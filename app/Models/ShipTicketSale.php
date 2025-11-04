@@ -1,0 +1,108 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class ShipTicketSale extends Model
+{
+    use HasFactory;
+
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'ship_ticket_sales';
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'customer_name',
+        'customer_mobile',
+        'sales_source',
+        'ship_name',
+        'journey_date',
+        'ticket_fee',
+        'payment_method',
+        'received_amount',
+        'due_amount',
+        'company_name',
+        'issued_date',
+        'sold_by',
+        'status',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'journey_date' => 'date',
+        'issued_date' => 'date',
+        'ticket_fee' => 'decimal:2',
+        'received_amount' => 'decimal:2',
+        'due_amount' => 'decimal:2',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
+     * Get the attributes that should be mutated to dates.
+     *
+     * @var array
+     */
+    protected $dates = [
+        'journey_date',
+        'issued_date',
+        'created_at',
+        'updated_at',
+    ];
+
+    /**
+     * Scope a query to only include pending dues.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeWithDue($query)
+    {
+        return $query->where('due_amount', '>', 0);
+    }
+
+    /**
+     * Scope a query to only include paid tickets.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopePaid($query)
+    {
+        return $query->where('due_amount', 0);
+    }
+
+    /**
+     * Check if the ticket sale has due amount.
+     *
+     * @return bool
+     */
+    public function hasDue()
+    {
+        return $this->due_amount > 0;
+    }
+
+    /**
+     * Get the total paid amount.
+     *
+     * @return float
+     */
+    public function getTotalPaidAttribute()
+    {
+        return $this->ticket_fee - $this->due_amount;
+    }
+}

@@ -6,7 +6,9 @@
         @if (session('success'))
             <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-4 flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd" />
                 </svg>
                 {{ session('success') }}
             </div>
@@ -16,7 +18,9 @@
             <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">
                 <div class="flex items-start">
                     <svg class="w-5 h-5 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                            clip-rule="evenodd" />
                     </svg>
                     <ul class="list-disc ml-5 space-y-1">
                         @foreach ($errors->all() as $error)
@@ -38,19 +42,19 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Customer Name <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="customer_name" value="{{ old('customer_name') }}" 
+                        <input type="text" name="customer_name" value="{{ old('customer_name') }}"
                             placeholder="Full name"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Mobile <span class="text-red-500">*</span> <span> [11 digits, no +88 or spaces] </span> 
+                            Mobile <span class="text-red-500">*</span> <span> [11 digits, no +88 or spaces] </span>
                         </label>
-                        <input type="number" name="customer_mobile" value="{{ old('customer_mobile') }}" 
+                        <input type="number" name="customer_mobile" value="{{ old('customer_mobile') }}"
                             placeholder="01XXXXXXXXX"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
 
@@ -58,14 +62,19 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Sales Source
                         </label>
-                        <select name="sales_source" 
+                        <select name="sales_source"
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                             <option value="">Select source</option>
-                            <option value="Facebook" {{ old('sales_source') == 'Facebook' ? 'selected' : '' }}>Facebook</option>
-                            <option value="Messenger" {{ old('sales_source') == 'Messenger' ? 'selected' : '' }}>Messenger</option>
-                            <option value="WhatsApp" {{ old('sales_source') == 'WhatsApp' ? 'selected' : '' }} selected>WhatsApp</option>
-                            <option value="Walk-in" {{ old('sales_source') == 'Walk-in' ? 'selected' : '' }}>Walk-in</option>
-                            <option value="Others" {{ old('sales_source') == 'Others' ? 'selected' : '' }}>Others</option>
+                            <option value="Facebook" {{ old('sales_source') == 'Facebook' ? 'selected' : '' }}>Facebook
+                            </option>
+                            <option value="Messenger" {{ old('sales_source') == 'Messenger' ? 'selected' : '' }}>
+                                Messenger</option>
+                            <option value="WhatsApp" {{ old('sales_source') == 'WhatsApp' ? 'selected' : '' }} selected>
+                                WhatsApp</option>
+                            <option value="Walk-in" {{ old('sales_source') == 'Walk-in' ? 'selected' : '' }}>Walk-in
+                            </option>
+                            <option value="Others" {{ old('sales_source') == 'Others' ? 'selected' : '' }}>Others
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -76,18 +85,26 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Ship Name <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="ship_name" value="{{ old('ship_name') }}" 
-                            placeholder="Ship name"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                        <select name="ship_id"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
+                            <option value="">Select a Ship</option>
+                            @foreach ($ships as $ship)
+                                <option value="{{ $ship->id }}"
+                                    {{ old('ship_id') == $ship->id ? 'selected' : '' }}>
+                                    {{ $ship->name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
+
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Journey Date <span class="text-red-500">*</span>
                         </label>
                         <input type="date" name="journey_date" value="{{ old('journey_date') }}"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
 
@@ -95,10 +112,17 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Company <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="company_name" value="{{ old('company_name') }}" 
-                            placeholder="Company name"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                        <select name="company_id"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
+                            <option value="">Select a Source</option>
+                            @foreach ($companies as $company)
+                                <option value="{{ $company->id }}"
+                                    {{ old('company_id') == $company->id ? 'selected' : '' }}>
+                                    {{ $company->name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
@@ -108,9 +132,9 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Ticket Fee (৳) <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" id="ticket_fee" name="ticket_fee" value="{{ old('ticket_fee') }}" 
+                        <input type="number" id="ticket_fee" name="ticket_fee" value="{{ old('ticket_fee') }}"
                             step="0.01" min="0" placeholder="0.00"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
 
@@ -118,14 +142,18 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Payment Method <span class="text-red-500">*</span>
                         </label>
-                        <select name="payment_method" 
+                        <select name="payment_method"
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                             <option value="">Select method</option>
-                            <option value="Cash" {{ old('payment_method') == 'Cash' ? 'selected' : '' }}>Cash</option>
-                            <option value="Bkash" {{ old('payment_method') == 'Bkash' ? 'selected' : '' }}>Bkash (+2%)</option>
-                            <option value="Nagad" {{ old('payment_method') == 'Nagad' ? 'selected' : '' }}>Nagad (+2%)</option>
-                            <option value="Bank Transfer" {{ old('payment_method') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                            <option value="Cash" {{ old('payment_method') == 'Cash' ? 'selected' : '' }}>Cash
+                            </option>
+                            <option value="Bkash" {{ old('payment_method') == 'Bkash' ? 'selected' : '' }}>Bkash (+2%)
+                            </option>
+                            <option value="Nagad" {{ old('payment_method') == 'Nagad' ? 'selected' : '' }}>Nagad (+2%)
+                            </option>
+                            <option value="Bank Transfer"
+                                {{ old('payment_method') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
                         </select>
                     </div>
 
@@ -133,8 +161,8 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Total Payable (৳)
                         </label>
-                        <input type="number" id="total_payable" name="total_payable" value="{{ old('total_payable', 0) }}" 
-                            step="0.01" min="0" placeholder="0.00" 
+                        <input type="number" id="total_payable" name="total_payable"
+                            value="{{ old('total_payable', 0) }}" step="0.01" min="0" placeholder="0.00"
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 dark:text-white rounded-lg px-3 py-2">
                     </div>
                 </div>
@@ -145,9 +173,9 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Received (৳) <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" id="received_amount" name="received_amount" value="{{ old('received_amount') }}" 
-                            step="0.01" min="0" placeholder="0.00"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                        <input type="number" id="received_amount" name="received_amount"
+                            value="{{ old('received_amount') }}" step="0.01" min="0" placeholder="0.00"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
 
@@ -155,7 +183,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Due Amount (৳)
                         </label>
-                        <input type="number" id="due_amount" name="due_amount" value="{{ old('due_amount', 0) }}" 
+                        <input type="number" id="due_amount" name="due_amount" value="{{ old('due_amount', 0) }}"
                             step="0.01" min="0" placeholder="0.00" readonly
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 dark:text-white rounded-lg px-3 py-2">
                     </div>
@@ -165,7 +193,7 @@
                             Issued Date <span class="text-red-500">*</span>
                         </label>
                         <input type="date" name="issued_date" value="{{ old('issued_date', date('Y-m-d')) }}"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
                 </div>
@@ -176,7 +204,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Sold By <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="sold_by" value="{{ old('sold_by', Auth::user()->name ?? '') }}" 
+                        <input type="text" name="sold_by" value="{{ old('sold_by', Auth::user()->name ?? '') }}"
                             placeholder="Seller name" readonly
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 dark:text-white rounded-lg px-3 py-2">
                     </div>
@@ -189,10 +217,10 @@
                         Cancel
                     </a>
                     <!-- Remove data-modal-target and data-modal-toggle from this button -->
-                <button type="button" id="reviewButton"
-                    class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition">
-                     Review & Submit
-                </button>
+                    <button type="button" id="reviewButton"
+                        class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition">
+                        Review & Submit
+                    </button>
                 </div>
             </form>
         </div>
@@ -210,26 +238,31 @@
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
                         Review Ticket Information
                     </h3>
-                    <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-hide="reviewModal">
-                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                    <button type="button"
+                        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                        data-modal-hide="reviewModal">
+                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 14 14">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
                         </svg>
                         <span class="sr-only">Close modal</span>
                     </button>
                 </div>
-                
+
                 <!-- Modal body -->
                 <div class="p-4 md:p-5 space-y-4">
                     <div id="reviewContent" class="space-y-4">
                         <!-- Content will be populated by JavaScript -->
                     </div>
                 </div>
-                
+
                 <!-- Modal footer -->
-                <div class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-3">
+                <div
+                    class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-3">
                     <button type="button" id="editInfoButton"
-                         class="px-5 py-2.5 text-sm font-medium text-gray-900 ...">
-                            Edit Information
+                        class="px-5 py-2.5 text-sm font-medium text-gray-900 ...">
+                        Edit Information
                     </button>
 
                     <button type="submit" form="ticketForm"

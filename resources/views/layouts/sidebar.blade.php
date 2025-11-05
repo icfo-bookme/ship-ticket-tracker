@@ -37,7 +37,11 @@
                             </a>
                             <a href="/sales/status/pending" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sold Packages</span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">pending sell</span>
+                            </a>
+                             <a href="/sales/status/payment-verified" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Payment Varifies sell</span>
                             </a>
                         </div>
                     </div>
@@ -57,13 +61,13 @@
                             </svg>
                         </button>
                         <div id="create-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
-                            <a href="/admin/create-ship" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                            <a href="/ships-details" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">New Ship</span>
                             </a>
-                            <a href="/admin/create-route" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                            <a href="/companies-details" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">New Route</span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">New Company</span>
                             </a>
                         </div>
                     </div>

@@ -5,7 +5,7 @@
         <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
             <div
                 class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Add New Ship</h3>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Add New item </h3>
                 <button data-modal-hide="add-modal" type="button"
                     class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg p-2.5">
                     <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
@@ -18,20 +18,13 @@
                 </button>
             </div>
 
-            <!-- Form for creating a new ship -->
-            <form id="createShipForm">
+            <!-- Form for creating a new item -->
+            <form id="createitemForm">
                 <div class="px-6 py-4">
                     <div class="mb-4">
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ship
+                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">item
                             Name</label>
                         <input type="text" name="name" id="name" required
-                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="route"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Route</label>
-                        <input type="text" name="route" id="route" required
                             class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
 
@@ -59,7 +52,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('createShipForm');
+        const form = document.getElementById('createitemForm');
         const closeButton = document.querySelector('[data-modal-hide="add-modal"]');
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -67,16 +60,14 @@
             event.preventDefault();
 
             const name = document.getElementById('name').value;
-            const route = document.getElementById('route').value;
             const status = document.getElementById('status').value;
 
             const data = {
                 name: name,
-                route: route,
                 status: status
             };
 
-            fetch('/ships', {
+            fetch('/companies', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -86,14 +77,14 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Failed to add ship');
+                        throw new Error('Failed to add item');
                     }
                     return response.json();
                 })
                 .then(data => {
                     Swal.fire({
                         title: 'Success!',
-                        text: 'Ship Added successfully!',
+                        text: 'Company Added successfully!',
                         icon: 'success',
                         confirmButtonText: 'OK',
                         customClass: {

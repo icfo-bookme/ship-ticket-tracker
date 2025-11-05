@@ -104,12 +104,12 @@ function isFormValid() {
     const requiredFields = [
         'customer_name',
         'customer_mobile',
-        'ship_name',
+        'ship_id',
         'journey_date',
         'ticket_fee',
         'payment_method',
         'received_amount',
-        'company_name',
+        'company_id',
         'issued_date',
         'sold_by'
     ];
@@ -205,9 +205,9 @@ function fillReviewContent() {
         'customer_name': 'Customer Name',
         'customer_mobile': 'Mobile Number',
         'sales_source': 'Sales Source',
-        'ship_name': 'Ship Name',
+        'ship_id': 'Ship Name',
         'journey_date': 'Journey Date',
-        'company_name': 'Company Name',
+        'company_id': 'Company Name',
         'ticket_fee': 'Ticket Fee',
         'payment_method': 'Payment Method',
         'total_payable': 'Total Payable',
@@ -264,12 +264,12 @@ function getFieldLabel(fieldName) {
     const labels = {
         'customer_name': 'Customer Name',
         'customer_mobile': 'Mobile Number',
-        'ship_name': 'Ship Name',
+        'ship_id': 'Ship Name',
         'journey_date': 'Journey Date',
         'ticket_fee': 'Ticket Fee',
         'payment_method': 'Payment Method',
         'received_amount': 'Received Amount',
-        'company_name': 'Company Name',
+        'company_id': 'Company Name',
         'issued_date': 'Issued Date',
         'sold_by': 'Sold By'
     };

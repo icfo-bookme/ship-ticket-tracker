@@ -25,13 +25,13 @@ class ShipTicketSale extends Model
         'customer_name',
         'customer_mobile',
         'sales_source',
-        'ship_name',
+        'ship_id',
         'journey_date',
         'ticket_fee',
         'payment_method',
         'received_amount',
         'due_amount',
-        'company_name',
+        'company_id',
         'issued_date',
         'sold_by',
         'status',
@@ -104,5 +104,15 @@ class ShipTicketSale extends Model
     public function getTotalPaidAttribute()
     {
         return $this->ticket_fee - $this->due_amount;
+    }
+
+    public function ships()
+    {
+        return $this->hasOne(Ship::class, 'id', 'ship_id');
+    }
+
+     public function companies()
+    {
+        return $this->hasOne(Company::class, 'id', 'company_id');
     }
 }

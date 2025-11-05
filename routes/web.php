@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShipTicketSaleController;
 use App\Http\Controllers\ShipController;
+use App\Http\Controllers\CompanyController;
 
 Route::resource('ships', ShipController::class);
 
@@ -21,13 +22,17 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::resource('ship-ticket-sales', ShipTicketSaleController::class);
     Route::post('/ship-ticket-sales/check-duplicate', [ShipTicketSaleController::class, 'checkDuplicate']);
-    Route::get('/sales/pending', [ShipTicketSaleController::class, 'pendingCS']);
-    Route::get('/sales/status/pending', [ShipTicketSaleController::class, 'showPendingSales']);
+    Route::get('/sales/{status}', [ShipTicketSaleController::class, 'pendingCS']);
+    Route::get('/sales/status/{status}', [ShipTicketSaleController::class, 'showPendingSales']);
     Route::put('/sales/status/{id}', [ShipTicketSaleController::class, 'update']);
+    Route::put('/sale/verify/{id}/{status}', [ShipTicketSaleController::class, 'verify']);
     Route::delete('/sale/delete/{id}', [ShipTicketSaleController::class, 'destroy']);
 
      Route::get('/ships-details', [ShipController::class, 'showTableList']);
     Route::resource('ships', ShipController::class);
+
+     Route::get('/companies-details', [CompanyController::class, 'showTableList']);
+    Route::resource('companies', CompanyController::class);
 
 });
 require __DIR__.'/auth.php';

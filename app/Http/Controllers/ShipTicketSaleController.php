@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ShipTicketSale;
 use App\Models\Ship;
+use App\Models\Shipment;
 use App\Models\Company;
 
 class ShipTicketSaleController extends Controller
@@ -66,12 +67,17 @@ class ShipTicketSaleController extends Controller
         $request->validate([
             'customer_name' => 'required|string|max:100',
             'customer_mobile' => 'required|string|max:20',
+            'nid' => 'nullable',
+            'email' => 'string|max:100',
             'sales_source' => 'nullable|string|max:255',
             'ship_id' => 'required|string|max:100',
-            'journey_date' => 'required|date',
+            'journey_date' => 'nullable|date',
+            'return_date' => 'required|date',
             'ticket_fee' => 'required|numeric',
             'payment_method' => 'required|string|max:255',
             'received_amount' => 'required|numeric',
+            'number_of_ticket' => 'required|numeric',
+            'ticket_category' => 'nullable|string',
             'due_amount' => 'nullable|numeric',
             'company_id' => 'required|string|max:100',
             'issued_date' => 'required|date',
@@ -112,19 +118,23 @@ class ShipTicketSaleController extends Controller
         'sales_source' => 'nullable|string|max:20',
         'ship_id' => 'nullable|exists:ships,id',
         'journey_date' => 'nullable|date',
+        'return_date' => 'required|date',
         'ticket_fee' => 'nullable|numeric|min:0',
-
+        'nid' => 'nullable',
+        'email' => 'string|max:100',
         'payment_method' => 'nullable|string|max:50',
         'received_amount' => 'nullable|numeric|min:0',
         'due_amount' => 'nullable|numeric|min:0',
         'company_id' => 'nullable',
+        'number_of_ticket' => 'required|numeric',
         'issued_date' => 'nullable|date',
+        'ticket_category' => 'nullable|string',
         'status' => 'nullable|string|max:50',
     ]);
 
     $sale = ShipTicketSale::findOrFail($id);
    
-   $test = $sale->update($request->only(['customer_name', 'customer_mobile','payment_method','received_amount','due_amount','company_id','issued_date', 'status','sales_source','ship_id','journey_date','ticket_fee']));
+   $test = $sale->update($request->only(['customer_name', 'customer_mobile','payment_method','received_amount','due_amount','company_id','issued_date', 'status','sales_source','ship_id','journey_date','ticket_fee','nid','email', 'number_of_ticket', 'return_date', 'ticket_category']));
 
     return response()->json(['message' => 'Sale updated successfully']);
 }
@@ -133,8 +143,8 @@ class ShipTicketSaleController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-  public function destroy($id)
-{
+  public function destroy(Request $request, $id)
+{ 
     try {
         // Find the sale by ID or fail
         $sale = ShipTicketSale::findOrFail($id);
@@ -165,13 +175,19 @@ class ShipTicketSaleController extends Controller
     return response()->json([
         'exists' => $existingTicket !== null,
         'message' => $existingTicket 
-            ? "This customer already has a ticket for {$request->journey_date} on {$existingTicket->ship_id}"
+            ? "This customer already has a ticket for {$request->journey_date} on {$existingTicket->sales_source}"
             : null
     ]);
 }
 
-public function verify($id, $status)
-{
+public function verify(Request $request, $id, $status)
+{  
+    if($request->shipmentId){
+         $shipment = new Shipment();
+        $shipment->ticket_id =  $id;
+        $shipment->shipment_id = $request->shipmentId;
+        $shipment->save();
+    }
     $sale = ShipTicketSale::findOrFail($id);
     $sale->update(['status' => $status]);
 

@@ -33,7 +33,7 @@
 
 
 <body class="font-sans antialiased">
-    <div class="min-h-screen max-w-[1480px] mx-auto">
+    <div class="min-h-screen max-w-[1480px] mx-auto bg-slate-200">
         <!-- Fixed Header -->
         <div class="fixed bg-[#006172] top-0 left-0 w-full z-50">
             @include('layouts.navigation')
@@ -47,7 +47,7 @@
             </div>
 
             <!-- Main Content with dynamic margin -->
-            <main id="main-content" class="ml-60 flex-1 transition-all duration-300 ease-in-out">
+            <main id="main-content" class="ml-60  flex-1 transition-all duration-300 ease-in-out">
                 {{ $slot }}
             </main>
         </div>

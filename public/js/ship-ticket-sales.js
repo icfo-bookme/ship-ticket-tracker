@@ -1,21 +1,18 @@
-// Simple Ship Ticket Sales Form JavaScript
+
 document.addEventListener('DOMContentLoaded', function () {
     setupEventListeners();
     calculateAll();
 });
 
 function setupEventListeners() {
-    // Auto-calculation events
+ 
     document.getElementById('ticket_fee').addEventListener('input', calculateAll);
     document.querySelector('select[name="payment_method"]').addEventListener('change', calculateAll);
     document.getElementById('received_amount').addEventListener('input', calculateDue);
-
-    // Clear errors when user types
     document.querySelectorAll('input, select').forEach(field => {
         field.addEventListener('input', () => clearFieldError(field));
     });
 
-    // Review button click
     document.getElementById('reviewButton').addEventListener('click', handleReviewClick);
 }
 
@@ -24,7 +21,6 @@ function calculateAll() {
     calculateDue();
 }
 
-// Calculate total payable with 2% extra for digital payments
 function calculateTotalPayable() {
     const ticketFee = getNumberValue('ticket_fee');
     const paymentMethod = document.querySelector('select[name="payment_method"]').value;
@@ -41,14 +37,12 @@ function calculateTotalPayable() {
 
     setValue('total_payable', totalPayable);
 
-    // Auto-fill received amount if empty
     const receivedAmount = getNumberValue('received_amount');
     if (!receivedAmount) {
         setValue('received_amount', totalPayable);
     }
 }
 
-// Calculate due amount
 function calculateDue() {
     const totalPayable = getNumberValue('total_payable');
     const receivedAmount = getNumberValue('received_amount');
@@ -56,16 +50,15 @@ function calculateDue() {
     setValue('due_amount', dueAmount);
 }
 
-// Handle review button click
+
 function handleReviewClick() {
     clearAllErrors();
 
-    if (!isFormValid()) return; // Stop if form invalid
+    if (!isFormValid()) return; 
 
     const customerMobile = getField('customer_mobile').value.trim();
     const journeyDate = getField('journey_date').value;
 
-    // Call Laravel route to check duplicate
     fetch('/ship-ticket-sales/check-duplicate', {
         method: 'POST',
         headers: {
@@ -80,15 +73,26 @@ function handleReviewClick() {
         .then(res => res.json())
         .then(data => {
             if (data.exists) {
-                // Show warning alert
-                if (confirm(`${data.message}\n\nThis ticket was bought within 24 hours. Do you want to continue?`)) {
-                    showReviewModal(); // User confirmed, show review
-                } else {
-                    // User cancelled
-                    return;
-                }
+                Swal.fire({
+                    title: `${data.message}`,  
+                    text: "This ticket was bought within 24 hours. Do you want to continue?",
+                    icon: 'warning',  
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, continue',
+                    cancelButtonText: 'Cancel',
+                    customClass: {
+                        confirmButton: 'bg-blue-950 text-white',
+                        cancelButton: 'bg-red-500 text-white'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {     
+                        showReviewModal();
+                    } else {         
+                        return;
+                    }
+                });
+
             } else {
-                // No duplicate, proceed
                 showReviewModal();
             }
         })
@@ -105,6 +109,8 @@ function isFormValid() {
         'customer_name',
         'customer_mobile',
         'ship_id',
+        'nid',
+        'email',
         'journey_date',
         'ticket_fee',
         'payment_method',
@@ -165,7 +171,6 @@ function isFormValid() {
 
 
 
-// Show review modal
 function showReviewModal() {
     fillReviewContent();
 
@@ -173,8 +178,7 @@ function showReviewModal() {
     const modal = document.getElementById('reviewModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-
-    // Close modal when clicking outside or close button
+    
     modal.addEventListener('click', function (e) {
         if (e.target === modal) closeModal();
     });
@@ -183,15 +187,14 @@ function showReviewModal() {
     //edit btn
     document.getElementById('editInfoButton').addEventListener('click', () => {
         closeModal(); // hide modal
-        document.getElementById('ticketForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        document.getElementById('ticketForm').querySelector('input, select').focus();
+       
     });
     document.querySelectorAll('[data-modal-hide="reviewModal"]').forEach(btn => {
         btn.addEventListener('click', closeModal);
     });
 }
 
-// Close modal
+
 function closeModal() {
     const modal = document.getElementById('reviewModal');
     modal.classList.add('hidden');
@@ -204,15 +207,20 @@ function fillReviewContent() {
     const fieldLabels = {
         'customer_name': 'Customer Name',
         'customer_mobile': 'Mobile Number',
+        'nid': 'NID',
+        'email': 'Email',
         'sales_source': 'Sales Source',
         'ship_id': 'Ship Name',
         'journey_date': 'Journey Date',
+        'return_date': 'Return Date',
         'company_id': 'Company Name',
-        'ticket_fee': 'Ticket Fee',
+        'number_of_ticket': 'Number Of Ticket',
+        'ticket_fee': 'Total Ticket Price',
         'payment_method': 'Payment Method',
         'total_payable': 'Total Payable',
         'received_amount': 'Received Amount',
         'due_amount': 'Due Amount',
+        'ticket_category': 'Ticket Category',
         'issued_date': 'Issued Date',
         'sold_by': 'Sold By'
     };
@@ -221,6 +229,19 @@ function fillReviewContent() {
 
     for (const [field, label] of Object.entries(fieldLabels)) {
         let value = formData.get(field) || 'Not specified';
+
+        if (field === 'ship_id') {
+            const shipSelect = document.querySelector('select[name="ship_id"]');
+            const selectedShipName = shipSelect.options[shipSelect.selectedIndex]?.text || 'Not specified';
+            value = selectedShipName;
+        }
+
+        if (field === 'company_id') {
+            const companySelect = document.querySelector('select[name="company_id"]');
+            const selectedCompanyName = companySelect.options[companySelect.selectedIndex]?.text || 'Not specified';
+            value = selectedCompanyName;
+        }
+
 
         // Format currency
         if (['ticket_fee', 'total_payable', 'received_amount', 'due_amount'].includes(field)) {
@@ -280,7 +301,7 @@ function isValidMobile(mobile) {
     return /^01[2-9]\d{8}$/.test(mobile);
 }
 
-// Error handling functions
+
 function showFieldError(field, message) {
     field.classList.add('border-red-500', 'dark:border-red-500', 'focus:ring-red-500');
     field.classList.remove('border-gray-300', 'dark:border-gray-600', 'focus:ring-blue-500');
@@ -309,11 +330,8 @@ function clearFieldError(field) {
 }
 
 function clearAllErrors() {
-    // Clear top error
     const topError = document.getElementById('topValidationError');
     if (topError) topError.remove();
-
-    // Clear field errors
     document.querySelectorAll('input, select').forEach(clearFieldError);
 }
 
@@ -331,7 +349,7 @@ function showTopError(message) {
     document.querySelector('h1').insertAdjacentElement('afterend', errorDiv);
 }
 
-// Fee message functions
+
 function showFeeMessage(message) {
     let feeMessage = document.getElementById('feeMessage');
     if (!feeMessage) {

@@ -27,6 +27,7 @@ class ShipTicketSale extends Model
         'sales_source',
         'ship_id',
         'journey_date',
+        'return_date',
         'ticket_fee',
         'payment_method',
         'received_amount',
@@ -34,6 +35,10 @@ class ShipTicketSale extends Model
         'company_id',
         'issued_date',
         'sold_by',
+        'nid',
+        'email',
+        'number_of_ticket',
+        'ticket_category',
         'status',
     ];
 

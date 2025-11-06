@@ -3,7 +3,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
         <div id="statusFilter" data-status="{{ $status }}" class="hidden"></div>
             <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
-                Pending Ship Ticket Sales
+                Ship Ticket Sales ({{ $status }} )
             </h2>
             <div class="mt-6 mb-4 grid grid-cols-3 gap-10">
                 <div class="">
@@ -67,8 +67,8 @@
 
     <!-- Edit Modal -->
     <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
+        <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white h-full max-h-[90%] py-5 overflow-y-auto">
+            <div class="mt-3 h-full">
                 <div class="flex justify-between items-center pb-3 border-b">
                     <h3 class="text-xl font-semibold text-gray-900">Edit Sale</h3>
                     <button id="closeModalX" class="text-gray-400 hover:text-gray-600">
@@ -90,15 +90,28 @@
                             <label for="editMobile" class="block text-sm font-medium text-gray-700">Customer Mobile</label>
                             <input type="text" id="editMobile" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                         </div>
+
+                         <div class="mb-4">
+                            <label for="editnid" class="block text-sm font-medium text-gray-700">NID</label>
+                            <input type="text" id="editnid" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="editEmail" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="text" id="editEmail" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
                         
                         <!-- Sales Source (Changed to dropdown) -->
                         <div class="mb-4">
                             <label for="editSalesSource" class="block text-sm font-medium text-gray-700">Sales Source</label>
                             <select id="editSalesSource" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                                 <option value="">Select source</option>
+                                
+                                <option value="WhatsApp(016)">WhatsApp(016)</option>
+                                <option value="WhatsApp(018)">WhatsApp(018)</option>
+                                <option value="WhatsApp(019)">WhatsApp(019)</option>
                                 <option value="Facebook">Facebook</option>
                                 <option value="Messenger">Messenger</option>
-                                <option value="WhatsApp">WhatsApp</option>
                                 <option value="Walk-in">Walk-in</option>
                                 <option value="Others">Others</option>
                             </select>
@@ -118,21 +131,31 @@
                             <label for="editJourneyDate" class="block text-sm font-medium text-gray-700">Journey Date</label>
                             <input type="date" id="editJourneyDate" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                         </div>
+
+                         <div class="mb-4">
+                            <label for="editReturnDate" class="block text-sm font-medium text-gray-700">Return Date</label>
+                            <input type="date" id="editReturnDate" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
                         
                         <!-- Ticket Fee -->
                         <div class="mb-4">
                             <label for="editTicketFee" class="block text-sm font-medium text-gray-700">Ticket Fee</label>
                             <input type="number" step="0.01" id="editTicketFee" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                         </div>
+
+                         <div class="mb-4">
+                            <label for="editTicketNumber" class="block text-sm font-medium text-gray-700">Number Of Tickets</label>
+                            <input type="number" step="1" id="editTicketNumber" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
                         
                         <!-- Payment Information -->
                         <div class="mb-4">
                             <label for="editPaymentMethod" class="block text-sm font-medium text-gray-700">Payment Method</label>
                             <select id="editPaymentMethod" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                                <option value="cash">Cash</option>
-                                <option value="card">Card</option>
-                                <option value="bank_transfer">Bank Transfer</option>
-                                <option value="digital_wallet">Digital Wallet</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Bkash">Bkash</option>
+                                <option value="Nagad">Nagad</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
                             </select>
                         </div>
                         
@@ -173,13 +196,18 @@
                             <select id="editStatus" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                                 <option value="pending">Pending</option>
                                 <option value="payment-verified">payment-verified</option>
-                                <option value="cancelled">Cancelled</option>
-                                <option value="completed">Completed</option>
+                                <option value="ticket-issued">ticket-issued</option>
+                                <option value="ticket-printed">ticket-printed</option>
                             </select>
+                        </div>
+
+                          <div class="mb-4">
+                            <label for="editTicketCategory" class="block text-sm font-medium text-gray-700">Ticket Category</label>
+                            <input type="text" id="editTicketCategory" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                         </div>
                     </div>
                     
-                    <div class="flex justify-end mt-6 space-x-3">
+                    <div class="flex justify-end py-5 space-x-3">
                         <button type="button" id="cancelBtn" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
                             Cancel
                         </button>
@@ -192,5 +220,19 @@
         </div>
     </div>
 
+    <!-- Modal Structure -->
+<div id="shipmentModal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
+    <div class="bg-white p-6 rounded shadow-lg w-96">
+        <h2 class="text-lg font-semibold mb-4">Enter Shipment ID</h2>
+        <input type="text" id="shipmentIdInput" class="border px-3 py-2 mb-4 w-full rounded" placeholder="Enter shipment ID" />
+        <div class="flex justify-end">
+            <button id="submitShipmentBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Entry</button>
+            <button id="closeModalBtn" class="bg-gray-400 text-white px-4 py-2 ml-2 rounded">Cancel</button>
+        </div>
+    </div>
+</div>
+
+
     <script src="{{ asset('js/panding-sell.js') }}"></script>
+    
 </x-app-layout>

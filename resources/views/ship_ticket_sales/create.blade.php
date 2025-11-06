@@ -57,6 +57,23 @@
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            NID <span class="text-red-500">*</span> <span> </span>
+                        </label>
+                        <input type="nid" name="nid" value="{{ old('nid') }}" placeholder="9203-746-48734"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            required>
+                    </div>
+
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Email <span class="text-red-500">*</span> <span> </span>
+                        </label>
+                        <input type="email" name="email" value="{{ old('email') }}" placeholder="abc@gmail.com"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            required>
+                    </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -65,23 +82,29 @@
                         <select name="sales_source"
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                             <option value="">Select source</option>
+                            <option value="WhatsApp(019)" {{ old('sales_source') == 'WhatsApp(019)' ? 'selected' : '' }}
+                                selected>
+                                WhatsApp(019)</option>
+                            <option value="WhatsApp(018)" {{ old('sales_source') == 'WhatsApp(018)' ? 'selected' : '' }}
+                                selected>
+                                WhatsApp(018)</option>
+                            <option value="WhatsApp(016)" {{ old('sales_source') == 'WhatsApp(016)' ? 'selected' : '' }}
+                                selected>
+                                WhatsApp(016)</option>
+
                             <option value="Facebook" {{ old('sales_source') == 'Facebook' ? 'selected' : '' }}>Facebook
                             </option>
                             <option value="Messenger" {{ old('sales_source') == 'Messenger' ? 'selected' : '' }}>
                                 Messenger</option>
-                            <option value="WhatsApp" {{ old('sales_source') == 'WhatsApp' ? 'selected' : '' }} selected>
-                                WhatsApp</option>
+
                             <option value="Walk-in" {{ old('sales_source') == 'Walk-in' ? 'selected' : '' }}>Walk-in
                             </option>
                             <option value="Others" {{ old('sales_source') == 'Others' ? 'selected' : '' }}>Others
                             </option>
                         </select>
                     </div>
-                </div>
 
-                <!-- Ship & Journey Info -->
-                <div class="grid grid-cols-3 gap-4">
-                    <div>
+                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Ship Name <span class="text-red-500">*</span>
                         </label>
@@ -98,12 +121,26 @@
                         </select>
                     </div>
 
+                </div>
+
+                <!-- Ship & Journey Info -->
+                <div class="grid grid-cols-3 gap-4">
+                   
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Journey Date <span class="text-red-500">*</span>
                         </label>
                         <input type="date" name="journey_date" value="{{ old('journey_date') }}"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Return Date <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" name="return_date" value="{{ old('return_date') }}"
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
@@ -128,9 +165,19 @@
 
                 <!-- Payment Info -->
                 <div class="grid grid-cols-3 gap-4">
+
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Number Of Ticket <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" id="number_of_ticket" name="number_of_ticket" value="{{ old('ticket_fee') }}"
+                            step="1" min="1" placeholder="Enter Number Of Ticket"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            required>
+                    </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Ticket Fee (৳) <span class="text-red-500">*</span>
+                           Total Ticket Price (৳) <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="ticket_fee" name="ticket_fee" value="{{ old('ticket_fee') }}"
                             step="0.01" min="0" placeholder="0.00"
@@ -165,11 +212,8 @@
                             value="{{ old('total_payable', 0) }}" step="0.01" min="0" placeholder="0.00"
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 dark:text-white rounded-lg px-3 py-2">
                     </div>
-                </div>
 
-                <!-- Additional Info -->
-                <div class="grid grid-cols-3 gap-4">
-                    <div>
+                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Received (৳) <span class="text-red-500">*</span>
                         </label>
@@ -187,6 +231,11 @@
                             step="0.01" min="0" placeholder="0.00" readonly
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 dark:text-white rounded-lg px-3 py-2">
                     </div>
+                </div>
+
+                <!-- Additional Info -->
+                <div class=" gap-4 hidden">
+                   
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -196,10 +245,6 @@
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
-                </div>
-
-                <!-- Additional Info -->
-                <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Sold By <span class="text-red-500">*</span>
@@ -207,6 +252,19 @@
                         <input type="text" name="sold_by" value="{{ old('sold_by', Auth::user()->name ?? '') }}"
                             placeholder="Seller name" readonly
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 dark:text-white rounded-lg px-3 py-2">
+                    </div>
+                </div>
+
+                <!-- Additional Info -->
+                <div class="grid grid-cols-1 gap-4">
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Ticket Category <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="ticket_category" value="{{ old('ticket_category') }}"
+                            placeholder="Ticket Category"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            required>
                     </div>
                 </div>
 
@@ -228,7 +286,7 @@
 
     <!-- Review Modal -->
     <div id="reviewModal" tabindex="-1" aria-hidden="true"
-        class="hidden overflow-hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+        class="hidden overflow-hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0  max-h-xl">
         <div class="absolute inset-0 bg-black bg-opacity-50 transition-opacity" id="modalBackdrop"></div>
         <div class="relative p-4 w-full max-w-2xl max-h-full">
             <!-- Modal content -->

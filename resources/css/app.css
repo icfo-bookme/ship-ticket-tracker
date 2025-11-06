@@ -1,61 +1,71 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-  /* Completely hide scrollbar but keep functionality */
-    .scrollbar-hide {
+
+/* Completely hide scrollbar but keep functionality */
+.scrollbar-hide {
   -ms-overflow-style: none;
   /* IE and Edge */
-        scrollbar-width: none;
+  scrollbar-width: none;
   /* Firefox */
 
 }
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
   /* Chrome, Safari and Opera */
-    
+
 }
+
 /* Smooth transitions */
-    .transition-all {
+.transition-all {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 200ms;
-  
+
 }
+
 /* Rotate dropdown icons when open */
-    .rotate-180 {
+.rotate-180 {
   transform: rotate(180deg);
-  
+
 }
+
 /* Hover effects */
-    .hover\:bg-blue-50:hover {
+.hover\:bg-blue-50:hover {
   background-color: #f0f9ff;
-  
+
 }
+
 /* Active menu item styling */
-    .bg-blue-50 {
+.bg-blue-50 {
   background-color: #f0f9ff;
-  
+
 }
+
 .text-blue-700 {
   color: #1d4ed8;
-  
+
 }
+
 /* Fix for text cutting */
-    .truncate {
+.truncate {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: inline-block;
   max-width: 100%;
-  
+
 }
+
 /* Z-index fixes */
-    #sidebar {
+#sidebar {
   z-index: 100;
-  
+
 }
+
 /* Expanded menu styles for collapsed sidebar */
-    .expanded-menu {
+.expanded-menu {
   position: absolute;
   left: 100%;
   top: 0;
@@ -65,88 +75,97 @@
   box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
   z-index: 120;
   padding: 8px 0;
-  
+
 }
+
 .expanded-menu .sidebar-text {
   display: inline !important;
-  
+
 }
+
 .expanded-menu-item {
   padding: 8px 16px;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  
+
 }
+
 .expanded-menu-item:hover {
   background-color: #f0f9ff;
-  
+
 }
+
 .expanded-menu-divider {
   border-top: 1px solid #e5e7eb;
   margin: 4px 0;
-  
+
 }
+
 /* Collapsed sidebar styles */
-    .sidebar-collapsed .sidebar-text {
+.sidebar-collapsed .sidebar-text {
   display: none !important;
-  
+
 }
+
 .sidebar-collapsed #nav-container a,
-    .sidebar-collapsed #nav-container button {
+.sidebar-collapsed #nav-container button {
   justify-content: center;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
-  
+
 }
+
 .sidebar-collapsed #nav-container button {
   justify-content: center !important;
-  
+
 }
+
 /* Expanded sidebar styles */
-    .sidebar-expanded .sidebar-text {
+.sidebar-expanded .sidebar-text {
   display: inline !important;
-  
+
 }
+
 .sidebar-expanded #nav-container a,
-    .sidebar-expanded #nav-container button {
+.sidebar-expanded #nav-container button {
   justify-content: flex-start;
   padding-left: 0.75rem;
   padding-right: 0.75rem;
-  
+
 }
+
 .sidebar-expanded #nav-container button {
   justify-content: space-between !important;
-  
+
 }
 
 
-  .dataTables_length select {
-    border: 1px solid #d1d5db; 
-    border-radius: 0.25rem;
-    padding: 0.25rem 1rem;
-    background-color: white;
-    height: 2.4rem;
-    margin-right: 1rem; 
-    appearance: none;
-    -webkit-appearance: none; 
-    -moz-appearance: none; 
-    background-image: none;
+.dataTables_length select {
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  padding: 0.25rem 1rem;
+  background-color: white;
+  height: 2.4rem;
+  margin-right: 1rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
 }
 
 
-    /* Style the label container */
-    .dataTables_length label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        
-    }
+/* Style the label container */
+.dataTables_length label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 
-    .dataTables_length label::before,
-    .dataTables_length label::after {
-        content: none !important;
-    }
+}
 
-    /* Optional: Hide label text but keep dropdown */
-   
+.dataTables_length label::before,
+.dataTables_length label::after {
+  content: none !important;
+}
+
+/* Optional: Hide label text but keep dropdown */

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShipTicketSaleController;
 use App\Http\Controllers\ShipController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\RefundController;
 
 Route::resource('ships', ShipController::class);
 
@@ -34,5 +35,8 @@ Route::middleware('auth')->group(function () {
      Route::get('/companies-details', [CompanyController::class, 'showTableList']);
     Route::resource('companies', CompanyController::class);
 
+    Route::resource('refunds', RefundController::class);
+    Route::post('/full/refunds', [RefundController::class, 'fullRefunds']);
+    Route::post('/partial/refund/{id}', [RefundController::class, 'partialRefund']);
 });
 require __DIR__.'/auth.php';

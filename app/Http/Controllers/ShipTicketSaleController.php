@@ -47,7 +47,7 @@ class ShipTicketSaleController extends Controller
 }
       public function showPendingSales($status)
     {
-        return view('ship_ticket_sales.pending_sales', compact('status')); 
+        return view('ship_ticket_sales.index', compact('status')); 
     }
     /**
      * Show the form for creating a new resource.

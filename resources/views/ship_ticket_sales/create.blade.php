@@ -59,6 +59,15 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Date Of Birth <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             NID <span class="text-red-500">*</span> <span> </span>
                         </label>
                         <input type="nid" name="nid" value="{{ old('nid') }}" placeholder="9203-746-48734"
@@ -66,7 +75,7 @@
                             required>
                     </div>
 
-                      <div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Email <span class="text-red-500">*</span> <span> </span>
                         </label>
@@ -88,8 +97,8 @@
                             <option value="WhatsApp(018)" {{ old('sales_source') == 'WhatsApp(018)' ? 'selected' : '' }}
                                 selected>
                                 WhatsApp(018)</option>
-                            <option value="WhatsApp(016)" {{ old('sales_source') == 'WhatsApp(016)' ? 'selected' : '' }}
-                                selected>
+                            <option value="WhatsApp(016)"
+                                {{ old('sales_source') == 'WhatsApp(016)' ? 'selected' : '' }} selected>
                                 WhatsApp(016)</option>
 
                             <option value="Facebook" {{ old('sales_source') == 'Facebook' ? 'selected' : '' }}>Facebook
@@ -104,7 +113,12 @@
                         </select>
                     </div>
 
-                     <div>
+
+                </div>
+
+                <!-- Ship & Journey Info -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Ship Name <span class="text-red-500">*</span>
                         </label>
@@ -120,12 +134,6 @@
                             @endforeach
                         </select>
                     </div>
-
-                </div>
-
-                <!-- Ship & Journey Info -->
-                <div class="grid grid-cols-3 gap-4">
-                   
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -145,6 +153,11 @@
                             required>
                     </div>
 
+
+                </div>
+
+                <!-- Payment Info -->
+                <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Company <span class="text-red-500">*</span>
@@ -161,23 +174,19 @@
                             @endforeach
                         </select>
                     </div>
-                </div>
-
-                <!-- Payment Info -->
-                <div class="grid grid-cols-3 gap-4">
-
-                     <div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Number Of Ticket <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" id="number_of_ticket" name="number_of_ticket" value="{{ old('ticket_fee') }}"
-                            step="1" min="1" placeholder="Enter Number Of Ticket"
+                        <input type="number" id="number_of_ticket" name="number_of_ticket"
+                            value="{{ old('ticket_fee') }}" step="1" min="1"
+                            placeholder="Enter Number Of Ticket"
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                           Total Ticket Price (৳) <span class="text-red-500">*</span>
+                            Total Ticket Price (৳) <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="ticket_fee" name="ticket_fee" value="{{ old('ticket_fee') }}"
                             step="0.01" min="0" placeholder="0.00"
@@ -195,9 +204,11 @@
                             <option value="">Select method</option>
                             <option value="Cash" {{ old('payment_method') == 'Cash' ? 'selected' : '' }}>Cash
                             </option>
-                            <option value="Bkash" {{ old('payment_method') == 'Bkash' ? 'selected' : '' }}>Bkash (+2%)
+                            <option value="Bkash" {{ old('payment_method') == 'Bkash' ? 'selected' : '' }}>Bkash
+                                (+2%)
                             </option>
-                            <option value="Nagad" {{ old('payment_method') == 'Nagad' ? 'selected' : '' }}>Nagad (+2%)
+                            <option value="Nagad" {{ old('payment_method') == 'Nagad' ? 'selected' : '' }}>Nagad
+                                (+2%)
                             </option>
                             <option value="Bank Transfer"
                                 {{ old('payment_method') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
@@ -213,7 +224,7 @@
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 dark:text-white rounded-lg px-3 py-2">
                     </div>
 
-                     <div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Received (৳) <span class="text-red-500">*</span>
                         </label>
@@ -231,12 +242,37 @@
                             step="0.01" min="0" placeholder="0.00" readonly
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 dark:text-white rounded-lg px-3 py-2">
                     </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Ticket Category <span class="text-red-500">*</span>
+                        </label>
+                        <select name="ticket_category" id="ticket_category"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            required>
+                            <option value="">Select a Package</option>
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                    </div>
                 </div>
+
+                <div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Full Address (please follow this format:
+                            <span class="font-semibold text-gray-900 dark:text-white">Fla# A1, House# 17/1, Road# 3/A,
+                                Dhanmondi, Dhaka-1209</span>)
+                        </label>
+                        <textarea id="address" name="address" placeholder="Enter your address here"
+                            class="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 dark:text-white rounded-lg ">
+            {{ old('address') }}
+        </textarea>
+                    </div>
+                </div>
+
+
 
                 <!-- Additional Info -->
                 <div class=" gap-4 hidden">
-                   
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Issued Date <span class="text-red-500">*</span>
@@ -255,18 +291,8 @@
                     </div>
                 </div>
 
-                <!-- Additional Info -->
-                <div class="grid grid-cols-1 gap-4">
-                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Ticket Category <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" name="ticket_category" value="{{ old('ticket_category') }}"
-                            placeholder="Ticket Category"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                            required>
-                    </div>
-                </div>
+
+
 
                 <!-- Action Buttons -->
                 <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -288,9 +314,9 @@
     <div id="reviewModal" tabindex="-1" aria-hidden="true"
         class="hidden overflow-hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0  max-h-xl">
         <div class="absolute inset-0 bg-black bg-opacity-50 transition-opacity" id="modalBackdrop"></div>
-        <div class="relative p-4 w-full max-w-2xl max-h-full">
+        <div class="relative   p-4 w-full max-w-2xl max-h-full">
             <!-- Modal content -->
-            <div class="relative bg-white rounded-lg shadow dark:bg-gray-800">
+            <div class="relative  bg-white rounded-lg shadow dark:bg-gray-800">
                 <!-- Modal header -->
                 <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white">

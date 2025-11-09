@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function setupEventListeners() {
- 
+
     document.getElementById('ticket_fee').addEventListener('input', calculateAll);
     document.querySelector('select[name="payment_method"]').addEventListener('change', calculateAll);
     document.getElementById('received_amount').addEventListener('input', calculateDue);
@@ -54,7 +54,7 @@ function calculateDue() {
 function handleReviewClick() {
     clearAllErrors();
 
-    if (!isFormValid()) return; 
+    if (!isFormValid()) return;
 
     const customerMobile = getField('customer_mobile').value.trim();
     const journeyDate = getField('journey_date').value;
@@ -74,9 +74,9 @@ function handleReviewClick() {
         .then(data => {
             if (data.exists) {
                 Swal.fire({
-                    title: `${data.message}`,  
+                    title: `${data.message}`,
                     text: "This ticket was bought within 24 hours. Do you want to continue?",
-                    icon: 'warning',  
+                    icon: 'warning',
                     showCancelButton: true,
                     confirmButtonText: 'Yes, continue',
                     cancelButtonText: 'Cancel',
@@ -85,9 +85,9 @@ function handleReviewClick() {
                         cancelButton: 'bg-red-500 text-white'
                     }
                 }).then((result) => {
-                    if (result.isConfirmed) {     
+                    if (result.isConfirmed) {
                         showReviewModal();
-                    } else {         
+                    } else {
                         return;
                     }
                 });
@@ -108,6 +108,8 @@ function isFormValid() {
     const requiredFields = [
         'customer_name',
         'customer_mobile',
+        'date_of_birth',
+        'address',
         'ship_id',
         'nid',
         'email',
@@ -174,20 +176,18 @@ function isFormValid() {
 function showReviewModal() {
     fillReviewContent();
 
-    // Show modal
     const modal = document.getElementById('reviewModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    
+
     modal.addEventListener('click', function (e) {
         if (e.target === modal) closeModal();
     });
     document.getElementById('modalBackdrop').addEventListener('click', closeModal);
 
-    //edit btn
     document.getElementById('editInfoButton').addEventListener('click', () => {
-        closeModal(); // hide modal
-       
+        closeModal(); 
+
     });
     document.querySelectorAll('[data-modal-hide="reviewModal"]').forEach(btn => {
         btn.addEventListener('click', closeModal);
@@ -201,14 +201,16 @@ function closeModal() {
     modal.classList.remove('flex');
 }
 
-// Fill review modal content
+
 function fillReviewContent() {
     const formData = new FormData(document.getElementById('ticketForm'));
     const fieldLabels = {
         'customer_name': 'Customer Name',
         'customer_mobile': 'Mobile Number',
+        'date_of_birth': 'Date Of Birth',
         'nid': 'NID',
         'email': 'Email',
+        'address': 'Full Address',
         'sales_source': 'Sales Source',
         'ship_id': 'Ship Name',
         'journey_date': 'Journey Date',
@@ -242,6 +244,11 @@ function fillReviewContent() {
             value = selectedCompanyName;
         }
 
+        if (field === 'ticket_category') {
+            const categorySelect = document.getElementById('ticket_category');
+            const selectedCategory = categorySelect.options[categorySelect.selectedIndex]?.text || 'Not specified';
+            value = selectedCategory;
+        }
 
         // Format currency
         if (['ticket_fee', 'total_payable', 'received_amount', 'due_amount'].includes(field)) {
@@ -258,7 +265,7 @@ function fillReviewContent() {
         }
 
         html += `
-            <div class="border-b border-gray-100 dark:border-gray-700 pb-2">
+            <div class="border-b border-gray-100 dark:border-gray-700 ">
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">${label}</dt>
                 <dd class="mt-1 text-sm text-gray-900 dark:text-white font-medium">${value}</dd>
             </div>`;
@@ -338,7 +345,7 @@ function clearAllErrors() {
 function showTopError(message) {
     const errorDiv = document.createElement('div');
     errorDiv.id = 'topValidationError';
-    errorDiv.className = 'bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4 flex items-center';
+    errorDiv.className = 'bg-red-50 mt-16 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4 flex items-center';
     errorDiv.innerHTML = `
         <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
@@ -371,3 +378,46 @@ function hideFeeMessage() {
     const feeMessage = document.getElementById('feeMessage');
     if (feeMessage) feeMessage.remove();
 }
+
+// Load packages when ship is selected
+document.querySelector('select[name="ship_id"]').addEventListener('change', async function () {
+    const shipId = this.value;
+    const categorySelect = document.getElementById('ticket_category');
+
+    if (shipId) {
+        try {
+            categorySelect.innerHTML = '<option value="">Loading packages...</option>';
+            
+            const response = await fetch(`/ship-packages/${shipId}`);
+            
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            
+            // Your API returns the array directly, not wrapped in an object
+            const packages = await response.json();
+            
+            categorySelect.innerHTML = '<option value="">Select a Package</option>';
+            
+            // Now 'packages' is the array directly
+            if (packages && packages.length > 0) {
+                packages.forEach(pkg => {
+                    const option = document.createElement('option');
+                    option.value = pkg.name || pkg.id;
+                    option.textContent = pkg.name;
+                    categorySelect.appendChild(option);
+                });
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No packages available';
+                categorySelect.appendChild(option);
+            }
+        } catch (error) {
+            console.error('Error fetching packages:', error);
+            categorySelect.innerHTML = '<option value="">Error loading packages</option>';
+        }
+    } else {
+        categorySelect.innerHTML = '<option value="">Select a Package</option>';
+    }
+});

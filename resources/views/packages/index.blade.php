@@ -22,8 +22,6 @@
                     <tr>
                         <th class="border px-4 py-2">ID</th>
                         <th class="border px-4 py-2">Name</th>
-                        <th class="border px-4 py-2">Route</th>
-                        <th class="border px-4 py-2">Status</th>
                         <th class="border px-4 py-2">Action</th>
                     </tr>
                 </thead>
@@ -34,6 +32,10 @@
 </div>
 
 <script>
+    // Pass the 'id' value from the server-side to JavaScript
+    const shipPackageId = @json($id);
+
+    // Now you can use the 'shipPackageId' in your JavaScript fetch request
     const loader = document.getElementById('loader');
     const table = document.getElementById('shipsTable');
     const salesBody = document.getElementById('shipsBody');
@@ -43,7 +45,8 @@
         try {
             loader.style.display = 'block';
 
-            const response = await fetch('/ships');
+            // Use the shipPackageId variable here
+            const response = await fetch(`/ship-packages/${shipPackageId}`);
             const data = await response.json();
 
             loader.style.display = 'none';
@@ -51,34 +54,25 @@
 
             salesBody.innerHTML = '';
 
-            // Render sales data into the table
-            data.forEach(sale => {
-                const status = sale.status == 1 ? 'Yes' : 'No';
+            // Render ship packages data into the table
+            data.forEach(package => {
                 const tr = document.createElement('tr');
-
                 tr.innerHTML = `
-                    <td class="border px-4 py-2">${sale.id}</td>
-                    <td class="border px-4 py-2">${sale.name}</td>
-                    <td class="border px-4 py-2">${sale.route}</td>
-                    <td class="border px-4 py-2">${status}</td>
+                    <td class="border px-4 py-2">${package.id}</td>
+                    <td class="border px-4 py-2">${package.name}</td>
                     <td class="border px-4 py-2">
                         <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" 
-                            data-id="${sale.id}" 
-                            data-name="${sale.name}" 
-                            data-route="${sale.route}" 
-                            data-status="${sale.status}">
+                            data-id="${package.id}" 
+                            data-name="${package.name}">
                             Edit  
                         </button>
                         <button class="bg-red-500 text-white px-2 py-1 rounded deleteBtn" 
-                            data-id="${sale.id}">
+                            data-id="${package.id}">
                             Delete  
                         </button>
-                        <a href="/ship/packages/${sale.id}" class="bg-blue-500 text-white px-2 py-2 rounded addPackagesBtn">
-                Add Packages
-            </a>
                     </td>
                 `;
-                shipsBody.appendChild(tr);
+                salesBody.appendChild(tr);
             });
 
             // Initialize DataTable if not already initialized
@@ -103,6 +97,8 @@
                 });
                 dataTableInitialized = true;
             }
+
+            // Event listeners for edit and delete buttons
             document.querySelectorAll('.editBtn').forEach(btn => {
                 btn.addEventListener('click', () => showEditModal(btn));
             });
@@ -111,13 +107,12 @@
                 btn.addEventListener('click', () => handleDeleteClick(btn));
             });
 
-
-
         } catch (error) {
-            console.error('Error fetching sales data:', error);
+            console.error('Error fetching ship packages data:', error);
             loader.textContent = 'Failed to load data. Please try again later.';
         }
     }
 
     getList();
 </script>
+

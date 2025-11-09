@@ -21,6 +21,59 @@ class RefundController extends Controller
         return view('refund.componentItem');
     }
 
+  public function refunded()
+{
+    try {
+        
+        $refunds = ShipTicketSale::with('refund')
+            ->whereIn('status', ['refunded', 'partial-refunded'])
+            ->get();
+
+    
+        if ($refunds->isEmpty()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'No refunds found for the given status.',
+                'data' => [],
+                'total_refunded_tickets' => 0,
+                'total_refunded_amount' => 0,
+            ], 200);
+        }
+
+        // Prepare arrays to hold refunded ticket numbers and amounts
+       
+        $totalRefundedTickets = 0;
+        $totalRefundedAmount = 0;
+
+        // Loop through the ShipTicketSale data and extract refund data
+        foreach ($refunds as $sale) {
+            foreach ($sale->refund as $refund) {
+              
+                // Calculate the totals
+                $totalRefundedTickets += $refund->refunded_number_of_tickets;
+                $totalRefundedAmount += $refund->refunded_amount;
+            }
+        }
+
+        // Return the structured API response
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Refund data retrieved successfully.',
+            'data' => $refunds,
+            'total_refunded_tickets' => $totalRefundedTickets,
+            'total_refunded_amount' => $totalRefundedAmount,
+        ], 200);
+
+    } catch (\Exception $e) {
+        // Return a generic error message in case of any exception
+        return response()->json([
+            'status' => 'error',
+            'message' => 'An error occurred while retrieving refund data.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
     
     public function store(Request $request)
     {

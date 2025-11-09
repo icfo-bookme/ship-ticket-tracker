@@ -40,6 +40,8 @@ class ShipTicketSale extends Model
         'number_of_ticket',
         'ticket_category',
         'status',
+        'date_of_birth',
+        'address'
     ];
 
     /**
@@ -120,4 +122,10 @@ class ShipTicketSale extends Model
     {
         return $this->hasOne(Company::class, 'id', 'company_id');
     }
+
+    public function refund()
+{
+    return $this->hasMany(Refund::class, 'sales_id', 'id');
+}
+
 }

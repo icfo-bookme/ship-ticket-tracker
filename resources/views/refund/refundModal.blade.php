@@ -5,7 +5,7 @@
                <div>
                    <label class="block text-sm font-medium text-gray-700">Received Amount</label>
                    <input type="text" id="receivedAmountInput" class="border px-3 py-2 mb-4 w-full rounded"
-                       placeholder="Enter Received Amount" />
+                      readonly placeholder="Enter Received Amount" />
                </div>
                <div>
                    <label class="block text-sm font-medium text-gray-700">Refund Amount</label>
@@ -19,7 +19,7 @@
                <div>
                    <label class="block text-sm font-medium text-gray-700">Purchase Number of Ticket</label>
                    <input type="text" id="PurchaseTicketInput" class="border px-3 py-2 mb-4 w-full rounded"
-                       placeholder="Enter Purchase Number of Ticket" />
+                      readonly placeholder="Enter Purchase Number of Ticket" />
                </div>
                <div>
                    <label class="block text-sm font-medium text-gray-700">Refund Number Of Ticket</label>

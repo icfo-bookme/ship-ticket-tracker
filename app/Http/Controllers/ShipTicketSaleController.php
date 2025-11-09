@@ -72,6 +72,7 @@ class ShipTicketSaleController extends Controller
             'sales_source' => 'nullable|string|max:255',
             'ship_id' => 'required|string|max:100',
             'journey_date' => 'nullable|date',
+            'date_of_birth' => 'nullable|date',
             'return_date' => 'required|date',
             'ticket_fee' => 'required|numeric',
             'payment_method' => 'required|string|max:255',
@@ -115,6 +116,7 @@ class ShipTicketSaleController extends Controller
     $request->validate([
         'customer_name' => 'nullable|string|max:100',
         'customer_mobile' => 'nullable|string|max:20',
+        'date_of_birth' => 'nullable|date',
         'sales_source' => 'nullable|string|max:20',
         'ship_id' => 'nullable|exists:ships,id',
         'journey_date' => 'nullable|date',
@@ -129,6 +131,7 @@ class ShipTicketSaleController extends Controller
         'number_of_ticket' => 'required|numeric',
         'issued_date' => 'nullable|date',
         'ticket_category' => 'nullable|string',
+        'address' => 'nullable|string',
         'status' => 'nullable|string|max:50',
     ]);
 

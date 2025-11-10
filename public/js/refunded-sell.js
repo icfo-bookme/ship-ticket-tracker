@@ -51,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch("/ships");
             ships = await response.json();
             populateDropdown(shipFilter, ships, "All Ships");
+            populateEditShipDropdown();
         } catch (error) {
             console.error("Error fetching ships:", error);
         }
@@ -61,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch("/companies");
             companies = await response.json();
             populateDropdown(companyFilter, companies, "All Companies");
+            populateEditCompanyDropdown();
         } catch (error) {
             console.error("Error fetching companies:", error);
         }
@@ -81,6 +83,33 @@ document.addEventListener("DOMContentLoaded", () => {
             option.value = item.id;
             option.textContent = item.name;
             selectElement.appendChild(option);
+        });
+    }
+
+    function populateEditShipDropdown() {
+        const editShipSelect = document.getElementById("editShip");
+        if (!editShipSelect) return;
+
+        editShipSelect.innerHTML = '<option value="">Select Ship</option>';
+        ships.forEach((ship) => {
+            const option = document.createElement("option");
+            option.value = ship.id;
+            option.textContent = ship.name;
+            editShipSelect.appendChild(option);
+        });
+    }
+
+    function populateEditCompanyDropdown() {
+        const editCompanySelect = document.getElementById("editCompany");
+        if (!editCompanySelect) return;
+
+        editCompanySelect.innerHTML =
+            '<option value="">Select Company</option>';
+        companies.forEach((company) => {
+            const option = document.createElement("option");
+            option.value = company.id;
+            option.textContent = company.name;
+            editCompanySelect.appendChild(option);
         });
     }
 
@@ -106,10 +135,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const selectedCompanyId = companyFilter.value;
             const selectedJourneyDate = journeyDateFilter.value;
 
-            const statusElement = document.getElementById("statusFilter");
-            const status = statusElement
-                ? statusElement.dataset.status
-                : "pending";
+            const rtotalRefundedTickets = document.getElementById(
+                "totalRefundedTickets"
+            );
+            const rtotalRefundedAmount = document.getElementById(
+                "totalRefundedAmount"
+            );
+
             // Destroy existing DataTable if initialized
             if (dataTableInitialized && dataTable) {
                 dataTable.destroy();
@@ -119,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Clear table body
             salesBody.innerHTML = "";
 
-            let url = `/sales/${status}?`;
+            let url = `/all/refunded?`;
             const params = new URLSearchParams();
 
             if (selectedShipId) params.append("ship_id", selectedShipId);
@@ -131,13 +163,18 @@ document.addEventListener("DOMContentLoaded", () => {
             url += params.toString();
 
             const response = await fetch(url);
-            const data = await response.json();
+            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+
+            const result = await response.json();
+
+            const sales = result.data || [];
+            console.log(sales);
 
             loader.style.display = "none";
             table.classList.remove("hidden");
 
             // Render sales data into the table
-            data.forEach((sale) => {
+            sales.forEach((sale) => {
                 const tr = document.createElement("tr");
                 const formatDate = (field, value) => {
                     if (
@@ -154,9 +191,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
 
                 tr.innerHTML = `
-                <td class="border px-4 py-2">
-        <input type="checkbox" class="selectSale" data-id="${sale.id}" />
-    </td>
     <td class="border px-4 py-2">${sale.id}</td>
     <td class="border px-4 py-2">${sale.customer_name}</td>
     <td class="border px-4 py-2">${sale.customer_mobile}</td>
@@ -171,12 +205,21 @@ document.addEventListener("DOMContentLoaded", () => {
         "journey_date",
         sale.journey_date
     )}</td>
-     <td class="border px-4 py-2">${sale.number_of_ticket}</td>
-      <td class="border px-4 py-2">${sale.ticket_fee}</td>
+    <td class="border px-4 py-2">${sale.number_of_ticket}</td>
+    <td class="border px-4 py-2">${sale.refund.refunded_number_of_tickets}</td>
     <td class="border px-4 py-2">${sale.received_amount}</td>
-    
+    <td class="border px-4 py-2">${sale.refund.refunded_amount}</td>
+    <td class="border px-4 py-2">${sale.status}</td>
     <td class="border px-4 py-2 flex gap-5 items-center justify-center">
-        <button class="fas fa-eye  text-blue-950 px-2 py-1 rounded showBtn" 
+     <button class="  text-white bg-yellow-700 px-2 py-1 rounded editRefundedBtn" 
+            data-id="${sale.refund.id}"
+            data-received_total_amount="${sale.received_amount}"
+            data-number_ticket="${sale.number_of_ticket}"
+            data-refunded_amount="${sale.refund.refunded_amount}"
+            data-refunded_number_of_tickets="${sale.refund.refunded_number_of_tickets}">
+            Edit Refunded
+        </button>
+        <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" 
             data-id="${sale.id}" 
             data-customer="${sale.customer_name}" 
             data-mobile="${sale.customer_mobile}" 
@@ -184,13 +227,6 @@ document.addEventListener("DOMContentLoaded", () => {
             data-nid="${sale.nid}" 
             data-source="${sale.sales_source}"
             data-ship="${sale.ship_id}"
-            data-ship-name="${
-                sale.ship
-                    ? sale.ship.name
-                    : sale.ships
-                    ? sale.ships.name
-                    : "Not available"
-            }"
             data-journeyDate="${sale.journey_date}"
             data-returnDate="${sale.return_date}"
             data-ticketFee="${sale.ticket_fee}"
@@ -199,30 +235,20 @@ document.addEventListener("DOMContentLoaded", () => {
             data-receivedAmount="${sale.received_amount}"
             data-dueAmount="${sale.due_amount}"
             data-companyId="${sale.company_id}"
-            data-company-name="${sale.companies.name}"
             data-issuedDate="${sale.issued_date}"
             data-ticket_category="${sale.ticket_category}"
             data-soldBy="${sale.sold_by || ""}"
-            data-status="${sale.status}">    
+            data-status="${sale.status}">
         </button>
-       
-         ${
-             sale.status === "shipped"
-                 ? `
-            <button class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund" 
-                data-id="${sale.id}"
-                data-received_total_amount="${sale.received_amount}"
-                data-number_ticket="${sale.number_of_ticket}"
-                data-status="shipped">
-               Partial Refund
-            </button>
-        `
-                 : ""
-         }
+        <button class="fas fa-trash text-red-500 px-2 py-1 rounded deleteBtn" 
+            data-id="${sale.id}">
+        </button>
     </td>
 `;
                 salesBody.appendChild(tr);
             });
+            rtotalRefundedTickets.textContent = result.total_refunded_tickets;
+            rtotalRefundedAmount.textContent = result.total_refunded_amount;
 
             // Initialize DataTable
             dataTable = $("#salesTable").DataTable({
@@ -261,60 +287,145 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function attachEventListeners() {
-        document.querySelectorAll(".showBtn").forEach((btn) => {
-            btn.addEventListener("click", () => showModal(btn, modal));
+        document.querySelectorAll(".editBtn").forEach((btn) => {
+            btn.addEventListener("click", () => showEditModal(btn));
         });
 
-        document.querySelectorAll(".verifyRefund").forEach((btn) => {
+        document.querySelectorAll(".deleteBtn").forEach((btn) => {
+            btn.addEventListener("click", () => deleteSale(btn, getList));
+        });
+        document.querySelectorAll(".editRefundedBtn").forEach((btn) => {
             btn.addEventListener("click", () => refunded(btn, getList));
         });
     }
-    document.getElementById("selectAll").addEventListener("change", (e) => {
-        const checkboxes = document.querySelectorAll(".selectSale");
-        checkboxes.forEach((checkbox) => {
-            checkbox.checked = e.target.checked;
+
+    function showEditModal(btn) {
+        populateEditShipDropdown();
+        populateEditCompanyDropdown();
+
+        const fields = {
+            editId: btn.dataset.id,
+            editCustomerName: btn.dataset.customer,
+            editnid: btn.dataset.nid,
+            editMobile: btn.dataset.mobile,
+            editEmail: btn.dataset.email,
+            editSalesSource: btn.dataset.source,
+            editShip: btn.dataset.ship,
+            editJourneyDate: formatDateForInput(btn.dataset.journeydate),
+            editReturnDate: formatDateForInput(btn.dataset.returndate),
+            editTicketFee: btn.dataset.ticketfee,
+            editTicketNumber: btn.dataset.number_of_ticket,
+            editPaymentMethod: btn.dataset.payment_method,
+            editReceivedAmount: btn.dataset.receivedamount,
+            editDueAmount: btn.dataset.dueamount,
+            editCompany: btn.dataset.companyid,
+            editIssuedDate: formatDateForInput(btn.dataset.issueddate),
+            editSoldBy: btn.dataset.soldby,
+            editStatus: btn.dataset.status,
+            editTicketCategory: btn.dataset.ticket_category,
+        };
+
+        // Set values for all fields
+        Object.keys(fields).forEach((fieldId) => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                element.value = fields[fieldId] || "";
+            }
         });
-    });
+
+        // Show the edit modal
+        modal.show();
+    }
+
+    function formatDateForInput(dateString) {
+        if (!dateString || dateString === "Not specified") return "";
+
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return "";
+
+        return date.toISOString().split("T")[0];
+    }
 
     document
-        .getElementById("refundSelectedBtn")
-        .addEventListener("click", async () => {
-            const selectedIds = [];
-            document
-                .querySelectorAll(".selectSale:checked")
-                .forEach((checkbox) => {
-                    selectedIds.push(checkbox.dataset.id);
-                });
+        .getElementById("editForm")
+        .addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-            if (selectedIds.length === 0) {
-                alert("Please select at least one item to refund.");
-                return;
-            }
+            const id = document.getElementById("editId").value;
+            const data = {
+                customer_name:
+                    document.getElementById("editCustomerName").value,
+                customer_mobile: document.getElementById("editMobile").value,
+                nid: document.getElementById("editnid").value,
+                email: document.getElementById("editEmail").value,
+                sales_source: document.getElementById("editSalesSource").value,
+                ship_id: document.getElementById("editShip").value,
+                journey_date: document.getElementById("editJourneyDate").value,
+                return_date: document.getElementById("editReturnDate").value,
+                ticket_fee: document.getElementById("editTicketFee").value,
+                number_of_ticket:
+                    document.getElementById("editTicketNumber").value,
+                payment_method:
+                    document.getElementById("editPaymentMethod").value,
+                received_amount:
+                    document.getElementById("editReceivedAmount").value,
+                due_amount: document.getElementById("editDueAmount").value,
+                company_id: document.getElementById("editCompany").value,
+                issued_date: document.getElementById("editIssuedDate").value,
+                sold_by: document.getElementById("editSoldBy").value,
+                status: document.getElementById("editStatus").value,
+                ticket_category:
+                    document.getElementById("editTicketCategory").value,
+            };
 
-            try {
-                const response = await fetch("/full/refunds", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            .getAttribute("content"),
-                    },
-                    body: JSON.stringify({ ids: selectedIds }),
-                });
-
-                const result = await response.json();
-                if (response.ok) {
-                    alert("Refund successfully processed for selected items.");
-                    getList(); // Reload the list
-                } else {
-                    alert(`Error: ${result.message}`);
-                }
-            } catch (error) {
-                console.error("Error sending refund request:", error);
-                alert("An error occurred. Please try again.");
-            }
+            await updateSale(id, data);
         });
+
+    // Function to update sale
+    async function updateSale(id, data) {
+        try {
+            const response = await fetch(`/sales/status/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
+                },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                Swal.fire({
+                    title: "Success!",
+                    text: "Sale updated successfully!",
+                    icon: "success",
+                    confirmButtonText: "OK",
+                    customClass: {
+                        confirmButton: "bg-blue-950 text-white",
+                    },
+                });
+
+                getList();
+                modal.hide();
+            } else {
+                throw new Error(result.message || "Failed to update sale");
+            }
+        } catch (error) {
+            console.error("Error updating sale:", error);
+            Swal.fire({
+                title: "Error!",
+                text: "Failed to update sale. Please try again.",
+                icon: "error",
+                confirmButtonText: "OK",
+                customClass: {
+                    confirmButton: "bg-red-600 text-white",
+                },
+            });
+        }
+    }
 
     // Initialize the page
     async function initializePage() {

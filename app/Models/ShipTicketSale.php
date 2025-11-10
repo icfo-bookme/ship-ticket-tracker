@@ -123,9 +123,10 @@ class ShipTicketSale extends Model
         return $this->hasOne(Company::class, 'id', 'company_id');
     }
 
-    public function refund()
+  public function refund()
 {
-    return $this->hasMany(Refund::class, 'sales_id', 'id');
+    return $this->hasOne(Refund::class, 'sales_id', 'id');
 }
+
 
 }

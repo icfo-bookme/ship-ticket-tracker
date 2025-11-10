@@ -38,12 +38,16 @@
 
    <script>
        function refunded(btn, getList) {
-           const saleId = btn.dataset.id;
+           const id = btn.dataset.id;
            const status = btn.dataset.status;
            const received_total_amount = btn.dataset.received_total_amount;
            const number_ticket = btn.dataset.number_ticket;
+           const refunded_number_of_tickets = btn.dataset.refunded_number_of_tickets;
+           const refunded_amount = btn.dataset.refunded_amount;
            document.getElementById('receivedAmountInput').value = received_total_amount;
            document.getElementById('PurchaseTicketInput').value = number_ticket;
+           document.getElementById('refundTicketInput').value = refunded_number_of_tickets;
+           document.getElementById('refundAmountInput').value = refunded_amount;
 
            // Show the modal
            const modal = document.getElementById('refundModal');
@@ -92,8 +96,8 @@
 
                if (isConfirmed.isConfirmed) {
                    try {
-                       const response = await fetch(`/partial/refund/${saleId}`, {
-                           method: 'POST',
+                       const response = await fetch(`/refunded/${id}`, {
+                           method: 'PUT',
                            headers: {
                                'Content-Type': 'application/json',
                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')

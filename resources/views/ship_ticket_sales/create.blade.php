@@ -292,8 +292,6 @@
                 </div>
 
 
-
-
                 <!-- Action Buttons -->
                 <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <a href="{{ route('ship-ticket-sales.create') }}"
@@ -302,7 +300,7 @@
                     </a>
                     <!-- Remove data-modal-target and data-modal-toggle from this button -->
                     <button type="button" id="reviewButton"
-                        class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition">
+                        class="px-5 py-2.5 text-sm font-medium text-white bg-blue-900 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition">
                         Review & Submit
                     </button>
                 </div>
@@ -310,53 +308,56 @@
         </div>
     </div>
 
-    <!-- Review Modal -->
-    <div id="reviewModal" tabindex="-1" aria-hidden="true"
-        class="hidden overflow-hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0  max-h-xl">
-        <div class="absolute inset-0 bg-black bg-opacity-50 transition-opacity" id="modalBackdrop"></div>
-        <div class="relative   p-4 w-full max-w-2xl max-h-full">
-            <!-- Modal content -->
-            <div class="relative  bg-white rounded-lg shadow dark:bg-gray-800">
-                <!-- Modal header -->
-                <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                        Review Ticket Information
-                    </h3>
-                    <button type="button"
-                        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-                        data-modal-hide="reviewModal">
-                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 14 14">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-                        </svg>
-                        <span class="sr-only">Close modal</span>
-                    </button>
-                </div>
+   <!-- Review Modal -->
+<div id="reviewModal" tabindex="-1" aria-hidden="true"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
 
-                <!-- Modal body -->
-                <div class="p-4 md:p-5 space-y-4">
-                    <div id="reviewContent" class="space-y-4">
-                        <!-- Content will be populated by JavaScript -->
-                    </div>
-                </div>
+    <!-- Backdrop -->
+    <div id="modalBackdrop" class="absolute inset-0 bg-black bg-opacity-50  transition-opacity"></div>
 
-                <!-- Modal footer -->
-                <div
-                    class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-3">
-                    <button type="button" id="editInfoButton"
-                        class="px-5 py-2.5 text-sm font-medium text-gray-900 ...">
-                        Edit Information
-                    </button>
+    <!-- Modal Container -->
+    <div class="relative w-full max-w-2xl mx-auto my-8 p-4">
+        <!-- Modal Content -->
+        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-lg flex flex-col max-h-[90vh]">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between p-4 md:p-5 border-b dark:border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    Review Ticket Information
+                </h3>
+                <button type="button"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg p-1.5 transition"
+                    data-modal-hide="reviewModal">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                            stroke-width="2" d="M1 1l6 6m0 0l6 6M7 7l6-6M7 7l-6 6" />
+                    </svg>
+                </button>
+            </div>
 
-                    <button type="submit" form="ticketForm"
-                        class="px-5 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">
-                        Confirm & Save Ticket
-                    </button>
+            <!-- Body (Scrollable) -->
+            <div class="p-4 md:p-5 overflow-y-auto flex-1">
+                <div id="reviewContent" class="space-y-4">
+                    <!-- Populated dynamically by JS -->
                 </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex justify-end p-4 md:p-5 border-t dark:border-gray-700 gap-3">
+                <button type="button" id="editInfoButton"
+                    class="px-5 py-2.5 text-sm font-medium text-gray-800 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition">
+                    Edit Information
+                </button>
+
+                <button type="submit" form="ticketForm"
+                    class="px-5 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 rounded-lg dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 transition">
+                    Confirm & Save Ticket
+                </button>
             </div>
         </div>
     </div>
+</div>
+
 
     <!-- Include custom JavaScript -->
     <script src="{{ asset('js/ship-ticket-sales.js') }}"></script>

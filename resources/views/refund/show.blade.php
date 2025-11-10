@@ -159,8 +159,7 @@
             'editShip': btn.dataset.ship - name || 'Not specified',
             'editJourneyDate': formatDateForDisplay(btn.dataset.journeydate),
             'editReturnDate': formatDateForDisplay(btn.dataset.returndate),
-            'editTicketFee': btn.dataset.ticketfee ? `$${parseFloat(btn.dataset.ticketfee).toFixed(2)}` :
-                'Not specified',
+            'editTicketFee': btn.dataset.ticketfee ? `$${parseFloat(btn.dataset.ticketfee).toFixed(2)}` : 'Not specified',
             'editTicketNumber': btn.dataset.number_of_ticket || 'Not specified',
             'editPaymentMethod': btn.dataset.payment_method || 'Not specified',
             'editReceivedAmount': btn.dataset.receivedamount ?

@@ -8,73 +8,85 @@ use Illuminate\Http\Request;
 
 class RefundController extends Controller
 {
-   
+
     public function index()
     {
-        $refunds = Refund::all(); 
+        $refunds = Refund::all();
         return response()->json($refunds);
     }
 
-    
+
     public function create()
     {
         return view('refund.componentItem');
     }
 
-  public function refunded()
-{
-    try {
-        
-        $refunds = ShipTicketSale::with('refund')
-            ->whereIn('status', ['refunded', 'partial-refunded'])
-            ->get();
+    public function refunded(Request $request)
+    {
+        $shipId = $request->input('ship_id');
+        $companyId = $request->input('company_id');
+        $journeyDate = $request->input('journey_date');
 
-    
-        if ($refunds->isEmpty()) {
-            return response()->json([
-                'status' => 'success',
-                'message' => 'No refunds found for the given status.',
-                'data' => [],
-                'total_refunded_tickets' => 0,
-                'total_refunded_amount' => 0,
-            ], 200);
-        }
+        try {
+            // Build the query with relationships
+            $query = ShipTicketSale::with(['ships', 'companies', 'refund'])
+                ->whereIn('status', ['refunded', 'partial-refunded']);
 
-        // Prepare arrays to hold refunded ticket numbers and amounts
-       
-        $totalRefundedTickets = 0;
-        $totalRefundedAmount = 0;
-
-        // Loop through the ShipTicketSale data and extract refund data
-        foreach ($refunds as $sale) {
-            foreach ($sale->refund as $refund) {
-              
-                // Calculate the totals
-                $totalRefundedTickets += $refund->refunded_number_of_tickets;
-                $totalRefundedAmount += $refund->refunded_amount;
+            // Apply filters if provided
+            if ($shipId && !empty($shipId)) {
+                $query->where('ship_id', $shipId);
             }
+
+            if ($companyId && !empty($companyId)) {
+                $query->where('company_id', $companyId);
+            }
+
+            if ($journeyDate && !empty($journeyDate)) {
+                $query->whereDate('journey_date', $journeyDate);
+            }
+
+            $sales = $query->get();
+
+            // Handle case when no refunds are found
+            if ($sales->isEmpty()) {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'No refunded or partially refunded tickets found.',
+                    'data'    => [],
+                    'total_refunded_tickets' => 0,
+                    'total_refunded_amount'  => 0,
+                ], 200);
+            }
+
+            // Calculate totals
+            $totalRefundedTickets = 0;
+            $totalRefundedAmount  = 0;
+
+            foreach ($sales as $sale) {
+                if ($sale->refund) {
+                    $totalRefundedTickets += (int) $sale->refund->refunded_number_of_tickets;
+                    $totalRefundedAmount  += (float) $sale->refund->refunded_amount;
+                }
+            }
+
+            // Return structured response
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Refund data retrieved successfully.',
+                'data'    => $sales,
+                'total_refunded_tickets' => $totalRefundedTickets,
+                'total_refunded_amount'  => $totalRefundedAmount,
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'An unexpected error occurred while retrieving refund data.',
+                'error'   => $e->getMessage() // optional: for debugging
+            ], 500);
         }
-
-        // Return the structured API response
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Refund data retrieved successfully.',
-            'data' => $refunds,
-            'total_refunded_tickets' => $totalRefundedTickets,
-            'total_refunded_amount' => $totalRefundedAmount,
-        ], 200);
-
-    } catch (\Exception $e) {
-        // Return a generic error message in case of any exception
-        return response()->json([
-            'status' => 'error',
-            'message' => 'An error occurred while retrieving refund data.',
-            'error' => $e->getMessage(),
-        ], 500);
     }
-}
 
-    
+
     public function store(Request $request)
     {
         $request->validate([
@@ -85,27 +97,31 @@ class RefundController extends Controller
 
         $refund = Refund::create($request->all());
 
-        return response()->json($refund, 201); 
+        return response()->json($refund, 201);
     }
 
-    
-   public function fullRefunds(Request $request)
+    public function showRefundedCS()
     {
-        
+        return view('refunded.index');
+    }
+
+    public function fullRefunds(Request $request)
+    {
+
         $validated = $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'required|integer',  
+            'ids.*' => 'required|integer',
         ]);
 
         foreach ($validated['ids'] as $id) {
-           
+
             $sale = ShipTicketSale::find($id);
             if ($sale && $sale->status == 'shipped') {
-                
+
                 Refund::create([
-                    'sales_id' => $sale->id, 
-                    'refunded_number_of_tickets' => $sale->number_of_ticket,  
-                    'refunded_amount' => $sale->received_amount,      
+                    'sales_id' => $sale->id,
+                    'refunded_number_of_tickets' => $sale->number_of_ticket,
+                    'refunded_amount' => $sale->received_amount,
                 ]);
 
                 $sale->status = 'refunded';
@@ -114,26 +130,30 @@ class RefundController extends Controller
         }
         return response()->json(['message' => 'Refund processed successfully.']);
     }
-    
-   public function partialRefund(Request $request, $id)
-    { 
-        
-            $sale = ShipTicketSale::find($id);
-            if ($sale && $sale->status == 'shipped') {
-                
-                Refund::create([
-                    'sales_id' => $id, 
-                    'refunded_number_of_tickets' => $request->refunded_number_of_tickets,  
-                    'refunded_amount' => $request->refunded_amount,      
-                ]);
 
+    public function partialRefund(Request $request, $id)
+    {
+
+        $sale = ShipTicketSale::find($id);
+        if ($sale && $sale->status == 'shipped') {
+
+            Refund::create([
+                'sales_id' => $id,
+                'refunded_number_of_tickets' => $request->refunded_number_of_tickets,
+                'refunded_amount' => $request->refunded_amount,
+            ]);
+
+            if ($sale->number_of_ticket == $request->refunded_number_of_tickets) {
+                $sale->status = 'refunded';
+            } else {
                 $sale->status = 'partial-refunded';
-                $sale->save();
             }
+            $sale->save();
+        }
 
-        return response()->json(['success' => true,'message' => 'Refund processed successfully.']);
+        return response()->json(['success' => true, 'message' => 'Refund processed successfully.']);
     }
-    
+
 
 
     public function show($id)
@@ -147,19 +167,17 @@ class RefundController extends Controller
         return response()->json($refund);
     }
 
-    
+
     public function edit($id)
     {
         // Not necessary for APIs, usually handled in web apps
     }
 
-    // Update the specified refund in storage
     public function update(Request $request, $id)
     {
         $request->validate([
-            'sales_id' => 'required|integer',
-            'refunded_number_of_tickets' => 'required|integer',
-            'refunded_amount' => 'required|numeric',
+            'refunded_number_of_tickets' => 'required|integer|min:1',
+            'refunded_amount' => 'required|numeric|min:0',
         ]);
 
         $refund = Refund::find($id);
@@ -168,10 +186,25 @@ class RefundController extends Controller
             return response()->json(['message' => 'Refund not found'], 404);
         }
 
-        $refund->update($request->all());
+        $sale = ShipTicketSale::find($refund->sales_id);
 
-        return response()->json($refund);
+        if (!$sale) {
+            return response()->json(['message' => 'Associated sale not found'], 404);
+        }
+
+        $refund->update([
+            'refunded_number_of_tickets' => $request->refunded_number_of_tickets,
+            'refunded_amount' => $request->refunded_amount,
+        ]);
+
+        $sale->status = ($sale->number_of_ticket == $request->refunded_number_of_tickets)
+            ? 'refunded'
+            : 'partial-refunded';
+        $sale->save();
+
+        return response()->json(['success' => true, 'message' => 'Refund updated successfully.']);
     }
+
 
     // Remove the specified refund from storage
     public function destroy($id)

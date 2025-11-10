@@ -58,7 +58,7 @@
                                     class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Pending
                                     Tickets</span>
                             </a>
-                            <a href="/sales/status/payment-verified"
+                            <!-- <a href="/sales/status/payment-verified"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span
@@ -90,7 +90,7 @@
                                 <span
                                     class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Shipped
                                     Tickets</span>
-                            </a>
+                            </a> -->
                         </div>
                     </div>
                 </div>

@@ -40,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/full/refunds', [RefundController::class, 'fullRefunds']);
     Route::post('/partial/refund/{id}', [RefundController::class, 'partialRefund']);
     Route::get('/all/refunded', [RefundController::class, 'refunded']);
+    Route::get('/refunded', [RefundController::class, 'showRefundedCS']);
+    Route::put('/refunded/{id}', [RefundController::class, 'update']);
 
     Route::get('/ship/packages/{id}', [ShipPackageController::class, 'showPackages']);
     Route::get('/ship-packages/{id}', [ShipPackageController::class, 'index']);

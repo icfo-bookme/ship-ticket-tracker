@@ -16,38 +16,39 @@ class ShipTicketSaleController extends Controller
     public function index()
     {
         $sales = ShipTicketSale::with('ships')->latest()->get();
-        dd($sales);
         $ships = Ship::all();
-        return view('ship_ticket_sales.index', compact('sales','ships'));
+        return view('ship_ticket_sales.index', compact('sales', 'ships'));
     }
 
-  public function pendingCS(Request $request, $status )
-{  
-    $shipId = $request->input('ship_id');
-    $companyId = $request->input('company_id');
-    $journeyDate = $request->input('journey_date');
-
-    $query = ShipTicketSale::with('ships','companies')->where('status', $status);
-
-    if ($shipId && !empty($shipId)) {
-        $query->where('ship_id', $shipId);
-    }
-
-    if ($companyId && !empty($companyId)) {
-        $query->where('company_id', $companyId);
-    }
-
-    if ($journeyDate && !empty($journeyDate)) {
-        $query->whereDate('journey_date', $journeyDate);
-    }
-
-    $sales = $query->get();
-    
-    return response()->json($sales);
-}
-      public function showPendingSales($status)
+    public function pendingCS(Request $request, $status)
     {
-        return view('ship_ticket_sales.index', compact('status')); 
+        $shipId = $request->input('ship_id');
+        $companyId = $request->input('company_id');
+        $journeyDate = $request->input('journey_date');
+
+        $query = ShipTicketSale::with('ships', 'companies')->where('status', $status);
+
+        if ($shipId && !empty($shipId)) {
+            $query->where('ship_id', $shipId);
+        }
+
+        if ($companyId && !empty($companyId)) {
+            $query->where('company_id', $companyId);
+        }
+
+        if ($journeyDate && !empty($journeyDate)) {
+            $query->whereDate('journey_date', $journeyDate);
+        }
+
+        $sales = $query->get();
+
+        return response()->json($sales);
+    }
+
+    
+    public function showPendingSales($status)
+    {
+        return view('ship_ticket_sales.index', compact('status'));
     }
     /**
      * Show the form for creating a new resource.
@@ -56,7 +57,7 @@ class ShipTicketSaleController extends Controller
     {
         $ships = Ship::all();
         $companies = Company::all();
-        return view('ship_ticket_sales.create', compact('ships','companies'));
+        return view('ship_ticket_sales.create', compact('ships', 'companies'));
     }
 
     /**
@@ -111,91 +112,89 @@ class ShipTicketSaleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-   public function update(Request $request, $id)
-{  
-    $request->validate([
-        'customer_name' => 'nullable|string|max:100',
-        'customer_mobile' => 'nullable|string|max:20',
-        'date_of_birth' => 'nullable|date',
-        'sales_source' => 'nullable|string|max:20',
-        'ship_id' => 'nullable|exists:ships,id',
-        'journey_date' => 'nullable|date',
-        'return_date' => 'required|date',
-        'ticket_fee' => 'nullable|numeric|min:0',
-        'nid' => 'nullable',
-        'email' => 'string|max:100',
-        'payment_method' => 'nullable|string|max:50',
-        'received_amount' => 'nullable|numeric|min:0',
-        'due_amount' => 'nullable|numeric|min:0',
-        'company_id' => 'nullable',
-        'number_of_ticket' => 'required|numeric',
-        'issued_date' => 'nullable|date',
-        'ticket_category' => 'nullable|string',
-        'address' => 'nullable|string',
-        'status' => 'nullable|string|max:50',
-    ]);
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'customer_name' => 'nullable|string|max:100',
+            'customer_mobile' => 'nullable|string|max:20',
+            'date_of_birth' => 'nullable|date',
+            'sales_source' => 'nullable|string|max:20',
+            'ship_id' => 'nullable|exists:ships,id',
+            'journey_date' => 'nullable|date',
+            'return_date' => 'required|date',
+            'ticket_fee' => 'nullable|numeric|min:0',
+            'nid' => 'nullable',
+            'email' => 'string|max:100',
+            'payment_method' => 'nullable|string|max:50',
+            'received_amount' => 'nullable|numeric|min:0',
+            'due_amount' => 'nullable|numeric|min:0',
+            'company_id' => 'nullable',
+            'number_of_ticket' => 'required|numeric',
+            'issued_date' => 'nullable|date',
+            'ticket_category' => 'nullable|string',
+            'address' => 'nullable|string',
+            'status' => 'nullable|string|max:50',
+        ]);
 
-    $sale = ShipTicketSale::findOrFail($id);
-   
-   $test = $sale->update($request->only(['customer_name', 'customer_mobile','payment_method','received_amount','due_amount','company_id','issued_date', 'status','sales_source','ship_id','journey_date','ticket_fee','nid','email', 'number_of_ticket', 'return_date', 'ticket_category']));
+        $sale = ShipTicketSale::findOrFail($id);
 
-    return response()->json(['message' => 'Sale updated successfully']);
-}
+        $test = $sale->update($request->only(['customer_name', 'customer_mobile', 'payment_method', 'received_amount', 'due_amount', 'company_id', 'issued_date', 'status', 'sales_source', 'ship_id', 'journey_date', 'ticket_fee', 'nid', 'email', 'number_of_ticket', 'return_date', 'ticket_category']));
+
+        return response()->json(['message' => 'Sale updated successfully']);
+    }
 
 
     /**
      * Remove the specified resource from storage.
      */
-  public function destroy(Request $request, $id)
-{ 
-    try {
-        // Find the sale by ID or fail
-        $sale = ShipTicketSale::findOrFail($id);
+    public function destroy(Request $request, $id)
+    {
+        try {
+            // Find the sale by ID or fail
+            $sale = ShipTicketSale::findOrFail($id);
 
-        // Delete the sale
-        $sale->delete();
+            // Delete the sale
+            $sale->delete();
 
-        // Return success response
-        return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
-    } catch (\Exception $e) {
-        // Handle the error if any, e.g., sale not found
-        return response()->json(['success' => false, 'message' => 'Sale not found'], 404);
+            // Return success response
+            return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
+        } catch (\Exception $e) {
+            // Handle the error if any, e.g., sale not found
+            return response()->json(['success' => false, 'message' => 'Sale not found'], 404);
+        }
     }
-}
 
 
     public function checkDuplicate(Request $request)
-{  
-    $request->validate([
-        'customer_mobile' => 'required|string',
-        'journey_date' => 'required|date'
-    ]);
+    {
+        $request->validate([
+            'customer_mobile' => 'required|string',
+            'journey_date' => 'required|date'
+        ]);
 
-    $existingTicket = ShipTicketSale::where('customer_mobile', $request->customer_mobile)
-        ->where('journey_date', $request->journey_date)
-        ->first();
- 
-    return response()->json([
-        'exists' => $existingTicket !== null,
-        'message' => $existingTicket 
-            ? "This customer already has a ticket for {$request->journey_date} on {$existingTicket->sales_source}"
-            : null
-    ]);
-}
+        $existingTicket = ShipTicketSale::where('customer_mobile', $request->customer_mobile)
+            ->where('journey_date', $request->journey_date)
+            ->first();
 
-public function verify(Request $request, $id, $status)
-{  
-    if($request->shipmentId){
-         $shipment = new Shipment();
-        $shipment->ticket_id =  $id;
-        $shipment->shipment_id = $request->shipmentId;
-        $shipment->save();
+        return response()->json([
+            'exists' => $existingTicket !== null,
+            'message' => $existingTicket
+                ? "This customer already has a ticket for {$request->journey_date} on {$existingTicket->sales_source}"
+                : null
+        ]);
     }
-    $sale = ShipTicketSale::findOrFail($id);
-    $sale->update(['status' => $status]);
 
-   return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
-}
+    public function verify(Request $request, $id, $status)
+    {
+        if ($request->shipmentId) {
+            $shipment = new Shipment();
+            $shipment->ticket_id =  $id;
+            $shipment->shipment_id = $request->shipmentId;
+            $shipment->save();
+        }
+        $sale = ShipTicketSale::findOrFail($id);
+        $sale->update(['status' => $status]);
 
-
+        return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
+    }
 }

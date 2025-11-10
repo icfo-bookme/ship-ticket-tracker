@@ -1,9 +1,8 @@
-    
-
+<div class="py-6">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
-        <div id="statusFilter" data-status="{{ $status }}" class="hidden"></div>
+        <div id="statusFilter" data-status="{{ "refunded" }}" class="hidden"></div>
         <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
-            Ship Ticket Sales ({{ $status }} )
+            Refunded Ship Ticket Sales
         </h2>
         <div class="mt-6 mb-4 grid grid-cols-3 gap-10">
             <div class="">
@@ -45,7 +44,7 @@
         </div>
 
         <!-- Sales Table -->
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto ">
             <table id="salesTable" class="min-w-full border border-gray-300 hidden">
                 <thead class="bg-gray-100">
                     <tr>
@@ -54,8 +53,10 @@
                         <th class="border px-4 py-2">Mobile</th>
                         <th class="border px-4 py-2">Ship Name</th>
                         <th class="border px-4 py-2">Journey Date</th>
-                        <th class="border px-4 py-2">Ticket Fee</th>
-                        <th class="border px-4 py-2">Resource Company</th>
+                        <th class="border px-4 py-2">Purchase Num Of Tickets</th>
+                        <th class="border px-4 py-2">Return Num Of Tickets</th>
+                        <th class="border px-4 py-2">Received Amount</th>
+                        <th class="border px-4 py-2">Refunded Amount</th>
                         <th class="border px-4 py-2">Status</th>
                         <th class="border px-4 py-2">Action</th>
                     </tr>
@@ -63,7 +64,30 @@
                 <tbody id="salesBody"></tbody>
             </table>
         </div>
-        
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Total Refunded Tickets -->
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 flex items-center justify-between border border-gray-200 dark:border-gray-700">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Refunded Tickets</p>
+                    <p id="totalRefundedTickets" class="text-2xl font-bold text-blue-950 dark:text-blue-400">0</p>
+                </div>
+                <div class="text-blue-200 dark:text-blue-600 text-3xl">
+                    Ticket/s <!-- Optional icon -->
+                </div>
+            </div>
+
+            <!-- Total Refunded Amount -->
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 flex items-center justify-between border border-gray-200 dark:border-gray-700">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Refunded Amount</p>
+                    <p id="totalRefundedAmount" class="text-2xl font-bold text-blue-950 dark:text-blue-400">0</p>
+                </div>
+                <div class="text-blue-200 dark:text-blue-600 text-3xl">
+                    BDT <!-- Optional icon -->
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -226,8 +250,6 @@
                             <option value="payment-verified">payment-verified</option>
                             <option value="ticket-issued">ticket-issued</option>
                             <option value="ticket-printed">ticket-printed</option>
-                            <option value="shipment_id_entered">shipment_id_entered</option>
-                            <option value="shipped">shipped</option>
                         </select>
                     </div>
 
@@ -253,7 +275,4 @@
     </div>
 </div>
 
-
-
-
-<script src="{{ asset('js/panding-sell.js') }}"></script>
+<script src="{{ asset('js/refunded-sell.js') }}"></script>

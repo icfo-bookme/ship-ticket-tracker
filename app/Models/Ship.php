@@ -11,7 +11,8 @@ class Ship extends Model
     protected $fillable = [
         'name',
         'route',
-        'status'
+        'status',
+   
     ];
     
      public $timestamps = true;

@@ -22,6 +22,8 @@
                     <tr>
                         <th class="border px-4 py-2">ID</th>
                         <th class="border px-4 py-2">Name</th>
+                        <th class="border px-4 py-2">Price</th>
+                        <th class="border px-4 py-2">round_trip_price</th>
                         <th class="border px-4 py-2">Action</th>
                     </tr>
                 </thead>
@@ -60,10 +62,14 @@
                 tr.innerHTML = `
                     <td class="border px-4 py-2">${package.id}</td>
                     <td class="border px-4 py-2">${package.name}</td>
+                    <td class="border px-4 py-2">${package.price}</td>
+                    <td class="border px-4 py-2">${package.round_trip_price}</td>
                     <td class="border px-4 py-2">
                         <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" 
                             data-id="${package.id}" 
-                            data-name="${package.name}">
+                            data-name="${package.name}"
+                            data-price="${package.price}"
+                            data-round_trip_price="${package.round_trip_price}">
                             Edit  
                         </button>
                         <button class="bg-red-500 text-white px-2 py-1 rounded deleteBtn" 

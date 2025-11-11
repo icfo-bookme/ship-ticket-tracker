@@ -32,6 +32,20 @@
                             class="block w-full p-2 text-sm text-gray-900 bg-gray-50 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="Enter ship name">
                     </div>
+                    <div class="mb-4">
+                        <label for="update-price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ship
+                            Price</label>
+                        <input type="text" id="update-price" name="price" required
+                            class="block w-full p-2 text-sm text-gray-900 bg-gray-50 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder="Enter Price">
+                    </div>
+                    <div class="mb-4">
+                        <label for="update-round_trip_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ship
+                            Price</label>
+                        <input type="number" id="update-round_trip_price" name="round_trip_price" required
+                            class="block w-full p-2 text-sm text-gray-900 bg-gray-50 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder="Enter round_trip_price">
+                    </div>
                     <div class="flex justify-end">
                         <button type="submit"
                             class="px-4 py-2 bg-blue-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -51,6 +65,10 @@
 
         document.getElementById('update-package-id').value = btn.dataset.id;
         document.getElementById('update-name').value = btn.dataset.name;
+        document.getElementById('update-price').value = btn.dataset.price;
+        document.getElementById('update-round_trip_price').value = btn.dataset.round_trip_price;
+
+
 
 
         // Show the modal
@@ -81,6 +99,8 @@
         const id = document.getElementById('update-package-id').value;
         const data = {
             name: document.getElementById('update-name').value,
+            price: document.getElementById('update-price').value,
+        round_trip_price: document.getElementById('update-round_trip_price').value,
 
         };
 

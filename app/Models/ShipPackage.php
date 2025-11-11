@@ -15,6 +15,8 @@ class ShipPackage extends Model
     protected $fillable = [
         'ship_id',
         'name',
+        'price',
+        'round_trip_price'
     ];
 
    

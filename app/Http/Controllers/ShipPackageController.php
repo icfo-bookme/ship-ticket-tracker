@@ -36,12 +36,16 @@ class ShipPackageController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:250',
             'ship_id' => 'required|integer|exists:ships,id', 
+             'price' => 'required|numeric|min:0',
+             'round_trip_price' => 'required|numeric|min:0',
         ]);
 
         // Create the new ship package
         $package = ShipPackage::create([
             'name' => $validated['name'],
             'ship_id' => $validated['ship_id'],
+            'price' => $validated['price'],
+            'round_trip_price' => $validated['round_trip_price'],
         ]);
 
         // Return the newly created package as JSON with 201 status code
@@ -74,6 +78,9 @@ class ShipPackageController extends Controller
         // Validate the request data
         $validated = $request->validate([
             'name' => 'required|string|max:250',
+            'price' => 'required|numeric|min:0',
+            'round_trip_price' => 'required|numeric|min:0',
+
         ]);
 
         $shipPackage = ShipPackage::find($id);
@@ -81,6 +88,8 @@ class ShipPackageController extends Controller
         // Update the ship package
         $shipPackage->update([
             'name' => $validated['name'],
+            'price' => $validated['price'],
+            'round_trip_price' => $validated['round_trip_price'],
         ]);
 
         // Return the updated ship package as JSON

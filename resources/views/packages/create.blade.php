@@ -28,6 +28,20 @@
                             class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
                     <div class="mb-4">
+                        <label for="price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Price</label>
+                        <input type="number" name="price" id="price" required
+                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="round_trip_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            round_trip_price</label>
+                        <input type="number" name="round_trip_price" id="round_trip_price" required
+                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                    </div>
+
+                    <div class="mb-4">
                         <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Package
                             Name</label>
@@ -59,11 +73,17 @@
         event.preventDefault();
 
         const name = document.getElementById('name').value;
+        const price = document.getElementById('price').value;
         const id = document.getElementById('ship_id').value;  
+        const round_trip_price = document.getElementById('round_trip_price').value;
+
+
 
         const data = {
             name: name,
             ship_id: id,
+            price: price,
+            round_trip_price: round_trip_price,
         };
 
         fetch('/ship-packages', {

@@ -50,8 +50,7 @@ class ShipTicketSale extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'journey_date' => 'date',
-        'issued_date' => 'date',
+       
         'ticket_fee' => 'decimal:2',
         'received_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
@@ -65,8 +64,7 @@ class ShipTicketSale extends Model
      * @var array
      */
     protected $dates = [
-        'journey_date',
-        'issued_date',
+       
         'created_at',
         'updated_at',
     ];
@@ -118,15 +116,17 @@ class ShipTicketSale extends Model
         return $this->hasOne(Ship::class, 'id', 'ship_id');
     }
 
-     public function companies()
+    public function companies()
     {
         return $this->hasOne(Company::class, 'id', 'company_id');
     }
 
-  public function refund()
-{
-    return $this->hasOne(Refund::class, 'sales_id', 'id');
-}
-
-
+    public function refund()
+    {
+        return $this->hasOne(Refund::class, 'sales_id', 'id');
+    }
+    public function coPassengers()
+    {
+        return $this->hasMany(CoPassenger::class, 'ship_ticket_sale_id');
+    }
 }

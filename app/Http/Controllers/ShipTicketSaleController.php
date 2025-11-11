@@ -65,7 +65,7 @@ class ShipTicketSaleController extends Controller
      * Store a newly created resource in storage.
      */
    public function store(Request $request)
-{ dd($request->all());
+{ 
     $validated = $request->validate([
         'customer_name'   => 'required|string|max:100',
         'customer_mobile' => 'required|string|max:20',

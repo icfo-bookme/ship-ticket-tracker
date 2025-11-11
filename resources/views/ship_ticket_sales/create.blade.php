@@ -150,7 +150,7 @@
                 <!-- Ticket Categories -->
                 <div class="grid grid-cols-2 gap-4">
                     <div class="mt-6 border border-blue-200 dark:border-blue-800 rounded-lg p-5 bg-blue-50 dark:bg-blue-900/20">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Departure Journey Tickets</h3>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4"> Departure Journey Tickets Category</h3>
                         <div id="departureTicketCategoriesContainer" class="space-y-4">
                             <!-- Dynamic departure ticket category fields will appear here -->
                         </div>
@@ -161,7 +161,7 @@
 
                     <!-- Return Journey Ticket Categories -->
                     <div class="mt-6 border border-green-200 dark:border-green-800 rounded-lg p-5 bg-green-50 dark:bg-green-900/20" id="returnJourneySection" style="display: none;">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Return Journey Tickets</h3>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Return Journey Tickets Category</h3>
                         <div id="returnTicketCategoriesContainer" class="space-y-4">
                             <!-- Dynamic return ticket category fields will appear here -->
                         </div>

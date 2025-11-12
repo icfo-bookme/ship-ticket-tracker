@@ -5,7 +5,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const shipFilter = document.getElementById("shipFilter");
     const companyFilter = document.getElementById("companyFilter");
     const journeyDateFilter = document.getElementById("journeyDateFilter");
+    const returnDateFilter = document.getElementById("returnDateFilter");
     const clearFiltersBtn = document.getElementById("clearFilters");
+    const paymentMethodFilter = document.getElementById("payment_method");
+    const startDateFilter = document.getElementById("startDate");
+    const endDateFilter = document.getElementById("endDate");
+    const createdDateFilter = document.getElementById("createdDateFilter");
+    const startCreateDateFilter = document.getElementById("startCreateDate");
+    const endCreateDateFilter = document.getElementById("endCreateDate");
+
+
+
+
 
     let dataTableInitialized = false;
     let dataTable;
@@ -88,14 +99,32 @@ document.addEventListener("DOMContentLoaded", () => {
     shipFilter.addEventListener("change", getList);
     companyFilter.addEventListener("change", getList);
     journeyDateFilter.addEventListener("change", getList);
+    returnDateFilter.addEventListener("change", getList);
+    paymentMethodFilter.addEventListener("change", getList);
+    startDateFilter.addEventListener("change", getList);
+    endDateFilter.addEventListener("change", getList);
+    createdDateFilter.addEventListener("change", getList);
+    startCreateDateFilter.addEventListener("change", getList);
+    endCreateDateFilter.addEventListener("change", getList);
+
+
+
 
     // Clear filters
     clearFiltersBtn.addEventListener("click", () => {
         shipFilter.value = "";
         companyFilter.value = "";
         journeyDateFilter.value = "";
+        returnDateFilter.value = "";
+        paymentMethodFilter.value = "";
+        startDateFilter.value = "";
+        endDateFilter.value = "";
+        createdDateFilter.value = "";
+        startCreateDateFilter.value = "";
+        endCreateDateFilter.value = "";
         getList();
     });
+
 
     async function getList() {
         try {
@@ -105,12 +134,32 @@ document.addEventListener("DOMContentLoaded", () => {
             const selectedShipId = shipFilter.value;
             const selectedCompanyId = companyFilter.value;
             const selectedJourneyDate = journeyDateFilter.value;
+            const selectedReturnDate = returnDateFilter.value;
+            const selectedPaymentMethod = paymentMethodFilter.value;
+            const selectedStartDate = startDateFilter.value;
+            const selectedEndDate = endDateFilter.value;
+            const selectedCreatedDate = createdDateFilter.value;
+            const selectedStartCreateDate = startCreateDateFilter.value;
+            const selectedEndCreateDate = endCreateDateFilter.value;
+
+            const rtotalRefundedTickets = document.getElementById(
+                "totalRefundedTickets"
+            );
+            const rtotalRefundedAmount = document.getElementById(
+                "totalRefundedAmount"
+            );
+             const totalSellTickets = document.getElementById(
+                "totalSellTickets"
+            );
+            const totalSellAmount = document.getElementById(
+                "totalSellAmount"
+            );
 
             const statusElement = document.getElementById("statusFilter");
             const status = statusElement
                 ? statusElement.dataset.status
                 : "pending";
-           
+
             if (dataTableInitialized && dataTable) {
                 dataTable.destroy();
                 dataTableInitialized = false;
@@ -119,20 +168,28 @@ document.addEventListener("DOMContentLoaded", () => {
             // Clear table body
             salesBody.innerHTML = "";
 
-            let url = `/sales/${status}?`;
+            let url = `/reports?`;
             const params = new URLSearchParams();
 
             if (selectedShipId) params.append("ship_id", selectedShipId);
-            if (selectedCompanyId)
-                params.append("company_id", selectedCompanyId);
-            if (selectedJourneyDate)
-                params.append("journey_date", selectedJourneyDate);
+            if (selectedCompanyId) params.append("company_id", selectedCompanyId);
+            if (selectedJourneyDate) params.append("journey_date", selectedJourneyDate);
+            if (selectedReturnDate) params.append("return_date", selectedReturnDate);
+            if (selectedPaymentMethod) params.append("payment_method", selectedPaymentMethod);
+            if (selectedStartDate) params.append("start_date", selectedStartDate);
+            if (selectedEndDate) params.append("end_date", selectedEndDate);
+            if (selectedCreatedDate) params.append("created_date", selectedCreatedDate);
+            if (selectedStartCreateDate) params.append("start_create_date", selectedStartCreateDate);
+            if (selectedEndCreateDate) params.append("end_create_date", selectedEndCreateDate);
 
             url += params.toString();
 
             const response = await fetch(url);
-            const data = await response.json();
+            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
 
+            const result = await response.json();
+
+            const data = result.data || [];
             loader.style.display = "none";
             table.classList.remove("hidden");
 
@@ -154,76 +211,61 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
 
                 tr.innerHTML = `
-                <td class="border px-4 py-2">
-        <input type="checkbox" class="selectSale" data-id="${sale.id}" />
-    </td>
-    <td class="border border-gray-300 px-4 py-2">${sale.id}</td>
-    <td class="border border-gray-300 px-4 py-2">${sale.customer_name}</td>
-    <td class="border border-gray-300 px-4 py-2">${sale.customer_mobile}</td>
-    <td class="border border-gray-300 px-4 py-2">${
-        sale.ship
-            ? sale.ship.name
-            : sale.ships
-            ? sale.ships.name
-            : "Not available"
-    }</td>
-    <td class="border border-gray-300 px-4 py-2">${formatDate(
-        "journey_date",
-        sale.journey_date
-    )}</td>
-     <td class="border border-gray-300 px-4 py-2">${sale.number_of_ticket}</td>
-      <td class="border border-gray-300 px-4 py-2">${sale.ticket_fee}</td>
-    <td class="border border-gray-300 px-4 py-2">${sale.received_amount}</td>
-    
-    <td class="border border-gray-300 px-4 py-2 flex gap-5 items-center justify-center">
-        <button class="fas fa-eye  text-blue-950 px-2 py-1 rounded showBtn" 
-            data-id="${sale.id}" 
-            data-customer="${sale.customer_name}" 
-            data-mobile="${sale.customer_mobile}" 
-            data-email="${sale.email}" 
-            data-nid="${sale.nid}" 
-            data-source="${sale.sales_source}"
-            data-ship="${sale.ship_id}"
-            data-ship-name="${
-                sale.ship
-                    ? sale.ship.name
-                    : sale.ships
-                    ? sale.ships.name
-                    : "Not available"
-            }"
-            data-journeyDate="${sale.journey_date}"
-            data-returnDate="${sale.return_date}"
-            data-ticketFee="${sale.ticket_fee}"
-            data-payment_method="${sale.payment_method}"
-            data-number_of_ticket="${sale.number_of_ticket}"
-            data-receivedAmount="${sale.received_amount}"
-            data-dueAmount="${sale.due_amount}"
-            data-companyId="${sale.company_id}"
-            data-company-name="${sale.companies.name}"
-            data-issuedDate="${sale.issued_date}"
-            data-ticket_category="${sale.ticket_category}"
-            data-soldBy="${sale.sold_by || ""}"
-            data-status="${sale.status}">    
-        </button>
-       
-         ${
-             sale.status === "shipped"
-                 ? `
-            <button class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund" 
-                data-id="${sale.id}"
-                data-received_total_amount="${sale.received_amount}"
-                data-number_ticket="${sale.number_of_ticket}"
-                data-status="shipped">
-               Partial Refund
+          <td class="border px-4 py-2  border-gray-300">${sale.id}</td>
+          <td class="border px-4 py-2 border-gray-300">${sale.customer_name}</td>
+          <td class="border px-4 py-2 border-gray-300">${sale.customer_mobile}</td>
+          <td class="border px-4 py-2 border-gray-300">${sale.ship
+                        ? sale.ship.name
+                        : sale.ships
+                            ? sale.ships.name
+                            : "Not available"
+                    }</td>
+          <td class="border px-4 py-2 border-gray-300">${formatDate(
+                        "journey_date",
+                        sale.journey_date
+                    )}</td>
+          <td class="border px-4 py-2 border-gray-300">${sale.number_of_ticket}</td>
+          <td class="border px-4 py-2 border-gray-300">${sale.ticket_fee}</td>
+          <td class="border px-4 py-2 border-gray-300">${sale.received_amount}</td>
+          
+          <td class="border px-4 py-2 flex gap-5 items-center justify-center border-gray-300">
+            <button class="fas fa-eye text-blue-950 px-2 py-1 rounded showBtn" 
+              data-id="${sale.id}" 
+              data-customer="${sale.customer_name}" 
+              data-mobile="${sale.customer_mobile}" 
+              data-email="${sale.email}" 
+              data-nid="${sale.nid}" 
+              data-source="${sale.sales_source}"
+              data-ship="${sale.ship_id}"
+              data-ship-name="${sale.ship
+                        ? sale.ship.name
+                        : sale.ships
+                            ? sale.ships.name
+                            : "Not available"
+                    }"
+              data-journeyDate="${sale.journey_date}"
+              data-returnDate="${sale.return_date}"
+              data-ticketFee="${sale.ticket_fee}"
+              data-payment_method="${sale.payment_method}"
+              data-number_of_ticket="${sale.number_of_ticket}"
+              data-receivedAmount="${sale.received_amount}"
+              data-dueAmount="${sale.due_amount}"
+              data-companyId="${sale.company_id}"
+              data-company-name="${sale.companies.name}"
+              data-issuedDate="${sale.issued_date}"
+              data-ticket_category="${sale.ticket_category}"
+              data-soldBy="${sale.sold_by || ""}"
+              data-status="${sale.status}">    
             </button>
-        `
-                 : ""
-         }
-    </td>
-`;
+          </td>
+        `;
                 salesBody.appendChild(tr);
             });
-
+            rtotalRefundedTickets.textContent = result.total_refunded_tickets;
+            rtotalRefundedAmount.textContent = result.total_refunded_amount;
+            totalSellTickets.textContent = result.total_sold_tickets;
+            totalSellAmount.textContent = result.total_sales_amount
+            
             // Initialize DataTable
             dataTable = $("#salesTable").DataTable({
                 dom: "lBfrtip",
@@ -252,7 +294,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
             });
             dataTableInitialized = true;
-
             attachEventListeners();
         } catch (error) {
             console.error("Error fetching sales data:", error);
@@ -264,57 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".showBtn").forEach((btn) => {
             btn.addEventListener("click", () => showModal(btn, modal));
         });
-
-        document.querySelectorAll(".verifyRefund").forEach((btn) => {
-            btn.addEventListener("click", () => refunded(btn, getList));
-        });
     }
-    document.getElementById("selectAll").addEventListener("change", (e) => {
-        const checkboxes = document.querySelectorAll(".selectSale");
-        checkboxes.forEach((checkbox) => {
-            checkbox.checked = e.target.checked;
-        });
-    });
-
-    document
-        .getElementById("refundSelectedBtn")
-        .addEventListener("click", async () => {
-            const selectedIds = [];
-            document
-                .querySelectorAll(".selectSale:checked")
-                .forEach((checkbox) => {
-                    selectedIds.push(checkbox.dataset.id);
-                });
-
-            if (selectedIds.length === 0) {
-                alert("Please select at least one item to refund.");
-                return;
-            }
-
-            try {
-                const response = await fetch("/full/refunds", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            .getAttribute("content"),
-                    },
-                    body: JSON.stringify({ ids: selectedIds }),
-                });
-
-                const result = await response.json();
-                if (response.ok) {
-                    alert("Refund successfully processed for selected items.");
-                    getList(); // Reload the list
-                } else {
-                    alert(`Error: ${result.message}`);
-                }
-            } catch (error) {
-                console.error("Error sending refund request:", error);
-                alert("An error occurred. Please try again.");
-            }
-        });
 
     // Initialize the page
     async function initializePage() {

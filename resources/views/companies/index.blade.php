@@ -57,10 +57,10 @@
                     const tr = document.createElement('tr');
 
                     tr.innerHTML = `
-                    <td class="border px-4 py-2">${item.id}</td>
-                    <td class="border px-4 py-2">${item.name}</td>
-                  <td class="border px-4 py-2">${status}</td>
-                    <td class="border px-4 py-2">
+                    <td class="border border-gray-300 px-4 py-2">${item.id}</td>
+                    <td class="border border-gray-300 px-4 py-2">${item.name}</td>
+                  <td class="border border-gray-300 px-4 py-2">${status}</td>
+                    <td class="border border-gray-300 px-4 py-2">
                         <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" 
                             data-id="${item.id}" 
                             data-name="${item.name}" 

@@ -208,24 +208,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
 
                 tr.innerHTML = `
-    <td class="border px-4 py-2">${sale.id}</td>
-    <td class="border px-4 py-2">${sale.customer_name}</td>
-    <td class="border px-4 py-2">${sale.customer_mobile}</td>
-    <td class="border px-4 py-2">${
-        sale.ship
-            ? sale.ship.name
-            : sale.ships
-            ? sale.ships.name
-            : "Not available"
-    }</td>
-    <td class="border px-4 py-2">${formatDate(
-        "journey_date",
-        sale.journey_date
-    )}</td>
-    <td class="border px-4 py-2">${sale.ticket_fee}</td>
-    <td class="border px-4 py-2">${sale.companies.name}</td>
-    <td class="border px-4 py-2">${sale.status}</td>
-    <td class="border px-4 py-2 flex gap-5 items-center justify-center">
+    <td class="border border-gray-300 px-4 py-2">${sale.id}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.customer_name}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.customer_mobile}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.ship
+                        ? sale.ship.name
+                        : sale.ships
+                            ? sale.ships.name
+                            : "Not available"
+                    }</td>
+    <td class="border border-gray-300 px-4 py-2">${formatDate(
+                        "journey_date",
+                        sale.journey_date
+                    )}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.ticket_fee}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.companies.name}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.status}</td>
+    <td class="border border-gray-300 px-4 py-2 flex gap-5 items-center justify-center">
         <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" 
             data-id="${sale.id}" 
             data-customer="${sale.customer_name}" 
@@ -247,69 +246,71 @@ document.addEventListener("DOMContentLoaded", () => {
             data-soldBy="${sale.sold_by || ""}"
             data-status="${sale.status}">
         </button>
-        <button class="fas fa-trash text-red-500 px-2 py-1 rounded deleteBtn" 
+        <button class="fas fa-trash text-red-500 px-2 py-1 border border-gray-300 rounded deleteBtn" 
             data-id="${sale.id}">
         </button>
+        
 
-        ${
-            sale.status === "pending"
-                ? `
-            <button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
-                data-id="${sale.id}"
-                data-status="payment-verified">
-                Verify Payment
-            </button>
-        `
-                : ""
-        }
+     ${sale.status === "pending"
+                        ? `
+    <button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
+        data-id="${sale.id}"
+        data-status="payment-verified"
+        title="Sold by: ${sale.sold_by}">
+        Verify Payment
+    </button>
+`
+                        : ""
+                    }
 
-        ${
-            sale.status === "payment-verified"
-                ? `
+
+        ${sale.status === "payment-verified"
+                        ? `
             <button class="bg-green-500 text-white px-2 py-1 rounded verifyBtn" 
                 data-id="${sale.id}"
-                data-status="ticket-issued">
+                data-status="ticket-issued"
+                title="payment-verified by: ${sale.verifyby.length > 0 ? sale.verifyby[0].verified_by_user.name : 'Unknown'}">
                 Ticket Issued
             </button>
         `
-                : ""
-        }
+                        : ""
+                    }
 
-        ${
-            sale.status === "ticket-issued"
-                ? `
+        ${sale.status === "ticket-issued"
+                        ? `
             <button class="bg-blue-500 text-white px-2 py-1 rounded verifyBtn" 
                 data-id="${sale.id}"
-                data-status="ticket-printed">
+                data-status="ticket-printed"
+                title="ticket-issued by: ${sale.verifyby.length > 0 ? sale.verifyby[0].verified_by_user.name : 'Unknown'}">
                 Ticket Printed
             </button>
         `
-                : ""
-        }
+                        : ""
+                    }
 
-        ${
-            sale.status === "ticket-printed"
-                ? `
+        ${sale.status === "ticket-printed"
+                        ? `
             <button class="bg-blue-500 text-white px-2 py-1 rounded shipmentIdEntryBtn" 
                 data-id="${sale.id}"
-                data-status="shipment_id_entered">
+                data-status="shipment_id_entered"
+                title="ticket-printed  by: ${sale.verifyby.length > 0 ? sale.verifyby[0].verified_by_user.name : 'Unknown'}">
                 Entry Shipment ID
             </button>
         `
-                : ""
-        }
+                        : ""
+                    }
 
-         ${
-             sale.status === "shipment_id_entered"
-                 ? `
+         ${sale.status === "shipment_id_entered"
+                        ? `
             <button class="bg-blue-500 text-white px-2 py-1 rounded verifyBtn" 
                 data-id="${sale.id}"
-                data-status="shipped">
+                data-status="shipped"
+                title="shipment_id_entered by: ${sale.verifyby.length > 0 ? sale.verifyby[0].verified_by_user.name : 'Unknown'}">
                 Shipped
             </button>
         `
-                 : ""
-         }
+                        : ""
+                    }
     </td>
 `;
                 salesBody.appendChild(tr);

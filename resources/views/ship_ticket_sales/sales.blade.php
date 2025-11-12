@@ -1,11 +1,9 @@
-    
-
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
+     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
         <div id="statusFilter" data-status="{{ $status }}" class="hidden"></div>
         <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
             Ship Ticket Sales ({{ $status }} )
         </h2>
-        <div class="mt-6 mb-4 grid grid-cols-3 gap-10">
+        <div class="mt-6 mb-4 grid grid-cols-4 gap-10">
             <div class="">
                 <label for="shipFilter" class="block text-sm font-medium text-gray-700">Filter by Ship</label>
                 <select id="shipFilter"
@@ -47,7 +45,7 @@
         <!-- Sales Table -->
         <div class="overflow-x-auto">
             <table id="salesTable" class="min-w-full border border-gray-300 hidden">
-                <thead class="bg-gray-100">
+                <thead class="bg-[#003366] text-white">
                     <tr>
                         <th class="border px-4 py-2">ID</th>
                         <th class="border px-4 py-2">Customer Name</th>

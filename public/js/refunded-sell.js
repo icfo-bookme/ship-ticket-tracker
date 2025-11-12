@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const result = await response.json();
 
             const sales = result.data || [];
-            console.log(sales);
+            
 
             loader.style.display = "none";
             table.classList.remove("hidden");
@@ -191,26 +191,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
 
                 tr.innerHTML = `
-    <td class="border px-4 py-2">${sale.id}</td>
-    <td class="border px-4 py-2">${sale.customer_name}</td>
-    <td class="border px-4 py-2">${sale.customer_mobile}</td>
-    <td class="border px-4 py-2">${
+    <td class="border border-gray-300 px-4 py-2">${sale.id}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.customer_name}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.customer_mobile}</td>
+    <td class="border border-gray-300 px-4 py-2">${
         sale.ship
             ? sale.ship.name
             : sale.ships
             ? sale.ships.name
             : "Not available"
     }</td>
-    <td class="border px-4 py-2">${formatDate(
+    <td class="border border-gray-300 px-4 py-2">${formatDate(
         "journey_date",
         sale.journey_date
     )}</td>
-    <td class="border px-4 py-2">${sale.number_of_ticket}</td>
-    <td class="border px-4 py-2">${sale.refund.refunded_number_of_tickets}</td>
-    <td class="border px-4 py-2">${sale.received_amount}</td>
-    <td class="border px-4 py-2">${sale.refund.refunded_amount}</td>
-    <td class="border px-4 py-2">${sale.status}</td>
-    <td class="border px-4 py-2 flex gap-5 items-center justify-center">
+    <td class="border border-gray-300 px-4 py-2">${sale.number_of_ticket}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.refund.refunded_number_of_tickets}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.received_amount}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.refund.refunded_amount}</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.status}</td>
+    <td class="border border-gray-300 px-4 py-2 flex gap-5 items-center justify-center">
      <button class="  text-white bg-yellow-700 px-2 py-1 rounded editRefundedBtn" 
             data-id="${sale.refund.id}"
             data-received_total_amount="${sale.received_amount}"

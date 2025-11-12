@@ -129,4 +129,8 @@ class ShipTicketSale extends Model
     {
         return $this->hasMany(CoPassenger::class, 'ship_ticket_sale_id');
     }
+    public function verifyby()
+    {
+        return $this->hasMany(VerifyTracker::class,  'ticket_id', 'id');
+    }
 }

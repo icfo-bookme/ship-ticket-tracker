@@ -60,11 +60,11 @@
             data.forEach(package => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="border px-4 py-2">${package.id}</td>
-                    <td class="border px-4 py-2">${package.name}</td>
-                    <td class="border px-4 py-2">${package.price}</td>
-                    <td class="border px-4 py-2">${package.round_trip_price}</td>
-                    <td class="border px-4 py-2">
+                    <td class="border border-gray-300 px-4 py-2">${package.id}</td>
+                    <td class="border border-gray-300 px-4 py-2">${package.name}</td>
+                    <td class="border border-gray-300 px-4 py-2">${package.price}</td>
+                    <td class="border border-gray-300 px-4 py-2">${package.round_trip_price}</td>
+                    <td class="border border-gray-300 px-4 py-2">
                         <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" 
                             data-id="${package.id}" 
                             data-name="${package.name}"

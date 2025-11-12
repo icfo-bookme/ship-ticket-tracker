@@ -6,6 +6,7 @@ use App\Http\Controllers\ShipTicketSaleController;
 use App\Http\Controllers\ShipController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\RefundController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShipPackageController;
 
 Route::resource('ships', ShipController::class);
@@ -49,6 +50,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/ship-packages/{id}', [ShipPackageController::class, 'update']);
     Route::delete('/ship-packages/{id}', [ShipPackageController::class, 'destroy']);
 
+    Route::get('/admin/sales-reports', [ReportController::class, 'index']);
+    Route::get('/reports', [ReportController::class, 'reports']);
+   
     
 });
 require __DIR__.'/auth.php';

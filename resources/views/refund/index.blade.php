@@ -59,7 +59,6 @@
                         <th class="border px-4 py-2">Number Of Ticket</th>
                         <th class="border px-4 py-2">Total Ticket Price</th>
                         <th class="border px-4 py-2">Received Amount</th>
-
                         <th class="border px-4 py-2">Action</th>
                     </tr>
                 </thead>
@@ -74,10 +73,5 @@
         </div>
     </div>
 </div>
-
-
-
-
-
 
 <script src="{{ asset('js/refund.js') }}"></script>

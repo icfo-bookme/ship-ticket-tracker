@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ShipTicketSale;
 use App\Models\Ship;
+use App\Models\VerifyTracker;
 use App\Models\CoPassenger;
 use App\Models\Shipment;
 use App\Models\Company;
@@ -28,7 +29,14 @@ class ShipTicketSaleController extends Controller
         $companyId = $request->input('company_id');
         $journeyDate = $request->input('journey_date');
 
-        $query = ShipTicketSale::with('ships', 'companies')->where('status', $status);
+        $query = ShipTicketSale::with([
+            'ships',
+            'companies',
+            'verifyby' => function ($q) use ($status) {
+                $q->where('name', $status)
+                ->with('verifiedByUser:id,name');
+            }
+        ])->where('status', $status);
 
         if ($shipId && !empty($shipId)) {
             $query->where('ship_id', $shipId);
@@ -65,82 +73,81 @@ class ShipTicketSaleController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-   public function store(Request $request)
-{  
-    $validated = $request->validate([
-        'customer_name'   => 'required|string|max:100',
-        'customer_mobile' => 'required|string|max:20',
-        'nid'             => 'nullable|string|max:50',
-        'email'           => 'nullable|string|max:100',
-        'sales_source'    => 'nullable|string|max:255',
-        'ship_id'         => 'required|string|max:100',
-        'journey_date'    => 'nullable|date',
-        'date_of_birth'   => 'nullable|date',
-        'return_date'     => 'required|date',
-        'ticket_fee'      => 'required|numeric',
-        'payment_method'  => 'required|string|max:255',
-        'received_amount' => 'required|numeric',
-        'number_of_ticket'=> 'required|numeric',
-        'ticket_category' => 'nullable|string|max:255',
-        'due_amount'      => 'nullable|numeric',
-        'company_id'      => 'required|string|max:100',
-        'issued_date'     => 'required|date',
-        'sold_by'         => 'required|string|max:100',
-    ]);
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_name'   => 'required|string|max:100',
+            'customer_mobile' => 'required|string|max:20',
+            'nid'             => 'nullable|string|max:50',
+            'email'           => 'nullable|string|max:100',
+            'sales_source'    => 'nullable|string|max:255',
+            'ship_id'         => 'required|string|max:100',
+            'journey_date'    => 'nullable|date',
+            'date_of_birth'   => 'nullable|date',
+            'return_date'     => 'required|date',
+            'ticket_fee'      => 'required|numeric',
+            'payment_method'  => 'required|string|max:255',
+            'received_amount' => 'required|numeric',
+            'number_of_ticket' => 'required|numeric',
+            'ticket_category' => 'nullable|string|max:255',
+            'due_amount'      => 'nullable|numeric',
+            'company_id'      => 'required|string|max:100',
+            'issued_date'     => 'required|date',
+            'sold_by'         => 'required|string|max:100',
+        ]);
 
-    $ticketSale = ShipTicketSale::create($validated);
+        $ticketSale = ShipTicketSale::create($validated);
 
-    if ($request->filled('co_passengers')) {
-        foreach ($request->co_passengers as $coPassenger) {
-            if (!empty($coPassenger['name']) && !empty($coPassenger['nid'])) {
-                CoPassenger::create([
-                    'ship_ticket_sale_id' => $ticketSale->id,
-                    'name' => $coPassenger['name'],
-                    'nid'  => $coPassenger['nid'],
-                ]);
+        if ($request->filled('co_passengers')) {
+            foreach ($request->co_passengers as $coPassenger) {
+                if (!empty($coPassenger['name']) && !empty($coPassenger['nid'])) {
+                    CoPassenger::create([
+                        'ship_ticket_sale_id' => $ticketSale->id,
+                        'name' => $coPassenger['name'],
+                        'nid'  => $coPassenger['nid'],
+                    ]);
+                }
             }
         }
-    }
 
-   if ($request->filled('ticket_categories')) {
-    // Optional: check entire structure once before loop
-    // dd($request->ticket_categories);
+        if ($request->filled('ticket_categories')) {
+            // Optional: check entire structure once before loop
+            // dd($request->ticket_categories);
 
-    foreach ($request->ticket_categories as $type => $categories) {
-        
+            foreach ($request->ticket_categories as $type => $categories) {
 
-        foreach ($categories as $category) {
-            // Debug each category (optional)
-           
-           
-            if (
-                $category['quantity'] > 0
-            ) {
-                Category::create([
-                    'ticket_id'  => $ticketSale->id,
-                    'package_id' => $category['package_id'],
-                    'type'       => $type, // 'departure' or 'return'
-                    
-                ]);
+
+                foreach ($categories as $category) {
+                    // Debug each category (optional)
+
+
+                    if (
+                        $category['quantity'] > 0
+                    ) {
+                        Category::create([
+                            'ticket_id'  => $ticketSale->id,
+                            'package_id' => $category['package_id'],
+                            'type'       => $type, // 'departure' or 'return'
+
+                        ]);
+                    }
+                }
             }
         }
+
+
+        return redirect()->back()
+            ->with('success', 'Journey ticket saved!.');
     }
-}
-
-
-   return redirect()->back()
-                 ->with('success', 'Journey ticket saved!.');
-
-}
 
 
     /**
      * Display the specified resource.
      */
     public function show($id)
-    { 
+    {
         $sale = ShipTicketSale::findOrFail($id);
-         $ships = Ship::all();
+        $ships = Ship::all();
         $companies = Company::all();
         return view('ship_ticket_sales.create', compact('sale', 'ships', 'companies'));
     }
@@ -239,6 +246,12 @@ class ShipTicketSaleController extends Controller
         }
         $sale = ShipTicketSale::findOrFail($id);
         $sale->update(['status' => $status]);
+
+        VerifyTracker::create([
+            'name' => $status,
+            'ticket_id' => $id,
+            'verified_by' => auth()->id(),
+        ]);
 
         return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
     }

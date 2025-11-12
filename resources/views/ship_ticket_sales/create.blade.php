@@ -179,7 +179,7 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Total Number of Tickets
                             </label>
-                            <input type="number" id="total_tickets" name="total_tickets" value="0" min="0" readonly
+                            <input type="number" id="total_tickets" name="number_of_ticket" value="0" min="0" readonly
                                 class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2">
                         </div>
 

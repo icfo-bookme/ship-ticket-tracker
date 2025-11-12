@@ -8,6 +8,7 @@ use App\Models\Ship;
 use App\Models\CoPassenger;
 use App\Models\Shipment;
 use App\Models\Company;
+use App\Models\Category;
 
 class ShipTicketSaleController extends Controller
 {
@@ -65,7 +66,7 @@ class ShipTicketSaleController extends Controller
      * Store a newly created resource in storage.
      */
    public function store(Request $request)
-{ 
+{  
     $validated = $request->validate([
         'customer_name'   => 'required|string|max:100',
         'customer_mobile' => 'required|string|max:20',
@@ -101,10 +102,34 @@ class ShipTicketSaleController extends Controller
         }
     }
 
-   
+   if ($request->filled('ticket_categories')) {
+    // Optional: check entire structure once before loop
+    // dd($request->ticket_categories);
 
-   return redirect()->route('ship-ticket-sales.show', [$ticketSale->id])
-                 ->with('success', 'Journey ticket saved! You can now fill return ticket.');
+    foreach ($request->ticket_categories as $type => $categories) {
+        
+
+        foreach ($categories as $category) {
+            // Debug each category (optional)
+           
+           
+            if (
+                $category['quantity'] > 0
+            ) {
+                Category::create([
+                    'ticket_id'  => $ticketSale->id,
+                    'package_id' => $category['package_id'],
+                    'type'       => $type, // 'departure' or 'return'
+                    
+                ]);
+            }
+        }
+    }
+}
+
+
+   return redirect()->back()
+                 ->with('success', 'Journey ticket saved!.');
 
 }
 

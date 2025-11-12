@@ -360,7 +360,7 @@ function fillReviewContent() {
         total_tickets: "Total Tickets",
     };
 
-    let html = '<div class="grid grid-cols-2 gap-4">';
+    let html = '<div class="grid grid-cols-3 gap-4">';
 
     // Loop through normal fields
     for (const [field, label] of Object.entries(fieldLabels)) {
@@ -394,7 +394,7 @@ function fillReviewContent() {
         }
 
         html += `
-            <div class="border-b border-gray-100 dark:border-gray-700 pb-2">
+            <div class="border-b  border-gray-100 dark:border-gray-700 pb-2">
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">${label}</dt>
                 <dd class="mt-1 text-sm text-gray-900 dark:text-white font-medium">${value}</dd>
             </div>`;
@@ -472,7 +472,7 @@ function fillReviewContent() {
             const nid = group.querySelector('input[name^="co_passengers"][name$="[nid]"]')?.value?.trim() || "Not specified";
 
             html += `
-                <div class="border-b border-gray-100 dark:border-gray-700 pb-2">
+                <div class="border-b flex item-center gap-5 border-gray-100 dark:border-gray-700 pb-2">
                     <p class="text-sm font-medium text-gray-900 dark:text-white">#${index + 1}. ${name}</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">NID: ${nid}</p>
                 </div>`;

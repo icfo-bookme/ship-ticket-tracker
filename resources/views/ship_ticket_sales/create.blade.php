@@ -4,31 +4,31 @@
 
         <!-- Success/Error Messages -->
         @if (session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-4 flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clip-rule="evenodd" />
-            </svg>
-            {{ session('success') }}
-        </div>
+            <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd" />
+                </svg>
+                {{ session('success') }}
+            </div>
         @endif
 
         @if ($errors->any())
-        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">
-            <div class="flex items-start">
-                <svg class="w-5 h-5 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                        clip-rule="evenodd" />
-                </svg>
-                <ul class="list-disc ml-5 space-y-1">
-                    @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
+            <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <ul class="list-disc ml-5 space-y-1">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
-        </div>
         @endif
 
         <!-- Form Card -->
@@ -48,15 +48,40 @@
                             required>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Mobile <span class="text-red-500">*</span> <span class="text-xs text-gray-500">[11 digits, no +88 or spaces]</span>
+                    <!-- Mobile Number -->
+                    <div class="mb-4">
+                        <label for="customer_mobile"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Mobile Number *
                         </label>
-                        <input type="number" name="customer_mobile" value="{{ old('customer_mobile') }}"
-                            placeholder="01XXXXXXXXX"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                            required>
+                        <input type="text" id="customer_mobile" name="customer_mobile"
+                            placeholder="Enter mobile number (01XXXXXXXXX)"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
                     </div>
+
+                    <!-- WhatsApp Number -->
+                    <div class="mb-4">
+                        <label for="whatsapp" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            WhatsApp Number
+                        </label>
+
+                        <div class="">
+                            <!-- WhatsApp Input -->
+                            <input type="text" id="whatsapp" name="whatsapp" placeholder="Enter WhatsApp number"
+                                class=" w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+
+                            <!-- Checkbox -->
+                            <label for="sameAsMobileCheckbox"
+                                class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" id="sameAsMobileCheckbox"
+                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded 
+                       dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Same as Mobile</span>
+                            </label>
+                        </div>
+                    </div>
+
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Date Of Birth <span class="text-red-500">*</span>
@@ -91,11 +116,14 @@
                         <select name="sales_source"
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                             <option value="">Select source</option>
-                            <option value="WhatsApp(019)" {{ old('sales_source') == 'WhatsApp(019)' ? 'selected' : '' }}>
+                            <option value="WhatsApp(019)"
+                                {{ old('sales_source') == 'WhatsApp(019)' ? 'selected' : '' }}>
                                 WhatsApp(019)</option>
-                            <option value="WhatsApp(018)" {{ old('sales_source') == 'WhatsApp(018)' ? 'selected' : '' }}>
+                            <option value="WhatsApp(018)"
+                                {{ old('sales_source') == 'WhatsApp(018)' ? 'selected' : '' }}>
                                 WhatsApp(018)</option>
-                            <option value="WhatsApp(016)" {{ old('sales_source') == 'WhatsApp(016)' ? 'selected' : '' }}>
+                            <option value="WhatsApp(016)"
+                                {{ old('sales_source') == 'WhatsApp(016)' ? 'selected' : '' }}>
                                 WhatsApp(016)</option>
                             <option value="Facebook" {{ old('sales_source') == 'Facebook' ? 'selected' : '' }}>Facebook
                             </option>
@@ -111,7 +139,6 @@
 
                 <!-- Ship & Journey Info -->
                 <div class="grid grid-cols-3 gap-4">
-                    
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -139,9 +166,10 @@
                             required>
                             <option value="">Select a Ship</option>
                             @foreach ($ships as $ship)
-                            <option value="{{ $ship->id }}" {{ old('ship_id') == $ship->id ? 'selected' : '' }}>
-                                {{ $ship->name }}
-                            </option>
+                                <option value="{{ $ship->id }}"
+                                    {{ old('ship_id') == $ship->id ? 'selected' : '' }}>
+                                    {{ $ship->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -149,8 +177,10 @@
 
                 <!-- Ticket Categories -->
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="mt-6 border border-blue-200 dark:border-blue-800 rounded-lg p-5 bg-blue-50 dark:bg-blue-900/20">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4"> Departure Journey Tickets Category</h3>
+                    <div
+                        class="mt-6 border border-blue-200 dark:border-blue-800 rounded-lg p-5 bg-blue-50 dark:bg-blue-900/20">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4"> Departure Journey Tickets
+                            Category</h3>
                         <div id="departureTicketCategoriesContainer" class="space-y-4">
                             <!-- Dynamic departure ticket category fields will appear here -->
                         </div>
@@ -160,8 +190,10 @@
                     </div>
 
                     <!-- Return Journey Ticket Categories -->
-                    <div class="mt-6 border border-green-200 dark:border-green-800 rounded-lg p-5 bg-green-50 dark:bg-green-900/20" id="returnJourneySection" style="display: none;">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Return Journey Tickets Category</h3>
+                    <div class="mt-6 border border-green-200 dark:border-green-800 rounded-lg p-5 bg-green-50 dark:bg-green-900/20"
+                        id="returnJourneySection" style="display: none;">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Return Journey Tickets
+                            Category</h3>
                         <div id="returnTicketCategoriesContainer" class="space-y-4">
                             <!-- Dynamic return ticket category fields will appear here -->
                         </div>
@@ -172,14 +204,16 @@
                 </div>
 
                 <!-- Ticket Summary -->
-                <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mt-6">
+                <div
+                    class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mt-6">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Ticket Summary</h3>
                     <div class="grid grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Total Number of Tickets
                             </label>
-                            <input type="number" id="total_tickets" name="number_of_ticket" value="0" min="0" readonly
+                            <input type="number" id="total_tickets" name="number_of_ticket" value="0"
+                                min="0" readonly
                                 class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2">
                         </div>
 
@@ -187,8 +221,8 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Total Ticket Price (৳) <span class="text-red-500">*</span>
                             </label>
-                            <input type="number" id="ticket_fee" name="ticket_fee" value="{{ old('ticket_fee', 0) }}"
-                                step="0.01" min="0" placeholder="0.00"
+                            <input type="number" id="ticket_fee" name="ticket_fee"
+                                value="{{ old('ticket_fee', 0) }}" step="0.01" min="0" placeholder="0.00"
                                 class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                 required>
                         </div>
@@ -210,7 +244,8 @@
                                     (+2%)
                                 </option>
                                 <option value="Bank Transfer"
-                                    {{ old('payment_method') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                                    {{ old('payment_method') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer
+                                </option>
                             </select>
                         </div>
                     </div>
@@ -227,9 +262,10 @@
                             required>
                             <option value="">Select a Source</option>
                             @foreach ($companies as $company)
-                            <option value="{{ $company->id }}" {{ old('company_id') == $company->id ? 'selected' : '' }}>
-                                {{ $company->name }}
-                            </option>
+                                <option value="{{ $company->id }}"
+                                    {{ old('company_id') == $company->id ? 'selected' : '' }}>
+                                    {{ $company->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -239,7 +275,8 @@
                             Total Payable (৳)
                         </label>
                         <input type="number" id="total_payable" name="total_payable"
-                            value="{{ old('total_payable', 0) }}" step="0.01" min="0" placeholder="0.00" readonly
+                            value="{{ old('total_payable', 0) }}" step="0.01" min="0" placeholder="0.00"
+                            readonly
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2">
                     </div>
 
@@ -248,7 +285,8 @@
                             Received (৳) <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="received_amount" name="received_amount"
-                            value="{{ old('received_amount', 0) }}" step="0.01" min="0" placeholder="0.00"
+                            value="{{ old('received_amount', 0) }}" step="0.01" min="0"
+                            placeholder="0.00"
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             required>
                     </div>
@@ -266,10 +304,30 @@
                 <div class="mt-6">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Full Address
-                        <span class="text-xs text-gray-500">(Format: Fla# A1, House# 17/1, Road# 3/A, Dhanmondi, Dhaka-1209)</span>
+                        <span class="text-xs text-gray-500">(Format: Fla# A1, House# 17/1, Road# 3/A, Dhanmondi,
+                            Dhaka-1209)</span>
                     </label>
                     <textarea id="address" name="address" placeholder="Enter your address here" rows="3"
                         class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">{{ old('address') }}</textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 ">
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Remark-1
+
+                        </label>
+                        <textarea id="remark1" name="remark1" placeholder="Enter Remark here" rows="3"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">{{ old('address') }}</textarea>
+                    </div>
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Remark-2
+
+                        </label>
+                        <textarea id="remark2" name="remark2" placeholder="Enter your Remark here" rows="3"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">{{ old('address') }}</textarea>
+                    </div>
                 </div>
 
                 <!-- Additional Info -->

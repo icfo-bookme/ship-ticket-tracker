@@ -15,6 +15,92 @@ class RefundController extends Controller
         return response()->json($refunds);
     }
 
+    public function refundableCS(Request $request)
+    {
+        $shipId = $request->input('ship_id');
+        $companyId = $request->input('company_id');
+        $journeyDate = $request->input('journey_date');
+
+        // DataTables parameters
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        $searchValue = $request->input('search.value', '');
+
+        $query = ShipTicketSale::with([
+            'ships',
+            'companies',
+        ])->where('status', '!=', 'pending');
+
+        // Apply filters
+        if ($shipId && !empty($shipId)) {
+            $query->where('ship_id', $shipId);
+        }
+
+        if ($companyId && !empty($companyId)) {
+            $query->where('company_id', $companyId);
+        }
+
+        if ($journeyDate && !empty($journeyDate)) {
+            $query->whereDate('journey_date', $journeyDate);
+        }
+
+        // Apply search
+        if (!empty($searchValue)) {
+            $query->where(function ($q) use ($searchValue) {
+                // Direct table columns
+                $q->where('customer_name', 'like', "%{$searchValue}%")
+                    ->orWhere('customer_mobile', 'like', "%{$searchValue}%")
+                    ->orWhere('email', 'like', "%{$searchValue}%")
+                    ->orWhere('nid', 'like', "%{$searchValue}%")
+                    ->orWhere('sales_source', 'like', "%{$searchValue}%")
+                    ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
+                    ->orWhere('payment_method', 'like', "%{$searchValue}%")
+                    ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
+                    ->orWhere('received_amount', 'like', "%{$searchValue}%")
+                    ->orWhere('due_amount', 'like', "%{$searchValue}%")
+                    ->orWhere('sold_by', 'like', "%{$searchValue}%")
+                    ->orWhere('ticket_category', 'like', "%{$searchValue}%")
+                    ->orWhere('status', 'like', "%{$searchValue}%")
+
+                    // Date fields (search by formatted date or raw value)
+                    ->orWhereDate('journey_date', $searchValue)
+                    ->orWhere('journey_date', 'like', "%{$searchValue}%")
+                    ->orWhereDate('return_date', $searchValue)
+                    ->orWhere('return_date', 'like', "%{$searchValue}%")
+                    ->orWhereDate('issued_date', $searchValue)
+                    ->orWhere('issued_date', 'like', "%{$searchValue}%")
+
+                    // Related tables (ships)
+                    ->orWhereHas('ships', function ($shipQuery) use ($searchValue) {
+                        $shipQuery->where('name', 'like', "%{$searchValue}%");
+                    })
+
+                    // Related tables (companies)
+                    ->orWhereHas('companies', function ($companyQuery) use ($searchValue) {
+                        $companyQuery->where('name', 'like', "%{$searchValue}%");
+                    })
+
+                    // Search by ID
+                    ->orWhere('id', $searchValue);
+            });
+        }
+
+        // Get total count before pagination
+        $totalRecords = $query->count();
+
+        // Apply pagination
+        $sales = $query->skip($start)
+            ->take($length)
+            ->get();
+
+        return response()->json([
+            'draw' => $request->input('draw'),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+            'data' => $sales
+        ]);
+    }
+
 
     public function create()
     {
@@ -133,14 +219,14 @@ class RefundController extends Controller
 
     public function partialRefund(Request $request, $id)
     {
-
         $sale = ShipTicketSale::find($id);
-        if ($sale && $sale->status == 'shipped') {
+        if ($sale) {
 
-            Refund::create([
+            $check =  Refund::create([
                 'sales_id' => $id,
                 'refunded_number_of_tickets' => $request->refunded_number_of_tickets,
                 'refunded_amount' => $request->refunded_amount,
+                'remark' => $request->remark,
             ]);
 
             if ($sale->number_of_ticket == $request->refunded_number_of_tickets) {

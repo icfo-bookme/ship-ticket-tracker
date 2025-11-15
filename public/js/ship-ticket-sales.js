@@ -9,7 +9,7 @@ function setupEventListeners() {
     document.getElementById("ticket_fee").addEventListener("input", calculateAll);
     document.getElementById("payment_method").addEventListener("change", calculateAll);
     document.getElementById("received_amount").addEventListener("input", calculateDue);
-    
+
     // Form validation listeners
     document.querySelectorAll("input, select").forEach((field) => {
         field.addEventListener("input", () => clearFieldError(field));
@@ -17,20 +17,60 @@ function setupEventListeners() {
 
     // Main action listeners
     document.getElementById("reviewButton").addEventListener("click", handleReviewClick);
-    
+
     // Ship and journey listeners
     document.getElementById("ship_id").addEventListener("change", loadTicketCategories);
     document.getElementById("return_date").addEventListener("change", toggleReturnJourneySection);
-    
+    document.querySelector('[name="customer_mobile"]').addEventListener('input', function () {
+        const checkbox = document.getElementById("sameAsMobileCheckbox");
+        if (checkbox.checked) {
+            handleSameAsMobileCheckbox();
+        }
+    });
+    document.getElementById("sameAsMobileCheckbox").addEventListener("change", handleSameAsMobileCheckbox);
+
     // Initialize co-passenger functionality
     initializeCoPassenger();
 }
+function handleSameAsMobileCheckbox() {
+    const checkbox = document.getElementById("sameAsMobileCheckbox");
+    const mobileField = document.querySelector('[name="customer_mobile"]');
+    const whatsappField = document.querySelector('[name="whatsapp"]');
 
+    if (checkbox.checked) {
+        const mobileValue = mobileField.value.trim();
+
+        if (!mobileValue) {
+            alert("Please enter mobile number first");
+            checkbox.checked = false;
+            mobileField.focus();
+            return;
+        }
+
+        if (!isValidMobile(mobileValue)) {
+            alert("Please enter a valid mobile number first");
+            checkbox.checked = false;
+            mobileField.focus();
+            return;
+        }
+
+        // Copy mobile to WhatsApp and disable the field
+        whatsappField.value = mobileValue;
+        whatsappField.disabled = true;
+        whatsappField.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-500', 'dark:text-gray-400');
+        clearFieldError(whatsappField);
+    } else {
+        // Enable WhatsApp field and clear styling
+        whatsappField.disabled = false;
+        whatsappField.classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-500', 'dark:text-gray-400');
+        whatsappField.value = '';
+    }
+}
 function toggleReturnJourneySection() {
     const returnDate = document.getElementById("return_date").value;
     const returnSection = document.getElementById("returnJourneySection");
     const noReturnMessage = document.getElementById("noReturnCategoriesMessage");
-    
+
     if (returnDate) {
         returnSection.style.display = 'block';
         noReturnMessage.classList.add("hidden");
@@ -76,7 +116,7 @@ function loadTicketCategories() {
             // Clear containers
             departureContainer.innerHTML = '';
             returnContainer.innerHTML = '';
-            
+
             if (packages && packages.length > 0) {
                 // Create departure journey tickets
                 packages.forEach((pkg, index) => {
@@ -94,12 +134,12 @@ function loadTicketCategories() {
                 } else {
                     noReturnMessage.classList.remove("hidden");
                 }
-                
+
                 // Add event listeners to quantity inputs
                 document.querySelectorAll('.ticket-quantity').forEach(input => {
                     input.addEventListener('input', calculateTotalTickets);
                 });
-                
+
                 calculateTotalTickets();
             } else {
                 departureContainer.innerHTML = '<div class="text-gray-500 dark:text-gray-400">No ticket categories available for this ship.</div>';
@@ -116,7 +156,7 @@ function loadTicketCategories() {
 function createCategoryField(pkg, index, type) {
     const div = document.createElement("div");
     div.classList.add("grid", "grid-cols-2", "gap-4", "items-end");
-    
+
     div.innerHTML = `
         <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -138,19 +178,18 @@ function createCategoryField(pkg, index, type) {
                 data-type="${type}">
         </div>
     `;
-    
     return div;
 }
 
 function calculateTotalTickets() {
     let totalTickets = 0;
-    
+
     // Calculate from quantity inputs
     document.querySelectorAll('.ticket-quantity').forEach(input => {
         const quantity = parseInt(input.value) || 0;
         totalTickets += quantity;
     });
-    
+
     // Update the total tickets field
     document.getElementById("total_tickets").value = totalTickets;
 }
@@ -186,9 +225,7 @@ function calculateDue() {
 
 function handleReviewClick() {
     clearAllErrors();
-
     if (!isFormValid()) return;
-
     const customerMobile = document.querySelector('[name="customer_mobile"]').value.trim();
     const journeyDate = document.querySelector('[name="journey_date"]').value;
 
@@ -248,6 +285,7 @@ function isFormValid() {
         "company_id",
         "issued_date",
         "sold_by",
+        "whatsapp",
     ];
 
     let isValid = true;
@@ -273,6 +311,18 @@ function isFormValid() {
         if (!firstErrorField) firstErrorField = mobileField;
     }
 
+    // In your isFormValid() function, update the WhatsApp validation:
+    const whatsappField = document.querySelector('[name="whatsapp"]');
+    const isWhatsAppDisabled = whatsappField.disabled;
+
+    // Only validate WhatsApp if it's enabled and has a value
+    if (!isWhatsAppDisabled && whatsappField.value.trim()) {
+        if (!isValidMobile(whatsappField.value)) {
+            showFieldError(whatsappField, "Enter valid WhatsApp number (01XXXXXXXXX)");
+            isValid = false;
+            if (!firstErrorField) firstErrorField = whatsappField;
+        }
+    }
     // Check amounts are positive
     const ticketFee = parseFloat(document.getElementById("ticket_fee").value) || 0;
     const receivedAmount = parseFloat(document.getElementById("received_amount").value) || 0;
@@ -319,10 +369,10 @@ function showReviewModal() {
     modal.classList.remove("hidden");
     modal.classList.add("flex");
 
+    // Single event listener for closing modal
     modal.addEventListener("click", function (e) {
-        if (e.target === modal) closeModal();
+        if (e.target === modal || e.target.id === "modalBackdrop") closeModal();
     });
-    document.getElementById("modalBackdrop").addEventListener("click", closeModal);
 
     document.getElementById("editInfoButton").addEventListener("click", closeModal);
     document.querySelectorAll('[data-modal-hide="reviewModal"]').forEach((btn) => {
@@ -338,9 +388,11 @@ function closeModal() {
 
 function fillReviewContent() {
     const formData = new FormData(document.getElementById("ticketForm"));
+
     const fieldLabels = {
         customer_name: "Customer Name",
         customer_mobile: "Mobile Number",
+        whatsapp: "Whatsapp Number",
         date_of_birth: "Date Of Birth",
         nid: "NID",
         email: "Email",
@@ -357,7 +409,9 @@ function fillReviewContent() {
         due_amount: "Due Amount",
         issued_date: "Issued Date",
         sold_by: "Sold By",
-        total_tickets: "Total Tickets",
+        number_of_ticket: "Total Tickets",
+        remark1: "Remark 1",
+        remark2: "Remark 2",
     };
 
     let html = '<div class="grid grid-cols-3 gap-4">';
@@ -394,7 +448,7 @@ function fillReviewContent() {
         }
 
         html += `
-            <div class="border-b  border-gray-100 dark:border-gray-700 pb-2">
+            <div class="border-b border-gray-100 dark:border-gray-700 pb-2">
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">${label}</dt>
                 <dd class="mt-1 text-sm text-gray-900 dark:text-white font-medium">${value}</dd>
             </div>`;
@@ -431,7 +485,7 @@ function fillReviewContent() {
         `;
 
         // Add departure journey tickets
-        departureTicketCategories.forEach((category, index) => {
+        departureTicketCategories.forEach((category) => {
             html += `
                 <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
                     <div>
@@ -443,7 +497,7 @@ function fillReviewContent() {
         });
 
         // Add return journey tickets
-        returnTicketCategories.forEach((category, index) => {
+        returnTicketCategories.forEach((category) => {
             html += `
                 <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
                     <div>
@@ -470,11 +524,13 @@ function fillReviewContent() {
         coPassengerFields.forEach((group, index) => {
             const name = group.querySelector('input[name^="co_passengers"][name$="[name]"]')?.value?.trim() || "Not specified";
             const nid = group.querySelector('input[name^="co_passengers"][name$="[nid]"]')?.value?.trim() || "Not specified";
+            const co_passernger_number = group.querySelector('input[name^="co_passengers"][name$="[co_passernger_number]"]')?.value?.trim() || "Not specified";
 
             html += `
                 <div class="border-b flex item-center gap-5 border-gray-100 dark:border-gray-700 pb-2">
                     <p class="text-sm font-medium text-gray-900 dark:text-white">#${index + 1}. ${name}</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">NID: ${nid}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Number: ${co_passernger_number}</p>
                 </div>`;
         });
 
@@ -540,17 +596,30 @@ function clearAllErrors() {
 }
 
 function showTopError(message) {
+    const old = document.getElementById("topValidationError");
+    if (old) old.remove();
+
     const errorDiv = document.createElement("div");
     errorDiv.id = "topValidationError";
-    errorDiv.className = "bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4 flex items-center";
+
+    errorDiv.className = `
+        fixed top-4 left-1/2 transform -translate-x-1/2
+        bg-red-50 border border-red-200 text-red-800 px-4 py-3 
+        rounded-lg shadow-lg flex items-center z-50
+    `;
+
     errorDiv.innerHTML = `
         <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
         </svg>
         ${message}
     `;
+    document.body.appendChild(errorDiv);
 
-    document.querySelector("h1").insertAdjacentElement("afterend", errorDiv);
+    // Auto hide after 4 seconds
+    setTimeout(() => {
+        errorDiv.remove();
+    }, 4000);
 }
 
 function showFeeMessage(message) {
@@ -584,31 +653,42 @@ function initializeCoPassenger() {
 
     addBtn.addEventListener("click", function () {
         const div = document.createElement("div");
-        div.classList.add("co-passenger", "grid", "grid-cols-2", "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg");
+        div.classList.add("co-passenger", "grid", "grid-cols-3", "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg");
+
 
         div.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Co-Passenger Name
-                </label>
-                <input type="text" name="co_passengers[${index}][name]" placeholder="Enter co-passenger name"
-                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
-            </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Co-Passenger Name
+        </label>
+        <input type="text" name="co_passengers[${index}][name]" placeholder="Enter co-passenger name"
+            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+    </div>
 
-            <div class="flex items-end gap-2">
-                <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Co-Passenger NID
-                    </label>
-                    <input type="text" name="co_passengers[${index}][nid]" placeholder="Enter NID"
-                        class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
-                </div>
-                <button type="button" class="removeCoPassengerBtn px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition">
-                    Remove
-                </button>
-            </div>
-        `;
+    <div class="flex items-end gap-2">
+        <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Co-Passenger NID
+            </label>
+            <input type="text" name="co_passengers[${index}][nid]" placeholder="Enter NID"
+                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+        </div>
+        
+    </div>
 
+    <div class="flex items-end gap-2">
+        <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Co-Passenger Mobile Number
+            </label>
+            <input type="text" name="co_passengers[${index}][co_passernger_number]" placeholder="Enter Mobile Number"
+                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+        </div>
+        <button type="button" class="removeCoPassengerBtn px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition">
+            Remove
+        </button>
+    </div>
+`;
         // Insert before the add button
         wrapper.insertBefore(div, addBtn);
         index++;

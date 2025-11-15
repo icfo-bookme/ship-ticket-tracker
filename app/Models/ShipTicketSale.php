@@ -24,6 +24,7 @@ class ShipTicketSale extends Model
     protected $fillable = [
         'customer_name',
         'customer_mobile',
+        'whatsapp',
         'sales_source',
         'ship_id',
         'journey_date',
@@ -41,7 +42,9 @@ class ShipTicketSale extends Model
         'ticket_category',
         'status',
         'date_of_birth',
-        'address'
+        'address',
+        'remark1',
+        'remark2',
     ];
 
     /**

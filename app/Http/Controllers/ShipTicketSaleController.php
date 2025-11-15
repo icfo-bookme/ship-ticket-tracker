@@ -23,37 +23,95 @@ class ShipTicketSaleController extends Controller
         return view('ship_ticket_sales.index', compact('sales', 'ships'));
     }
 
-    public function pendingCS(Request $request, $status)
-    {
-        $shipId = $request->input('ship_id');
-        $companyId = $request->input('company_id');
-        $journeyDate = $request->input('journey_date');
-
-        $query = ShipTicketSale::with([
-            'ships',
-            'companies',
-            'verifyby' => function ($q) use ($status) {
-                $q->where('name', $status)
-                ->with('verifiedByUser:id,name');
-            }
-        ])->where('status', $status);
-
-        if ($shipId && !empty($shipId)) {
-            $query->where('ship_id', $shipId);
+  public function pendingCS(Request $request, $status)
+{
+    $shipId = $request->input('ship_id');
+    $companyId = $request->input('company_id');
+    $journeyDate = $request->input('journey_date');
+    
+    // DataTables parameters
+    $start = $request->input('start', 0);
+    $length = $request->input('length', 10);
+    $searchValue = $request->input('search.value', '');
+    
+    $query = ShipTicketSale::with([
+        'ships',
+        'companies',
+        'verifyby' => function ($q) use ($status) {
+            $q->where('name', $status)
+              ->with('verifiedByUser:id,name');
         }
+    ])->where('status', $status);
 
-        if ($companyId && !empty($companyId)) {
-            $query->where('company_id', $companyId);
-        }
-
-        if ($journeyDate && !empty($journeyDate)) {
-            $query->whereDate('journey_date', $journeyDate);
-        }
-
-        $sales = $query->get();
-
-        return response()->json($sales);
+    // Apply filters
+    if ($shipId && !empty($shipId)) {
+        $query->where('ship_id', $shipId);
     }
+
+    if ($companyId && !empty($companyId)) {
+        $query->where('company_id', $companyId);
+    }
+
+    if ($journeyDate && !empty($journeyDate)) {
+        $query->whereDate('journey_date', $journeyDate);
+    }
+
+    // Apply search
+if (!empty($searchValue)) {
+    $query->where(function($q) use ($searchValue) {
+        // Direct table columns
+        $q->where('customer_name', 'like', "%{$searchValue}%")
+          ->orWhere('customer_mobile', 'like', "%{$searchValue}%")
+          ->orWhere('email', 'like', "%{$searchValue}%")
+          ->orWhere('nid', 'like', "%{$searchValue}%")
+          ->orWhere('sales_source', 'like', "%{$searchValue}%")
+          ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
+          ->orWhere('payment_method', 'like', "%{$searchValue}%")
+          ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
+          ->orWhere('received_amount', 'like', "%{$searchValue}%")
+          ->orWhere('due_amount', 'like', "%{$searchValue}%")
+          ->orWhere('sold_by', 'like', "%{$searchValue}%")
+          ->orWhere('ticket_category', 'like', "%{$searchValue}%")
+          ->orWhere('status', 'like', "%{$searchValue}%")
+          
+          // Date fields (search by formatted date or raw value)
+          ->orWhereDate('journey_date', $searchValue)
+          ->orWhere('journey_date', 'like', "%{$searchValue}%")
+          ->orWhereDate('return_date', $searchValue)
+          ->orWhere('return_date', 'like', "%{$searchValue}%")
+          ->orWhereDate('issued_date', $searchValue)
+          ->orWhere('issued_date', 'like', "%{$searchValue}%")
+          
+          // Related tables (ships)
+          ->orWhereHas('ships', function($shipQuery) use ($searchValue) {
+              $shipQuery->where('name', 'like', "%{$searchValue}%");
+          })
+          
+          // Related tables (companies)
+          ->orWhereHas('companies', function($companyQuery) use ($searchValue) {
+              $companyQuery->where('name', 'like', "%{$searchValue}%");
+          })
+          
+          // Search by ID
+          ->orWhere('id', $searchValue);
+    });
+}
+
+    // Get total count before pagination
+    $totalRecords = $query->count();
+    
+    // Apply pagination
+    $sales = $query->skip($start)
+                   ->take($length)
+                   ->get();
+
+    return response()->json([
+        'draw' => $request->input('draw'),
+        'recordsTotal' => $totalRecords,
+        'recordsFiltered' => $totalRecords,
+        'data' => $sales
+    ]);
+}
 
 
     public function showPendingSales($status)
@@ -78,6 +136,7 @@ class ShipTicketSaleController extends Controller
         $validated = $request->validate([
             'customer_name'   => 'required|string|max:100',
             'customer_mobile' => 'required|string|max:20',
+            'whatsapp'        => 'nullable|string|max:20',
             'nid'             => 'nullable|string|max:50',
             'email'           => 'nullable|string|max:100',
             'sales_source'    => 'nullable|string|max:255',
@@ -94,6 +153,8 @@ class ShipTicketSaleController extends Controller
             'company_id'      => 'required|string|max:100',
             'issued_date'     => 'required|date',
             'sold_by'         => 'required|string|max:100',
+            'remark1'         => 'nullable|string|max:255',
+            'remark2'         => 'nullable|string|max:255',
         ]);
 
         $ticketSale = ShipTicketSale::create($validated);
@@ -105,6 +166,7 @@ class ShipTicketSaleController extends Controller
                         'ship_ticket_sale_id' => $ticketSale->id,
                         'name' => $coPassenger['name'],
                         'nid'  => $coPassenger['nid'],
+                        'co_passernger_number'  => $coPassenger['co_passernger_number'],
                     ]);
                 }
             }
@@ -169,6 +231,7 @@ class ShipTicketSaleController extends Controller
         $request->validate([
             'customer_name' => 'nullable|string|max:100',
             'customer_mobile' => 'nullable|string|max:20',
+            'whatsapp'        => 'nullable|string|max:20',
             'date_of_birth' => 'nullable|date',
             'sales_source' => 'nullable|string|max:20',
             'ship_id' => 'nullable|exists:ships,id',
@@ -186,6 +249,8 @@ class ShipTicketSaleController extends Controller
             'ticket_category' => 'nullable|string',
             'address' => 'nullable|string',
             'status' => 'nullable|string|max:50',
+            'remark1'         => 'nullable|string|max:255',
+            'remark2'         => 'nullable|string|max:255',
         ]);
 
         $sale = ShipTicketSale::findOrFail($id);

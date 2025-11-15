@@ -58,39 +58,7 @@
                                     class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Pending
                                     Tickets</span>
                             </a>
-                            <!-- <a href="/sales/status/payment-verified"
-                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
-                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span
-                                    class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Payment
-                                    Varified Tickets</span>
-                            </a>
-                            <a href="/sales/status/ticket-issued"
-                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
-                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Issued
-                                    Tickets</span>
-                            </a>
-                            <a href="/sales/status/ticket-printed"
-                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
-                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span
-                                    class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Printed
-                                    Tickets</span>
-                            </a>
-                            <a href="/sales/status/shipment_id_entered"
-                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
-                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Ready
-                                    for Courier</span>
-                            </a>
-                            <a href="/sales/status/shipped"
-                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
-                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span
-                                    class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Shipped
-                                    Tickets</span>
-                            </a> -->
+                           
                         </div>
                     </div>
                 </div>
@@ -209,8 +177,8 @@
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span
-                                    class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Booking
-                                    Reports</span>
+                                    class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">
+                                    Cash Collection</span>
                             </a>
                         </div>
                     </div>

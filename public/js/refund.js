@@ -101,16 +101,13 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             loader.style.display = "block";
 
-            // Get filter values
             const selectedShipId = shipFilter.value;
             const selectedCompanyId = companyFilter.value;
             const selectedJourneyDate = journeyDateFilter.value;
-
             const statusElement = document.getElementById("statusFilter");
-            const status = statusElement
-                ? statusElement.dataset.status
-                : "pending";
-           
+            const status = statusElement ? statusElement.dataset.status : "pending";
+
+            // Destroy existing DataTable if initialized
             if (dataTableInitialized && dataTable) {
                 dataTable.destroy();
                 dataTableInitialized = false;
@@ -119,63 +116,86 @@ document.addEventListener("DOMContentLoaded", () => {
             // Clear table body
             salesBody.innerHTML = "";
 
-            let url = `/sales/${status}?`;
-            const params = new URLSearchParams();
-
-            if (selectedShipId) params.append("ship_id", selectedShipId);
-            if (selectedCompanyId)
-                params.append("company_id", selectedCompanyId);
-            if (selectedJourneyDate)
-                params.append("journey_date", selectedJourneyDate);
-
-            url += params.toString();
-
-            const response = await fetch(url);
-            const data = await response.json();
-
             loader.style.display = "none";
             table.classList.remove("hidden");
 
-            // Render sales data into the table
-            data.forEach((sale) => {
-                const tr = document.createElement("tr");
-                const formatDate = (field, value) => {
-                    if (
-                        ["journey_date", "issued_date"].includes(field) &&
-                        value !== "Not specified"
-                    ) {
-                        return new Date(value).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                        });
+            dataTable = $("#salesTable").DataTable({
+                processing: true,
+                serverSide: true,
+                "ordering": false,
+                ajax: {
+                    url: `/all/refundable`,
+                    type: 'GET',
+                    data: function (d) {
+                        d.ship_id = selectedShipId;
+                        d.company_id = selectedCompanyId;
+                        d.journey_date = selectedJourneyDate;
                     }
-                    return value;
-                };
+                },
+                columns: [
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row) {
+                            return `<input type="checkbox" class="selectSale" data-id="${row.id}" />`;
+                        }
+                    },
+                    { data: 'id' },
+                    { data: 'customer_name' },
+                    { data: 'customer_mobile' },
+                    {
+                        data: null,
+                        render: function (data) {
+                            return data.ship?.name || data.ships?.name || 'Not available';
+                        }
+                    },
+                    {
+                        data: 'journey_date',
+                        render: function (data) {
+                            return new Date(data).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            });
+                        }
+                    },
+                    { data: 'ticket_fee' },
+                    { data: 'companies.name' },
+                    { data: 'status' },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            return createActionButtons(row);
+                        }
+                    }
+                ],
+                dom: "lBfrtip",
+                lengthChange: true,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
+                drawCallback: function () {
+                    attachEventListeners();
+                }
+            });
 
-                tr.innerHTML = `
-                <td class="border px-4 py-2">
-        <input type="checkbox" class="selectSale" data-id="${sale.id}" />
-    </td>
-    <td class="border border-gray-300 px-4 py-2">${sale.id}</td>
-    <td class="border border-gray-300 px-4 py-2">${sale.customer_name}</td>
-    <td class="border border-gray-300 px-4 py-2">${sale.customer_mobile}</td>
-    <td class="border border-gray-300 px-4 py-2">${
-        sale.ship
-            ? sale.ship.name
-            : sale.ships
-            ? sale.ships.name
-            : "Not available"
-    }</td>
-    <td class="border border-gray-300 px-4 py-2">${formatDate(
-        "journey_date",
-        sale.journey_date
-    )}</td>
-     <td class="border border-gray-300 px-4 py-2">${sale.number_of_ticket}</td>
-      <td class="border border-gray-300 px-4 py-2">${sale.ticket_fee}</td>
-    <td class="border border-gray-300 px-4 py-2">${sale.received_amount}</td>
-    
-    <td class="border border-gray-300 px-4 py-2 flex gap-5 items-center justify-center">
+            dataTableInitialized = true;
+
+        } catch (error) {
+            console.error("Error initializing DataTable:", error);
+            loader.textContent = "Failed to load data. Please try again later.";
+        }
+    }
+
+    function createActionButtons(sale) {
+        const verifyByName = sale.verifyby?.length > 0
+            ? sale.verifyby[0].verified_by_user?.name
+            : 'Unknown';
+
+        return `
+        <div class="flex gap-2 items-center justify-center">
+             <td class="border border-gray-300 px-4 py-2 flex gap-5 items-center justify-center">
         <button class="fas fa-eye  text-blue-950 px-2 py-1 rounded showBtn" 
             data-id="${sale.id}" 
             data-customer="${sale.customer_name}" 
@@ -184,10 +204,9 @@ document.addEventListener("DOMContentLoaded", () => {
             data-nid="${sale.nid}" 
             data-source="${sale.sales_source}"
             data-ship="${sale.ship_id}"
-            data-ship-name="${
-                sale.ship
-                    ? sale.ship.name
-                    : sale.ships
+            data-ship-name="${sale.ship
+                ? sale.ship.name
+                : sale.ships
                     ? sale.ships.name
                     : "Not available"
             }"
@@ -205,10 +224,6 @@ document.addEventListener("DOMContentLoaded", () => {
             data-soldBy="${sale.sold_by || ""}"
             data-status="${sale.status}">    
         </button>
-       
-         ${
-             sale.status === "shipped"
-                 ? `
             <button class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund" 
                 data-id="${sale.id}"
                 data-received_total_amount="${sale.received_amount}"
@@ -216,48 +231,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 data-status="shipped">
                Partial Refund
             </button>
-        `
-                 : ""
-         }
+      
     </td>
-`;
-                salesBody.appendChild(tr);
-            });
-
-            // Initialize DataTable
-            dataTable = $("#salesTable").DataTable({
-                dom: "lBfrtip",
-                lengthChange: true,
-                lengthMenu: [
-                    [10, 25, 50, 75, 100, 200, 300, 400, 500],
-                    [10, 25, 50, 75, 100, 200, 300, 400, 500],
-                ],
-                language: {
-                    lengthMenu: "_MENU_",
-                },
-                buttons: [
-                    "copy",
-                    "excel",
-                    "csv",
-                    "pdf",
-                    "print",
-                    {
-                        extend: "colvis",
-                        text: "Column Visibility",
-                    },
-                ],
-                // Add this callback
-                drawCallback: function () {
-                    attachEventListeners();
-                },
-            });
-            dataTableInitialized = true;
-
-            attachEventListeners();
-        } catch (error) {
-            console.error("Error fetching sales data:", error);
-            loader.textContent = "Failed to load data. Please try again later.";
-        }
+          
+        </div>
+    `;
     }
 
     function attachEventListeners() {

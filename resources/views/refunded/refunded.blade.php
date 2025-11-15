@@ -46,7 +46,7 @@
         <!-- Sales Table -->
         <div class="overflow-x-auto ">
             <table id="salesTable" class="min-w-full border border-gray-300 hidden">
-                <thead class="bg-gray-100">
+                <thead class="bg-[#003366] text-white">
                     <tr>
                         <th class="border px-4 py-2">ID</th>
                         <th class="border px-4 py-2">Customer Name</th>

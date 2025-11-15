@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/full/refunds', [RefundController::class, 'fullRefunds']);
     Route::post('/partial/refund/{id}', [RefundController::class, 'partialRefund']);
     Route::get('/all/refunded', [RefundController::class, 'refunded']);
+    Route::get('/all/refundable', [RefundController::class, 'refundableCS']);
     Route::get('/refunded', [RefundController::class, 'showRefundedCS']);
     Route::put('/refunded/{id}', [RefundController::class, 'update']);
 

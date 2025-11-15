@@ -4,8 +4,8 @@
            <div class="grid grid-cols-2 gap-5">
                <div>
                    <label class="block text-sm font-medium text-gray-700">Received Amount</label>
-                   <input type="text" id="receivedAmountInput" class="border px-3 py-2 mb-4 w-full rounded"
-                       readonly placeholder="Enter Received Amount" />
+                   <input type="text" id="receivedAmountInput" class="border px-3 py-2 mb-4 w-full rounded" readonly
+                       placeholder="Enter Received Amount" />
                </div>
                <div>
                    <label class="block text-sm font-medium text-gray-700">Refund Amount</label>
@@ -18,8 +18,8 @@
            <div class="grid grid-cols-2 gap-5">
                <div>
                    <label class="block text-sm font-medium text-gray-700">Purchase Number of Ticket</label>
-                   <input type="text" id="PurchaseTicketInput" class="border px-3 py-2 mb-4 w-full rounded"
-                       readonly placeholder="Enter Purchase Number of Ticket" />
+                   <input type="text" id="PurchaseTicketInput" class="border px-3 py-2 mb-4 w-full rounded" readonly
+                       placeholder="Enter Purchase Number of Ticket" />
                </div>
                <div>
                    <label class="block text-sm font-medium text-gray-700">Refund Number Of Ticket</label>
@@ -28,6 +28,16 @@
                </div>
 
            </div>
+           <div class="mt-4">
+               <label for="remark" class="block text-sm font-medium text-gray-700 mb-2">
+                   Remark
+               </label>
+
+               <textarea id="remark" name="remark" rows="3" placeholder="Enter remark (optional)"
+                   class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 
+               dark:text-white rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-blue-500 transition"></textarea>
+           </div>
+
            <div class="flex justify-end">
                <button id="submitShipmentBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Refund</button>
                <button id="closeModalBtn" class="bg-gray-400 text-white px-4 py-2 ml-2 rounded">Cancel</button>
@@ -58,6 +68,7 @@
            document.getElementById('submitShipmentBtn').addEventListener('click', async () => {
                const refundAmountInput = document.getElementById('refundAmountInput').value;
                const refundTicketInput = document.getElementById('refundTicketInput').value;
+               const remarkInput = document.getElementById('remark').value;
 
                if (!refundAmountInput) {
                    Swal.fire({
@@ -101,7 +112,8 @@
                            },
                            body: JSON.stringify({
                                refunded_amount: refundAmountInput,
-                               refunded_number_of_tickets: refundTicketInput
+                               refunded_number_of_tickets: refundTicketInput,
+                               remark: remarkInput,
                            })
                        });
 

@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const result = await response.json();
 
             const sales = result.data || [];
-            
+
 
             loader.style.display = "none";
             table.classList.remove("hidden");
@@ -194,17 +194,16 @@ document.addEventListener("DOMContentLoaded", () => {
     <td class="border border-gray-300 px-4 py-2">${sale.id}</td>
     <td class="border border-gray-300 px-4 py-2">${sale.customer_name}</td>
     <td class="border border-gray-300 px-4 py-2">${sale.customer_mobile}</td>
-    <td class="border border-gray-300 px-4 py-2">${
-        sale.ship
-            ? sale.ship.name
-            : sale.ships
-            ? sale.ships.name
-            : "Not available"
-    }</td>
+    <td class="border border-gray-300 px-4 py-2">${sale.ship
+                        ? sale.ship.name
+                        : sale.ships
+                            ? sale.ships.name
+                            : "Not available"
+                    }</td>
     <td class="border border-gray-300 px-4 py-2">${formatDate(
-        "journey_date",
-        sale.journey_date
-    )}</td>
+                        "journey_date",
+                        sale.journey_date
+                    )}</td>
     <td class="border border-gray-300 px-4 py-2">${sale.number_of_ticket}</td>
     <td class="border border-gray-300 px-4 py-2">${sale.refund.refunded_number_of_tickets}</td>
     <td class="border border-gray-300 px-4 py-2">${sale.received_amount}</td>

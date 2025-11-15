@@ -15,6 +15,7 @@ class Refund extends Model
         'sales_id',
         'refunded_number_of_tickets',
         'refunded_amount',
+        'remark',
     ];
 
     public $timestamps = true;

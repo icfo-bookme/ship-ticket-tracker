@@ -6,14 +6,6 @@
         </h2>
         <div class="mt-6 mb-4 grid grid-cols-3 gap-10">
             <div class="">
-                <label for="shipFilter" class="block text-sm font-medium text-gray-700">Filter by Ship</label>
-                <select id="shipFilter"
-                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    <!-- Options will be populated dynamically via JS -->
-                </select>
-            </div>
-
-            <div class="">
                 <label for="companyFilter" class="block text-sm font-medium text-gray-700">Filter by Source
                     Company</label>
                 <select id="companyFilter"
@@ -21,7 +13,13 @@
                     <!-- Options will be populated dynamically via JS -->
                 </select>
             </div>
-
+            <div class="">
+                <label for="shipFilter" class="block text-sm font-medium text-gray-700">Filter by Ship</label>
+                <select id="shipFilter"
+                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <!-- Options will be populated dynamically via JS -->
+                </select>
+            </div>
             <div class="flex-1">
                 <label for="journeyDateFilter" class="block text-sm font-medium text-gray-700">Filter by Journey
                     Date</label>
@@ -46,7 +44,7 @@
         <!-- Sales Table -->
         <div class="overflow-x-auto">
             <table id="salesTable" class="min-w-full border border-gray-300 hidden">
-                <thead class="bg-gray-100">
+                <thead class="bg-[#003366] text-white">
                     <tr>
                         <th class="border px-4 py-2">
                             <input type="checkbox" id="selectAll" class="form-checkbox" />

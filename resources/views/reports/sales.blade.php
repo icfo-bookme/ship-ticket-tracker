@@ -93,9 +93,7 @@
                     Clear Filters
                 </button>
             </div>
-
         </div>
-
 
         <!-- Loader -->
         <div id="loader" class="text-center my-4">

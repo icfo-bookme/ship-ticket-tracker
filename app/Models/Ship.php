@@ -16,4 +16,9 @@ class Ship extends Model
     ];
     
      public $timestamps = true;
+
+      public function packages()
+    {
+        return $this->hasMany(ShipPackage::class, 'ship_id');
+    }
 }

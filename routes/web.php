@@ -8,6 +8,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShipPackageController;
+use App\Http\Controllers\PaymentController;
 
 Route::resource('ships', ShipController::class);
 
@@ -54,6 +55,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/sales-reports', [ReportController::class, 'index']);
     Route::get('/reports', [ReportController::class, 'reports']);
    
-    
+    Route::post('/partial/paid/{id}', [PaymentController::class, 'partial_due_payment']);
 });
 require __DIR__.'/auth.php';

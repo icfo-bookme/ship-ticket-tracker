@@ -135,6 +135,22 @@
                             </option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Company <span class="text-red-500">*</span>
+                        </label>
+                        <select name="company_id"
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            required>
+                            <option value="">Select a Source</option>
+                            @foreach ($companies as $company)
+                                <option value="{{ $company->id }}"
+                                    {{ old('company_id') == $company->id ? 'selected' : '' }}>
+                                    {{ $company->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Ship & Journey Info -->
@@ -202,7 +218,18 @@
                         </div>
                     </div>
                 </div>
-
+            <div class="mt-6">
+                    <label class="block text-lg font-semibold text-gray-800 dark:text-white mb-3">
+                        Payment Details
+                    </label>
+                    <div id="paymentInfoWrapper" class="space-y-4">
+                        <!-- Add button -->
+                        <button type="button" id="addPaymentInfo"
+                            class="mt-3 px-4 py-2 text-sm font-medium text-white bg-blue-950 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 transition">
+                            + Add Payment
+                        </button>
+                    </div>
+                </div>
                 <!-- Ticket Summary -->
                 <div
                     class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mt-6">
@@ -229,46 +256,20 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Payment Method <span class="text-red-500">*</span>
+                                Other Fee(Vat,Tax,etc if include ) (৳) <span class="text-red-500">*</span>
                             </label>
-                            <select name="payment_method" id="payment_method"
+                            <input type="number" id="other_fee" name="other_fee"
+                                value="{{ old('ticket_fee', 0) }}" step="0.01" min="0" placeholder="0.00"
                                 class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                 required>
-                                <option value="">Select method</option>
-                                <option value="Cash" {{ old('payment_method') == 'Cash' ? 'selected' : '' }}>Cash
-                                </option>
-                                <option value="Bkash" {{ old('payment_method') == 'Bkash' ? 'selected' : '' }}>Bkash
-                                    (+2%)
-                                </option>
-                                <option value="Nagad" {{ old('payment_method') == 'Nagad' ? 'selected' : '' }}>Nagad
-                                    (+2%)
-                                </option>
-                                <option value="Bank Transfer"
-                                    {{ old('payment_method') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer
-                                </option>
-                            </select>
                         </div>
                     </div>
                 </div>
+               
 
                 <!-- Payment Info -->
                 <div class="grid grid-cols-3 gap-4 mt-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Company <span class="text-red-500">*</span>
-                        </label>
-                        <select name="company_id"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                            required>
-                            <option value="">Select a Source</option>
-                            @foreach ($companies as $company)
-                                <option value="{{ $company->id }}"
-                                    {{ old('company_id') == $company->id ? 'selected' : '' }}>
-                                    {{ $company->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -282,7 +283,7 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Received (৳) <span class="text-red-500">*</span>
+                           Total Received (৳) <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="received_amount" name="received_amount"
                             value="{{ old('received_amount', 0) }}" step="0.01" min="0"

@@ -53,7 +53,7 @@ class ShipTicketSale extends Model
      * @var array<string, string>
      */
     protected $casts = [
-       
+
         'ticket_fee' => 'decimal:2',
         'received_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
@@ -67,7 +67,7 @@ class ShipTicketSale extends Model
      * @var array
      */
     protected $dates = [
-       
+
         'created_at',
         'updated_at',
     ];
@@ -135,5 +135,13 @@ class ShipTicketSale extends Model
     public function verifyby()
     {
         return $this->hasMany(VerifyTracker::class,  'ticket_id', 'id');
+    }
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'sales_id');
+    }
+     public function categories()
+    {
+        return $this->hasMany(Category::class, 'ticket_id');
     }
 }

@@ -10,6 +10,7 @@ use App\Models\CoPassenger;
 use App\Models\Shipment;
 use App\Models\Company;
 use App\Models\Category;
+use App\Models\Payment;
 
 class ShipTicketSaleController extends Controller
 {
@@ -35,8 +36,10 @@ class ShipTicketSaleController extends Controller
     $searchValue = $request->input('search.value', '');
     
     $query = ShipTicketSale::with([
-        'ships',
+        'ships.packages',
+        'categories',
         'companies',
+        'coPassengers',
         'verifyby' => function ($q) use ($status) {
             $q->where('name', $status)
               ->with('verifiedByUser:id,name');
@@ -132,7 +135,7 @@ if (!empty($searchValue)) {
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
+    {  
         $validated = $request->validate([
             'customer_name'   => 'required|string|max:100',
             'customer_mobile' => 'required|string|max:20',
@@ -145,7 +148,6 @@ if (!empty($searchValue)) {
             'date_of_birth'   => 'nullable|date',
             'return_date'     => 'required|date',
             'ticket_fee'      => 'required|numeric',
-            'payment_method'  => 'required|string|max:255',
             'received_amount' => 'required|numeric',
             'number_of_ticket' => 'required|numeric',
             'ticket_category' => 'nullable|string|max:255',
@@ -172,10 +174,20 @@ if (!empty($searchValue)) {
             }
         }
 
-        if ($request->filled('ticket_categories')) {
-            // Optional: check entire structure once before loop
-            // dd($request->ticket_categories);
+        if ($request->filled('payment_methods')) {
+            foreach ($request->payment_methods as $payment_method) {
+                if (!empty($payment_method['method']) && !empty($payment_method['amount'])) {
+                    Payment::create([
+                        'sales_id' => $ticketSale->id,
+                        'payment_method' => $payment_method['method'],
+                        'received_amount'  => $payment_method['amount'],
+                    ]);
+                }
+            }
+        }
 
+        if ($request->filled('ticket_categories')) {
+            
             foreach ($request->ticket_categories as $type => $categories) {
 
 

@@ -168,7 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Clear table body
             salesBody.innerHTML = "";
-
             loader.style.display = "none";
             table.classList.remove("hidden");
 
@@ -209,7 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     },
                     { data: 'ticket_fee' },
                     {
-                        data: 'companies.name', // Change this from 'companies.name'
+                        data: 'companies.name',
                         render: function (data, type, row) {
                             return data || row.company?.name || 'Not available';
                         }
@@ -245,57 +244,78 @@ document.addEventListener("DOMContentLoaded", () => {
             ? sale.verifyby[0].verified_by_user?.name
             : 'Unknown';
 
-        return `
+        let html = `
         <div class="flex gap-2 items-center justify-center">
-            <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" 
-             data-id="${sale.id}" 
-            data-customer="${sale.customer_name}" 
-            data-mobile="${sale.customer_mobile}" 
-            data-email="${sale.email}" 
-            data-nid="${sale.nid}" 
-            data-source="${sale.sales_source}"
-            data-ship="${sale.ship_id}"
-            data-journeyDate="${sale.journey_date}"
-            data-returnDate="${sale.return_date}"
-            data-ticketFee="${sale.ticket_fee}"
-            data-payment_method="${sale.payment_method}"
-            data-number_of_ticket="${sale.number_of_ticket}"
-            data-receivedAmount="${sale.received_amount}"
-            data-dueAmount="${sale.due_amount}"
-            data-companyId="${sale.company_id}"
-            data-issuedDate="${sale.issued_date}"
-            data-ticket_category="${sale.ticket_category}"
-            data-soldBy="${sale.sold_by || ""}"
-            data-status="${sale.status}"
-                data-sale='${JSON.stringify(sale)}'>
+
+            <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn"
+                data-id="${sale.id}"
+                data-customer="${sale.customer_name}"
+                data-mobile="${sale.customer_mobile}"
+                data-email="${sale.email}"
+                data-nid="${sale.nid}"
+                data-source="${sale.sales_source}"
+                data-ship="${sale.ship_id}"
+                data-journeyDate="${sale.journey_date}"
+                data-returnDate="${sale.return_date}"
+                data-ticketFee="${sale.ticket_fee}"
+                data-payment_method="${sale.payment_method}"
+                data-number_of_ticket="${sale.number_of_ticket}"
+                data-receivedAmount="${sale.received_amount}"
+                data-dueAmount="${sale.due_amount}"
+                data-companyId="${sale.company_id}"
+                data-issuedDate="${sale.issued_date}"
+                data-ticket_category="${sale.ticket_category}"
+                data-soldBy="${sale.sold_by || ""}"
+                data-status="${sale.status}"
+                data-sale='${JSON.stringify(sale)}'
+                title="Edit">
             </button>
-            <button class="fas fa-trash text-red-500 px-2 py-1 border border-gray-300 rounded deleteBtn" 
-                data-id="${sale.id}">
+
+            <button class="fas fa-trash text-red-500 px-2 py-1 border border-gray-300 rounded deleteBtn"
+                data-id="${sale.id}"
+                title="Delete">
             </button>
-            ${createStatusButton(sale, verifyByName)}
-        </div>
     `;
+        const due = Number(sale.due_amount);
+        if (due > 0) {
+            html += `
+
+            <button class="bg-yellow-500 text-black px-2 py-1 rounded dueBtn"
+                data-id="${sale.id}"
+                data-due_amount="${sale.due_amount}"
+                title="Due Amount: ${sale.due_amount}">
+               Pay Due
+            </button>
+        `;
+        }
+        html += createStatusButton(sale, verifyByName);
+
+        html += `</div>`;
+
+        return html;
     }
 
+
     function createStatusButton(sale, verifyByName) {
+
         const statusButtons = {
             'pending': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
             data-id="${sale.id}" data-status="payment-verified" 
             title="Sold by: ${sale.sold_by}">Verify Payment</button>`,
 
-            'payment-verified': `<button class="bg-green-500 text-white px-2 py-1 rounded verifyBtn" 
+            'payment-verified': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
             data-id="${sale.id}" data-status="ticket-issued" 
             title="payment-verified by: ${verifyByName}">Ticket Issued</button>`,
 
-            'ticket-issued': `<button class="bg-blue-500 text-white px-2 py-1 rounded verifyBtn" 
+            'ticket-issued': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
             data-id="${sale.id}" data-status="ticket-printed" 
             title="ticket-issued by: ${verifyByName}">Ticket Printed</button>`,
 
-            'ticket-printed': `<button class="bg-blue-500 text-white px-2 py-1 rounded shipmentIdEntryBtn" 
+            'ticket-printed': `<button class="bg-red-500 text-white px-2 py-1 rounded shipmentIdEntryBtn" 
             data-id="${sale.id}" data-status="shipment_id_entered" 
             title="ticket-printed by: ${verifyByName}">Entry Shipment ID</button>`,
 
-            'shipment_id_entered': `<button class="bg-blue-500 text-white px-2 py-1 rounded verifyBtn" 
+            'shipment_id_entered': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
             data-id="${sale.id}" data-status="shipped" 
             title="shipment_id_entered by: ${verifyByName}">Shipped</button>`
         };
@@ -319,6 +339,11 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".shipmentIdEntryBtn").forEach((btn) => {
             btn.addEventListener("click", () => varifyShipment(btn, getList));
         });
+
+         document.querySelectorAll(".dueBtn").forEach((btn) => {
+            btn.addEventListener("click", () => due(btn, getList));
+        });
+        
     }
 
     function showEditModal(btn) {

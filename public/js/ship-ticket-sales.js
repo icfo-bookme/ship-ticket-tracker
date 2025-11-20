@@ -7,9 +7,8 @@ document.addEventListener("DOMContentLoaded", function () {
 function setupEventListeners() {
     // Payment calculation listeners
     document.getElementById("ticket_fee").addEventListener("input", calculateAll);
-    document.getElementById("payment_method").addEventListener("change", calculateAll);
     document.getElementById("received_amount").addEventListener("input", calculateDue);
-
+    document.getElementById("other_fee").addEventListener("input", calculateAll);
     // Form validation listeners
     document.querySelectorAll("input, select").forEach((field) => {
         field.addEventListener("input", () => clearFieldError(field));
@@ -31,7 +30,9 @@ function setupEventListeners() {
 
     // Initialize co-passenger functionality
     initializeCoPassenger();
+    initializePaymentMethod();
 }
+
 function handleSameAsMobileCheckbox() {
     const checkbox = document.getElementById("sameAsMobileCheckbox");
     const mobileField = document.querySelector('[name="customer_mobile"]');
@@ -56,7 +57,6 @@ function handleSameAsMobileCheckbox() {
 
         // Copy mobile to WhatsApp and disable the field
         whatsappField.value = mobileValue;
-        whatsappField.disabled = true;
         whatsappField.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-500', 'dark:text-gray-400');
         clearFieldError(whatsappField);
     } else {
@@ -66,6 +66,7 @@ function handleSameAsMobileCheckbox() {
         whatsappField.value = '';
     }
 }
+
 function toggleReturnJourneySection() {
     const returnDate = document.getElementById("return_date").value;
     const returnSection = document.getElementById("returnJourneySection");
@@ -201,19 +202,14 @@ function calculateAll() {
 
 function calculateTotalPayable() {
     const ticketFee = parseFloat(document.getElementById("ticket_fee").value) || 0;
-    const paymentMethod = document.getElementById("payment_method").value;
+    const otherChargesFee = parseFloat(document.getElementById("other_fee").value) || 0;
+    const totalPayable = ticketFee + otherChargesFee;
 
-    let totalPayable = ticketFee;
-
-    if (paymentMethod === "Bkash" || paymentMethod === "Nagad") {
-        const extraFee = ticketFee * 0.02;
-        totalPayable = ticketFee + extraFee;
-        showFeeMessage(`2% extra fee: ৳${extraFee.toFixed(2)}`);
-    } else {
-        hideFeeMessage();
-    }
 
     document.getElementById("total_payable").value = totalPayable.toFixed(2);
+
+    // Update due amount after calculating total payable
+    calculateDue();
 }
 
 function calculateDue() {
@@ -280,7 +276,6 @@ function isFormValid() {
         "email",
         "journey_date",
         "ticket_fee",
-        "payment_method",
         "received_amount",
         "company_id",
         "issued_date",
@@ -311,7 +306,7 @@ function isFormValid() {
         if (!firstErrorField) firstErrorField = mobileField;
     }
 
-    // In your isFormValid() function, update the WhatsApp validation:
+    // WhatsApp validation
     const whatsappField = document.querySelector('[name="whatsapp"]');
     const isWhatsAppDisabled = whatsappField.disabled;
 
@@ -323,6 +318,7 @@ function isFormValid() {
             if (!firstErrorField) firstErrorField = whatsappField;
         }
     }
+
     // Check amounts are positive
     const ticketFee = parseFloat(document.getElementById("ticket_fee").value) || 0;
     const receivedAmount = parseFloat(document.getElementById("received_amount").value) || 0;
@@ -349,6 +345,24 @@ function isFormValid() {
     const totalTickets = parseInt(document.getElementById("total_tickets").value) || 0;
     if (totalTickets <= 0) {
         showTopError("Please select at least one ticket");
+        isValid = false;
+    }
+
+    // Check payment methods
+    const paymentEntries = document.querySelectorAll('.payment-entry');
+    let hasValidPayment = false;
+
+    paymentEntries.forEach(entry => {
+        const method = entry.querySelector('.payment-method-select').value;
+        const amount = parseFloat(entry.querySelector('.payment-amount-input').value) || 0;
+
+        if (method && amount > 0) {
+            hasValidPayment = true;
+        }
+    });
+
+    if (!hasValidPayment) {
+        showTopError("Please add at least one valid payment method with amount");
         isValid = false;
     }
 
@@ -403,7 +417,6 @@ function fillReviewContent() {
         return_date: "Return Date",
         company_id: "Company Name",
         ticket_fee: "Total Ticket Price",
-        payment_method: "Payment Method",
         total_payable: "Total Payable",
         received_amount: "Received Amount",
         due_amount: "Due Amount",
@@ -455,6 +468,37 @@ function fillReviewContent() {
     }
 
     html += "</div>";
+
+    // Add payment methods to review
+    const paymentMethods = [];
+    document.querySelectorAll('.payment-entry').forEach(entry => {
+        const method = entry.querySelector('.payment-method-select').value;
+        const amount = parseFloat(entry.querySelector('.payment-amount-input').value) || 0;
+
+        if (method && amount > 0) {
+            paymentMethods.push({ method, amount });
+        }
+    });
+
+    if (paymentMethods.length > 0) {
+        html += `
+            <div class="mt-6">
+                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-3 border-b pb-2">
+                    Payment Methods
+                </h4>
+                <div class="space-y-3">
+        `;
+
+        paymentMethods.forEach((payment, index) => {
+            html += `
+                <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">${payment.method}</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">৳ ${payment.amount.toFixed(2)}</p>
+                </div>`;
+        });
+
+        html += `</div></div>`;
+    }
 
     // Add ticket categories to review
     const departureTicketCategories = [];
@@ -548,7 +592,6 @@ function getFieldLabel(fieldName) {
         ship_id: "Ship Name",
         journey_date: "Journey Date",
         ticket_fee: "Ticket Fee",
-        payment_method: "Payment Method",
         received_amount: "Received Amount",
         company_id: "Company Name",
         issued_date: "Issued Date",
@@ -622,28 +665,6 @@ function showTopError(message) {
     }, 4000);
 }
 
-function showFeeMessage(message) {
-    let feeMessage = document.getElementById("feeMessage");
-    if (!feeMessage) {
-        feeMessage = document.createElement("div");
-        feeMessage.id = "feeMessage";
-        feeMessage.className = "text-sm text-blue-600 dark:text-blue-400 mt-1 flex items-center";
-        document.getElementById("payment_method").parentNode.appendChild(feeMessage);
-    }
-
-    feeMessage.innerHTML = `
-        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-        </svg>
-        ${message}
-    `;
-}
-
-function hideFeeMessage() {
-    const feeMessage = document.getElementById("feeMessage");
-    if (feeMessage) feeMessage.remove();
-}
-
 // Co-Passenger functionality
 function initializeCoPassenger() {
     const wrapper = document.getElementById("coPassengersWrapper");
@@ -654,7 +675,6 @@ function initializeCoPassenger() {
     addBtn.addEventListener("click", function () {
         const div = document.createElement("div");
         div.classList.add("co-passenger", "grid", "grid-cols-3", "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg");
-
 
         div.innerHTML = `
     <div>
@@ -700,4 +720,95 @@ function initializeCoPassenger() {
             e.target.closest(".co-passenger").remove();
         }
     });
+}
+
+// Payment Method functionality
+function initializePaymentMethod() {
+    const wrapper = document.getElementById("paymentInfoWrapper");
+    const addBtn = document.getElementById("addPaymentInfo");
+
+    let paymentIndex = 0;
+
+    function createPaymentEntry() {
+        const div = document.createElement("div");
+        div.classList.add("payment-entry", "grid", "grid-cols-3", "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg", "bg-white", "dark:bg-gray-800");
+
+        div.innerHTML = `
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Payment Method <span class="text-red-500">*</span>
+                </label>
+                <select name="payment_methods[${paymentIndex}][method]" 
+                    class="payment-method-select w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+                    <option value="">Select method</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Bkash">Bkash</option>
+                    <option value="Nagad">Nagad</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                   Receive Amount (৳) <span class="text-red-500">*</span>
+                </label>
+                <input type="number" name="payment_methods[${paymentIndex}][amount]" 
+                    placeholder="Enter amount"
+                    class="payment-amount-input w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+                    step="0.01" min="0" value="0">
+            </div>
+
+            <div class="flex items-end">
+                <button type="button" class="removePaymentBtn w-full px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-lg">
+                    Remove
+                </button>
+            </div>
+        `;
+
+        wrapper.insertBefore(div, addBtn);
+        paymentIndex++;
+
+        // Add event listeners for calculations
+        const amountInput = div.querySelector('.payment-amount-input');
+        const methodSelect = div.querySelector('.payment-method-select');
+
+        amountInput.addEventListener('input', function () {
+            calculatePaymentTotals();
+            calculateTotalPayable();
+        });
+
+        methodSelect.addEventListener('change', function () {
+            calculateTotalPayable();
+        });
+
+        div.querySelector('.removePaymentBtn').addEventListener('click', function () {
+            div.remove();
+            calculatePaymentTotals();
+            calculateTotalPayable();
+        });
+
+        return div;
+    }
+
+    addBtn.addEventListener("click", function () {
+        createPaymentEntry();
+    });
+
+    createPaymentEntry();
+}
+
+function calculatePaymentTotals() {
+    let totalReceived = 0;
+
+    // Sum all payment amounts
+    document.querySelectorAll('.payment-amount-input').forEach(input => {
+        const amount = parseFloat(input.value) || 0;
+        totalReceived += amount;
+    });
+
+    // Update total received field
+    document.getElementById("received_amount").value = totalReceived.toFixed(2);
+
+    // Calculate due amount
+    calculateDue();
 }

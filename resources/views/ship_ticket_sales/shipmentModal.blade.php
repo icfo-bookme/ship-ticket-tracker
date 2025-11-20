@@ -1,12 +1,12 @@
     <!-- Modal Structure -->
-    <div id="shipmentModal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
+    <div id="shipmentModal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
         <div class="bg-white p-6 rounded shadow-lg w-96">
             <h2 class="text-lg font-semibold mb-4">Enter Shipment ID</h2>
             <input type="text" id="shipmentIdInput" class="border px-3 py-2 mb-4 w-full rounded"
                 placeholder="Enter shipment ID" />
             <div class="flex justify-end">
                 <button id="submitShipmentBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Entry</button>
-                <button id="closeModalBtn" class="bg-gray-400 text-white px-4 py-2 ml-2 rounded">Cancel</button>
+                <button id="close1ModalBtn" class="bg-gray-400 text-white px-4 py-2 ml-2 rounded">Cancel</button>
             </div>
         </div>
     </div>
@@ -20,13 +20,24 @@
             const modal = document.getElementById('shipmentModal');
             modal.classList.remove('hidden');
 
+           
+            const closeBtn = document.getElementById('close1ModalBtn');
+            const submitBtn = document.getElementById('submitShipmentBtn');
+
+            const newCloseBtn = closeBtn.cloneNode(true);
+            const newSubmitBtn = submitBtn.cloneNode(true);
+
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+            submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+
             // Close modal event
-            document.getElementById('closeModalBtn').addEventListener('click', () => {
+            newCloseBtn.addEventListener('click', () => {
                 modal.classList.add('hidden');
+                document.getElementById('shipmentIdInput').value = '';
             });
 
             // Submit shipment event
-            document.getElementById('submitShipmentBtn').addEventListener('click', async () => {
+            newSubmitBtn.addEventListener('click', async () => {
                 const shipmentId = document.getElementById('shipmentIdInput').value;
 
                 if (!shipmentId) {
@@ -44,8 +55,9 @@
 
                 // Close modal after submission
                 modal.classList.add('hidden');
+                document.getElementById('shipmentIdInput').value = '';
 
-                // Proceed with the verification process
+                // Rest of your existing code...
                 const isConfirmed = await Swal.fire({
                     title: 'Are you sure?',
                     text: "You won't be able to revert this!",
@@ -71,7 +83,7 @@
                             },
                             body: JSON.stringify({
                                 shipmentId
-                            }) // Sending the shipment ID as part of the request
+                            })
                         });
 
                         const result = await response.json();
@@ -85,7 +97,7 @@
                                     confirmButton: 'bg-blue-950 text-white'
                                 }
                             });
-                            getList(); // Assuming this refreshes or reloads the list
+                            getList();
                         } else {
                             Swal.fire({
                                 title: 'Error!',

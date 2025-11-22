@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\ShipTicketSale;
 use App\Models\Ship;
@@ -144,6 +144,7 @@ if (!empty($searchValue)) {
             'email'           => 'nullable|string|max:100',
             'sales_source'    => 'nullable|string|max:255',
             'ship_id'         => 'required|string|max:100',
+            'address'         => 'nullable|string',
             'journey_date'    => 'nullable|date',
             'date_of_birth'   => 'nullable|date',
             'return_date'     => 'required|date',
@@ -181,6 +182,7 @@ if (!empty($searchValue)) {
                         'sales_id' => $ticketSale->id,
                         'payment_method' => $payment_method['method'],
                         'received_amount'  => $payment_method['amount'],
+                        'paid_date'  => $payment_method['paid_date'],
                     ]);
                 }
             }
@@ -201,7 +203,7 @@ if (!empty($searchValue)) {
                         Category::create([
                             'ticket_id'  => $ticketSale->id,
                             'package_id' => $category['package_id'],
-                            'type'       => $type, // 'departure' or 'return'
+                            'type'       => $type, 
 
                         ]);
                     }
@@ -219,12 +221,22 @@ if (!empty($searchValue)) {
      * Display the specified resource.
      */
     public function show($id)
-    {
-        $sale = ShipTicketSale::findOrFail($id);
-        $ships = Ship::all();
-        $companies = Company::all();
-        return view('ship_ticket_sales.create', compact('sale', 'ships', 'companies'));
-    }
+{
+    $sale = ShipTicketSale::with([
+        'ships.packages',
+        'categories',
+        'companies',
+        'coPassengers',
+        "payments",
+        'verifyby.verifiedByUser:id,name'
+    ])->findOrFail($id);
+ 
+    $ships = Ship::all();
+    $companies = Company::all();
+
+    return view('ship_ticket_sales.edit', compact('sale', 'ships', 'companies'));
+}
+
 
     /**
      * Show the form for editing the specified resource.
@@ -239,39 +251,161 @@ if (!empty($searchValue)) {
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
-    {
-        $request->validate([
-            'customer_name' => 'nullable|string|max:100',
-            'customer_mobile' => 'nullable|string|max:20',
-            'whatsapp'        => 'nullable|string|max:20',
-            'date_of_birth' => 'nullable|date',
-            'sales_source' => 'nullable|string|max:20',
-            'ship_id' => 'nullable|exists:ships,id',
-            'journey_date' => 'nullable|date',
-            'return_date' => 'required|date',
-            'ticket_fee' => 'nullable|numeric|min:0',
-            'nid' => 'nullable',
-            'email' => 'string|max:100',
-            'payment_method' => 'nullable|string|max:50',
-            'received_amount' => 'nullable|numeric|min:0',
-            'due_amount' => 'nullable|numeric|min:0',
-            'company_id' => 'nullable',
-            'number_of_ticket' => 'required|numeric',
-            'issued_date' => 'nullable|date',
-            'ticket_category' => 'nullable|string',
-            'address' => 'nullable|string',
-            'status' => 'nullable|string|max:50',
-            'remark1'         => 'nullable|string|max:255',
-            'remark2'         => 'nullable|string|max:255',
-        ]);
+{
+    // Validate the request
+    $validated = $request->validate([
+        'customer_name' => 'required|string|max:255',
+        'customer_mobile' => 'required|string|max:20',
+        'whatsapp' => 'nullable|string|max:20',
+        'email' => 'nullable|email|max:255',
+        'nid' => 'nullable|string|max:255',
+        'date_of_birth' => 'nullable|date',
+        'address' => 'nullable|string',
+        'ship_id' => 'required|exists:ships,id',
+        'company_id' => 'required|exists:company,id',
+        'journey_date' => 'required|date',
+        'return_date' => 'nullable|date',
+        'number_of_ticket' => 'required|integer|min:1',
+        'ticket_category' => 'nullable|string|max:255',
+        'ticket_fee' => 'required|numeric|min:0',
+        'received_amount' => 'nullable|numeric|min:0',
+        'due_amount' => 'nullable|numeric|min:0',
+        'sales_source' => 'nullable|string|max:255',
+        'sold_by' => 'nullable|string|max:255',
+        'issued_date' => 'nullable|date',
+        'status' => 'required',
+        'remark1' => 'nullable|string',
+        'remark2' => 'nullable|string',
+        'departure_package' => 'required|exists:ship_packages,id',
+        'return_package' => 'nullable|exists:ship_packages,id',
+        'payments' => 'nullable|array',
+        'payments.*.payment_method' => 'required|string',
+        'payments.*.received_amount' => 'required|numeric|min:0',
+        'payments.*.paid_date' => 'nullable|date',
+        'payments.*.remark' => 'nullable|string',
+        'co_passengers' => 'nullable|array',
+        'co_passengers.*.name' => 'nullable|string|max:255',
+        'co_passengers.*.nid' => 'nullable|string|max:255',
+        'co_passengers.*.co_passernger_number' => 'nullable|string|max:20',
+    ]);
 
+    DB::beginTransaction();
+
+    try {
+        // Find the sale record
         $sale = ShipTicketSale::findOrFail($id);
 
-        $test = $sale->update($request->only(['customer_name', 'customer_mobile', 'payment_method', 'received_amount', 'due_amount', 'company_id', 'issued_date', 'status', 'sales_source', 'ship_id', 'journey_date', 'ticket_fee', 'nid', 'email', 'number_of_ticket', 'return_date', 'ticket_category']));
+        // Update main sale record
+        $sale->update([
+            'customer_name' => $validated['customer_name'],
+            'customer_mobile' => $validated['customer_mobile'],
+            'whatsapp' => $validated['whatsapp'],
+            'email' => $validated['email'],
+            'nid' => $validated['nid'],
+            'date_of_birth' => $validated['date_of_birth'],
+            'address' => $validated['address'],
+            'ship_id' => $validated['ship_id'],
+            'company_id' => $validated['company_id'],
+            'journey_date' => $validated['journey_date'],
+            'return_date' => $validated['return_date'],
+            'number_of_ticket' => $validated['number_of_ticket'],
+            'ticket_category' => $validated['ticket_category'],
+            'ticket_fee' => $validated['ticket_fee'],
+            'received_amount' => $validated['received_amount'] ?? 0,
+            'due_amount' => $validated['due_amount'] ?? $validated['ticket_fee'],
+            'sales_source' => $validated['sales_source'],
+            'sold_by' => $validated['sold_by'],
+            'issued_date' => $validated['issued_date'],
+            'status' => $validated['status'],
+            'remark1' => $validated['remark1'],
+            'remark2' => $validated['remark2'],
+        ]);
 
-        return response()->json(['message' => 'Sale updated successfully']);
+        // Update package categories (departure and return)
+        $this->updatePackageCategories($sale, $validated);
+
+        // Update payments
+        $this->updatePayments($sale, $validated['payments'] ?? []);
+
+        // Update co-passengers
+        $this->updateCoPassengers($sale, $validated['co_passengers'] ?? []);
+
+        DB::commit();
+
+        return redirect()->route('ship-ticket-sales.show', $sale->id)
+            ->with('success', 'Ship ticket sale updated successfully!');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        return back()->with('error', 'Failed to update ship ticket sale: ' . $e->getMessage())
+            ->withInput();
     }
+}
 
+/**
+ * Update package categories for departure and return
+ */
+private function updatePackageCategories(ShipTicketSale $sale, array $validated)
+{
+    // Delete existing categories
+    $sale->categories()->delete();
+
+    // Create departure package category
+    $sale->categories()->create([
+        'package_id' => $validated['departure_package'],
+        'type' => 'departure'
+    ]);
+
+    // Create return package category if provided
+    if (!empty($validated['return_package'])) {
+        $sale->categories()->create([
+            'package_id' => $validated['return_package'],
+            'type' => 'return'
+        ]);
+    }
+}
+
+/**
+ * Update payments for the sale
+ */
+private function updatePayments(ShipTicketSale $sale, array $payments)
+{
+    // Delete existing payments
+    $sale->payments()->delete();
+
+    // Create new payments
+    foreach ($payments as $payment) {
+        if (!empty($payment['payment_method']) && !empty($payment['received_amount'])) {
+            $sale->payments()->create([
+                'payment_method' => $payment['payment_method'],
+                'received_amount' => $payment['received_amount'],
+                'paid_date' => $payment['paid_date'] ?? null,
+                'remark' => $payment['remark'] ?? null,
+            ]);
+        }
+    }
+}
+
+/**
+ * Update co-passengers for the sale
+ */
+private function updateCoPassengers(ShipTicketSale $sale, array $coPassengers)
+{
+    // Delete existing co-passengers
+    $sale->coPassengers()->delete();
+
+    // Create new co-passengers
+    foreach ($coPassengers as $passenger) {
+        if (!empty($passenger['name'])) {
+            $sale->coPassengers()->create([
+                'name' => $passenger['name'],
+                'nid' => $passenger['nid'] ?? null,
+                'co_passernger_number' => $payment['co_passernger_number'] ?? null,
+            ]);
+        }
+    }
+}
 
     /**
      * Remove the specified resource from storage.
@@ -295,7 +429,7 @@ if (!empty($searchValue)) {
 
 
     public function checkDuplicate(Request $request)
-    {
+    { 
         $request->validate([
             'customer_mobile' => 'required|string',
             'journey_date' => 'required|date'

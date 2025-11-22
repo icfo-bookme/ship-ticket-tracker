@@ -109,34 +109,6 @@ document.addEventListener("DOMContentLoaded", () => {
             selectElement.appendChild(option);
         });
     }
-
-    function populateEditShipDropdown() {
-        const editShipSelect = document.getElementById("editShip");
-        if (!editShipSelect) return;
-
-        editShipSelect.innerHTML = '<option value="">Select Ship</option>';
-        ships.forEach((ship) => {
-            const option = document.createElement("option");
-            option.value = ship.id;
-            option.textContent = ship.name;
-            editShipSelect.appendChild(option);
-        });
-    }
-
-    function populateEditCompanyDropdown() {
-        const editCompanySelect = document.getElementById("editCompany");
-        if (!editCompanySelect) return;
-
-        editCompanySelect.innerHTML =
-            '<option value="">Select Company</option>';
-        companies.forEach((company) => {
-            const option = document.createElement("option");
-            option.value = company.id;
-            option.textContent = company.name;
-            editCompanySelect.appendChild(option);
-        });
-    }
-
     // Filter event listeners
     shipFilter.addEventListener("change", getList);
     companyFilter.addEventListener("change", getList);
@@ -246,30 +218,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let html = `
         <div class="flex gap-2 items-center justify-center">
-
-            <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn"
-                data-id="${sale.id}"
-                data-customer="${sale.customer_name}"
-                data-mobile="${sale.customer_mobile}"
-                data-email="${sale.email}"
-                data-nid="${sale.nid}"
-                data-source="${sale.sales_source}"
-                data-ship="${sale.ship_id}"
-                data-journeyDate="${sale.journey_date}"
-                data-returnDate="${sale.return_date}"
-                data-ticketFee="${sale.ticket_fee}"
-                data-payment_method="${sale.payment_method}"
-                data-number_of_ticket="${sale.number_of_ticket}"
-                data-receivedAmount="${sale.received_amount}"
-                data-dueAmount="${sale.due_amount}"
-                data-companyId="${sale.company_id}"
-                data-issuedDate="${sale.issued_date}"
-                data-ticket_category="${sale.ticket_category}"
-                data-soldBy="${sale.sold_by || ""}"
-                data-status="${sale.status}"
-                data-sale='${JSON.stringify(sale)}'
+        <a href="/ship-ticket-sales/${sale.id}">
+           <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn"    
                 title="Edit">
             </button>
+        </a>
 
             <button class="fas fa-trash text-red-500 px-2 py-1 border border-gray-300 rounded deleteBtn"
                 data-id="${sale.id}"
@@ -294,7 +247,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return html;
     }
-
 
     function createStatusButton(sale, verifyByName) {
 
@@ -324,13 +276,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function attachEventListeners() {
-        document.querySelectorAll(".editBtn").forEach((btn) => {
-            btn.addEventListener("click", () => showEditModal(btn));
-        });
-
-        document.querySelectorAll(".deleteBtn").forEach((btn) => {
-            btn.addEventListener("click", () => deleteSale(btn, getList));
-        });
 
         document.querySelectorAll(".verifyBtn").forEach((btn) => {
             btn.addEventListener("click", () => varifySale(btn, getList));
@@ -340,140 +285,11 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.addEventListener("click", () => varifyShipment(btn, getList));
         });
 
-         document.querySelectorAll(".dueBtn").forEach((btn) => {
+        document.querySelectorAll(".dueBtn").forEach((btn) => {
             btn.addEventListener("click", () => due(btn, getList));
         });
-        
+
     }
-
-    function showEditModal(btn) {
-        populateEditShipDropdown();
-        populateEditCompanyDropdown();
-
-        const fields = {
-            editId: btn.dataset.id,
-            editCustomerName: btn.dataset.customer,
-            editnid: btn.dataset.nid,
-            editMobile: btn.dataset.mobile,
-            editEmail: btn.dataset.email,
-            editSalesSource: btn.dataset.source,
-            editShip: btn.dataset.ship,
-            editJourneyDate: formatDateForInput(btn.dataset.journeydate),
-            editReturnDate: formatDateForInput(btn.dataset.returndate),
-            editTicketFee: btn.dataset.ticketfee,
-            editTicketNumber: btn.dataset.number_of_ticket,
-            editPaymentMethod: btn.dataset.payment_method,
-            editReceivedAmount: btn.dataset.receivedamount,
-            editDueAmount: btn.dataset.dueamount,
-            editCompany: btn.dataset.companyid,
-            editIssuedDate: formatDateForInput(btn.dataset.issueddate),
-            editSoldBy: btn.dataset.soldby,
-            editStatus: btn.dataset.status,
-            editTicketCategory: btn.dataset.ticket_category,
-        };
-
-        // Set values for all fields
-        Object.keys(fields).forEach((fieldId) => {
-            const element = document.getElementById(fieldId);
-            if (element) {
-                element.value = fields[fieldId] || "";
-            }
-        });
-
-        // Show the edit modal
-        modal.show();
-    }
-
-    function formatDateForInput(dateString) {
-        if (!dateString || dateString === "Not specified") return "";
-
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return "";
-
-        return date.toISOString().split("T")[0];
-    }
-
-    document
-        .getElementById("editForm")
-        .addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const id = document.getElementById("editId").value;
-            const data = {
-                customer_name:
-                    document.getElementById("editCustomerName").value,
-                customer_mobile: document.getElementById("editMobile").value,
-                nid: document.getElementById("editnid").value,
-                email: document.getElementById("editEmail").value,
-                sales_source: document.getElementById("editSalesSource").value,
-                ship_id: document.getElementById("editShip").value,
-                journey_date: document.getElementById("editJourneyDate").value,
-                return_date: document.getElementById("editReturnDate").value,
-                ticket_fee: document.getElementById("editTicketFee").value,
-                number_of_ticket:
-                    document.getElementById("editTicketNumber").value,
-                payment_method:
-                    document.getElementById("editPaymentMethod").value,
-                received_amount:
-                    document.getElementById("editReceivedAmount").value,
-                due_amount: document.getElementById("editDueAmount").value,
-                company_id: document.getElementById("editCompany").value,
-                issued_date: document.getElementById("editIssuedDate").value,
-                sold_by: document.getElementById("editSoldBy").value,
-                status: document.getElementById("editStatus").value,
-                ticket_category:
-                    document.getElementById("editTicketCategory").value,
-            };
-
-            await updateSale(id, data);
-        });
-
-    // Function to update sale
-    async function updateSale(id, data) {
-        try {
-            const response = await fetch(`/sales/status/${id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        .getAttribute("content"),
-                },
-                body: JSON.stringify(data),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                Swal.fire({
-                    title: "Success!",
-                    text: "Sale updated successfully!",
-                    icon: "success",
-                    confirmButtonText: "OK",
-                    customClass: {
-                        confirmButton: "bg-blue-950 text-white",
-                    },
-                });
-
-                getList();
-                modal.hide();
-            } else {
-                throw new Error(result.message || "Failed to update sale");
-            }
-        } catch (error) {
-            console.error("Error updating sale:", error);
-            Swal.fire({
-                title: "Error!",
-                text: "Failed to update sale. Please try again.",
-                icon: "error",
-                confirmButtonText: "OK",
-                customClass: {
-                    confirmButton: "bg-red-600 text-white",
-                },
-            });
-        }
-    }
-
     // Initialize the page
     async function initializePage() {
         initializeModalEvents();

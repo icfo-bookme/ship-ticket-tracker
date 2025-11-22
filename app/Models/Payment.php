@@ -16,6 +16,7 @@ class Payment extends Model
         'payment_method',
         'received_amount',
         'remark',
+        'paid_date',
     ];
 
     /**

@@ -140,8 +140,12 @@ class ShipTicketSale extends Model
     {
         return $this->hasMany(Payment::class, 'sales_id');
     }
-     public function categories()
+    public function categories()
     {
         return $this->hasMany(Category::class, 'ticket_id');
+    }
+    public function shipment()
+    {
+        return $this->hasOne(Shipment::class, 'ticket_id', 'id');
     }
 }

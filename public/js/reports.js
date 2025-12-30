@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Safely get all elements with null checks
     const loader = document.getElementById("loader");
     const table = document.getElementById("salesTable");
     const salesBody = document.getElementById("salesBody");
@@ -14,54 +15,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const startCreateDateFilter = document.getElementById("startCreateDate");
     const endCreateDateFilter = document.getElementById("endCreateDate");
 
-
-
-
+    // Totals elements with null checks
+    const totalRefundedTickets = document.getElementById("totalRefundedTickets");
+    const totalRefundedAmount = document.getElementById("totalRefundedAmount");
+    const totalSellTickets = document.getElementById("totalSellTickets");
+    const totalSellAmount = document.getElementById("totalSellAmount");
 
     let dataTableInitialized = false;
     let dataTable;
     let ships = [];
     let companies = [];
 
-    // Reusable modal functions
-    const modal = {
-        element: document.getElementById("editModal"),
-
-        show: function () {
-            this.element.classList.remove("hidden");
-            this.element.classList.add("flex");
-        },
-
-        hide: function () {
-            this.element.classList.add("hidden");
-            this.element.classList.remove("flex");
-        },
-    };
-
-    function initializeModalEvents() {
-        // Close modal when clicking the X button
-        document
-            .getElementById("closeModalX")
-            .addEventListener("click", () => modal.hide());
-
-        // Close modal when clicking the cancel button
-        document
-            .getElementById("cancelBtn")
-            .addEventListener("click", () => modal.hide());
-
-        // Close modal when clicking outside the modal content
-        modal.element.addEventListener("click", (e) => {
-            if (e.target === modal.element) {
-                modal.hide();
-            }
-        });
-    }
-
     async function fetchShips() {
         try {
             const response = await fetch("/ships");
             ships = await response.json();
-            populateDropdown(shipFilter, ships, "All Ships");
+            if (shipFilter) {
+                populateDropdown(shipFilter, ships, "All Ships");
+            }
         } catch (error) {
             console.error("Error fetching ships:", error);
         }
@@ -71,7 +42,9 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetch("/companies");
             companies = await response.json();
-            populateDropdown(companyFilter, companies, "All Companies");
+            if (companyFilter) {
+                populateDropdown(companyFilter, companies, "All Companies");
+            }
         } catch (error) {
             console.error("Error fetching companies:", error);
         }
@@ -95,224 +68,296 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Filter event listeners
-    shipFilter.addEventListener("change", getList);
-    companyFilter.addEventListener("change", getList);
-    journeyDateFilter.addEventListener("change", getList);
-    returnDateFilter.addEventListener("change", getList);
-    paymentMethodFilter.addEventListener("change", getList);
-    startDateFilter.addEventListener("change", getList);
-    endDateFilter.addEventListener("change", getList);
-    createdDateFilter.addEventListener("change", getList);
-    startCreateDateFilter.addEventListener("change", getList);
-    endCreateDateFilter.addEventListener("change", getList);
+    function formatDate(dateString) {
+        if (!dateString || dateString === "Not specified") return dateString;
+        
+        try {
+            return new Date(dateString).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            });
+        } catch (error) {
+            return dateString;
+        }
+    }
 
+    function formatCurrency(amount) {
+        if (!amount) return '0.00';
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    }
 
+    // Safely add event listeners only if elements exist
+    function initializeEventListeners() {
+        const elements = [
+            { element: shipFilter, event: 'change' },
+            { element: companyFilter, event: 'change' },
+            { element: journeyDateFilter, event: 'change' },
+            { element: returnDateFilter, event: 'change' },
+            { element: paymentMethodFilter, event: 'change' },
+            { element: startDateFilter, event: 'change' },
+            { element: endDateFilter, event: 'change' },
+            { element: createdDateFilter, event: 'change' },
+            { element: startCreateDateFilter, event: 'change' },
+            { element: endCreateDateFilter, event: 'change' }
+        ];
 
+        elements.forEach(({ element, event }) => {
+            if (element) {
+                element.addEventListener(event, getList);
+            }
+        });
 
-    // Clear filters
-    clearFiltersBtn.addEventListener("click", () => {
-        shipFilter.value = "";
-        companyFilter.value = "";
-        journeyDateFilter.value = "";
-        returnDateFilter.value = "";
-        paymentMethodFilter.value = "";
-        startDateFilter.value = "";
-        endDateFilter.value = "";
-        createdDateFilter.value = "";
-        startCreateDateFilter.value = "";
-        endCreateDateFilter.value = "";
-        getList();
-    });
-
+        // Clear filters with safe element access
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener("click", () => {
+                const filters = [
+                    shipFilter, companyFilter, journeyDateFilter, returnDateFilter,
+                    paymentMethodFilter, startDateFilter, endDateFilter, createdDateFilter,
+                    startCreateDateFilter, endCreateDateFilter
+                ];
+                
+                filters.forEach(filter => {
+                    if (filter) filter.value = "";
+                });
+                
+                getList();
+            });
+        }
+    }
 
     async function getList() {
         try {
-            loader.style.display = "block";
+            // Safe loader handling
+            if (loader) {
+                loader.style.display = "block";
+            }
 
-            // Get filter values
-            const selectedShipId = shipFilter.value;
-            const selectedCompanyId = companyFilter.value;
-            const selectedJourneyDate = journeyDateFilter.value;
-            const selectedReturnDate = returnDateFilter.value;
-            const selectedPaymentMethod = paymentMethodFilter.value;
-            const selectedStartDate = startDateFilter.value;
-            const selectedEndDate = endDateFilter.value;
-            const selectedCreatedDate = createdDateFilter.value;
-            const selectedStartCreateDate = startCreateDateFilter.value;
-            const selectedEndCreateDate = endCreateDateFilter.value;
+            const filters = {
+                ship_id: shipFilter ? shipFilter.value : "",
+                company_id: companyFilter ? companyFilter.value : "",
+                journey_date: journeyDateFilter ? journeyDateFilter.value : "",
+                return_date: returnDateFilter ? returnDateFilter.value : "",
+                payment_method: paymentMethodFilter ? paymentMethodFilter.value : "",
+                start_date: startDateFilter ? startDateFilter.value : "",
+                end_date: endDateFilter ? endDateFilter.value : "",
+                created_date: createdDateFilter ? createdDateFilter.value : "",
+                start_create_date: startCreateDateFilter ? startCreateDateFilter.value : "",
+                end_create_date: endCreateDateFilter ? endCreateDateFilter.value : "",
+            };
 
-            const rtotalRefundedTickets = document.getElementById(
-                "totalRefundedTickets"
-            );
-            const rtotalRefundedAmount = document.getElementById(
-                "totalRefundedAmount"
-            );
-             const totalSellTickets = document.getElementById(
-                "totalSellTickets"
-            );
-            const totalSellAmount = document.getElementById(
-                "totalSellAmount"
-            );
-
-            const statusElement = document.getElementById("statusFilter");
-            const status = statusElement
-                ? statusElement.dataset.status
-                : "pending";
-
+            // Destroy existing DataTable if initialized
             if (dataTableInitialized && dataTable) {
                 dataTable.destroy();
                 dataTableInitialized = false;
             }
 
-            // Clear table body
-            salesBody.innerHTML = "";
+            // Clear table body if it exists
+            if (salesBody) {
+                salesBody.innerHTML = "";
+            }
 
-            let url = `/reports?`;
-            const params = new URLSearchParams();
+            // Safe DOM manipulation
+            if (loader) {
+                loader.style.display = "none";
+            }
+            if (table) {
+                table.classList.remove("hidden");
+            }
 
-            if (selectedShipId) params.append("ship_id", selectedShipId);
-            if (selectedCompanyId) params.append("company_id", selectedCompanyId);
-            if (selectedJourneyDate) params.append("journey_date", selectedJourneyDate);
-            if (selectedReturnDate) params.append("return_date", selectedReturnDate);
-            if (selectedPaymentMethod) params.append("payment_method", selectedPaymentMethod);
-            if (selectedStartDate) params.append("start_date", selectedStartDate);
-            if (selectedEndDate) params.append("end_date", selectedEndDate);
-            if (selectedCreatedDate) params.append("created_date", selectedCreatedDate);
-            if (selectedStartCreateDate) params.append("start_create_date", selectedStartCreateDate);
-            if (selectedEndCreateDate) params.append("end_create_date", selectedEndCreateDate);
+            // Check if table exists before initializing DataTable
+            if (!document.getElementById('salesTable')) {
+                console.error('salesTable element not found');
+                return;
+            }
 
-            url += params.toString();
-
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-
-            const result = await response.json();
-
-            const data = result.data || [];
-            loader.style.display = "none";
-            table.classList.remove("hidden");
-
-            // Render sales data into the table
-            data.forEach((sale) => {
-                const tr = document.createElement("tr");
-                const formatDate = (field, value) => {
-                    if (
-                        ["journey_date", "issued_date"].includes(field) &&
-                        value !== "Not specified"
-                    ) {
-                        return new Date(value).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                        });
-                    }
-                    return value;
-                };
-
-                tr.innerHTML = `
-          <td class="border px-4 py-2  border-gray-300">${sale.id}</td>
-          <td class="border px-4 py-2 border-gray-300">${sale.customer_name}</td>
-          <td class="border px-4 py-2 border-gray-300">${sale.customer_mobile}</td>
-          <td class="border px-4 py-2 border-gray-300">${sale.ship
-                        ? sale.ship.name
-                        : sale.ships
-                            ? sale.ships.name
-                            : "Not available"
-                    }</td>
-          <td class="border px-4 py-2 border-gray-300">${formatDate(
-                        "journey_date",
-                        sale.journey_date
-                    )}</td>
-          <td class="border px-4 py-2 border-gray-300">${sale.number_of_ticket}</td>
-          <td class="border px-4 py-2 border-gray-300">${sale.ticket_fee}</td>
-          <td class="border px-4 py-2 border-gray-300">${sale.received_amount}</td>
-          
-          <td class="border px-4 py-2 flex gap-5 items-center justify-center border-gray-300">
-            <button class="fas fa-eye text-blue-950 px-2 py-1 rounded showBtn" 
-              data-id="${sale.id}" 
-              data-customer="${sale.customer_name}" 
-              data-mobile="${sale.customer_mobile}" 
-              data-email="${sale.email}" 
-              data-nid="${sale.nid}" 
-              data-source="${sale.sales_source}"
-              data-ship="${sale.ship_id}"
-              data-ship-name="${sale.ship
-                        ? sale.ship.name
-                        : sale.ships
-                            ? sale.ships.name
-                            : "Not available"
-                    }"
-              data-journeyDate="${sale.journey_date}"
-              data-returnDate="${sale.return_date}"
-              data-ticketFee="${sale.ticket_fee}"
-              data-payment_method="${sale.payment_method}"
-              data-number_of_ticket="${sale.number_of_ticket}"
-              data-receivedAmount="${sale.received_amount}"
-              data-dueAmount="${sale.due_amount}"
-              data-companyId="${sale.company_id}"
-              data-company-name="${sale.companies.name}"
-              data-issuedDate="${sale.issued_date}"
-              data-ticket_category="${sale.ticket_category}"
-              data-soldBy="${sale.sold_by || ""}"
-              data-status="${sale.status}">    
-            </button>
-          </td>
-        `;
-                salesBody.appendChild(tr);
-            });
-            rtotalRefundedTickets.textContent = result.total_refunded_tickets;
-            rtotalRefundedAmount.textContent = result.total_refunded_amount;
-            totalSellTickets.textContent = result.total_sold_tickets;
-            totalSellAmount.textContent = result.total_sales_amount
-            
-            // Initialize DataTable
+            // Initialize DataTable with server-side processing
             dataTable = $("#salesTable").DataTable({
+                processing: true,
+                serverSide: true,
+                ordering: false,
+                ajax: {
+                    url: "/reports",
+                    type: 'GET',
+                    data: function (d) {
+                        // Add custom filters to DataTables request
+                        Object.keys(filters).forEach(key => {
+                            if (filters[key]) {
+                                d[key] = filters[key];
+                            }
+                        });
+                    },
+                    dataSrc: function (json) {
+                        // Safe totals update - match your HTML structure
+                        if (json.totals) {
+                            if (totalSellTickets) totalSellTickets.textContent = json.totals.total_sold_tickets || '0';
+                            if (totalSellAmount) totalSellAmount.textContent = json.totals.total_sales_amount || '0.00';
+                            if (totalRefundedTickets) totalRefundedTickets.textContent = json.totals.total_refunded_tickets || '0';
+                            if (totalRefundedAmount) totalRefundedAmount.textContent = json.totals.total_refunded_amount || '0.00';
+                        }
+                        
+                        // Return data or empty array
+                        return json.data || [];
+                    },
+                    error: function (xhr, error, thrown) {
+                        console.error('AJAX error:', error);
+                        if (loader) {
+                            loader.textContent = "Failed to load data from server.";
+                        }
+                        return [];
+                    }
+                },
+                columns: [
+                    { 
+                        data: 'id',
+                        title: 'ID',
+                        render: function(data) {
+                            return data || 'N/A';
+                        }
+                    },
+                    { 
+                        data: 'customer_name',
+                        title: 'Customer Name',
+                        render: function(data) {
+                            return data || 'N/A';
+                        }
+                    },
+                    { 
+                        data: 'customer_mobile',
+                        title: 'Mobile',
+                        render: function(data) {
+                            return data || 'N/A';
+                        }
+                    },
+                    { 
+                        data: 'ship_name',
+                        title: 'Ship Name',
+                        render: function(data) {
+                            return data || 'N/A';
+                        }
+                    },
+                    {
+                        data: 'journey_date',
+                        title: 'Journey Date',
+                        render: function (data) {
+                            return formatDate(data);
+                        }
+                    },
+                    { 
+                        data: 'number_of_ticket',
+                        title: 'Number Of Ticket',
+                        render: function(data) {
+                            return data || '0';
+                        }
+                    },
+                    { 
+                        data: 'received_amount',
+                        title: 'Total Ticket Price',
+                        render: function (data) {
+                            return formatCurrency(data);
+                        }
+                    },
+                    { 
+                        data: 'received_amount',
+                        title: 'Received Amount',
+                        render: function (data) {
+                            return formatCurrency(data);
+                        }
+                    },
+                    {
+                        data: null,
+                        title: 'Action',
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row) {
+                            return createActionButtons(row);
+                        }
+                    }
+                ],
                 dom: "lBfrtip",
                 lengthChange: true,
                 lengthMenu: [
-                    [10, 25, 50, 75, 100, 200, 300, 400, 500],
-                    [10, 25, 50, 75, 100, 200, 300, 400, 500],
+                    [10, 25, 50, 100],
+                    [10, 25, 50, 100]
                 ],
                 language: {
-                    lengthMenu: "_MENU_",
+                    processing: "Processing...",
+                    search: "Search:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                    infoEmpty: "Showing 0 to 0 of 0 entries",
+                    infoFiltered: "(filtered from _MAX_ total entries)",
+                    loadingRecords: "Loading...",
+                    zeroRecords: "No matching records found",
+                    emptyTable: "No data available in table",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous"
+                    }
                 },
                 buttons: [
                     "copy",
-                    "excel",
+                    "excel", 
                     "csv",
                     "pdf",
                     "print",
                     {
                         extend: "colvis",
                         text: "Column Visibility",
-                    },
+                    }
                 ],
-                // Add this callback
-                drawCallback: function () {
-                    attachEventListeners();
-                },
+                
+                error: function (xhr, error, thrown) {
+                    console.error("DataTables error:", error);
+                    if (loader) {
+                        loader.textContent = "Failed to load data. Please try again.";
+                    }
+                }
             });
+
             dataTableInitialized = true;
-            attachEventListeners();
+
         } catch (error) {
-            console.error("Error fetching sales data:", error);
-            loader.textContent = "Failed to load data. Please try again later.";
+            console.error("Error initializing DataTable:", error);
+            if (loader) {
+                loader.textContent = "Failed to load data. Please try again later.";
+            }
         }
     }
 
-    function attachEventListeners() {
-        document.querySelectorAll(".showBtn").forEach((btn) => {
-            btn.addEventListener("click", () => showModal(btn, modal));
-        });
+    function createActionButtons(row) {
+        if (!row || !row.id) return '';
+        
+        return `
+            <div class="flex gap-2 items-center justify-center">
+                <a href="/ship-ticket-sales/${row.id}">
+                    <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
+                </a>
+                
+            </div>
+        `;
     }
+
+    
+
+
+  
 
     // Initialize the page
     async function initializePage() {
-        initializeModalEvents();
-        await fetchShips();
-        await fetchCompanies();
-        getList();
+        try {
+            initializeEventListeners();
+            await fetchShips();
+            await fetchCompanies();
+            getList();
+        } catch (error) {
+            console.error("Error initializing page:", error);
+        }
     }
 
     initializePage();

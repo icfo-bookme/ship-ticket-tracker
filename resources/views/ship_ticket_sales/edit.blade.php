@@ -47,47 +47,7 @@
                         </div>
                     @endif
 
-                    <!-- Verification Status Section -->
-                    @if ($sale->verifyby && count($sale->verifyby) > 0)
-                        <div class="bg-green-50 rounded-2xl p-6 shadow-sm border border-green-200 mb-8">
-                            <div class="flex items-center mb-4">
-                                <div class="bg-green-600 p-2 rounded-lg mr-3">
-                                    <i class="fas fa-check-circle text-white text-sm"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-gray-800">Verification Status</h3>
-                            </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                @foreach ($sale->verifyby as $verification)
-                                    <div class="bg-white rounded-xl p-4 shadow-sm border border-green-200">
-                                        <div class="flex items-center justify-between">
-                                            <div>
-                                                <span
-                                                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold 
-                                            {{ $verification->name == 'payment-verified' ? 'bg-green-100 text-green-800' : '' }}
-                                            {{ $verification->name == 'ticket-issued' ? 'bg-blue-100 text-blue-800' : '' }}
-                                             {{ $verification->name == 'ticket-printed' ? 'bg-blue-100 text-blue-800' : '' }}
-                                               {{ $verification->name == 'shipped' ? 'bg-red-100 text-red-800' : '' }}"
-                                                    {{ $verification->name == 'Shipment_id_entered' ? 'bg-blue-100 text-blue-800' : '' }}"
-                                                    {{ $verification->name == 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
-                                                    {{ ucfirst(str_replace('-', ' ', $verification->name)) }}
-                                                </span>
-                                                <p class="text-sm text-gray-600 mt-1">
-                                                    Verified by: <span class="font-semibold">
-                                                        {{ $verification->verifiedByUser->name ?? 'N/A' }}</span>
-                                                </p>
-                                            </div>
-                                            <div class="text-right">
-                                                <p class="text-xs text-gray-500">
-                                                    {{ $verification->created_at->format('M d, Y h:i A') }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
 
                     <form action="{{ route('ship-ticket-sales.update', $sale->id) }}" method="POST" class="space-y-8"
                         id="ticketForm">
@@ -156,13 +116,17 @@
                                         <button type="button"
                                             class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
                                             data-field="email" title="Copy Email">
-                                            <i class="fas fa-copy text-xs"></i>
+                                            <i class="fas fa-copy text-xs"></i> 
                                         </button>
                                     </div>
                                     <input type="email" name="email" id="email"
                                         value="{{ old('email', $sale->email) }}"
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
+
+                            
+                                    <input type="number" value={{ $nextSale->id ?? '' }} name="next_sale_id" hidden> 
+                              
 
                                 <div>
                                     <div class="flex items-center justify-between mb-2">
@@ -345,19 +309,41 @@
                                     </h4>
                                     <div class="space-y-3">
                                         @foreach ($sale->ships->packages as $package)
+                                            @php
+                                                $departureCategory = $sale->categories
+                                                    ->where('type', 'departure')
+                                                    ->where('package_id', $package->id)
+                                                    ->first();
+                                                $departureQuantity = $departureCategory
+                                                    ? $departureCategory->quantity
+                                                    : 0;
+                                            @endphp
                                             <div
-                                                class="flex items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
-                                                <input type="radio" name="departure_package"
-                                                    value="{{ $package->id }}"
-                                                    id="departure_package_{{ $package->id }}"
-                                                    {{ in_array($package->id, $sale->categories->where('type', 'departure')->pluck('package_id')->toArray()) ? 'checked' : '' }}
-                                                    class="copyable-field focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300">
-                                                <label for="departure_package_{{ $package->id }}"
-                                                    class="ml-3 block text-sm font-medium text-gray-700">
-                                                    <span class="font-semibold">{{ $package->name }}</span>
-                                                    <span
-                                                        class="text-blue-600 font-bold ml-2">৳{{ number_format($package->price, 2) }}</span>
-                                                </label>
+                                                class="grid grid-cols-2 items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
+                                                <div class="flex items-center">
+                                                    <input type="radio" name="departure_package"
+                                                        value="{{ $package->id }}"
+                                                        id="departure_package_{{ $package->id }}"
+                                                        {{ $departureCategory ? 'checked' : '' }}
+                                                        class="copyable-field focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300">
+                                                    <label for="departure_package_{{ $package->id }}"
+                                                        class="ml-3 block text-sm font-medium text-gray-700">
+                                                        <span class="font-semibold">{{ $package->name }}</span>
+                                                        <span
+                                                            class="text-blue-600 font-bold ml-2">৳{{ number_format($package->price, 2) }}</span>
+                                                    </label>
+                                                </div>
+                                                <div class="flex items-center justify-end space-x-2">
+                                                    <label for="departure_quantity_{{ $package->id }}"
+                                                        class="text-sm font-semibold text-gray-700">
+                                                        Quantity:
+                                                    </label>
+                                                    <input type="number"
+                                                        name="departure_quantity[{{ $package->id }}]"
+                                                        id="departure_quantity_{{ $package->id }}"
+                                                        value="{{ $departureQuantity }}" min="0"
+                                                        class="w-20 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3 text-center">
+                                                </div>
                                             </div>
                                         @endforeach
                                     </div>
@@ -371,19 +357,38 @@
                                     </h4>
                                     <div class="space-y-3">
                                         @foreach ($sale->ships->packages as $package)
+                                            @php
+                                                $returnCategory = $sale->categories
+                                                    ->where('type', 'return')
+                                                    ->where('package_id', $package->id)
+                                                    ->first();
+                                                $returnQuantity = $returnCategory ? $returnCategory->quantity : 0;
+                                            @endphp
                                             <div
-                                                class="flex items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
-                                                <input type="radio" name="return_package"
-                                                    value="{{ $package->id }}"
-                                                    id="return_package_{{ $package->id }}"
-                                                    {{ in_array($package->id, $sale->categories->where('type', 'return')->pluck('package_id')->toArray()) ? 'checked' : '' }}
-                                                    class="copyable-field focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300">
-                                                <label for="return_package_{{ $package->id }}"
-                                                    class="ml-3 block text-sm font-medium text-gray-700">
-                                                    <span class="font-semibold">{{ $package->name }}</span>
-                                                    <span
-                                                        class="text-blue-600 font-bold ml-2">৳{{ number_format($package->round_trip_price, 2) }}</span>
-                                                </label>
+                                                class="grid grid-cols-2 items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
+                                                <div class="flex items-center">
+                                                    <input type="radio" name="return_package"
+                                                        value="{{ $package->id }}"
+                                                        id="return_package_{{ $package->id }}"
+                                                        {{ $returnCategory ? 'checked' : '' }}
+                                                        class="copyable-field focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300">
+                                                    <label for="return_package_{{ $package->id }}"
+                                                        class="ml-3 block text-sm font-medium text-gray-700">
+                                                        <span class="font-semibold">{{ $package->name }}</span>
+                                                        <span
+                                                            class="text-blue-600 font-bold ml-2">৳{{ number_format($package->round_trip_price, 2) - number_format($package->price, 2) }}</span>
+                                                    </label>
+                                                </div>
+                                                <div class="flex items-center justify-end space-x-2">
+                                                    <label for="return_quantity_{{ $package->id }}"
+                                                        class="text-sm font-semibold text-gray-700">
+                                                        Quantity:
+                                                    </label>
+                                                    <input type="number" name="return_quantity[{{ $package->id }}]"
+                                                        id="return_quantity_{{ $package->id }}"
+                                                        value="{{ $returnQuantity }}" min="0"
+                                                        class="w-20 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3 text-center">
+                                                </div>
                                             </div>
                                         @endforeach
                                     </div>
@@ -755,18 +760,89 @@
                             </button>
                         </div>
 
+                        @if ($sale->status == 'shipped' || $sale->status == 'ticket-printed' || $sale->status == "shipment_id_entered")
+                            <!-- Shipment Info Section -->
+                            <div class="bg-blue-50 rounded-2xl p-6 shadow-sm border border-blue-100">
+                                <div class="flex items-center mb-4">
+                                    <div class="bg-red-600 p-2 rounded-lg mr-3">
+                                        <i class="fas fa-truck text-white text-sm"></i>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-red-800">Add Shipment Info</h3>
+                                </div>
+                                <div>
+                                    <input type="text" name="shipment_id"
+                                        value="{{ $sale->shipment->shipment_id ?? '' }}"
+                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
+                                </div>
+                            </div>
+                        @endif
+
                         <!-- Submit Button -->
                         <div class="mt-8 flex justify-end space-x-4">
                             <a href="/sales/status/pending"
                                 class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md">
                                 <i class="fas fa-times mr-2"></i>Cancel
                             </a>
-                            <button type="submit"
+
+                            <!-- Regular Update Button -->
+                            <button type="submit" name="action" value="update"
                                 class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
                                 <i class="fas fa-save mr-2"></i>Update Ticket Sale
                             </button>
+
+                            <!-- Update and Next Button -->
+                            @if ($nextSale)
+                                <button type="submit" name="action" value="update_and_next"
+                                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
+                                    <i class="fas fa-save mr-2"></i>
+                                    <i class="fas fa-arrow-right mr-2"></i>
+                                    Update & Next
+                                </button>
+                            @endif
                         </div>
                     </form>
+
+                    <!-- Verification Status Section -->
+                    @if ($sale->verifyby && count($sale->verifyby) > 0)
+                        <div class="bg-green-50 rounded-2xl p-6 shadow-sm border border-green-200 my-8">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-green-600 p-2 rounded-lg mr-3">
+                                    <i class="fas fa-check-circle text-white text-sm"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-800">Verification Status</h3>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @foreach ($sale->verifyby as $verification)
+                                    <div class="bg-white rounded-xl p-4 shadow-sm border border-green-200">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span
+                                                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold 
+                                            {{ $verification->name == 'payment-verified' ? 'bg-green-100 text-green-800' : '' }}
+                                            {{ $verification->name == 'ticket-issued' ? 'bg-blue-100 text-blue-800' : '' }}
+                                             {{ $verification->name == 'ticket-printed' ? 'bg-blue-100 text-blue-800' : '' }}
+                                               {{ $verification->name == 'shipped' ? 'bg-red-100 text-red-800' : '' }}"
+                                                    {{ $verification->name == 'Shipment_id_entered' ? 'bg-blue-100 text-blue-800' : '' }}"
+                                                    {{ $verification->name == 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
+                                                    {{ ucfirst(str_replace('-', ' ', $verification->name)) }}
+                                                </span>
+                                                <p class="text-sm text-gray-600 mt-1">
+                                                    Verified by: <span class="font-semibold">
+                                                        {{ $verification->verifiedByUser->name ?? 'N/A' }}</span>
+                                                </p>
+                                            </div>
+                                            <div class="text-right">
+                                                <p class="text-xs text-gray-500">
+                                                    {{ $verification->created_at->format('M d, Y h:i A') }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

@@ -167,6 +167,18 @@
 .dataTables_length label::after {
   content: none !important;
 }
+/* Add border to all table cells */
+#salesTable th,
+#salesTable td {
+    border: 1px solid #d1d5db; /* Tailwind's gray-300 color */
+    padding: 10px;
+}
+
+/* Outer table border */
+#salesTable {
+    border: 1px solid #789dd4;
+    border-collapse: collapse;
+}
 
 /* Optional: Hide label text but keep dropdown */
 

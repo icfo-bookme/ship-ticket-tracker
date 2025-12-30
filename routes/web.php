@@ -9,6 +9,7 @@ use App\Http\Controllers\RefundController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShipPackageController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\CashCollectionController;
 
 Route::resource('ships', ShipController::class);
 
@@ -56,5 +57,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports', [ReportController::class, 'reports']);
    
     Route::post('/partial/paid/{id}', [PaymentController::class, 'partial_due_payment']);
+
+    Route::get('/show/cash-collections', [CashCollectionController::class, 'showCashCollection']);
+    Route::resource('cash-collections', CashCollectionController::class);
 });
 require __DIR__.'/auth.php';

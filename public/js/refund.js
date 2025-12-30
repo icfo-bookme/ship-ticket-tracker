@@ -27,24 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
     };
 
-    function initializeModalEvents() {
-        // Close modal when clicking the X button
-        document
-            .getElementById("closeModalX")
-            .addEventListener("click", () => modal.hide());
-
-        // Close modal when clicking the cancel button
-        document
-            .getElementById("cancelBtn")
-            .addEventListener("click", () => modal.hide());
-
-        // Close modal when clicking outside the modal content
-        modal.element.addEventListener("click", (e) => {
-            if (e.target === modal.element) {
-                modal.hide();
-            }
-        });
-    }
+   
 
     async function fetchShips() {
         try {
@@ -68,7 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function populateDropdown(selectElement, data, defaultText) {
         if (!selectElement) return;
-
         selectElement.innerHTML = "";
         const defaultOption = document.createElement("option");
         defaultOption.value = "";
@@ -196,34 +178,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return `
         <div class="flex gap-2 items-center justify-center">
              <td class="border border-gray-300 px-4 py-2 flex gap-5 items-center justify-center">
-        <button class="fas fa-eye  text-blue-950 px-2 py-1 rounded showBtn" 
-            data-id="${sale.id}" 
-            data-customer="${sale.customer_name}" 
-            data-mobile="${sale.customer_mobile}" 
-            data-email="${sale.email}" 
-            data-nid="${sale.nid}" 
-            data-source="${sale.sales_source}"
-            data-ship="${sale.ship_id}"
-            data-ship-name="${sale.ship
-                ? sale.ship.name
-                : sale.ships
-                    ? sale.ships.name
-                    : "Not available"
-            }"
-            data-journeyDate="${sale.journey_date}"
-            data-returnDate="${sale.return_date}"
-            data-ticketFee="${sale.ticket_fee}"
-            data-payment_method="${sale.payment_method}"
-            data-number_of_ticket="${sale.number_of_ticket}"
-            data-receivedAmount="${sale.received_amount}"
-            data-dueAmount="${sale.due_amount}"
-            data-companyId="${sale.company_id}"
-            data-company-name="${sale.companies.name}"
-            data-issuedDate="${sale.issued_date}"
-            data-ticket_category="${sale.ticket_category}"
-            data-soldBy="${sale.sold_by || ""}"
-            data-status="${sale.status}">    
-        </button>
+         <a href="/ship-ticket-sales/${sale.id}">
+           <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn"    
+                title="Edit">
+            </button>
+        </a>
             <button class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund" 
                 data-id="${sale.id}"
                 data-received_total_amount="${sale.received_amount}"
@@ -239,10 +198,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function attachEventListeners() {
-        document.querySelectorAll(".showBtn").forEach((btn) => {
-            btn.addEventListener("click", () => showModal(btn, modal));
-        });
-
         document.querySelectorAll(".verifyRefund").forEach((btn) => {
             btn.addEventListener("click", () => refunded(btn, getList));
         });
@@ -282,7 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 const result = await response.json();
-                if (response.ok) {
+                if (result.status == "success") {
                     alert("Refund successfully processed for selected items.");
                     getList(); // Reload the list
                 } else {
@@ -296,7 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initialize the page
     async function initializePage() {
-        initializeModalEvents();
+      
         await fetchShips();
         await fetchCompanies();
         getList();

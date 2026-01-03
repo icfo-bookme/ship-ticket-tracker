@@ -225,31 +225,56 @@ document.addEventListener("DOMContentLoaded", () => {
                             return data.ship?.name || data.ships?.name || 'Not available';
                         }
                     },
+                    // {
+                    //     data: 'journey_date',
+                    //     render: function (data) {
+                    //         return new Date(data).toLocaleDateString('en-US', {
+                    //             year: 'numeric',
+                    //             month: 'long',
+                    //             day: 'numeric'
+                    //         });
+                    //     }
+                    // },
+                    // { data: 'ticket_fee' },
+                    // {
+                    //     data: 'companies.name',
+                    //     render: function (data, type, row) {
+                    //         return data || row.company?.name || 'Not available';
+                    //     }
+                    // },
+                    // { data: 'status' },
                     {
-                        data: 'journey_date',
-                        render: function (data) {
-                            return new Date(data).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            });
+                        data: 'remark1', render: function (data) {
+                            if (!data) return 'N/A';
+                            return `
+                                <div class="flex items-center gap-2">
+                                    <span>${data}</span>
+                                    <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>`;
                         }
                     },
-                    { data: 'ticket_fee' },
                     {
-                        data: 'companies.name',
-                        render: function (data, type, row) {
-                            return data || row.company?.name || 'Not available';
+                        data: 'remark2', render: function (data) {
+                            if (!data) return 'N/A';
+                            return `
+                                <div class="flex items-center gap-2">
+                                    <span>${data}</span>
+                                    <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>`;
                         }
                     },
-                    { data: 'status' },
                     {
                         data: null,
                         orderable: false,
                         render: function (data, type, row) {
                             return createActionButtons(row);
                         }
-                    }
+                    },
+
                 ],
                 dom: "lBfrtip",
                 lengthChange: true,
@@ -365,7 +390,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const saleId = btn.dataset.id;
                 if (!saleId) return;
 
-                const pdfUrl = `/print-pdf/${saleId}`; 
+                const pdfUrl = `/print-pdf/${saleId}`; // your Laravel route
 
                 // Create a hidden iframe
                 const iframe = document.createElement("iframe");
@@ -382,6 +407,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
             });
         });
+
+
+
     }
 
     async function initializePage() {
@@ -390,7 +418,6 @@ document.addEventListener("DOMContentLoaded", () => {
         initializeTabs();
         await fetchCompanies();
         getList();
-        
     }
 
     initializePage();

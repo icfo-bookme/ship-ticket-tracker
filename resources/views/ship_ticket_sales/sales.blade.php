@@ -64,10 +64,12 @@
                          <th class="border px-4 py-2">Customer Name</th>
                          <th class="border px-4 py-2">Mobile</th>
                          <th class="border px-4 py-2">Ship Name</th>
-                         <th class="border px-4 py-2">Journey Date</th>
+                         {{-- <th class="border px-4 py-2">Journey Date</th>
                          <th class="border px-4 py-2">Ticket Fee</th>
                          <th class="border px-4 py-2">Resource Company</th>
-                         <th class="border px-4 py-2">Status</th>
+                         <th class="border px-4 py-2">Status</th> --}}
+                         <th class="border px-4 py-2">Remark 1</th>
+                         <th class="border px-4 py-2">Remark 2</th>
                          <th class="border px-4 py-2">Action</th>
                      </tr>
                  </thead>

@@ -1,8 +1,12 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Support\Facades\DB;
+
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use App\Models\ShipTicketSale;
 use App\Models\Ship;
 use App\Models\VerifyTracker;
@@ -30,6 +34,7 @@ class ShipTicketSaleController extends Controller
         $companyId = $request->input('company_id');
         $journeyDate = $request->input('journey_date');
 
+
         // DataTables parameters
         $start = $request->input('start', 0);
         $length = $request->input('length', 10);
@@ -45,6 +50,7 @@ class ShipTicketSaleController extends Controller
                     ->with('verifiedByUser:id,name');
             }
         ])->where('status', $status);
+
 
         // Apply filters
         if ($shipId && !empty($shipId)) {
@@ -147,12 +153,13 @@ class ShipTicketSaleController extends Controller
             'address'         => 'nullable|string',
             'journey_date'    => 'nullable|date',
             'date_of_birth'   => 'nullable|date',
-            'return_date'     => 'required|date',
+            'return_date'     => 'nullable|date',
             'ticket_fee'      => 'required|numeric',
             'received_amount' => 'required|numeric',
             'number_of_ticket' => 'required|numeric',
             'ticket_category' => 'nullable|string|max:255',
             'due_amount'      => 'nullable|numeric',
+            'bftn_status'      => 'nullable',
             'company_id'      => 'required|string|max:100',
             'issued_date'     => 'required|date',
             'sold_by'         => 'required|string|max:100',
@@ -212,7 +219,6 @@ class ShipTicketSaleController extends Controller
             }
         }
 
-
         return redirect()->back()
             ->with('success', 'Journey ticket saved!.');
     }
@@ -257,7 +263,7 @@ class ShipTicketSaleController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
-    { 
+    {
         // Validate the request
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
@@ -276,6 +282,7 @@ class ShipTicketSaleController extends Controller
             'ticket_fee' => 'required|numeric|min:0',
             'received_amount' => 'nullable|numeric|min:0',
             'due_amount' => 'nullable|numeric|min:0',
+            'bftn_status'      => 'nullable',
             'sales_source' => 'nullable|string|max:255',
             'sold_by' => 'nullable|string|max:255',
             'issued_date' => 'nullable|date',
@@ -339,7 +346,7 @@ class ShipTicketSaleController extends Controller
             DB::commit();
             if (!$request->next_sale_id) {
                 return redirect()->route('ship-ticket-sales.show', $id)
-                ->with('success', 'Ship ticket sale updated successfully!');
+                    ->with('success', 'Ship ticket sale updated successfully!');
             }
             return redirect()->route('ship-ticket-sales.show', $request->next_sale_id)
                 ->with('success', 'Ship ticket sale updated successfully!');
@@ -439,9 +446,16 @@ class ShipTicketSaleController extends Controller
     public function checkDuplicate(Request $request)
     {
         $request->validate([
-            'customer_mobile' => 'required|string',
-            'journey_date' => 'required|date'
+            'customer_mobile' => 'nullable|string',
+            'journey_date' => 'nullable|date',
         ]);
+
+        if (empty($request->customer_mobile) || empty($request->journey_date)) {
+            return response()->json([
+                'exists' => false,
+                'message' => null,
+            ]);
+        }
 
         $existingTicket = ShipTicketSale::where('customer_mobile', $request->customer_mobile)
             ->where('journey_date', $request->journey_date)
@@ -451,9 +465,10 @@ class ShipTicketSaleController extends Controller
             'exists' => $existingTicket !== null,
             'message' => $existingTicket
                 ? "This customer already has a ticket for {$request->journey_date} on {$existingTicket->sales_source}"
-                : null
+                : null,
         ]);
     }
+
 
     public function verify(Request $request, $id, $status)
     {
@@ -474,4 +489,78 @@ class ShipTicketSaleController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
     }
+
+
+
+    public function printedCS()
+    {
+        $sales = ShipTicketSale::where('status', 'payment-verified')->get();
+
+        foreach ($sales as $sale) {
+            try {
+                $fileUrl = "https://mvrezab.com/upload/{$sale->id}.pdf";
+
+                $response = Http::timeout(5)->head($fileUrl);
+
+                if ($response->successful()) {
+                    $sale->status = 'ticket-printed';
+                    $sale->save();
+                }
+            } catch (\Exception $e) {
+                continue; // Skip to the next sale
+            }
+        }
+
+        return redirect()->back()->with('success', 'Printed ticket verification completed.');
+    }
+
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'pdfs'   => 'required|array',
+            'pdfs.*' => 'required|mimes:pdf|max:10240',
+        ]);
+
+        $uploadedFiles = [];
+
+        foreach ($request->file('pdfs') as $pdf) {
+            $filename = time() . '_' . uniqid() . '.' . $pdf->getClientOriginalExtension();
+
+            $path = $pdf->storeAs('uploads/pdfs', $filename, 'public');
+
+            $uploadedFiles[] = $path;
+        }
+        $this->printedCS();
+        return back()->with('success', 'PDF files uploaded successfully.');
+    }
+
+   public function pdfDownload($id)
+{
+    // Storage path in public disk
+    $pdfFile = "uploads/pdfs/{$id}.pdf"; 
+    // Check if file exists
+    if (!Storage::disk('public')->exists($pdfFile)) {
+        dd("File not found!");
+    }
+    // Get file contents
+    $fileContents = Storage::disk('public')->get($pdfFile);
+    $fileName = basename($pdfFile);
+
+    return Response::make($fileContents, 200, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => "inline; filename=\"{$fileName}\"",
+    ]);
+}
+
+ 
+
+// ShipTicketSaleController.php
+public function pdfPrintAll()
+{
+    return ShipTicketSale::where('status', 'ticket-issued')
+        ->orderBy('id')
+        ->pluck('id');
+}
+
+
 }

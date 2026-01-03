@@ -32,6 +32,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/sales/status/{id}', [ShipTicketSaleController::class, 'update']);
     Route::put('/sale/verify/{id}/{status}', [ShipTicketSaleController::class, 'verify']);
     Route::delete('/sale/delete/{id}', [ShipTicketSaleController::class, 'destroy']);
+    Route::get('printed/sales', [ShipTicketSaleController::class, 'printedCS'])->name('printed_ticket_sales.verify');
+    Route::post('/upload-pdf', [ShipTicketSaleController::class, 'upload'])
+        ->name('pdf.upload');
 
     Route::get('/ships-details', [ShipController::class, 'showTableList']);
     Route::resource('ships', ShipController::class);
@@ -55,10 +58,15 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/admin/sales-reports', [ReportController::class, 'index']);
     Route::get('/reports', [ReportController::class, 'reports']);
-   
+
     Route::post('/partial/paid/{id}', [PaymentController::class, 'partial_due_payment']);
 
     Route::get('/show/cash-collections', [CashCollectionController::class, 'showCashCollection']);
     Route::resource('cash-collections', CashCollectionController::class);
+
+    Route::get('/print-all-ids', [ShipTicketSaleController::class, 'pdfPrintAll']);
+    Route::get('/print-pdf/{id}', [ShipTicketSaleController::class, 'pdfDownload'])->name('print.pdf');
 });
-require __DIR__.'/auth.php';
+
+
+require __DIR__ . '/auth.php';

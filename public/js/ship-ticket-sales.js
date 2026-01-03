@@ -32,7 +32,7 @@ class TicketSalesSystem {
             // Ship and journey listeners
             this.addEventListener('ship_id', 'change', () => this.loadTicketCategories());
             this.addEventListener('return_date', 'change', () => this.toggleReturnJourneySection());
-            
+
             // Mobile and WhatsApp listeners
             const mobileField = document.querySelector('[name="customer_mobile"]');
             mobileField.addEventListener('input', () => {
@@ -154,11 +154,11 @@ class TicketSalesSystem {
         try {
             const response = await fetch(`/ship-packages/${shipId}`);
             if (!response.ok) throw new Error(`Server error: ${response.status}`);
-            
+
             const packages = await response.json();
             this.currentPackages = packages;
             this.renderTicketCategories(packages, returnDate);
-            
+
         } catch (error) {
             console.error("Error fetching packages:", error);
             this.showErrorState(departureContainer, returnContainer);
@@ -236,10 +236,10 @@ class TicketSalesSystem {
                 <input type="hidden" class="ticket-return-price" data-package-id="${pkg.id}" data-type="${type}" value="${returnTripPrice}">
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                     Category: ${this.escapeHtml(pkg.name || 'Unnamed')}<br>
-                    ${type === 'departure' ? 
-                        `Departure: ৳${singlePrice.toFixed(2)}` : 
-                        `Return: ৳${returnTripPrice.toFixed(2)}`
-                    }
+                    ${type === 'departure' ?
+                `Departure: ৳${singlePrice.toFixed(2)}` :
+                `Return: ৳${returnTripPrice.toFixed(2)}`
+            }
                     ${roundTripPrice > 0 ? `<br>Round trip: ৳${roundTripPrice.toFixed(2)}` : ''}
                 </p>
             </div>
@@ -271,8 +271,8 @@ class TicketSalesSystem {
     // Calculation Methods
     calculateTicketFee() {
         const hasReturnJourney = !!this.getValue("return_date");
-        const totalTicketFee = hasReturnJourney ? 
-            this.calculateRoundTripPricing() : 
+        const totalTicketFee = hasReturnJourney ?
+            this.calculateRoundTripPricing() :
             this.calculateSingleJourneyPricing();
 
         this.setValue("ticket_fee", totalTicketFee.toFixed(2));
@@ -284,7 +284,7 @@ class TicketSalesSystem {
         document.querySelectorAll('.ticket-quantity').forEach(input => {
             const quantity = parseInt(input.value) || 0;
             const packageId = input.getAttribute('data-package-id');
-            
+
             if (quantity > 0) {
                 const pkg = this.currentPackages.find(p => p.id == packageId);
                 if (pkg) {
@@ -308,7 +308,7 @@ class TicketSalesSystem {
             const packageId = input.getAttribute('data-package-id');
             const type = input.getAttribute('data-type');
             const quantity = parseInt(input.value) || 0;
-            
+
             if (!quantities[packageId]) {
                 quantities[packageId] = { departure: 0, return: 0 };
             }
@@ -331,7 +331,7 @@ class TicketSalesSystem {
                 const roundTripPairs = Math.min(departure, returnQty);
                 const remainingDeparture = departure - roundTripPairs;
                 const remainingReturn = returnQty - roundTripPairs;
-                
+
                 total += (roundTripPairs * roundTripPrice);
                 total += (remainingDeparture * singlePrice);
                 total += (remainingReturn * singlePrice);
@@ -353,7 +353,7 @@ class TicketSalesSystem {
         Object.keys(quantities).forEach(packageId => {
             const pkg = this.currentPackages.find(p => p.id == packageId);
             const { departure, return: returnQty } = quantities[packageId];
-            
+
             if (pkg?.round_trip_price > 0) {
                 const roundTripPairs = Math.min(departure, returnQty);
                 remaining[packageId] = {
@@ -380,17 +380,17 @@ class TicketSalesSystem {
 
         packageIds.forEach(departureId => {
             const departureData = remainingQuantities[departureId];
-            
+
             if (departureData.departure > 0) {
                 packageIds.forEach(returnId => {
                     if (departureId !== returnId) {
                         const returnData = remainingQuantities[returnId];
                         const crossPairs = Math.min(departureData.departure, returnData.return);
-                        
+
                         if (crossPairs > 0) {
                             total += (crossPairs * departureData.singlePrice);
                             total += (crossPairs * returnData.returnPrice);
-                            
+
                             departureData.departure -= crossPairs;
                             returnData.return -= crossPairs;
                         }
@@ -440,31 +440,31 @@ class TicketSalesSystem {
     // Form Validation
     async handleReviewClick() {
         this.clearAllErrors();
-        
+
         // Step-by-step validation with proper error focus
         const validationSteps = [
             () => this.validateRequiredFields(),
             () => this.validateMobileNumbers(),
-            () => this.validateTickets(),
+            // () => this.validateTickets(),
             () => this.validateAmounts(),
             () => this.validatePaymentMethods() // Payment validation last
         ];
-        
+
         for (let step of validationSteps) {
             const result = step();
             if (!result.isValid) {
                 // Focus on the first error field
                 if (result.firstErrorField) {
                     result.firstErrorField.focus();
-                    result.firstErrorField.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'center' 
+                    result.firstErrorField.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
                     });
                 }
                 return;
             }
         }
-        
+
         try {
             const isDuplicate = await this.checkDuplicateTicket();
             console.log('Duplicate check result:', isDuplicate.exists);
@@ -519,14 +519,14 @@ class TicketSalesSystem {
         const requiredFields = [
             { name: "customer_name", label: "Customer Name" },
             { name: "customer_mobile", label: "Mobile Number" },
-            { name: "date_of_birth", label: "Date of Birth" },
-            { name: "address", label: "Address" },
+            // { name: "date_of_birth", label: "Date of Birth" },
+            // { name: "address", label: "Address" },
             { name: "ship_id", label: "Ship Name" },
-            { name: "nid", label: "NID" },
-            { name: "email", label: "Email" },
-            { name: "journey_date", label: "Journey Date" },
+            // { name: "nid", label: "NID" },
+            // { name: "email", label: "Email" },
+            // { name: "journey_date", label: "Journey Date" },
             { name: "company_id", label: "Company Name" },
-            { name: "issued_date", label: "Issued Date" },
+            // { name: "issued_date", label: "Issued Date" },
             { name: "sold_by", label: "Sold By" },
             { name: "whatsapp", label: "WhatsApp Number" }
         ];
@@ -534,7 +534,7 @@ class TicketSalesSystem {
         let isValid = true;
         let firstErrorField = null;
 
-        requiredFields.forEach(({name, label}) => {
+        requiredFields.forEach(({ name, label }) => {
             const field = document.querySelector(`[name="${name}"]`);
             const value = field?.value?.toString().trim() || '';
 
@@ -554,7 +554,7 @@ class TicketSalesSystem {
 
         const mobileField = document.querySelector('[name="customer_mobile"]');
         const mobileValue = mobileField.value.trim();
-        
+
         if (mobileValue && !this.isValidMobile(mobileValue)) {
             this.showFieldError(mobileField, "Enter valid mobile number (01XXXXXXXXX)");
             isValid = false;
@@ -596,14 +596,14 @@ class TicketSalesSystem {
         return { isValid, firstErrorField };
     }
 
-    validateTickets() {
-        const totalTickets = parseInt(this.getValue("total_tickets")) || 0;
-        if (totalTickets <= 0) {
-            this.showTopError("Please select at least one ticket");
-            return { isValid: false, firstErrorField: null };
-        }
-        return { isValid: true, firstErrorField: null };
-    }
+    // validateTickets() {
+    //     const totalTickets = parseInt(this.getValue("total_tickets")) || 0;
+    //     if (totalTickets <= 0) {
+    //         this.showTopError("Please select at least one ticket");
+    //         return { isValid: false, firstErrorField: null };
+    //     }
+    //     return { isValid: true, firstErrorField: null };
+    // }
 
     validatePaymentMethods() {
         const paymentEntries = document.querySelectorAll('.payment-entry');
@@ -684,6 +684,7 @@ class TicketSalesSystem {
             total_payable: "Total Payable",
             received_amount: "Received Amount",
             due_amount: "Due Amount",
+            bftn_status: "BFTN Status",
             issued_date: "Issued Date",
             sold_by: "Sold By",
             number_of_ticket: "Total Tickets",
@@ -1009,7 +1010,7 @@ class TicketSalesSystem {
     showFieldError(field, message) {
         // Remove any existing error
         this.clearFieldError(field);
-        
+
         // Add error styling to field
         field.classList.add("border-red-500", "dark:border-red-500", "focus:ring-red-500", "focus:border-red-500");
         field.classList.remove("border-gray-300", "dark:border-gray-600", "focus:ring-blue-500", "focus:border-blue-500");

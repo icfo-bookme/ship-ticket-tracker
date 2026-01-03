@@ -1,5 +1,4 @@
 <script>
-      // Function to verify sale
     async function varifySale(btn, getList) {
         const saleId = btn.dataset.id;
         const status = btn.dataset.status;
@@ -26,7 +25,8 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                            'content'),
                     },
                 });
 
@@ -68,6 +68,4 @@
             }
         }
     }
-
-
 </script>

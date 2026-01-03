@@ -33,6 +33,7 @@ class ShipTicketSale extends Model
         'payment_method',
         'received_amount',
         'due_amount',
+        'bftn_status',
         'company_id',
         'issued_date',
         'sold_by',

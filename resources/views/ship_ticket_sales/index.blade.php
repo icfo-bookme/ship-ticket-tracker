@@ -1,7 +1,6 @@
 <x-app-layout>
     @include('layouts.tab')
-    @include('ship_ticket_sales.sales')
-      
+    @include('ship_ticket_sales.sales')    
     @include('ship_ticket_sales.paymentDueModal')
     @include('ship_ticket_sales.shipmentModal')
     @include('ship_ticket_sales.verifySales')

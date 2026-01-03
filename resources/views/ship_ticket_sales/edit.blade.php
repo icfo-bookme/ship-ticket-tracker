@@ -46,9 +46,6 @@
                             </div>
                         </div>
                     @endif
-
-
-
                     <form action="{{ route('ship-ticket-sales.update', $sale->id) }}" method="POST" class="space-y-8"
                         id="ticketForm">
                         @csrf
@@ -56,11 +53,20 @@
 
                         <!-- Customer Information -->
                         <div class="bg-blue-50 rounded-2xl p-6 shadow-sm border border-blue-100">
-                            <div class="flex items-center mb-4">
-                                <div class="bg-blue-600 p-2 rounded-lg mr-3">
-                                    <i class="fas fa-user text-white text-sm"></i>
+                            <div class="flex items-center justify-between  ">
+                                <div class="flex items-center mb-4">
+                                    <div class="bg-blue-600 p-2 rounded-lg mr-3">
+                                        <i class="fas fa-user text-white text-sm"></i>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gray-800">Customer Information</h3>
                                 </div>
-                                <h3 class="text-xl font-bold text-gray-800">Customer Information</h3>
+
+                                @if ($sale->status == 'ticket-issued')
+                                    <a href="{{ route('print.pdf', $sale->id) }}" target="_blank"
+                                        class="px-4 py-2 bg-blue-950 text-white rounded">
+                                        Print Ticket
+                                    </a>
+                                @endif
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -116,7 +122,7 @@
                                         <button type="button"
                                             class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
                                             data-field="email" title="Copy Email">
-                                            <i class="fas fa-copy text-xs"></i> 
+                                            <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
                                     <input type="email" name="email" id="email"
@@ -124,9 +130,9 @@
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
-                            
-                                    <input type="number" value={{ $nextSale->id ?? '' }} name="next_sale_id" hidden> 
-                              
+
+                                <input type="number" value={{ $nextSale->id ?? '' }} name="next_sale_id" hidden>
+
 
                                 <div>
                                     <div class="flex items-center justify-between mb-2">
@@ -760,7 +766,7 @@
                             </button>
                         </div>
 
-                        @if ($sale->status == 'shipped' || $sale->status == 'ticket-printed' || $sale->status == "shipment_id_entered")
+                        @if ($sale->status == 'shipped' || $sale->status == 'ticket-printed' || $sale->status == 'shipment_id_entered')
                             <!-- Shipment Info Section -->
                             <div class="bg-blue-50 rounded-2xl p-6 shadow-sm border border-blue-100">
                                 <div class="flex items-center mb-4">

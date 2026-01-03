@@ -20,7 +20,7 @@
             const modal = document.getElementById('shipmentModal');
             modal.classList.remove('hidden');
 
-           
+
             const closeBtn = document.getElementById('close1ModalBtn');
             const submitBtn = document.getElementById('submitShipmentBtn');
 

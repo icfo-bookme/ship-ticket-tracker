@@ -22,7 +22,7 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Payment Method <span class="text-red-500">*</span>
             </label>
-            <select id="paymentMethodSelect" name="payment_methods" 
+            <select id="paymentMethodSelect" name="payment_methods"
                 class="payment-method-select w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
                 <option value="">Select method</option>
                 <option value="Cash">Cash</option>
@@ -31,7 +31,7 @@
                 <option value="Bank Transfer">Bank Transfer</option>
             </select>
         </div>
-      
+
         <div class="mt-4">
             <label for="remark" class="block text-sm font-medium text-gray-700 mb-2">
                 Remark
@@ -79,7 +79,7 @@
             const paidAmount = parseFloat(this.value) || 0;
             const totalDue = parseFloat(due_total_amount);
             const remainingDue = totalDue - paidAmount;
-            
+
             document.getElementById('remainingDueAmountInput').value = remainingDue.toFixed(2);
         };
 
@@ -162,16 +162,17 @@
                         document.getElementById('remainingDueAmountInput').value = '';
                         document.getElementById('paymentMethodSelect').value = '';
                         document.getElementById('remark').value = '';
-                        
+
                         // Close modal
                         modal.classList.add('hidden');
-                        
+
                         // Refresh list
                         getList();
                     } else {
                         Swal.fire({
                             title: 'Error!',
-                            text: result.message || 'Failed to process payment. Please try again later.',
+                            text: result.message ||
+                                'Failed to process payment. Please try again later.',
                             icon: 'error',
                             confirmButtonText: 'OK'
                         });

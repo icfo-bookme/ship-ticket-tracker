@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\ShipTicketSale;
 use App\Models\CashCollection;
 use Illuminate\Http\Request;
 
@@ -21,23 +21,41 @@ class CashCollectionController extends Controller
      */
     public function showCashCollection()
     {
-        return view('cashCollection.componentItem'); 
+        $sales = ShipTicketSale::with('refund')
+            ->where('status', '!=', 'pending')
+            ->get();
+
+        $totalSalesAmount = $sales->sum('received_amount');
+
+        $totalRefundedAmount = 0;
+
+        foreach ($sales as $sale) {
+            if ($sale->refund) {
+                $totalRefundedAmount += (float) $sale->refund->refunded_amount;
+            }
+        }
+
+        $netSalesAmount = $totalSalesAmount - $totalRefundedAmount;
+        return view('cashCollection.componentItem', compact(
+            'totalSalesAmount',
+            'totalRefundedAmount',
+            'netSalesAmount'
+        ));
     }
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    { dd($request->all());
+    {
         $request->validate([
             'name'           => 'nullable|string|max:255',
-            'entry_by'       => 'required|integer',
             'cashout_amount' => 'required|numeric',
         ]);
 
         $collection = CashCollection::create([
             'name'           => $request->name,
-            'entry_by'       => $request->entry_by,
+            'entry_by'       => auth()->id(),
             'cashout_amount' => $request->cashout_amount,
         ]);
 

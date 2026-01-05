@@ -25,14 +25,7 @@
                         <label for="available_cash_amount"
                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Available Cash
                             Amount</label>
-                        <input type="text" name="available_cash_amount" id="available_cash_amount" required
-                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">item
-                            Name</label>
-                        <input type="text" name="name" id="name" required
+                        <input type="text" name="available_cash_amount" id="available_cash_amount" required value={{ $totalRefundedAmount }} readonly
                             class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
 
@@ -44,13 +37,9 @@
                     </div>
 
                     <div class="mb-4">
-                        <label for="status"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                        <select name="status" id="status" required
+                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reason For</label>
+                        <input type="text" name="name" id="name" required
                             class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                            <option value=1>Active</option>
-                            <option value=0>Inactive</option>
-                        </select>
                     </div>
 
                     <div class="mt-4 text-right">
@@ -76,10 +65,12 @@
 
             const name = document.getElementById('name').value;
             const cashout_amount = document.getElementById('cashout_amount').value;
+            const status = document.getElementById('status').value;
  
             const data = {
                 name: name,
-                cashout_amount: cashout_amount
+                cashout_amount: cashout_amount,
+                status: status
             };
 
             fetch('/cash-collections', {

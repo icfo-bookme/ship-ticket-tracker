@@ -64,7 +64,7 @@
                                 @if ($sale->status == 'ticket-issued')
                                     <a href="{{ route('print.pdf', $sale->id) }}" target="_blank"
                                         class="px-4 py-2 bg-blue-950 text-white rounded">
-                                        Print Ticket
+                                        Ticket
                                     </a>
                                 @endif
                             </div>

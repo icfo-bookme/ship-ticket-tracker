@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Http\Request;
+use App\Services\GoogleSheetService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use App\Models\ShipTicketSale;
@@ -15,6 +16,7 @@ use App\Models\Shipment;
 use App\Models\Company;
 use App\Models\Category;
 use App\Models\Payment;
+use App\Models\WhatsappDetail;
 
 class ShipTicketSaleController extends Controller
 {
@@ -137,6 +139,16 @@ class ShipTicketSaleController extends Controller
         return view('ship_ticket_sales.create', compact('ships', 'companies'));
     }
 
+
+    public function bookingForm(Request $request)
+    {
+        $form = $request->query('form');
+        
+        $ships = Ship::all();
+        $companies = Company::all();
+        return view('welcome', compact('ships', 'companies','form'));
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -160,7 +172,7 @@ class ShipTicketSaleController extends Controller
             'ticket_category' => 'nullable|string|max:255',
             'due_amount'      => 'nullable|numeric',
             'bftn_status'      => 'nullable',
-            'company_id'      => 'required|string|max:100',
+            'company_id'      => 'nullable|string|max:100',
             'issued_date'     => 'required|date',
             'sold_by'         => 'required|string|max:100',
             'remark1'         => 'nullable|string|max:255',
@@ -222,6 +234,117 @@ class ShipTicketSaleController extends Controller
         return redirect()->back()
             ->with('success', 'Journey ticket saved!.');
     }
+
+
+    public function publicStore(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_name'   => 'required|string|max:100',
+            'customer_mobile' => 'required|string|max:20',
+            'whatsapp'        => 'nullable|string|max:20',
+            'nid'             => 'nullable|string|max:50',
+            'email'           => 'nullable|string|max:100',
+            'sales_source'    => 'nullable|string|max:255',
+            'ship_id'         => 'required|string|max:100',
+            'address'         => 'nullable|string',
+            'journey_date'    => 'nullable|date',
+            'date_of_birth'   => 'nullable|date',
+            'return_date'     => 'nullable|date',
+            'ticket_fee'      => 'required|numeric',
+            'received_amount' => 'required|numeric',
+            'number_of_ticket' => 'required|numeric',
+            'ticket_category' => 'nullable|string|max:255',
+            'due_amount'      => 'nullable|numeric',
+            'bftn_status'      => 'nullable',
+            'company_id'      => 'nullable|string|max:100',
+            'issued_date'     => 'required|date',
+            'sold_by'         => 'required|string|max:100',
+            'remark1'         => 'nullable|string|max:255',
+            'remark2'         => 'nullable|string|max:255',
+        ]);
+
+       if ($request->sales_source) {
+    $whatsapp = WhatsappDetail::where('form_no', $request->sales_source)->first();
+
+    if ($whatsapp) {
+        $validated['sales_source'] = $whatsapp->whatsapp_number;
+    } else {
+        $validated['sales_source'] = null; // or handle default value
+    }
+}
+
+
+
+        $ticketSale = ShipTicketSale::create($validated);
+
+        if ($request->filled('co_passengers')) {
+            foreach ($request->co_passengers as $coPassenger) {
+                if (!empty($coPassenger['name']) && !empty($coPassenger['nid'])) {
+                    CoPassenger::create([
+                        'ship_ticket_sale_id' => $ticketSale->id,
+                        'name' => $coPassenger['name'],
+                        'nid'  => $coPassenger['nid'],
+                        'co_passernger_number'  => $coPassenger['co_passernger_number'],
+                    ]);
+                }
+            }
+        }
+
+        if ($request->filled('payment_methods')) {
+            foreach ($request->payment_methods as $payment_method) {
+                if (!empty($payment_method['method']) && !empty($payment_method['amount'])) {
+                    Payment::create([
+                        'sales_id' => $ticketSale->id,
+                        'payment_method' => $payment_method['method'],
+                        'received_amount'  => $payment_method['amount'],
+                        'paid_date'  => $payment_method['paid_date'],
+                    ]);
+                }
+            }
+        }
+
+        if ($request->filled('ticket_categories')) {
+
+            foreach ($request->ticket_categories as $type => $categories) {
+
+
+                foreach ($categories as $category) {
+                    // Debug each category (optional)
+
+
+                    if (
+                        $category['quantity'] > 0
+                    ) {
+                        Category::create([
+                            'ticket_id'  => $ticketSale->id,
+                            'package_id' => $category['package_id'],
+                            'quantity'   => $category['quantity'],
+                            'type'       => $type,
+
+                        ]);
+                    }
+                }
+            }
+        }
+
+        GoogleSheetService::appendRow([
+            $validated['customer_name'],      
+            $validated['customer_mobile'],    
+            $validated['email'] ?? '',         
+            $validated['ticket_fee'],         
+            now()->format('Y-m-d'),            
+        ]);
+
+        return redirect()
+            ->route('publicForm.success')
+            ->with('success', 'Journey ticket saved successfully! Your booking is confirmed.');
+    }
+
+    public function success()
+    {
+        return view('success');
+    }
+
 
 
     /**
@@ -534,33 +657,31 @@ class ShipTicketSaleController extends Controller
         return back()->with('success', 'PDF files uploaded successfully.');
     }
 
-   public function pdfDownload($id)
-{
-    // Storage path in public disk
-    $pdfFile = "uploads/pdfs/{$id}.pdf"; 
-    // Check if file exists
-    if (!Storage::disk('public')->exists($pdfFile)) {
-        dd("File not found!");
+    public function pdfDownload($id)
+    {
+        // Storage path in public disk
+        $pdfFile = "uploads/pdfs/{$id}.pdf";
+        // Check if file exists
+        if (!Storage::disk('public')->exists($pdfFile)) {
+            dd("File not found!");
+        }
+        // Get file contents
+        $fileContents = Storage::disk('public')->get($pdfFile);
+        $fileName = basename($pdfFile);
+
+        return Response::make($fileContents, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"{$fileName}\"",
+        ]);
     }
-    // Get file contents
-    $fileContents = Storage::disk('public')->get($pdfFile);
-    $fileName = basename($pdfFile);
-
-    return Response::make($fileContents, 200, [
-        'Content-Type' => 'application/pdf',
-        'Content-Disposition' => "inline; filename=\"{$fileName}\"",
-    ]);
-}
-
- 
-
-// ShipTicketSaleController.php
-public function pdfPrintAll()
-{
-    return ShipTicketSale::where('status', 'ticket-issued')
-        ->orderBy('id')
-        ->pluck('id');
-}
 
 
+
+    // ShipTicketSaleController.php
+    public function pdfPrintAll()
+    {
+        return ShipTicketSale::where('status', 'ticket-issued')
+            ->orderBy('id')
+            ->pluck('id');
+    }
 }

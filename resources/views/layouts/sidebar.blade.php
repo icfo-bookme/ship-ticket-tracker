@@ -139,6 +139,7 @@
                                 <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">New
                                     Company</span>
                             </a>
+                            
                         </div>
                     </div>
                 </div>
@@ -213,6 +214,34 @@
                                 <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">
                                     Cash Collection</span>
                             </a>
+                        </div>
+                    </div>
+                </div>
+
+
+                 <div class="px-2 pt-2">
+                    <div id="whatsapp-dropdown" class="mb-1 relative">
+                        <button
+                            class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-gray-700 rounded-lg hover:bg-blue-50 group transition focus:outline-none">
+                            <div class="flex items-center">
+                                <i class="fa-brands fa-whatsapp text-blue-600"></i>
+                                <span
+                                    class="ml-3 whitespace-nowrap transition-all duration-300 sidebar-text truncate text-left">Whatsapp</span>
+                            </div>
+                            <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200 text-gray-500"
+                                id="whatsapp-dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="whatsapp-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
+                            <a href="/admin/whatsapp"
+                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Whatsapp Details</span>
+                            </a>
+                           
                         </div>
                     </div>
                 </div>

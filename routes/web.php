@@ -10,16 +10,21 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShipPackageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\CashCollectionController;
+use App\Http\Controllers\WhatsappDetailsController;
 
 Route::resource('ships', ShipController::class);
 
 
-Route::get('/', function () {
-    return view('auth.login');
-});
+// Route::get('/', function () {
+//     return view('auth.login');
+// });
+
+Route::get('/', [ShipTicketSaleController::class, 'bookingForm'])->name('booking.form');
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+Route::post('/ship-ticket/sales', [ShipTicketSaleController::class, 'publicStore'])->name('publicForm.store');
+Route::get('/sales-create/success', [ShipTicketSaleController::class, 'success'])->name('publicForm.success');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -66,6 +71,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/print-all-ids', [ShipTicketSaleController::class, 'pdfPrintAll']);
     Route::get('/print-pdf/{id}', [ShipTicketSaleController::class, 'pdfDownload'])->name('print.pdf');
+
+     Route::get('/admin/whatsapp', [WhatsappDetailsController::class, 'showTableList']);
+    Route::resource('whatsapp', WhatsappDetailsController::class);
 });
 
 

@@ -25,7 +25,7 @@
                             Your Information Saved Successfully! 🎉
                         </h1>
                     </div>
-                    
+
                 </div>
             </div>
 
@@ -43,168 +43,78 @@
 
                 <!-- Hotels Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Hotel 1 -->
-                    <div
-                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden transform transition duration-300 hover:-translate-y-2 hover:shadow-2xl border border-gray-100 dark:border-gray-700">
-                        <div class="relative">
-                            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                                alt="Sea View Hotel" class="w-full h-48 object-cover">
-                            <div
-                                class="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                                4.8 ★
-                            </div>
-                        </div>
 
-                        <div class="p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
+                    @forelse ($hotels as $hotel)
+                        <div
+                            class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden transform transition duration-300  border border-gray-100 dark:border-gray-700">
+
+                            <!-- Image & Rating -->
+                            <div class="relative">
+                                <img src="{{ $hotel->main_photo
+                                    ? 'https://bookme.com.bd/admin/storage/' . $hotel->main_photo
+                                    : 'https://via.placeholder.com/800x400?text=Hotel+Image' }}"
+                                    alt="{{ $hotel->name }}" class="w-full h-48 object-cover">
+
+                                @if ($hotel->star_rating > 0)
+                                    <div
+                                        class="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                                        {{ number_format($hotel->star_rating, 1) }} ★
+                                    </div>
+                                @endif
+
+
+                            </div>
+
+                            <!-- Content -->
+                            <div class="p-6">
+                                <div class="mb-4">
                                     <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-1">
-                                        Sea View Grand Hotel
+                                        {{ $hotel->name }}
                                     </h3>
-                                    <div class="flex items-center text-gray-600 dark:text-gray-400 text-sm">
-                                        <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
-                                        Near Port, Coastal Area
+
+                                    <div class="flex  text-gray-600 dark:text-gray-400 text-sm">
+                                        <i class="fas fa-map-marker-alt mr-2 text-blue-500 mt-1"></i>
+                                        {{ $hotel->street_address }}, {{ $hotel->city }}
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="mb-4">
-                                <div class="flex items-center mb-2">
-                                    <i class="fas fa-wifi text-green-500 mr-2"></i>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Free WiFi</span>
-                                </div>
-                                <div class="flex items-center mb-2">
-                                    <i class="fas fa-swimming-pool text-blue-500 mr-2"></i>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Swimming Pool</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-utensils text-red-500 mr-2"></i>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Restaurant</span>
-                                </div>
-                            </div>
+                                <!-- Price -->
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                                            Starting from
+                                        </p>
 
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Starting from</p>
-                                    <p class="text-2xl font-bold text-gray-800 dark:text-white">৳ 4,500<span
-                                            class="text-sm font-normal">/night</span></p>
-                                </div>
-                                <a href="#"
-                                    class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                                    Book Now
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Hotel 2 -->
-                    <div
-                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden transform transition duration-300 hover:-translate-y-2 hover:shadow-2xl border border-gray-100 dark:border-gray-700">
-                        <div class="relative">
-                            <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                                alt="Paradise Resort" class="w-full h-48 object-cover">
-                            <div
-                                class="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                                4.9 ★
-                            </div>
-                        </div>
-
-                        <div class="p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-1">
-                                        Paradise Beach Resort
-                                    </h3>
-                                    <div class="flex items-center text-gray-600 dark:text-gray-400 text-sm">
-                                        <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
-                                        Beachfront, 5 min from Port
+                                        @if ($hotel->price)
+                                            <p class="text-2xl font-bold text-gray-800 dark:text-white">
+                                                ৳ {{ number_format($hotel->price) }}
+                                                <span class="text-sm font-normal">/night</span>
+                                            </p>
+                                        @else
+                                            <p class="text-sm text-red-500">
+                                                Price not available
+                                            </p>
+                                        @endif
                                     </div>
-                                </div>
-                            </div>
 
-                            <div class="mb-4">
-                                <div class="flex items-center mb-2">
-                                    <i class="fas fa-spa text-purple-500 mr-2"></i>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Spa & Wellness</span>
-                                </div>
-                                <div class="flex items-center mb-2">
-                                    <i class="fas fa-dumbbell text-orange-500 mr-2"></i>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Gym</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-concierge-bell text-yellow-500 mr-2"></i>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">24/7 Room Service</span>
-                                </div>
-                            </div>
+                                    <a href="{{ url('https://bookme.com.bd/hotel/list/details/' . Str::slug($hotel->name) . '/' . $hotel->id) }}"
+                                        class="bg-gradient-to-r from-blue-950 to-blue-900 hover:from-blue-950 hover:to-blue-700
+          text-white px-3 py-2 rounded-lg font-semibold transition duration-300
+          transform hover:scale-105 shadow-lg hover:shadow-xl">
+                                        View Details
+                                    </a>
 
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Starting from</p>
-                                    <p class="text-2xl font-bold text-gray-800 dark:text-white">৳ 6,200<span
-                                            class="text-sm font-normal">/night</span></p>
                                 </div>
-                                <a href="#"
-                                    class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                                    Book Now
-                                </a>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Hotel 3 -->
-                    <div
-                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden transform transition duration-300 hover:-translate-y-2 hover:shadow-2xl border border-gray-100 dark:border-gray-700">
-                        <div class="relative">
-                            <img src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                                alt="Budget Inn" class="w-full h-48 object-cover">
-                            <div
-                                class="absolute top-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                                4.5 ★
-                            </div>
+                    @empty
+                        <div class="col-span-3 text-center text-gray-500">
+                            No hotels found.
                         </div>
+                    @endforelse
 
-                        <div class="p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-1">
-                                        Budget Inn
-                                    </h3>
-                                    <div class="flex items-center text-gray-600 dark:text-gray-400 text-sm">
-                                        <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
-                                        City Center, 10 min from Port
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mb-4">
-                                <div class="flex items-center mb-2">
-                                    <i class="fas fa-parking text-gray-500 mr-2"></i>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Free Parking</span>
-                                </div>
-                                <div class="flex items-center mb-2">
-                                    <i class="fas fa-coffee text-yellow-700 mr-2"></i>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Free Breakfast</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-shuttle-van text-red-500 mr-2"></i>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Airport/Port Shuttle</span>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Starting from</p>
-                                    <p class="text-2xl font-bold text-gray-800 dark:text-white">৳ 2,500<span
-                                            class="text-sm font-normal">/night</span></p>
-                                </div>
-                                <a href="#"
-                                    class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                                    Book Now
-                                </a>
-                            </div>
-                        </div>
-                    </div>
                 </div>
+
             </div>
 
             <!-- Call to Action -->

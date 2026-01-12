@@ -64,6 +64,10 @@
                          <th class="border px-4 py-2">Customer Name</th>
                          <th class="border px-4 py-2">Mobile</th>
                          <th class="border px-4 py-2">Ship Name</th>
+                         @if ($status == "shipment_id_entered")
+                             <th class="border px-4 py-2">Shipment Id</th>
+                         @endif
+                         
                          {{-- <th class="border px-4 py-2">Journey Date</th>
                          <th class="border px-4 py-2">Ticket Fee</th>
                          <th class="border px-4 py-2">Resource Company</th>
@@ -268,8 +272,5 @@
              </div>
          </div>
      </div>
-
-
-
 
      <script src="{{ asset('js/panding-sell.js') }}"></script>

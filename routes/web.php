@@ -37,7 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/sales/status/{id}', [ShipTicketSaleController::class, 'update']);
     Route::put('/sale/verify/{id}/{status}', [ShipTicketSaleController::class, 'verify']);
     Route::delete('/sale/delete/{id}', [ShipTicketSaleController::class, 'destroy']);
-    Route::get('printed/sales', [ShipTicketSaleController::class, 'printedCS'])->name('printed_ticket_sales.verify');
+    Route::get('/printed/sales', [ShipTicketSaleController::class, 'printedCS'])->name('printed_ticket_sales.verify');
     Route::post('/upload-pdf', [ShipTicketSaleController::class, 'upload'])
         ->name('pdf.upload');
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Google\Client;
+use Google\Service\Drive;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Http\Request;
@@ -17,6 +19,9 @@ use App\Models\Company;
 use App\Models\Category;
 use App\Models\Payment;
 use App\Models\WhatsappDetail;
+use App\Services\SteadfastService;
+use Illuminate\Support\Facades\Log;
+
 
 class ShipTicketSaleController extends Controller
 {
@@ -47,6 +52,7 @@ class ShipTicketSaleController extends Controller
             'categories',
             'companies',
             'coPassengers',
+            'shipment',
             'verifyby' => function ($q) use ($status) {
                 $q->where('name', $status)
                     ->with('verifiedByUser:id,name');
@@ -143,10 +149,10 @@ class ShipTicketSaleController extends Controller
     public function bookingForm(Request $request)
     {
         $form = $request->query('form');
-        
+
         $ships = Ship::all();
         $companies = Company::all();
-        return view('welcome', compact('ships', 'companies','form'));
+        return view('welcome', compact('ships', 'companies', 'form'));
     }
 
     /**
@@ -234,7 +240,12 @@ class ShipTicketSaleController extends Controller
         return redirect()->back()
             ->with('success', 'Journey ticket saved!.');
     }
+    protected $steadfast;
 
+    public function __construct(SteadfastService $steadfast)
+    {
+        $this->steadfast = $steadfast;
+    }
 
     public function publicStore(Request $request)
     {
@@ -263,17 +274,15 @@ class ShipTicketSaleController extends Controller
             'remark2'         => 'nullable|string|max:255',
         ]);
 
-       if ($request->sales_source) {
-    $whatsapp = WhatsappDetail::where('form_no', $request->sales_source)->first();
+        if ($request->sales_source) {
+            $whatsapp = WhatsappDetail::where('form_no', $request->sales_source)->first();
 
-    if ($whatsapp) {
-        $validated['sales_source'] = $whatsapp->whatsapp_number;
-    } else {
-        $validated['sales_source'] = null; // or handle default value
-    }
-}
-
-
+            if ($whatsapp) {
+                $validated['sales_source'] = $whatsapp->whatsapp_number;
+            } else {
+                $validated['sales_source'] = null;
+            }
+        }
 
         $ticketSale = ShipTicketSale::create($validated);
 
@@ -327,13 +336,28 @@ class ShipTicketSaleController extends Controller
             }
         }
 
-        GoogleSheetService::appendRow([
-            $validated['customer_name'],      
-            $validated['customer_mobile'],    
-            $validated['email'] ?? '',         
-            $validated['ticket_fee'],         
-            now()->format('Y-m-d'),            
-        ]);
+        // GoogleSheetService::appendRow([
+        //     $validated['customer_name'],
+        //     $validated['customer_mobile'],
+        //     $validated['email'] ?? '',
+        //     $validated['ticket_fee'],
+        //     now()->format('Y-m-d'),
+        // ]);
+
+        $bulkParcelData = [
+            [
+                'invoice'          => 'TICKET-' . $ticketSale->id,
+                'recipient_name'   => $ticketSale->customer_name,
+                'recipient_phone'  => $ticketSale->customer_mobile,
+                'recipient_address' => $ticketSale->address ?? 'N/A',
+                'cod_amount'       => $ticketSale->due_amount ?? 0,
+                'note'             => 'Journey ticket booking ID: ' . $ticketSale->id,
+                'delivery_type'    => 0,
+            ]
+        ];
+
+        // Use the injected service
+        $steadfastResult = $this->steadfast->bulkCreate($bulkParcelData);
 
         return redirect()
             ->route('publicForm.success')
@@ -342,7 +366,31 @@ class ShipTicketSaleController extends Controller
 
     public function success()
     {
-        return view('success');
+        $hotels = DB::connection('bookme')
+            ->table('hotels')
+            ->leftJoin('rooms', 'rooms.hotel_id', '=', 'hotels.id')
+            ->select(
+                'hotels.id',
+                'hotels.name',
+                'hotels.star_rating',
+                'hotels.street_address',
+                'hotels.city',
+                'hotels.main_photo',
+                DB::raw('MIN(rooms.price) as price')
+            )
+            ->where('hotels.is_active', 1)
+            ->where('hotels.destination_id', 702)
+            ->groupBy(
+                'hotels.id',
+                'hotels.name',
+                'hotels.star_rating',
+                'hotels.street_address',
+                'hotels.city',
+                'hotels.main_photo',
+            )
+            ->orderBy('price', 'asc')
+            ->get();
+        return view('success', compact('hotels'));
     }
 
 
@@ -595,13 +643,55 @@ class ShipTicketSaleController extends Controller
 
     public function verify(Request $request, $id, $status)
     {
-        if ($request->shipmentId) {
-            $shipment = new Shipment();
-            $shipment->ticket_id =  $id;
-            $shipment->shipment_id = $request->shipmentId;
-            $shipment->save();
-        }
+
+
         $sale = ShipTicketSale::findOrFail($id);
+        if ($status == "shipment_id_entered") {
+            $bulkParcelData = [
+                [
+                    'invoice'          => 'TICKET-' . $sale->id,
+                    'recipient_name'   => $sale->customer_name,
+                    'recipient_phone'  => $sale->customer_mobile,
+                    'recipient_address' => $sale->address ?? 'N/A',
+                    'cod_amount'       => $sale->due_amount ?? 0,
+                    'note'             => 'Journey ticket booking ID: ' . $sale->id,
+                    'delivery_type'    => 0,
+                ]
+            ];
+
+
+
+            // Use the injected service
+            $steadfastResult = $this->steadfast->bulkCreate($bulkParcelData);
+
+            $consignmentId = null;
+
+            // Option 1: Direct access if you know the structure
+            if (isset($steadfastResult['data'][0]['consignment_id'])) {
+                $consignmentId = $steadfastResult['data'][0]['consignment_id'];
+            }
+
+            // Option 2: Safer approach with validation
+            if (!empty($steadfastResult['data']) && is_array($steadfastResult['data'])) {
+                $firstResult = $steadfastResult['data'][0] ?? null;
+                if ($firstResult && isset($firstResult['consignment_id'])) {
+                    $consignmentId = $firstResult['consignment_id'];
+                }
+            }
+
+            // Check if we got a consignment_id
+            if (!$consignmentId) {
+                // Handle error - log it or throw exception
+                Log::error('Failed to get consignment_id from Steadfast response', $steadfastResult);
+                return response()->json(['success' => false, 'message' => 'Failed to create shipment'], 500);
+            }
+
+            Shipment::create([
+                'ticket_id' => $sale->id,
+                'shipment_id' => $consignmentId, // Use the extracted value
+            ]);
+        }
+
         $sale->update(['status' => $status]);
 
         VerifyTracker::create([
@@ -617,24 +707,44 @@ class ShipTicketSaleController extends Controller
 
     public function printedCS()
     {
+        $client = new Client();
+        $client->setAuthConfig(storage_path('app/google/service-account.json'));
+        $client->addScope(Drive::DRIVE_READONLY);
+
+        $driveService = new Drive($client);
+
+        $folderId = '1Kw6lNhhch4H0SbXrNNNRWp_4mTEGvvCv';
+
         $sales = ShipTicketSale::where('status', 'payment-verified')->get();
+
+        $updated = 0;
 
         foreach ($sales as $sale) {
             try {
-                $fileUrl = "https://mvrezab.com/upload/{$sale->id}.pdf";
+                $fileName = $sale->id . '.pdf';
 
-                $response = Http::timeout(5)->head($fileUrl);
+                // ✅ USE THE QUERY
+                $query = "name='{$fileName}' and '{$folderId}' in parents and mimeType='application/pdf' and trashed=false";
 
-                if ($response->successful()) {
-                    $sale->status = 'ticket-printed';
-                    $sale->save();
+                $files = $driveService->files->listFiles([
+                    'q' => $query,
+                    'fields' => 'files(id,name)',
+                    'pageSize' => 1,
+                ]);
+
+                if (count($files->getFiles()) > 0) {
+                    $sale->update(['status' => 'ticket-issued']);
+                    $updated++;
                 }
             } catch (\Exception $e) {
-                continue; // Skip to the next sale
+                \Log::error('Drive error: ' . $e->getMessage());
             }
         }
 
-        return redirect()->back()->with('success', 'Printed ticket verification completed.');
+        return redirect()->back()->with(
+            'success',
+            "{$updated} ticket(s) marked as printed from Google Drive."
+        );
     }
 
     public function upload(Request $request)
@@ -659,20 +769,42 @@ class ShipTicketSaleController extends Controller
 
     public function pdfDownload($id)
     {
-        // Storage path in public disk
-        $pdfFile = "uploads/pdfs/{$id}.pdf";
-        // Check if file exists
-        if (!Storage::disk('public')->exists($pdfFile)) {
-            dd("File not found!");
-        }
-        // Get file contents
-        $fileContents = Storage::disk('public')->get($pdfFile);
-        $fileName = basename($pdfFile);
+        $client = new Client();
+        $client->setAuthConfig(storage_path('app/google/service-account.json'));
+        $client->addScope(Drive::DRIVE_READONLY);
 
-        return Response::make($fileContents, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"{$fileName}\"",
+        $driveService = new Drive($client);
+
+        $folderId = '1Kw6lNhhch4H0SbXrNNNRWp_4mTEGvvCv';
+        $fileName = $id . '.pdf';
+
+        // 1️⃣ Find file in Drive
+        $query = "name='{$fileName}' and '{$folderId}' in parents and trashed=false";
+        $files = $driveService->files->listFiles([
+            'q' => $query,
+            'fields' => 'files(id, name)',
+            'pageSize' => 1,
         ]);
+
+        if (count($files->getFiles()) === 0) {
+            abort(404, 'PDF not found in Google Drive');
+        }
+
+        $fileId = $files->getFiles()[0]->getId();
+
+        // 2️⃣ Stream PDF directly to browser
+        $response = $driveService->files->get($fileId, ['alt' => 'media']);
+
+        return response()->stream(
+            function () use ($response) {
+                echo $response->getBody()->getContents();
+            },
+            200,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => "inline; filename=\"{$fileName}\"",
+            ]
+        );
     }
 
 

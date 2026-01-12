@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".copyBtn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             e.stopPropagation();
-            copyToClipboard(btn.dataset.copy); // এবার toast দেখাবে
+            copyToClipboard(btn.dataset.copy);
         });
     });
 
@@ -60,31 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
             this.element.classList.remove("flex");
         },
     };
-
-    function initializeTabs() {
-        const tabs = document.querySelectorAll(".status-tab");
-        const statusElement = document.getElementById("statusFilter");
-        const title = document.querySelector("h2");
-
-        tabs.forEach((tab) => {
-            tab.addEventListener("click", () => {
-                tabs.forEach((t) => {
-                    t.classList.remove("bg-blue-950", "text-white");
-                    t.classList.add("bg-gray-200", "text-gray-900");
-                });
-
-                tab.classList.remove("bg-gray-200", "text-gray-900");
-                tab.classList.add("bg-blue-950", "text-white");
-
-                const newStatus = tab.dataset.status;
-                statusElement.dataset.status = newStatus;
-
-                title.textContent = `Ship Ticket Sales (${newStatus})`;
-
-                getList();
-            });
-        });
-    }
 
     function initializeModalEvents() {
         document.getElementById("closeModalX").addEventListener("click", () => modal.hide());
@@ -146,152 +121,146 @@ document.addEventListener("DOMContentLoaded", () => {
         getList();
     });
 
-    async function getList() {
-        try {
-            loader.style.display = "block";
+  async function getList() {
+    try {
+        loader.style.display = "block";
 
-            const selectedShipId = shipFilter.value;
-            const selectedCompanyId = companyFilter.value;
-            const selectedJourneyDate = journeyDateFilter.value;
-            const statusElement = document.getElementById("statusFilter");
-            const status = statusElement ? statusElement.dataset.status : "pending";
+        const selectedShipId = shipFilter.value;
+        const selectedCompanyId = companyFilter.value;
+        const selectedJourneyDate = journeyDateFilter.value;
 
-            if (dataTableInitialized && dataTable) {
-                dataTable.destroy();
-                dataTableInitialized = false;
+        const statusElement = document.getElementById("statusFilter");
+        const status = statusElement ? statusElement.dataset.status : "pending";
+
+        if (dataTableInitialized && dataTable) {
+            dataTable.destroy();
+            dataTableInitialized = false;
+        }
+
+        salesBody.innerHTML = "";
+        loader.style.display = "none";
+        table.classList.remove("hidden");
+
+        let columns = [
+            {
+                data: 'id',
+                render: function (data) {
+                    return `
+                        <div class="flex items-center gap-2 justify-center">
+                            <span>${data}</span>
+                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>`;
+                }
+            },
+            {
+                data: 'customer_name',
+                render: function (data) {
+                    return `
+                        <div class="flex items-center gap-2 justify-center">
+                            <span>${data}</span>
+                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>`;
+                }
+            },
+            {
+                data: 'customer_mobile',
+                render: function (data) {
+                    if (!data) return 'N/A';
+                    return `
+                        <div class="flex items-center gap-2">
+                            <span>${data}</span>
+                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>`;
+                }
+            },
+            {
+                data: null,
+                render: function (row) {
+                    return row.ship?.name || row.ships?.name || 'Not available';
+                }
             }
+        ];
 
-            salesBody.innerHTML = "";
-            loader.style.display = "none";
-            table.classList.remove("hidden");
-
-            dataTable = $("#salesTable").DataTable({
-                processing: true,
-                serverSide: true,
-                ordering: false,
-                ajax: {
-                    url: `/sales/${status}`,
-                    type: 'GET',
-                    data: function (d) {
-                        d.ship_id = selectedShipId;
-                        d.company_id = selectedCompanyId;
-                        d.journey_date = selectedJourneyDate;
-                    }
-                },
-                columns: [
-                    // ID Column with Copy Icon
-                    {
-                        data: 'id',
-                        render: function (data) {
-                            return `
-                                <div class="flex items-center gap-2 justify-center">
-                                    <span>${data}</span>
-                                    <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}" title="Copy">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>`;
-                        }
-                    },
-                    {
-                        data: 'customer_name',
-                        render: function (data) {
-                            return `
-                                <div class="flex items-center gap-2 justify-center">
-                                    <span>${data}</span>
-                                    <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}" title="Copy">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>`;
-                        }
-                    },
-
-                    // Customer Mobile with Copy Icon
-                    {
-                        data: 'customer_mobile',
-                        render: function (data) {
-                            if (!data) return 'N/A';
-                            return `
-                                <div class="flex items-center gap-2">
-                                    <span>${data}</span>
-                                    <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}" title="Copy">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>`;
-                        }
-                    },
-                    {
-                        data: null,
-                        render: function (data) {
-                            return data.ship?.name || data.ships?.name || 'Not available';
-                        }
-                    },
-                    // {
-                    //     data: 'journey_date',
-                    //     render: function (data) {
-                    //         return new Date(data).toLocaleDateString('en-US', {
-                    //             year: 'numeric',
-                    //             month: 'long',
-                    //             day: 'numeric'
-                    //         });
-                    //     }
-                    // },
-                    // { data: 'ticket_fee' },
-                    // {
-                    //     data: 'companies.name',
-                    //     render: function (data, type, row) {
-                    //         return data || row.company?.name || 'Not available';
-                    //     }
-                    // },
-                    // { data: 'status' },
-                    {
-                        data: 'remark1', render: function (data) {
-                            if (!data) return 'N/A';
-                            return `
-                                <div class="flex items-center gap-2">
-                                    <span>${data}</span>
-                                    <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}" title="Copy">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>`;
-                        }
-                    },
-                    {
-                        data: 'remark2', render: function (data) {
-                            if (!data) return 'N/A';
-                            return `
-                                <div class="flex items-center gap-2">
-                                    <span>${data}</span>
-                                    <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}" title="Copy">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>`;
-                        }
-                    },
-                    {
-                        data: null,
-                        orderable: false,
-                        render: function (data, type, row) {
-                            return createActionButtons(row);
-                        }
-                    },
-
-                ],
-                dom: "lBfrtip",
-                lengthChange: true,
-                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-                buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
-                drawCallback: function () {
-                    attachEventListeners();
+        if (status === 'shipment_id_entered') {
+            columns.push({
+                data: 'shipment.shipment_id',
+                render: function (data) {
+                    return data ?? 'Not available';
                 }
             });
-
-            dataTableInitialized = true;
-
-        } catch (error) {
-            console.error("Error initializing DataTable:", error);
-            loader.textContent = "Failed to load data. Please try again later.";
         }
+
+        columns.push(
+            {
+                data: 'remark1',
+                render: function (data) {
+                    if (!data) return 'N/A';
+                    return `
+                        <div class="flex items-center gap-2">
+                            <span>${data}</span>
+                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>`;
+                }
+            },
+            {
+                data: 'remark2',
+                render: function (data) {
+                    if (!data) return 'N/A';
+                    return `
+                        <div class="flex items-center gap-2">
+                            <span>${data}</span>
+                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>`;
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                render: function (data, type, row) {
+                    return createActionButtons(row);
+                }
+            }
+        );
+
+        dataTable = $("#salesTable").DataTable({
+            processing: true,
+            serverSide: true,
+            ordering: false,
+            ajax: {
+                url: `/sales/${status}`,
+                type: 'GET',
+                data: function (d) {
+                    d.ship_id = selectedShipId;
+                    d.company_id = selectedCompanyId;
+                    d.journey_date = selectedJourneyDate;
+                }
+            },
+            columns: columns,
+            dom: "lBfrtip",
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
+            drawCallback: function () {
+                attachEventListeners();
+            }
+        });
+
+        dataTableInitialized = true;
+
+    } catch (error) {
+        console.error("Error initializing DataTable:", error);
+        loader.textContent = "Failed to load data.";
     }
+}
 
     function createActionButtons(sale) {
         const verifyByName = sale.verifyby?.length > 0 ? sale.verifyby[0].verified_by_user?.name : 'Unknown';
@@ -339,7 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             'ticket-printed': `<button class="bg-red-500 text-white px-2 py-1 rounded shipmentIdEntryBtn" 
                 data-id="${sale.id}" data-status="shipment_id_entered" 
-                title="ticket-printed by: ${verifyByName}">Entry Shipment ID</button>`,
+                title="ticket-printed by: ${verifyByName}">Add To Parcel</button>`,
             'shipment_id_entered': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
                 data-id="${sale.id}" data-status="shipped" 
                 title="shipment_id_entered by: ${verifyByName}">Shipped</button>`
@@ -415,7 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
     async function initializePage() {
         initializeModalEvents();
         await fetchShips();
-        initializeTabs();
+
         await fetchCompanies();
         getList();
     }

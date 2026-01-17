@@ -1,9 +1,10 @@
 <x-app-layout>
 
-    <div class="flex justify-between items-center mt-16 ml-5">
+    <div class="flex justify-between items-center mt-2 ml-5">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             <i class="fas fa-edit mr-2 text-blue-600"></i>
-            Edit Ship Ticket Sale #{{ $sale->id }}
+            Ship Ticket Sale #{{ $sale->id }}
+            
         </h2>
         <a href="/sales/status/pending"
             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5">
@@ -25,9 +26,9 @@
     @endif
 
     <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 ">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl">
-                <div class="p-8">
+                <div class="">
                     @if ($errors->any())
                         <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-8 shadow-sm">
                             <div class="flex items-center">
@@ -46,7 +47,7 @@
                             </div>
                         </div>
                     @endif
-                    <form action="{{ route('ship-ticket-sales.update', $sale->id) }}" method="POST" class="space-y-8"
+                    <form action="{{ route('ship-ticket-sales.update', $sale->id) }}" method="POST" class=""
                         id="ticketForm">
                         @csrf
                         @method('PUT')
@@ -70,6 +71,20 @@
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                 <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label for="customer_name"
+                                            class="block text-sm font-semibold text-gray-700">Customer ID *</label>
+                                        <button type="button"
+                                            class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
+                                            data-field="id" title="Copy Customer id">
+                                            <i class="fas fa-copy text-xs"></i>
+                                        </button>
+                                    </div>
+                                    <input type="text" name="id" id="id" required
+                                        value="{{ old('id', $sale->id) }}"
+                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
+                                </div>
                                 <div>
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="customer_name"
@@ -244,7 +259,7 @@
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
-                                    <input type="date" name="journey_date" id="journey_date" required
+                                    <input type="date" name="journey_date" id="journey_date"
                                         value="{{ old('journey_date', $sale->journey_date) }}"
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
@@ -453,7 +468,7 @@
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
-                                    <input type="number" step="0.01" name="due_amount" id="due_amount" readonly
+                                    <input type="number" step="0.01" name="due_amount" id="due_amount"
                                         value="{{ old('due_amount', $sale->due_amount) }}"
                                         class="copyable-field w-full border-red-200 bg-red-50 rounded-lg shadow-sm py-3 px-4 text-lg font-bold text-red-800">
                                 </div>
@@ -497,7 +512,7 @@
                                                             {{ $payment->payment_method == 'Nagad' ? 'selected' : '' }}>
                                                             Nagad</option>
                                                         <option value="Bank"
-                                                            {{ $payment->payment_method == 'Bank' ? 'selected' : '' }}>
+                                                            {{ $payment->payment_method == 'Bank Transfer' ? 'selected' : '' }}>
                                                             Bank Transfer</option>
                                                         <option value="Card"
                                                             {{ $payment->payment_method == 'Card' ? 'selected' : '' }}>
@@ -637,14 +652,20 @@
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                         <option value="pending" {{ $sale->status == 'pending' ? 'selected' : '' }}>
                                             Pending</option>
-                                        <option value="confirmed"
-                                            {{ $sale->status == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                                        <option value="cancelled"
-                                            {{ $sale->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                        <option value="completed"
-                                            {{ $sale->status == 'completed' ? 'selected' : '' }}>Completed</option>
+                                        <option value="payment-verified"
+                                            {{ $sale->status == 'payment-verified' ? 'selected' : '' }}>
+                                            payment-verified</option>
                                         <option value="ticket-issued"
-                                            {{ $sale->status == 'ticket-issued' ? 'selected' : '' }}>Ticket Issued
+                                            {{ $sale->status == 'ticket-issued' ? 'selected' : '' }}>ticket-issued
+                                        </option>
+                                        <option value="ticket-printed"
+                                            {{ $sale->status == 'ticket-printed' ? 'selected' : '' }}>ticket-printed
+                                        </option>
+                                        <option value="shipment_id_entered"
+                                            {{ $sale->status == 'shipment_id_entered' ? 'selected' : '' }}>Parcel
+                                            Created</option>
+                                        <option value="shipped" {{ $sale->status == 'shipped' ? 'selected' : '' }}>
+                                            shipped
                                         </option>
                                     </select>
                                 </div>

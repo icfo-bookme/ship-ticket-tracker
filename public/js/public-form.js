@@ -1,3 +1,4 @@
+
 class TicketSalesSystem {
     constructor() {
         this.currentPackages = [];
@@ -515,6 +516,7 @@ class TicketSalesSystem {
 
     // Form Submission
     async handleSubmit() {
+        
         this.clearAllErrors();
 
         const validationSteps = [
@@ -538,12 +540,15 @@ class TicketSalesSystem {
                 return;
             }
         }
+        console.log('hello333333')
 
         try {
             const isDuplicate = await this.checkDuplicateTicket();
             if (isDuplicate.exists) {
+                console.log('hello333333')
                 this.showDuplicateWarning();
             } else {
+                console.log('hellcco333333')
                 this.submitForm();
             }
         } catch (error) {
@@ -608,7 +613,6 @@ class TicketSalesSystem {
             { name: "customer_name", label: "Customer Name" },
             { name: "customer_mobile", label: "Mobile Number" },
             { name: "ship_id", label: "Ship Name" },
-            { name: "sold_by", label: "Sold By" },
             { name: "whatsapp", label: "WhatsApp Number" }
         ];
 

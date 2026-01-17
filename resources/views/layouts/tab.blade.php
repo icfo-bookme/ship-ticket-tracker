@@ -11,7 +11,7 @@
                 'payment-verified' => 'Payment Verified',
                 'ticket-issued' => 'Ticket Issued',
                 'ticket-printed' => 'Ticket Printed',
-                'shipment_id_entered' => 'Shipment ID Entered',
+                'shipment_id_entered' => 'Parcel Created',
                 'shipped' => 'Shipped',
             ];
         @endphp

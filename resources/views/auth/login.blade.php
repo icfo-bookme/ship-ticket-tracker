@@ -1,47 +1,89 @@
 <x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    <div class=" flex items-center justify-center  px-4">
+        <div class="w-full pt-5">
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+            <!-- Session Status -->
+            <x-auth-session-status class="mb-4 text-center" :status="session('status')" />
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
-
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
+            <!-- Logo / Title -->
+            <div class="text-center mb-8">
+                <a href="/">
+                    <h1 class="text-3xl font-extrabold text-blue-900 tracking-wide">
+                        Ticket Tracker
+                    </h1>
                 </a>
-            @endif
+                <p class="text-sm text-gray-500 mt-1">
+                    Secure login to manage your tickets
+                </p>
+                <div class="w-24 mx-auto h-1 mt-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full"></div>
+            </div>
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
+            <!-- Login Form -->
+            <form method="POST" action="{{ route('login') }}" class="space-y-5">
+                @csrf
+
+                <!-- Email -->
+                <div>
+                    <x-input-label for="email" value="Email address" />
+                    <x-text-input
+                        id="email"
+                        class="block mt-1 w-full rounded-lg"
+                        type="email"
+                        name="email"
+                        :value="old('email')"
+                        required
+                        autofocus
+                        autocomplete="username"
+                    />
+                    <x-input-error :messages="$errors->get('email')" class="mt-1" />
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <x-input-label for="password" value="Password" />
+                    <x-text-input
+                        id="password"
+                        class="block mt-1 w-full rounded-lg"
+                        type="password"
+                        name="password"
+                        required
+                        autocomplete="current-password"
+                    />
+                    <x-input-error :messages="$errors->get('password')" class="mt-1" />
+                </div>
+
+                <!-- Remember Me -->
+                <div class="flex items-center justify-between">
+                    <label for="remember_me" class="flex items-center text-sm text-gray-600">
+                        <input
+                            id="remember_me"
+                            type="checkbox"
+                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            name="remember"
+                        >
+                        <span class="ml-2">Remember me</span>
+                    </label>
+
+                    @if (Route::has('password.request'))
+                        <a
+                            href="{{ route('password.request') }}"
+                            class="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                        >
+                            Forgot password?
+                        </a>
+                    @endif
+                </div>
+
+                <!-- Submit Button -->
+                <x-primary-button class="w-full justify-center py-3 text-base rounded-lg bg-indigo-600 hover:bg-indigo-700 transition">
+                    Log in
+                </x-primary-button>
+            </form>
+
+            <!-- Footer -->
+            <p class="text-center text-xs text-gray-400 mt-8">
+                © {{ date('Y') }} Ticket Tracker. All rights reserved.
+            </p>
         </div>
-    </form>
+    </div>
 </x-guest-layout>

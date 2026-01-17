@@ -45,4 +45,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function shipTicketSales()
+    {
+        return $this->hasMany(ShipTicketSale::class, 'sold_by');
+    }
 }

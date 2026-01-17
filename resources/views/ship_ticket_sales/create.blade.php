@@ -1,7 +1,7 @@
 <x-app-layout>
     <div class="max-w-7xl mx-auto p-6">
         <div class="mb-1">
-            <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Add New Ship Ticket Sale</h1>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Create New Ticket</h1>
             <p class="text-gray-600 dark:text-gray-400">Fill in the passenger details and ticket information below</p>
         </div>
 
@@ -100,35 +100,32 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Date Of Birth <span class="text-red-500">*</span>
+                                Date Of Birth
                             </label>
                             <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-                                >
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                NID <span class="text-red-500">*</span>
+                                NID
                             </label>
                             <input type="text" name="nid" value="{{ old('nid') }}"
                                 placeholder="9203-746-48734"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-                                >
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Email <span class="text-red-500">*</span>
+                                Email
                             </label>
                             <input type="email" name="email" value="{{ old('email') }}" placeholder="abc@gmail.com"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-                                >
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Sales Source
+                                Sales Source <span class="text-red-500">*</span>
                             </label>
                             <select name="sales_source"
                                 class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
@@ -159,9 +156,8 @@
                                 Company <span class="text-red-500">*</span>
                             </label>
                             <select name="company_id"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-                                >
-                                <option value="">Select a Source</option>
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                <option value="">Select a Company</option>
                                 @foreach ($companies as $company)
                                     <option value="{{ $company->id }}"
                                         {{ old('company_id') == $company->id ? 'selected' : '' }}>
@@ -193,8 +189,7 @@
                             </label>
                             <input type="date" name="journey_date" id="journey_date"
                                 value="{{ old('journey_date') }}"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-                                >
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 
                         <div>
@@ -211,8 +206,7 @@
                                 Ship Name <span class="text-red-500">*</span>
                             </label>
                             <select name="ship_id" id="ship_id"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-                                >
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                                 <option value="">Select a Ship</option>
                                 @foreach ($ships as $ship)
                                     <option value="{{ $ship->id }}"
@@ -325,33 +319,31 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Total Number of Tickets
+                                    Total Number of Tickets <span class="text-red-500">*</span>
                                 </label>
                                 <input type="number" id="total_tickets" name="number_of_ticket" value="0"
-                                    min="0" readonly
+                                    min="0"
                                     class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 shadow-sm">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Total Ticket Price (৳) <span class="text-red-500">*</span>
+                                    Total Ticket Value (৳) <span class="text-red-500">*</span>
                                 </label>
                                 <input type="number" id="ticket_fee" name="ticket_fee"
                                     value="{{ old('ticket_fee', 0) }}" step="0.01" min="0"
                                     placeholder="0.00"
-                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-                                    >
+                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Other Fee(Vat,Tax,etc if include ) (৳) <span class="text-red-500">*</span>
+                                    Other Fee(bikas,nogod,vat etc if include ) (৳)
                                 </label>
                                 <input type="number" id="other_fee" name="other_fee"
                                     value="{{ old('ticket_fee', 0) }}" step="0.01" min="0"
                                     placeholder="0.00"
-                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-                                    >
+                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                             </div>
                         </div>
                     </div>
@@ -373,7 +365,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Total Payable (৳)
+                                Total Payable (৳) <span class="text-red-500">(autofill)</span>
                             </label>
                             <input type="number" id="total_payable" name="total_payable"
                                 value="{{ old('total_payable', 0) }}" step="0.01" min="0"
@@ -383,13 +375,22 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Total Received (৳) <span class="text-red-500">*</span>
+                                Total Received (৳) <span class="text-red-500">(autofill)</span>
                             </label>
                             <input type="number" id="received_amount" name="received_amount"
                                 value="{{ old('received_amount', 0) }}" step="0.01" min="0"
                                 placeholder="0.00"
                                 class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
                                 required>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Due Amount (৳) <span class="text-red-500">(autofill)</span>
+                            </label>
+                            <input type="number" id="due_amount" name="due_amount"
+                                value="{{ old('due_amount', 0) }}" step="0.01" min="0" placeholder="0.00"
+                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 shadow-sm">
                         </div>
 
                         <div>
@@ -405,16 +406,6 @@
                                 </option>
                                 <option value="no" {{ old('bftn_status') == 'no' ? 'selected' : '' }}>No</option>
                             </select>
-                        </div>
-
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Due Amount (৳)
-                            </label>
-                            <input type="number" id="due_amount" name="due_amount"
-                                value="{{ old('due_amount', 0) }}" step="0.01" min="0" placeholder="0.00"
-                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 shadow-sm">
                         </div>
                     </div>
                 </div>
@@ -436,9 +427,9 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Full Address
                             <span class="text-xs text-gray-500">(Format: Fla# A1, House# 17/1, Road# 3/A, Dhanmondi,
-                                Dhaka-1209)</span>
+                                Dhaka-1209)</span> <span class="text-red-500 font-bold"> N.B: Please follow Steadfast Courier address format</span>
                         </label>
-                        <textarea id="address" name="address" placeholder="Enter your address here" rows="3"
+                        <textarea id="address" name="address" placeholder="Enter your address here" rows="3" required
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('address') }}</textarea>
                     </div>
 
@@ -493,14 +484,13 @@
                             Issued Date <span class="text-red-500">*</span>
                         </label>
                         <input type="date" name="issued_date" value="{{ old('issued_date', date('Y-m-d')) }}"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                            required>
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Sold By <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="sold_by" value="{{ old('sold_by', Auth::user()->name ?? '') }}"
+                        <input type="text" name="sold_by" value="{{ old('sold_by', Auth::user()->id ?? '') }}"
                             placeholder="Seller name" readonly
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3">
                     </div>

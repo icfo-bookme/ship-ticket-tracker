@@ -121,146 +121,188 @@ document.addEventListener("DOMContentLoaded", () => {
         getList();
     });
 
-  async function getList() {
-    try {
-        loader.style.display = "block";
+    async function getList() {
+        try {
+            loader.style.display = "block";
 
-        const selectedShipId = shipFilter.value;
-        const selectedCompanyId = companyFilter.value;
-        const selectedJourneyDate = journeyDateFilter.value;
+            const selectedShipId = shipFilter.value;
+            const selectedCompanyId = companyFilter.value;
+            const selectedJourneyDate = journeyDateFilter.value;
 
-        const statusElement = document.getElementById("statusFilter");
-        const status = statusElement ? statusElement.dataset.status : "pending";
+            const statusElement = document.getElementById("statusFilter");
+            const status = statusElement ? statusElement.dataset.status : "pending";
 
-        if (dataTableInitialized && dataTable) {
-            dataTable.destroy();
-            dataTableInitialized = false;
-        }
+            if (dataTableInitialized && dataTable) {
+                dataTable.destroy();
+                dataTableInitialized = false;
+            }
 
-        salesBody.innerHTML = "";
-        loader.style.display = "none";
-        table.classList.remove("hidden");
+            salesBody.innerHTML = "";
+            loader.style.display = "none";
+            table.classList.remove("hidden");
 
-        let columns = [
-            {
-                data: 'id',
-                render: function (data) {
-                    return `
+            let columns = [
+                {
+                    data: 'id',
+                    render: function (data) {
+                        return `
                         <div class="flex items-center gap-2 justify-center">
                             <span>${data}</span>
                             <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
                                 <i class="fas fa-copy"></i>
                             </button>
                         </div>`;
-                }
-            },
-            {
-                data: 'customer_name',
-                render: function (data) {
-                    return `
+                    }
+                },
+                {
+                    data: 'customer_name',
+                    render: function (data) {
+                        return `
                         <div class="flex items-center gap-2 justify-center">
                             <span>${data}</span>
                             <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
                                 <i class="fas fa-copy"></i>
                             </button>
                         </div>`;
-                }
-            },
-            {
-                data: 'customer_mobile',
-                render: function (data) {
-                    if (!data) return 'N/A';
-                    return `
+                    }
+                },
+                {
+                    data: 'customer_mobile',
+                    render: function (data) {
+                        if (!data) return 'N/A';
+                        return `
                         <div class="flex items-center gap-2">
                             <span>${data}</span>
                             <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
                                 <i class="fas fa-copy"></i>
                             </button>
                         </div>`;
+                    }
+                },
+                {
+                    data: null,
+                    render: function (row) {
+                        return row.ship?.name || row.ships?.name || 'Not available';
+                    }
                 }
-            },
-            {
-                data: null,
-                render: function (row) {
-                    return row.ship?.name || row.ships?.name || 'Not available';
-                }
-            }
-        ];
+            ];
 
-        if (status === 'shipment_id_entered') {
-            columns.push({
-                data: 'shipment.shipment_id',
-                render: function (data) {
-                    return data ?? 'Not available';
+            if (status === 'shipment_id_entered') {
+                columns.push({
+                    data: 'shipment.shipment_id',
+                    render: function (data) {
+                        return data ?? 'Not available';
+                    }
+                });
+            }
+
+              if (status === 'pending') {
+                columns.push({
+                    data: 'received_amount',
+                    render: function (data) {
+                        return data ?? 'Not available';
+                    }
+                });
+            }
+
+             if (status === 'pending') {
+    columns.push({
+        data: 'payments',
+        title: 'Payment Info',
+        orderable: false,
+        searchable: false,
+        render: function (payments) {
+
+            if (!payments || payments.length === 0) {
+                return '<span class="text-gray-400 text-sm">Not paid yet</span>';
+            }
+
+            let html = '<ul class="space-y-1 text-sm">';
+
+            payments.forEach(payment => {
+                html += `
+                    <li>
+                        <span class="font-medium">${payment.payment_method}</span>
+                        :
+                        <span class="text-green-600 font-semibold">
+                            ৳${payment.received_amount}
+                        </span>
+                    </li>
+                `;
+            });
+
+            html += '</ul>';
+
+            return html;
+        }
+    });
+}
+
+            columns.push(
+                {
+                    data: 'remark1',
+                    render: function (data) {
+                        if (!data) return 'N/A';
+                        return `
+                        <div class="flex items-center gap-2">
+                            <span>${data}</span>
+                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>`;
+                    }
+                },
+                {
+                    data: 'remark2',
+                    render: function (data) {
+                        if (!data) return 'N/A';
+                        return `
+                        <div class="flex items-center gap-2">
+                            <span>${data}</span>
+                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>`;
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    render: function (data, type, row) {
+                        return createActionButtons(row);
+                    }
+                }
+            );
+
+            dataTable = $("#salesTable").DataTable({
+                processing: true,
+                serverSide: true,
+                ordering: false,
+                ajax: {
+                    url: `/sales/${status}`,
+                    type: 'GET',
+                    data: function (d) {
+                        d.ship_id = selectedShipId;
+                        d.company_id = selectedCompanyId;
+                        d.journey_date = selectedJourneyDate;
+                    }
+                },
+                columns: columns,
+                dom: "lBfrtip",
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
+                drawCallback: function () {
+                    attachEventListeners();
                 }
             });
+
+            dataTableInitialized = true;
+
+        } catch (error) {
+            console.error("Error initializing DataTable:", error);
+            loader.textContent = "Failed to load data.";
         }
-
-        columns.push(
-            {
-                data: 'remark1',
-                render: function (data) {
-                    if (!data) return 'N/A';
-                    return `
-                        <div class="flex items-center gap-2">
-                            <span>${data}</span>
-                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>`;
-                }
-            },
-            {
-                data: 'remark2',
-                render: function (data) {
-                    if (!data) return 'N/A';
-                    return `
-                        <div class="flex items-center gap-2">
-                            <span>${data}</span>
-                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>`;
-                }
-            },
-            {
-                data: null,
-                orderable: false,
-                render: function (data, type, row) {
-                    return createActionButtons(row);
-                }
-            }
-        );
-
-        dataTable = $("#salesTable").DataTable({
-            processing: true,
-            serverSide: true,
-            ordering: false,
-            ajax: {
-                url: `/sales/${status}`,
-                type: 'GET',
-                data: function (d) {
-                    d.ship_id = selectedShipId;
-                    d.company_id = selectedCompanyId;
-                    d.journey_date = selectedJourneyDate;
-                }
-            },
-            columns: columns,
-            dom: "lBfrtip",
-            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-            buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
-            drawCallback: function () {
-                attachEventListeners();
-            }
-        });
-
-        dataTableInitialized = true;
-
-    } catch (error) {
-        console.error("Error initializing DataTable:", error);
-        loader.textContent = "Failed to load data.";
     }
-}
 
     function createActionButtons(sale) {
         const verifyByName = sale.verifyby?.length > 0 ? sale.verifyby[0].verified_by_user?.name : 'Unknown';
@@ -280,7 +322,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 data-id="${sale.id}"
                 data-due_amount="${sale.due_amount}"
                 title="Due Amount: ${sale.due_amount}">
-               Pay Due
+               Due
             </button>`;
         }
 
@@ -295,16 +337,35 @@ document.addEventListener("DOMContentLoaded", () => {
             'pending': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
                 data-id="${sale.id}" data-status="payment-verified" 
                 title="Sold by: ${sale.sold_by}">Verify Payment</button>`,
-            'payment-verified': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
-                data-id="${sale.id}" data-status="ticket-issued" 
-                title="payment-verified by: ${verifyByName}">Ticket Issued</button>`,
-            'ticket-issued': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
-                data-id="${sale.id}" data-status="ticket-printed" 
-                title="ticket-issued by: ${verifyByName}">Ticket Printed</button>
-                
-                <button class="fa-solid fa-print px-2 py-1 rounded printBtn" 
-                data-id="${sale.id}" data-status="ticket-printed" 
-                >  </button>`,
+            // 'payment-verified': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
+            //     data-id="${sale.id}" data-status="ticket-issued" 
+            //     title="payment-verified by: ${verifyByName}">Ticket Issued</button>`,
+            'ticket-issued': (() => {
+                const printedCount = sale.print_status?.total_printed_number ?? 0;
+
+                return `
+        <button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
+            data-id="${sale.id}" data-status="ticket-printed" 
+            title="ticket-issued by: ${verifyByName}">
+            Ticket Printed
+        </button>
+
+        <a
+            href="/tickets/open/${sale.id}"
+            target="_blank"
+            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700
+                   text-white px-3 py-1 rounded text-sm font-semibold"
+            title="Open Ticket in Google Drive"
+        >
+            Open Ticket <span class="text-red-600 bg-white rounded-full px-2">${printedCount}</span>
+        </a>
+
+        <button class="fa-solid fa-print px-2 py-1 rounded printBtn" 
+            data-id="${sale.id}">
+        </button>
+    `;
+            })(),
+
 
             'ticket-printed': `<button class="bg-red-500 text-white px-2 py-1 rounded shipmentIdEntryBtn" 
                 data-id="${sale.id}" data-status="shipment_id_entered" 
@@ -320,6 +381,10 @@ document.addEventListener("DOMContentLoaded", () => {
         // Verify buttons
         document.querySelectorAll(".verifyBtn").forEach((btn) => {
             btn.addEventListener("click", () => varifySale(btn, getList));
+        });
+
+        document.querySelectorAll(".deleteBtn").forEach((btn) => {
+            btn.addEventListener("click", () => deleteSale(btn, getList));
         });
 
         // Shipment ID buttons

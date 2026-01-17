@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ExcelSetting;
 use Google\Client;
 use Google\Service\Sheets;
 
@@ -16,12 +17,11 @@ class GoogleSheetService
         $client->setAccessType('offline');
 
         $service = new Sheets($client);
+        $excel = ExcelSetting::firstOrFail();
+        $spreadsheetId = $excel->spreadsheetId;
+        // $spreadsheetId = '1SUk8PHE8tWLbBi5Z5K4GmRN5p2NGoarj0ZHha6LDCYc';
 
-        // ✅ আপনার Spreadsheet ID এখানে বসানো হয়েছে
-        $spreadsheetId = '1SUk8PHE8tWLbBi5Z5K4GmRN5p2NGoarj0ZHha6LDCYc';
-
-        // Sheet name ঠিক রাখুন (Sheet1 হলে Sheet1)
-        $range = 'Sheet1!A:E';
+        $range = $excel->range;
 
         $body = new \Google\Service\Sheets\ValueRange([
             'values' => [$row]

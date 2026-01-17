@@ -149,4 +149,10 @@ class ShipTicketSale extends Model
     {
         return $this->hasOne(Shipment::class, 'ticket_id', 'id');
     }
+
+public function printStatus()
+{
+    return $this->hasOne(PrintStatus::class, 'sales_id', 'id');
+}
+
 }

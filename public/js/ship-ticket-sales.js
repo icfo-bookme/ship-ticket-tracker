@@ -520,10 +520,11 @@ class TicketSalesSystem {
             { name: "customer_name", label: "Customer Name" },
             { name: "customer_mobile", label: "Mobile Number" },
             // { name: "date_of_birth", label: "Date of Birth" },
-            // { name: "address", label: "Address" },
+            { name: "address", label: "Address" },
+            { name: "sales_source", label: "Sales Sourcethdjfhtod" },
             { name: "ship_id", label: "Ship Name" },
-            // { name: "nid", label: "NID" },
-            // { name: "email", label: "Email" },
+            // { name: "number_of_ticket", label: "Total Number of Tickets" },
+            { name: "ticket_fee", label: "Total Ticket Value" },
             // { name: "journey_date", label: "Journey Date" },
             { name: "company_id", label: "Company Name" },
             // { name: "issued_date", label: "Issued Date" },
@@ -902,44 +903,60 @@ class TicketSalesSystem {
         div.classList.add("payment-entry", "grid", "grid-cols-7", "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg", "bg-white", "dark:bg-gray-800");
 
         div.innerHTML = `
-            <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Payment Method <span class="text-red-500">*</span>
-                </label>
-                <select name="payment_methods[${this.paymentIndex}][method]" 
-                    class="payment-method-select w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
-                    <option value="">Select method</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Bkash">Bkash</option>
-                    <option value="Nagad">Nagad</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                </select>
-            </div>
+    <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Payment Method <span class="text-red-500">*</span>
+        </label>
+        <select name="payment_methods[${this.paymentIndex}][method]" 
+            class="payment-method-select w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+            <option value="">Select method</option>
+            <option value="Cash">Cash</option>
+            <option value="Bkash">Bkash</option>
+            <option value="Nagad">Nagad</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+        </select>
+    </div>
 
-            <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                   Receive Amount (৳) <span class="text-red-500">*</span>
-                </label>
-                <input type="number" name="payment_methods[${this.paymentIndex}][amount]" 
-                    placeholder="Enter amount"
-                    class="payment-amount-input w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
-                    step="0.01" min="0" value="0">
-            </div>
-            <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                   Date <span class="text-red-500">*</span>
-                </label>
-                <input type="date"
-                    name="payment_methods[${this.paymentIndex}][paid_date]"
-                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
-                    value="${new Date().toISOString().slice(0, 10)}">
-            </div>
+    <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+           Receive Amount (৳) <span class="text-red-500">*</span>
+        </label>
+        <input type="number" name="payment_methods[${this.paymentIndex}][amount]" 
+            placeholder="Enter amount"
+            class="payment-amount-input w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+            step="0.01" min="0" value="0">
+    </div>
 
-            <div class="flex items-end col-span-1">
-                <button type="button" class="removePaymentBtn fa-solid fa-trash w-full px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition  hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-lg">
-                </button>
-            </div>
-        `;
+    <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+           Date <span class="text-red-500">*</span>
+        </label>
+        <input type="date"
+            name="payment_methods[${this.paymentIndex}][paid_date]"
+            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+            value="${new Date().toISOString().slice(0, 10)}">
+    </div>
+
+    <!-- ✅ Remark full width -->
+    <div class="col-span-6">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Remarks (optional)
+        </label>
+        <textarea
+            name="payment_methods[${this.paymentIndex}][remark]"
+            placeholder="Enter remarks"
+            rows="3"
+            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+        ></textarea>
+    </div>
+
+    <div class="flex items-end col-span-1">
+        <button type="button"
+            class="removePaymentBtn fa-solid fa-trash w-full px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-lg">
+        </button>
+    </div>
+`;
+
 
         wrapper.insertBefore(div, document.getElementById("addPaymentInfo"));
         this.attachPaymentEventListeners(div);

@@ -4,19 +4,27 @@
              <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
                  Ship Ticket Sales ({{ $status }} )
              </h2>
-             <button onclick="window.location.href='{{ route('printed_ticket_sales.verify') }}'"
-                 class="mt-4 px-4 py-2 bg-blue-950 text-white rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                 Confirm Printed Tickets
-             </button>
-         </div>
+             @if ($status === 'payment-verified' || $status === 'ticket-issued')
+                 <button onclick="window.location.href='{{ route('printed_ticket_sales.verify') }}'"
+                     class="mt-4 px-4 py-2 bg-blue-950 text-white rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                     Verify Printed Tickets
+                 </button>
+             @endif
 
+
+         </div>
+         @if (session('success'))
+             <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
+                 <p>{{ session('success') }}</p>
+             </div>
+         @endif
          <button id="printAllBtn" class="hidden px-4 py-2 bg-red-600 text-white rounded flex items-center gap-2">
              <i class="fa-solid fa-print"></i>
              Print All Tickets
          </button>
 
 
-         @include('ship_ticket_sales.fileupload')
+         {{-- @include('ship_ticket_sales.fileupload') --}}
          <div class="mt-6 mb-4 grid grid-cols-4 gap-10">
              <div class="">
                  <label for="companyFilter" class="block text-sm font-medium text-gray-700">Filter by Source
@@ -64,10 +72,18 @@
                          <th class="border px-4 py-2">Customer Name</th>
                          <th class="border px-4 py-2">Mobile</th>
                          <th class="border px-4 py-2">Ship Name</th>
-                         @if ($status == "shipment_id_entered")
+                         @if ($status == 'shipment_id_entered')
                              <th class="border px-4 py-2">Shipment Id</th>
                          @endif
-                         
+
+                         @if ($status == 'pending')
+                             <th class="border px-4 py-2">Total Received Amount</th>
+                         @endif
+
+                          @if ($status == 'pending')
+                             <th class="border px-4 py-2">Payment Methods</th>
+                         @endif
+
                          {{-- <th class="border px-4 py-2">Journey Date</th>
                          <th class="border px-4 py-2">Ticket Fee</th>
                          <th class="border px-4 py-2">Resource Company</th>

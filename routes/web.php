@@ -10,6 +10,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShipPackageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\CashCollectionController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExcelSettingController;
 use App\Http\Controllers\WhatsappDetailsController;
 
 Route::resource('ships', ShipController::class);
@@ -20,18 +22,26 @@ Route::resource('ships', ShipController::class);
 // });
 
 Route::get('/', [ShipTicketSaleController::class, 'bookingForm'])->name('booking.form');
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');;
+// Route::get('/dashboard', function () {
+//     return view('dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/documentation', function () {
+    return view('documentation');
+})->name('documentation');
 Route::post('/ship-ticket/sales', [ShipTicketSaleController::class, 'publicStore'])->name('publicForm.store');
 Route::get('/sales-create/success', [ShipTicketSaleController::class, 'success'])->name('publicForm.success');
+Route::post('/ship-ticket-sales/check-duplicate', [ShipTicketSaleController::class, 'checkDuplicate']);
+Route::get('/ship/packages/{id}', [ShipPackageController::class, 'showPackages']);
+Route::get('/ship-packages/{id}', [ShipPackageController::class, 'index']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::resource('ship-ticket-sales', ShipTicketSaleController::class);
-    Route::post('/ship-ticket-sales/check-duplicate', [ShipTicketSaleController::class, 'checkDuplicate']);
+
     Route::get('/sales/{status}', [ShipTicketSaleController::class, 'pendingCS']);
     Route::get('/sales/status/{status}', [ShipTicketSaleController::class, 'showPendingSales']);
     Route::put('/sales/status/{id}', [ShipTicketSaleController::class, 'update']);
@@ -55,8 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/refunded', [RefundController::class, 'showRefundedCS']);
     Route::put('/refunded/{id}', [RefundController::class, 'update']);
 
-    Route::get('/ship/packages/{id}', [ShipPackageController::class, 'showPackages']);
-    Route::get('/ship-packages/{id}', [ShipPackageController::class, 'index']);
+
     Route::post('/ship-packages', [ShipPackageController::class, 'store']);
     Route::put('/ship-packages/{id}', [ShipPackageController::class, 'update']);
     Route::delete('/ship-packages/{id}', [ShipPackageController::class, 'destroy']);
@@ -72,8 +81,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/print-all-ids', [ShipTicketSaleController::class, 'pdfPrintAll']);
     Route::get('/print-pdf/{id}', [ShipTicketSaleController::class, 'pdfDownload'])->name('print.pdf');
 
-     Route::get('/admin/whatsapp', [WhatsappDetailsController::class, 'showTableList']);
+    Route::get('/admin/whatsapp', [WhatsappDetailsController::class, 'showTableList']);
     Route::resource('whatsapp', WhatsappDetailsController::class);
+
+     Route::get(
+    '/tickets/open/{saleId}',
+    [ShipTicketSaleController::class, 'openTicket']
+)->name('tickets.open');
+ Route::get('/excel', [ExcelSettingController::class, 'showTableList']);
+Route::apiResource('excel-settings', ExcelSettingController::class);
+
 });
 
 

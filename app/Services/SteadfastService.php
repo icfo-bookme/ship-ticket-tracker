@@ -30,17 +30,17 @@ class SteadfastService
     public function bulkCreate(array $data)
     {
         $response = Http::withHeaders($this->headers())
-                        ->post($this->baseUrl.'/create_order/bulk-order', [
-                            'data' => json_encode($data)
-                        ]);
+            ->post($this->baseUrl . '/create_order/bulk-order', [
+                'data' => json_encode($data)
+            ]);
 
         return $response->json();
     }
 
-     public function statusCheck($id)
+    public function statusCheck($id)
     {
         $response = Http::withHeaders($this->headers())
-                        ->get($this->baseUrl.'/status_by_cid/{$id}');
+            ->get($this->baseUrl . '/status_by_cid/{$id}');
 
         return $response->json();
     }

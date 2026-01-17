@@ -478,14 +478,14 @@
                     <input type="number" name="sales_source" value="{{ $form }}"
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             >
-                    <div>
+                    {{-- <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Sold By <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="sold_by" value="{{ old('sold_by', Auth::user()->name ?? '') }}"
+                        <input type="text" name="sold_by" value="{{ old('sold_by', Auth::user()->name ?? 'guest') }}"
                             placeholder="Seller name" readonly
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3">
-                    </div>
+                    </div> --}}
                 </div>
 
                 <!-- Action Buttons -->
@@ -513,5 +513,5 @@
     <!-- Include custom JavaScript -->
     <script src="{{ asset('js/public-form.js') }}"></script>
 
-
+<script>  </script>
 </x-frontend-layout>

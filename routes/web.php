@@ -85,7 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('whatsapp', WhatsappDetailsController::class);
 
      Route::get(
-    '/tickets/open/{saleId}',
+    '/tickets/open/{saleId}/{filename}',
     [ShipTicketSaleController::class, 'openTicket']
 )->name('tickets.open');
  Route::get('/excel', [ExcelSettingController::class, 'showTableList']);

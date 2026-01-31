@@ -1,7 +1,7 @@
      <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
          <div id="statusFilter" data-status="{{ $status }}" class="hidden"></div>
          <div class="flex items-center justify-between py-6">
-             <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
+             <h2 class="font-semibold text-xl text-gray-800  leading-tight">
                  Ship Ticket Sales ({{ $status }} )
              </h2>
              @if ($status === 'payment-verified' || $status === 'ticket-issued')
@@ -71,6 +71,7 @@
                          <th class="border px-4 py-2">ID</th>
                          <th class="border px-4 py-2">Customer Name</th>
                          <th class="border px-4 py-2">Mobile</th>
+                         <th class="border px-4 py-2">WhatsApp</th>
                          <th class="border px-4 py-2">Ship Name</th>
                          @if ($status == 'shipment_id_entered')
                              <th class="border px-4 py-2">Shipment Id</th>

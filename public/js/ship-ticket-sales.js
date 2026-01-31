@@ -3,9 +3,12 @@ class TicketSalesSystem {
         this.currentPackages = [];
         this.paymentIndex = 0;
         this.coPassengerIndex = 0;
+        this.selectors = this.initializeSelectors();
+        this.constants = this.initializeConstants();
         this.init();
     }
 
+    // ==================== INITIALIZATION ====================
     init() {
         document.addEventListener("DOMContentLoaded", () => {
             this.setupEventListeners();
@@ -14,44 +17,143 @@ class TicketSalesSystem {
         });
     }
 
+    initializeSelectors() {
+        return {
+            elements: {
+                reviewButton: '#reviewButton',
+                shipSelect: '#ship_id',
+                returnDate: '#return_date',
+                mobileField: '[name="customer_mobile"]',
+                whatsappField: '[name="whatsapp"]',
+                sameAsMobileCheckbox: '#sameAsMobileCheckbox',
+                ticketFee: '#ticket_fee',
+                receivedAmount: '#received_amount',
+                otherFee: '#other_fee',
+                totalTickets: '#total_tickets',
+                totalPayable: '#total_payable',
+                dueAmount: '#due_amount',
+                departureContainer: '#departureTicketCategoriesContainer',
+                returnContainer: '#returnTicketCategoriesContainer',
+                noDepartureMessage: '#noDepartureCategoriesMessage',
+                noReturnMessage: '#noReturnCategoriesMessage',
+                coPassengersWrapper: '#coPassengersWrapper',
+                addCoPassengerBtn: '#addCoPassengerBtn',
+                coPassengerInfo: '#coPassengerInfo',
+                paymentInfoWrapper: '#paymentInfoWrapper',
+                addPaymentInfo: '#addPaymentInfo',
+                reviewModal: '#reviewModal',
+                reviewContent: '#reviewContent',
+                bftnSelect: 'select[name="bftn_status"]',
+                bftnIssueDateWrapper: '#bftnIssueDateWrapper'
+            },
+            classes: {
+                ticketQuantity: '.ticket-quantity',
+                paymentEntry: '.payment-entry',
+                paymentMethodSelect: '.payment-method-select',
+                paymentAmountInput: '.payment-amount-input',
+                removePaymentBtn: '.removePaymentBtn',
+                coPassenger: '.co-passenger',
+                removeCoPassengerBtn: '.removeCoPassengerBtn'
+            }
+        };
+    }
+
+    initializeConstants() {
+        return {
+            MOBILE_REGEX: /^01[2-9]\d{8}$/,
+            FIELD_LABELS: {
+                customer_name: "Customer Name",
+                customer_mobile: "Mobile Number",
+                whatsapp: "Whatsapp Number",
+                date_of_birth: "Date Of Birth",
+                nid: "NID",
+                email: "Email",
+                address: "Full Address",
+                sales_source: "Sales Source",
+                ship_id: "Ship Name",
+                journey_date: "Journey Date",
+                return_date: "Return Date",
+                company_id: "Company Name",
+                ticket_fee: "Total Ticket Price",
+                total_payable: "Total Payable",
+                received_amount: "Received Amount",
+                due_amount: "Due Amount",
+                bftn_status: "BFTN Status",
+                bftn_issue_datetime: "BFTN Issue Date & Time",
+                issued_date: "Issued Date",
+                sold_by: "Sold By",
+                number_of_ticket: "Total Tickets",
+                remark1: "Remark 1",
+                remark2: "Remark 2",
+            },
+            REQUIRED_FIELDS: [
+                { name: "customer_name", label: "Customer Name" },
+                { name: "customer_mobile", label: "Mobile Number" },
+                { name: "address", label: "Address" },
+                { name: "sales_source", label: "Sales Source" },
+                { name: "ship_id", label: "Ship Name" },
+                { name: "ticket_fee", label: "Total Ticket Value" },
+                { name: "company_id", label: "Company Name" },
+                { name: "sold_by", label: "Sold By" },
+                { name: "whatsapp", label: "WhatsApp Number" }
+            ]
+        };
+    }
+
+    // ==================== EVENT HANDLERS ====================
     setupEventListeners() {
         try {
-            // Payment calculation listeners
-            this.addEventListener('ticket_fee', 'input', () => this.calculateAll());
-            this.addEventListener('received_amount', 'input', () => this.calculateDue());
-            this.addEventListener('other_fee', 'input', () => this.calculateAll());
-
-            // Form validation listeners
-            document.querySelectorAll("input, select").forEach((field) => {
-                field.addEventListener("input", () => this.clearFieldError(field));
-            });
-
-            // Main action listeners
-            this.addEventListener('reviewButton', 'click', () => this.handleReviewClick());
-
-            // Ship and journey listeners
-            this.addEventListener('ship_id', 'change', () => this.loadTicketCategories());
-            this.addEventListener('return_date', 'change', () => this.toggleReturnJourneySection());
-
-            // Mobile and WhatsApp listeners
-            const mobileField = document.querySelector('[name="customer_mobile"]');
-            mobileField.addEventListener('input', () => {
-                const checkbox = document.getElementById("sameAsMobileCheckbox");
-                if (checkbox.checked) this.handleSameAsMobileCheckbox();
-            });
-            this.addEventListener('sameAsMobileCheckbox', 'change', () => this.handleSameAsMobileCheckbox());
-
-            // Initialize components
-            this.initializeCoPassenger();
-            this.initializePaymentMethod();
-
+            this.setupCalculationListeners();
+            this.setupFormValidationListeners();
+            this.setupMainActionListeners();
+            this.setupShipAndJourneyListeners();
+            this.setupMobileAndWhatsAppListeners();
+            
+            this.initializeComponents();
         } catch (error) {
             console.error('Error setting up event listeners:', error);
             this.showNotification('Error initializing form. Please refresh the page.', 'error');
         }
     }
 
-    // Helper Methods
+    setupCalculationListeners() {
+        this.addEventListener('ticket_fee', 'input', () => this.calculateAll());
+        this.addEventListener('received_amount', 'input', () => this.calculateDue());
+        this.addEventListener('other_fee', 'input', () => this.calculateAll());
+    }
+
+    setupFormValidationListeners() {
+        document.querySelectorAll("input, select").forEach((field) => {
+            field.addEventListener("input", () => this.clearFieldError(field));
+        });
+    }
+
+    setupMainActionListeners() {
+        this.addEventListener('reviewButton', 'click', () => this.handleReviewClick());
+    }
+
+    setupShipAndJourneyListeners() {
+        this.addEventListener('ship_id', 'change', () => this.loadTicketCategories());
+        this.addEventListener('return_date', 'change', () => this.toggleReturnJourneySection());
+    }
+
+    setupMobileAndWhatsAppListeners() {
+        const mobileField = this.getElement(this.selectors.elements.mobileField);
+        mobileField.addEventListener('input', () => {
+            const checkbox = this.getElement(this.selectors.elements.sameAsMobileCheckbox);
+            if (checkbox.checked) this.handleSameAsMobileCheckbox();
+        });
+        
+        this.addEventListener('sameAsMobileCheckbox', 'change', () => this.handleSameAsMobileCheckbox());
+    }
+
+    initializeComponents() {
+        this.initializeCoPassenger();
+        this.initializePaymentMethod();
+        this.initBftnIssueDateToggle();
+    }
+
+    // ==================== DOM UTILITIES ====================
     addEventListener(elementId, event, callback) {
         const element = document.getElementById(elementId);
         if (element) {
@@ -65,6 +167,10 @@ class TicketSalesSystem {
         return document.querySelector(selector);
     }
 
+    getElements(selector) {
+        return document.querySelectorAll(selector);
+    }
+
     getValue(elementId) {
         const element = document.getElementById(elementId);
         return element ? element.value.trim() : '';
@@ -75,11 +181,11 @@ class TicketSalesSystem {
         if (element) element.value = value;
     }
 
-    // Mobile Number Handling
+    // ==================== MOBILE & WHATSAPP ====================
     handleSameAsMobileCheckbox() {
-        const checkbox = document.getElementById("sameAsMobileCheckbox");
-        const mobileField = document.querySelector('[name="customer_mobile"]');
-        const whatsappField = document.querySelector('[name="whatsapp"]');
+        const checkbox = this.getElement(this.selectors.elements.sameAsMobileCheckbox);
+        const mobileField = this.getElement(this.selectors.elements.mobileField);
+        const whatsappField = this.getElement(this.selectors.elements.whatsappField);
 
         if (checkbox.checked) {
             const mobileValue = mobileField.value.trim();
@@ -98,45 +204,24 @@ class TicketSalesSystem {
                 return;
             }
 
-            // Copy mobile to WhatsApp and disable the field
             whatsappField.value = mobileValue;
             whatsappField.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-500', 'dark:text-gray-400');
             this.clearFieldError(whatsappField);
         } else {
-            // Enable WhatsApp field and clear styling
             whatsappField.disabled = false;
             whatsappField.classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-500', 'dark:text-gray-400');
             whatsappField.value = '';
         }
     }
 
-    // Journey Section Management
-    toggleReturnJourneySection() {
-        const returnDate = this.getValue("return_date");
-        const returnSection = document.getElementById("returnJourneySection");
-        const noReturnMessage = document.getElementById("noReturnCategoriesMessage");
-
-        if (returnDate) {
-            returnSection.style.display = 'block';
-            noReturnMessage.classList.add("hidden");
-            this.loadTicketCategories();
-        } else {
-            returnSection.style.display = 'none';
-            document.getElementById("returnTicketCategoriesContainer").innerHTML = '';
-            noReturnMessage.classList.remove("hidden");
-            this.calculateTotalTickets();
-            this.calculateTicketFee();
-        }
-    }
-
-    // Ticket Categories Management
+    // ==================== TICKET CATEGORIES ====================
     async loadTicketCategories() {
         const shipId = this.getValue("ship_id");
         const returnDate = this.getValue("return_date");
-        const departureContainer = document.getElementById("departureTicketCategoriesContainer");
-        const returnContainer = document.getElementById("returnTicketCategoriesContainer");
-        const noDepartureMessage = document.getElementById("noDepartureCategoriesMessage");
-        const noReturnMessage = document.getElementById("noReturnCategoriesMessage");
+        const departureContainer = this.getElement(this.selectors.elements.departureContainer);
+        const returnContainer = this.getElement(this.selectors.elements.returnContainer);
+        const noDepartureMessage = this.getElement(this.selectors.elements.noDepartureMessage);
+        const noReturnMessage = this.getElement(this.selectors.elements.noReturnMessage);
 
         if (!shipId) {
             departureContainer.innerHTML = '';
@@ -146,7 +231,6 @@ class TicketSalesSystem {
             return;
         }
 
-        // Show loading state
         this.showLoadingState(departureContainer, returnContainer);
         noDepartureMessage.classList.add("hidden");
         noReturnMessage.classList.add("hidden");
@@ -178,21 +262,19 @@ class TicketSalesSystem {
     }
 
     renderTicketCategories(packages, returnDate) {
-        const departureContainer = document.getElementById("departureTicketCategoriesContainer");
-        const returnContainer = document.getElementById("returnTicketCategoriesContainer");
-        const noDepartureMessage = document.getElementById("noDepartureCategoriesMessage");
-        const noReturnMessage = document.getElementById("noReturnCategoriesMessage");
+        const departureContainer = this.getElement(this.selectors.elements.departureContainer);
+        const returnContainer = this.getElement(this.selectors.elements.returnContainer);
+        const noDepartureMessage = this.getElement(this.selectors.elements.noDepartureMessage);
+        const noReturnMessage = this.getElement(this.selectors.elements.noReturnMessage);
 
         departureContainer.innerHTML = '';
         returnContainer.innerHTML = '';
 
         if (packages?.length > 0) {
-            // Create departure journey tickets
             packages.forEach((pkg, index) => {
                 departureContainer.appendChild(this.createCategoryField(pkg, index, 'departure'));
             });
 
-            // Create return journey tickets only if return date is selected
             if (returnDate) {
                 packages.forEach((pkg, index) => {
                     returnContainer.appendChild(this.createCategoryField(pkg, index, 'return'));
@@ -205,15 +287,10 @@ class TicketSalesSystem {
             this.attachTicketQuantityListeners();
             this.calculateTotalTickets();
             this.calculateTicketFee();
+            this.updateCoPassengerRows();
         } else {
             this.showNoCategoriesMessage(departureContainer, returnContainer);
         }
-    }
-
-    showNoCategoriesMessage(departureContainer, returnContainer) {
-        const messageHTML = '<div class="text-gray-500 dark:text-gray-400">No ticket categories available for this ship.</div>';
-        departureContainer.innerHTML = messageHTML;
-        returnContainer.innerHTML = messageHTML;
     }
 
     createCategoryField(pkg, index, type) {
@@ -236,10 +313,7 @@ class TicketSalesSystem {
                 <input type="hidden" class="ticket-return-price" data-package-id="${pkg.id}" data-type="${type}" value="${returnTripPrice}">
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                     Category: ${this.escapeHtml(pkg.name || 'Unnamed')}<br>
-                    ${type === 'departure' ?
-                `Departure: ৳${singlePrice.toFixed(2)}` :
-                `Return: ৳${returnTripPrice.toFixed(2)}`
-            }
+                    ${type === 'departure' ? `Departure: ৳${singlePrice.toFixed(2)}` : `Return: ৳${returnTripPrice.toFixed(2)}`}
                     ${roundTripPrice > 0 ? `<br>Round trip: ৳${roundTripPrice.toFixed(2)}` : ''}
                 </p>
             </div>
@@ -260,15 +334,19 @@ class TicketSalesSystem {
     }
 
     attachTicketQuantityListeners() {
-        document.querySelectorAll('.ticket-quantity').forEach(input => {
-            input.addEventListener('input', () => {
-                this.calculateTotalTickets();
-                this.calculateTicketFee();
-            });
+        this.getElements(this.selectors.classes.ticketQuantity).forEach(input => {
+            input.removeEventListener('input', this.handleTicketQuantityChange);
+            input.addEventListener('input', () => this.handleTicketQuantityChange());
         });
     }
 
-    // Calculation Methods
+    handleTicketQuantityChange() {
+        this.calculateTotalTickets();
+        this.calculateTicketFee();
+        this.updateCoPassengerRows();
+    }
+
+    // ==================== CALCULATION METHODS ====================
     calculateTicketFee() {
         const hasReturnJourney = !!this.getValue("return_date");
         const totalTicketFee = hasReturnJourney ?
@@ -281,7 +359,7 @@ class TicketSalesSystem {
 
     calculateSingleJourneyPricing() {
         let total = 0;
-        document.querySelectorAll('.ticket-quantity').forEach(input => {
+        this.getElements(this.selectors.classes.ticketQuantity).forEach(input => {
             const quantity = parseInt(input.value) || 0;
             const packageId = input.getAttribute('data-package-id');
 
@@ -296,125 +374,55 @@ class TicketSalesSystem {
     }
 
     calculateRoundTripPricing() {
-        const packageQuantities = this.groupQuantitiesByPackage();
-        let total = this.calculateSameCategoryPricing(packageQuantities);
-        total += this.calculateCrossCategoryPricing(packageQuantities);
-        return total;
-    }
-
-    groupQuantitiesByPackage() {
-        const quantities = {};
-        document.querySelectorAll('.ticket-quantity').forEach(input => {
-            const packageId = input.getAttribute('data-package-id');
-            const type = input.getAttribute('data-type');
-            const quantity = parseInt(input.value) || 0;
-
-            if (!quantities[packageId]) {
-                quantities[packageId] = { departure: 0, return: 0 };
-            }
-            quantities[packageId][type] = quantity;
-        });
-        return quantities;
-    }
-
-    calculateSameCategoryPricing(quantities) {
         let total = 0;
-        Object.keys(quantities).forEach(packageId => {
-            const pkg = this.currentPackages.find(p => p.id == packageId);
-            if (!pkg) return;
 
-            const { departure, return: returnQty } = quantities[packageId];
+        this.currentPackages.forEach(pkg => {
+            const pkgId = pkg.id;
+            const departureQty = this.getQuantity(pkgId, 'departure');
+            const returnQty = this.getQuantity(pkgId, 'return');
             const singlePrice = parseFloat(pkg.price) || 0;
             const roundTripPrice = parseFloat(pkg.round_trip_price) || 0;
+            const returnOnlyPrice = roundTripPrice > 0 ? roundTripPrice - singlePrice : singlePrice;
 
-            if (roundTripPrice > 0) {
-                const roundTripPairs = Math.min(departure, returnQty);
-                const remainingDeparture = departure - roundTripPairs;
-                const remainingReturn = returnQty - roundTripPairs;
+            const paired = Math.min(departureQty, returnQty);
 
-                total += (roundTripPairs * roundTripPrice);
-                total += (remainingDeparture * singlePrice);
-                total += (remainingReturn * singlePrice);
+            if (paired > 0 && roundTripPrice > 0) {
+                total += paired * roundTripPrice;
             } else {
-                total += (departure * singlePrice);
-                total += (returnQty * singlePrice);
+                total += paired * (singlePrice + returnOnlyPrice);
             }
+
+            const remainingDeparture = departureQty - paired;
+            const remainingReturn = returnQty - paired;
+
+            total += remainingDeparture * singlePrice;
+            total += remainingReturn * returnOnlyPrice;
         });
+
         return total;
     }
 
-    calculateCrossCategoryPricing(quantities) {
-        const remainingQuantities = this.calculateRemainingQuantities(quantities);
-        return this.calculateCrossCategoryPairs(remainingQuantities);
-    }
-
-    calculateRemainingQuantities(quantities) {
-        const remaining = {};
-        Object.keys(quantities).forEach(packageId => {
-            const pkg = this.currentPackages.find(p => p.id == packageId);
-            const { departure, return: returnQty } = quantities[packageId];
-
-            if (pkg?.round_trip_price > 0) {
-                const roundTripPairs = Math.min(departure, returnQty);
-                remaining[packageId] = {
-                    departure: departure - roundTripPairs,
-                    return: returnQty - roundTripPairs,
-                    singlePrice: parseFloat(pkg.price) || 0,
-                    returnPrice: parseFloat(pkg.round_trip_price) - parseFloat(pkg.price) || 0
-                };
-            } else {
-                remaining[packageId] = {
-                    departure: departure,
-                    return: returnQty,
-                    singlePrice: parseFloat(pkg?.price) || 0,
-                    returnPrice: parseFloat(pkg?.price) || 0
-                };
-            }
-        });
-        return remaining;
-    }
-
-    calculateCrossCategoryPairs(remainingQuantities) {
-        let total = 0;
-        const packageIds = Object.keys(remainingQuantities);
-
-        packageIds.forEach(departureId => {
-            const departureData = remainingQuantities[departureId];
-
-            if (departureData.departure > 0) {
-                packageIds.forEach(returnId => {
-                    if (departureId !== returnId) {
-                        const returnData = remainingQuantities[returnId];
-                        const crossPairs = Math.min(departureData.departure, returnData.return);
-
-                        if (crossPairs > 0) {
-                            total += (crossPairs * departureData.singlePrice);
-                            total += (crossPairs * returnData.returnPrice);
-
-                            departureData.departure -= crossPairs;
-                            returnData.return -= crossPairs;
-                        }
-                    }
-                });
-            }
-        });
-
-        // Add remaining individual tickets
-        packageIds.forEach(packageId => {
-            const data = remainingQuantities[packageId];
-            total += (data.departure * data.singlePrice);
-            total += (data.return * data.singlePrice);
-        });
-
-        return total;
+    getQuantity(packageId, type) {
+        const input = this.getElement(
+            `.ticket-quantity[data-package-id="${packageId}"][data-type="${type}"]`
+        );
+        return parseInt(input?.value) || 0;
     }
 
     calculateTotalTickets() {
         let total = 0;
-        document.querySelectorAll('.ticket-quantity').forEach(input => {
+        this.getElements(this.selectors.classes.ticketQuantity).forEach(input => {
             total += parseInt(input.value) || 0;
         });
         this.setValue("total_tickets", total);
+    }
+
+    calculateTotalDepartureTickets() {
+        let totalDeparture = 0;
+        this.getElements('.ticket-quantity[data-type="departure"]').forEach(input => {
+            totalDeparture += parseInt(input.value) || 0;
+        });
+        return totalDeparture;
     }
 
     calculateAll() {
@@ -437,23 +445,21 @@ class TicketSalesSystem {
         this.setValue("due_amount", dueAmount.toFixed(2));
     }
 
-    // Form Validation
+    // ==================== FORM VALIDATION ====================
     async handleReviewClick() {
         this.clearAllErrors();
 
-        // Step-by-step validation with proper error focus
         const validationSteps = [
             () => this.validateRequiredFields(),
             () => this.validateMobileNumbers(),
-            // () => this.validateTickets(),
             () => this.validateAmounts(),
-            () => this.validatePaymentMethods() // Payment validation last
+            () => this.validatePaymentMethods(),
+            () => this.validateCoPassengers()
         ];
 
         for (let step of validationSteps) {
             const result = step();
             if (!result.isValid) {
-                // Focus on the first error field
                 if (result.firstErrorField) {
                     result.firstErrorField.focus();
                     result.firstErrorField.scrollIntoView({
@@ -467,7 +473,6 @@ class TicketSalesSystem {
 
         try {
             const isDuplicate = await this.checkDuplicateTicket();
-            console.log('Duplicate check result:', isDuplicate.exists);
             if (isDuplicate.exists) {
                 this.showDuplicateWarning();
             } else {
@@ -479,64 +484,12 @@ class TicketSalesSystem {
         }
     }
 
-    async checkDuplicateTicket() {
-        const customerMobile = document.querySelector('[name="customer_mobile"]').value.trim();
-        const journeyDate = document.querySelector('[name="journey_date"]').value;
-
-        const response = await fetch("/ship-ticket-sales/check-duplicate", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
-            },
-            body: JSON.stringify({ customer_mobile: customerMobile, journey_date: journeyDate }),
-        });
-
-        if (!response.ok) throw new Error('Network response was not ok');
-        return await response.json();
-    }
-
-    showDuplicateWarning() {
-        Swal.fire({
-            title: 'Duplicate Ticket Found',
-            text: "This ticket was bought within 24 hours. Do you want to continue?",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Yes, continue",
-            cancelButtonText: "Cancel",
-            customClass: {
-                confirmButton: "bg-blue-600 text-white",
-                cancelButton: "bg-red-500 text-white",
-            },
-        }).then((result) => {
-            if (result.isConfirmed) {
-                this.showReviewModal();
-            }
-        });
-    }
-
     validateRequiredFields() {
-        const requiredFields = [
-            { name: "customer_name", label: "Customer Name" },
-            { name: "customer_mobile", label: "Mobile Number" },
-            // { name: "date_of_birth", label: "Date of Birth" },
-            { name: "address", label: "Address" },
-            { name: "sales_source", label: "Sales Sourcethdjfhtod" },
-            { name: "ship_id", label: "Ship Name" },
-            // { name: "number_of_ticket", label: "Total Number of Tickets" },
-            { name: "ticket_fee", label: "Total Ticket Value" },
-            // { name: "journey_date", label: "Journey Date" },
-            { name: "company_id", label: "Company Name" },
-            // { name: "issued_date", label: "Issued Date" },
-            { name: "sold_by", label: "Sold By" },
-            { name: "whatsapp", label: "WhatsApp Number" }
-        ];
-
         let isValid = true;
         let firstErrorField = null;
 
-        requiredFields.forEach(({ name, label }) => {
-            const field = document.querySelector(`[name="${name}"]`);
+        this.constants.REQUIRED_FIELDS.forEach(({ name, label }) => {
+            const field = this.getElement(`[name="${name}"]`);
             const value = field?.value?.toString().trim() || '';
 
             if (!value) {
@@ -553,7 +506,7 @@ class TicketSalesSystem {
         let isValid = true;
         let firstErrorField = null;
 
-        const mobileField = document.querySelector('[name="customer_mobile"]');
+        const mobileField = this.getElement(this.selectors.elements.mobileField);
         const mobileValue = mobileField.value.trim();
 
         if (mobileValue && !this.isValidMobile(mobileValue)) {
@@ -562,7 +515,7 @@ class TicketSalesSystem {
             firstErrorField = mobileField;
         }
 
-        const whatsappField = document.querySelector('[name="whatsapp"]');
+        const whatsappField = this.getElement(this.selectors.elements.whatsappField);
         const whatsappValue = whatsappField.value.trim();
         const isWhatsAppDisabled = whatsappField.disabled;
 
@@ -583,36 +536,27 @@ class TicketSalesSystem {
         const receivedAmount = parseFloat(this.getValue("received_amount")) || 0;
 
         if (ticketFee <= 0) {
-            this.showFieldError(document.getElementById("ticket_fee"), "Ticket fee must be greater than 0");
+            this.showFieldError(this.getElement(this.selectors.elements.ticketFee), "Ticket fee must be greater than 0");
             isValid = false;
-            firstErrorField = document.getElementById("ticket_fee");
+            firstErrorField = this.getElement(this.selectors.elements.ticketFee);
         }
 
         if (receivedAmount <= 0) {
-            this.showFieldError(document.getElementById("received_amount"), "Received amount must be greater than 0");
+            this.showFieldError(this.getElement(this.selectors.elements.receivedAmount), "Received amount must be greater than 0");
             isValid = false;
-            if (!firstErrorField) firstErrorField = document.getElementById("received_amount");
+            if (!firstErrorField) firstErrorField = this.getElement(this.selectors.elements.receivedAmount);
         }
 
         return { isValid, firstErrorField };
     }
 
-    // validateTickets() {
-    //     const totalTickets = parseInt(this.getValue("total_tickets")) || 0;
-    //     if (totalTickets <= 0) {
-    //         this.showTopError("Please select at least one ticket");
-    //         return { isValid: false, firstErrorField: null };
-    //     }
-    //     return { isValid: true, firstErrorField: null };
-    // }
-
     validatePaymentMethods() {
-        const paymentEntries = document.querySelectorAll('.payment-entry');
+        const paymentEntries = this.getElements(this.selectors.classes.paymentEntry);
         let hasValidPayment = false;
 
         paymentEntries.forEach(entry => {
-            const method = entry.querySelector('.payment-method-select').value;
-            const amount = parseFloat(entry.querySelector('.payment-amount-input').value) || 0;
+            const method = entry.querySelector(this.selectors.classes.paymentMethodSelect).value;
+            const amount = parseFloat(entry.querySelector(this.selectors.classes.paymentAmountInput).value) || 0;
 
             if (method && amount > 0) {
                 hasValidPayment = true;
@@ -627,11 +571,266 @@ class TicketSalesSystem {
         return { isValid: true, firstErrorField: null };
     }
 
-    // Review Modal
+    validateCoPassengers() {
+        const wrapper = this.getElement(this.selectors.elements.coPassengersWrapper);
+        const coPassengerRows = wrapper.querySelectorAll(this.selectors.classes.coPassenger);
+        let isValid = true;
+        let firstErrorField = null;
+
+        coPassengerRows.forEach((row, index) => {
+            const nameField = row.querySelector('input[name$="[name]"]');
+            const nameValue = nameField?.value?.toString().trim() || '';
+
+            if (!nameValue) {
+                this.showFieldError(nameField, `Co-passenger name is required`);
+                isValid = false;
+                if (!firstErrorField) firstErrorField = nameField;
+            }
+        });
+
+        return { isValid, firstErrorField };
+    }
+
+    // ==================== CO-PASSENGER MANAGEMENT ====================
+    initializeCoPassenger() {
+        const wrapper = this.getElement(this.selectors.elements.coPassengersWrapper);
+        const addBtn = this.getElement(this.selectors.elements.addCoPassengerBtn);
+
+        wrapper.addEventListener("click", (e) => {
+            if (e.target.closest(this.selectors.classes.removeCoPassengerBtn)) {
+                const coPassengerRow = e.target.closest(this.selectors.classes.coPassenger);
+                if (coPassengerRow) {
+                    coPassengerRow.remove();
+                    this.updateCoPassengerIndex();
+                }
+            }
+        });
+
+        addBtn.addEventListener("click", () => this.addCoPassengerField(wrapper));
+        // this.addCoPassengerField(wrapper);
+    }
+
+    updateCoPassengerRows() {
+        const totalDepartureTickets = this.calculateTotalDepartureTickets();
+        const wrapper = this.getElement(this.selectors.elements.coPassengersWrapper);
+        const currentRows = wrapper.querySelectorAll(this.selectors.classes.coPassenger).length;
+
+        if (totalDepartureTickets > currentRows) {
+            const rowsToAdd = totalDepartureTickets - currentRows;
+            for (let i = 0; i < rowsToAdd-1; i++) {
+                this.addCoPassengerField(wrapper);
+            }
+        } else if (totalDepartureTickets < currentRows) {
+            const rowsToRemove = currentRows - totalDepartureTickets;
+            const rows = wrapper.querySelectorAll(this.selectors.classes.coPassenger);
+
+            for (let i = 0; i < rowsToRemove && rows.length > 1; i++) {
+                rows[rows.length - 1 - i].remove();
+            }
+        }
+
+        this.updateCoPassengerIndex();
+        this.updateCoPassengerInfoMessage(totalDepartureTickets);
+    }
+
+    updateCoPassengerInfoMessage(totalDepartureTickets) {
+        const infoDiv = this.getElement(this.selectors.elements.coPassengerInfo);
+        if (!infoDiv) return;
+
+        if (totalDepartureTickets > 0) {
+            infoDiv.innerHTML = `
+                <div class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-200">
+                    <p class="text-sm font-medium">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        ${totalDepartureTickets} departure ticket(s) require ${totalDepartureTickets} co-passenger row(s). All co-passenger names are required.
+                    </p>
+                </div>
+            `;
+            infoDiv.classList.remove('hidden');
+        } else {
+            infoDiv.innerHTML = `
+                <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-200">
+                    <p class="text-sm font-medium">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        No departure tickets selected. At least 1 co-passenger row is required.
+                    </p>
+                </div>
+            `;
+            infoDiv.classList.remove('hidden');
+        }
+    }
+
+    updateCoPassengerIndex() {
+        const wrapper = this.getElement(this.selectors.elements.coPassengersWrapper);
+        const rows = wrapper.querySelectorAll(this.selectors.classes.coPassenger);
+
+        rows.forEach((row, index) => {
+            const nameInput = row.querySelector('input[name$="[name]"]');
+            if (nameInput) nameInput.name = `co_passengers[${index}][name]`;
+
+            const nidInput = row.querySelector('input[name$="[nid]"]');
+            if (nidInput) nidInput.name = `co_passengers[${index}][nid]`;
+
+            const mobileInput = row.querySelector('input[name$="[co_passernger_number]"]');
+            if (mobileInput) mobileInput.name = `co_passengers[${index}][co_passernger_number]`;
+
+            const removeBtn = row.querySelector(this.selectors.classes.removeCoPassengerBtn);
+            if (removeBtn) {
+                removeBtn.disabled = rows.length === 1;
+                removeBtn.classList.toggle('opacity-50', rows.length === 1);
+                removeBtn.classList.toggle('cursor-not-allowed', rows.length === 1);
+            }
+        });
+
+        this.coPassengerIndex = rows.length;
+    }
+
+    addCoPassengerField(wrapper) {
+        const div = document.createElement("div");
+        div.classList.add("co-passenger", "grid", "grid-cols-3", "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg");
+
+        div.innerHTML = `
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Co-Passenger Name
+                </label>
+                <input type="text" name="co_passengers[${this.coPassengerIndex}][name]" placeholder="Enter co-passenger name"
+                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+            </div>
+
+            <div class="flex items-end gap-2">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Co-Passenger NID
+                    </label>
+                    <input type="text" name="co_passengers[${this.coPassengerIndex}][nid]" placeholder="Enter NID"
+                        class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+            </div>
+
+            <div class="flex items-end gap-2">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Co-Passenger Mobile Number
+                    </label>
+                    <input type="text" name="co_passengers[${this.coPassengerIndex}][co_passernger_number]" placeholder="Enter Mobile Number"
+                        class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <button type="button" class="removeCoPassengerBtn fa-solid fa-trash px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition"></button>
+            </div>
+        `;
+
+        wrapper.insertBefore(div, this.getElement(this.selectors.elements.addCoPassengerBtn));
+        this.coPassengerIndex++;
+    }
+
+    // ==================== PAYMENT MANAGEMENT ====================
+    initializePaymentMethod() {
+        const wrapper = this.getElement(this.selectors.elements.paymentInfoWrapper);
+        const addBtn = this.getElement(this.selectors.elements.addPaymentInfo);
+
+        addBtn.addEventListener("click", () => this.addPaymentEntry(wrapper));
+        this.addPaymentEntry(wrapper);
+    }
+
+    addPaymentEntry(wrapper) {
+        const div = document.createElement("div");
+        div.classList.add("payment-entry", "grid", "grid-cols-7", "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg", "bg-white", "dark:bg-gray-800");
+
+        div.innerHTML = `
+            <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Payment Method <span class="text-red-500">*</span>
+                </label>
+                <select name="payment_methods[${this.paymentIndex}][method]" 
+                    class="payment-method-select w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+                    <option value="">Select method</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Bkash">Bkash</option>
+                    <option value="Nagad">Nagad</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                </select>
+            </div>
+
+            <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                   Receive Amount (৳) <span class="text-red-500">*</span>
+                </label>
+                <input type="number" name="payment_methods[${this.paymentIndex}][amount]" 
+                    placeholder="Enter amount"
+                    class="payment-amount-input w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+                    step="0.01" min="0" value="0">
+            </div>
+
+            <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                   Date <span class="text-red-500">*</span>
+                </label>
+                <input type="date"
+                    name="payment_methods[${this.paymentIndex}][paid_date]"
+                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+                    value="${new Date().toISOString().slice(0, 10)}">
+            </div>
+
+            <div class="col-span-6">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Remarks (optional)
+                </label>
+                <textarea
+                    name="payment_methods[${this.paymentIndex}][remark]"
+                    placeholder="Enter remarks"
+                    rows="3"
+                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+                ></textarea>
+            </div>
+
+            <div class="flex items-end col-span-1">
+                <button type="button"
+                    class="removePaymentBtn fa-solid fa-trash w-full px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-lg">
+                </button>
+            </div>
+        `;
+
+        wrapper.insertBefore(div, this.getElement(this.selectors.elements.addPaymentInfo));
+        this.attachPaymentEventListeners(div);
+        this.paymentIndex++;
+    }
+
+    attachPaymentEventListeners(div) {
+        const amountInput = div.querySelector(this.selectors.classes.paymentAmountInput);
+        const methodSelect = div.querySelector(this.selectors.classes.paymentMethodSelect);
+        const removeBtn = div.querySelector(this.selectors.classes.removePaymentBtn);
+
+        amountInput.addEventListener('input', () => {
+            this.calculatePaymentTotals();
+            this.calculateTotalPayable();
+        });
+
+        methodSelect.addEventListener('change', () => {
+            this.calculateTotalPayable();
+        });
+
+        removeBtn.addEventListener('click', () => {
+            div.remove();
+            this.calculatePaymentTotals();
+            this.calculateTotalPayable();
+        });
+    }
+
+    calculatePaymentTotals() {
+        let totalReceived = 0;
+        this.getElements(this.selectors.classes.paymentAmountInput).forEach(input => {
+            totalReceived += parseFloat(input.value) || 0;
+        });
+        this.setValue("received_amount", totalReceived.toFixed(2));
+        this.calculateDue();
+    }
+
+    // ==================== REVIEW MODAL ====================
     showReviewModal() {
         this.fillReviewContent();
 
-        const modal = document.getElementById("reviewModal");
+        const modal = this.getElement(this.selectors.elements.reviewModal);
         modal.classList.remove("hidden");
         modal.classList.add("flex");
 
@@ -639,22 +838,22 @@ class TicketSalesSystem {
             if (e.target === modal || e.target.id === "modalBackdrop") this.closeModal();
         });
 
-        document.getElementById("editInfoButton").addEventListener("click", () => this.closeModal());
-        document.querySelectorAll('[data-modal-hide="reviewModal"]').forEach((btn) => {
+        this.getElement('#editInfoButton').addEventListener("click", () => this.closeModal());
+        this.getElements('[data-modal-hide="reviewModal"]').forEach((btn) => {
             btn.addEventListener("click", () => this.closeModal());
         });
     }
 
     closeModal() {
-        const modal = document.getElementById("reviewModal");
+        const modal = this.getElement(this.selectors.elements.reviewModal);
         modal.classList.add("hidden");
         modal.classList.remove("flex");
     }
 
     fillReviewContent() {
-        const formData = new FormData(document.getElementById("ticketForm"));
+        const formData = new FormData(this.getElement("#ticketForm"));
         let html = this.generateReviewContent(formData);
-        document.getElementById("reviewContent").innerHTML = html;
+        this.getElement(this.selectors.elements.reviewContent).innerHTML = html;
     }
 
     generateReviewContent(formData) {
@@ -668,33 +867,8 @@ class TicketSalesSystem {
     }
 
     generateBasicInfo(formData) {
-        const fieldLabels = {
-            customer_name: "Customer Name",
-            customer_mobile: "Mobile Number",
-            whatsapp: "Whatsapp Number",
-            date_of_birth: "Date Of Birth",
-            nid: "NID",
-            email: "Email",
-            address: "Full Address",
-            sales_source: "Sales Source",
-            ship_id: "Ship Name",
-            journey_date: "Journey Date",
-            return_date: "Return Date",
-            company_id: "Company Name",
-            ticket_fee: "Total Ticket Price",
-            total_payable: "Total Payable",
-            received_amount: "Received Amount",
-            due_amount: "Due Amount",
-            bftn_status: "BFTN Status",
-            issued_date: "Issued Date",
-            sold_by: "Sold By",
-            number_of_ticket: "Total Tickets",
-            remark1: "Remark 1",
-            remark2: "Remark 2",
-        };
-
         let content = '';
-        for (const [field, label] of Object.entries(fieldLabels)) {
+        for (const [field, label] of Object.entries(this.constants.FIELD_LABELS)) {
             let value = this.formatReviewValue(field, formData.get(field));
             content += `
                 <div class="border-b border-gray-100 dark:border-gray-700 pb-2">
@@ -708,18 +882,15 @@ class TicketSalesSystem {
     formatReviewValue(field, value) {
         if (!value) return "Not specified";
 
-        // Handle select fields
         if (field === "ship_id" || field === "company_id") {
-            const select = document.querySelector(`select[name="${field}"]`);
+            const select = this.getElement(`select[name="${field}"]`);
             return select?.options[select.selectedIndex]?.text || "Not specified";
         }
 
-        // Currency formatting
         if (["ticket_fee", "total_payable", "received_amount", "due_amount"].includes(field)) {
             return "৳ " + (parseFloat(value) || 0).toFixed(2);
         }
 
-        // Date formatting
         if (["journey_date", "issued_date", "return_date", "date_of_birth"].includes(field)) {
             const date = new Date(value);
             if (!isNaN(date)) {
@@ -736,9 +907,9 @@ class TicketSalesSystem {
 
     generatePaymentMethods() {
         const paymentMethods = [];
-        document.querySelectorAll('.payment-entry').forEach(entry => {
-            const method = entry.querySelector('.payment-method-select').value;
-            const amount = parseFloat(entry.querySelector('.payment-amount-input').value) || 0;
+        this.getElements(this.selectors.classes.paymentEntry).forEach(entry => {
+            const method = entry.querySelector(this.selectors.classes.paymentMethodSelect).value;
+            const amount = parseFloat(entry.querySelector(this.selectors.classes.paymentAmountInput).value) || 0;
             if (method && amount > 0) paymentMethods.push({ method, amount });
         });
 
@@ -795,7 +966,7 @@ class TicketSalesSystem {
 
     getTicketCategories(type) {
         const categories = [];
-        document.querySelectorAll(`.ticket-quantity[data-type="${type}"]`).forEach(input => {
+        this.getElements(`.ticket-quantity[data-type="${type}"]`).forEach(input => {
             const quantity = parseInt(input.value) || 0;
             if (quantity > 0) {
                 const name = input.closest('div').previousElementSibling.querySelector('input[name$="[name]"]').value;
@@ -806,7 +977,7 @@ class TicketSalesSystem {
     }
 
     generateCoPassengerInfo() {
-        const coPassengerFields = [...document.querySelectorAll(".co-passenger")];
+        const coPassengerFields = [...this.getElements(this.selectors.classes.coPassenger)];
         if (coPassengerFields.length === 0) return '';
 
         let html = `
@@ -834,168 +1005,70 @@ class TicketSalesSystem {
         return html;
     }
 
-    // Co-Passenger Management
-    initializeCoPassenger() {
-        const wrapper = document.getElementById("coPassengersWrapper");
-        const addBtn = document.getElementById("addCoPassengerBtn");
+    // ==================== UTILITY METHODS ====================
+    toggleReturnJourneySection() {
+        const returnDate = this.getValue("return_date");
+        const returnSection = this.getElement("#returnJourneySection");
+        const noReturnMessage = this.getElement("#noReturnCategoriesMessage");
 
-        addBtn.addEventListener("click", () => this.addCoPassengerField(wrapper));
+        if (returnDate) {
+            returnSection.style.display = 'block';
+            noReturnMessage.classList.add("hidden");
+            this.loadTicketCategories();
+        } else {
+            returnSection.style.display = 'none';
+            this.getElement("#returnTicketCategoriesContainer").innerHTML = '';
+            noReturnMessage.classList.remove("hidden");
+            this.calculateTotalTickets();
+            this.calculateTicketFee();
+            this.updateCoPassengerRows();
+        }
+    }
 
-        wrapper.addEventListener("click", (e) => {
-            if (e.target.classList.contains("removeCoPassengerBtn")) {
-                e.target.closest(".co-passenger").remove();
+    showNoCategoriesMessage(departureContainer, returnContainer) {
+        const messageHTML = '<div class="text-gray-500 dark:text-gray-400">No ticket categories available for this ship.</div>';
+        departureContainer.innerHTML = messageHTML;
+        returnContainer.innerHTML = messageHTML;
+    }
+
+    async checkDuplicateTicket() {
+        const customerMobile = this.getElement('[name="customer_mobile"]').value.trim();
+        const journeyDate = this.getElement('[name="journey_date"]').value;
+
+        const response = await fetch("/ship-ticket-sales/check-duplicate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": this.getElement('meta[name="csrf-token"]').getAttribute("content"),
+            },
+            body: JSON.stringify({ customer_mobile: customerMobile, journey_date: journeyDate }),
+        });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+        return await response.json();
+    }
+
+    showDuplicateWarning() {
+        Swal.fire({
+            title: 'Duplicate Ticket Found',
+            text: "This ticket was bought within 24 hours. Do you want to continue?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, continue",
+            cancelButtonText: "Cancel",
+            customClass: {
+                confirmButton: "bg-blue-600 text-white",
+                cancelButton: "bg-red-500 text-white",
+            },
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.showReviewModal();
             }
         });
     }
 
-    addCoPassengerField(wrapper) {
-        const div = document.createElement("div");
-        div.classList.add("co-passenger", "grid", "grid-cols-3", "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg");
-
-        div.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Co-Passenger Name
-                </label>
-                <input type="text" name="co_passengers[${this.coPassengerIndex}][name]" placeholder="Enter co-passenger name"
-                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
-            </div>
-
-            <div class="flex items-end gap-2">
-                <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Co-Passenger NID
-                    </label>
-                    <input type="text" name="co_passengers[${this.coPassengerIndex}][nid]" placeholder="Enter NID"
-                        class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
-                </div>
-            </div>
-
-            <div class="flex items-end gap-2">
-                <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Co-Passenger Mobile Number
-                    </label>
-                    <input type="text" name="co_passengers[${this.coPassengerIndex}][co_passernger_number]" placeholder="Enter Mobile Number"
-                        class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
-                </div>
-                <button type="button" class="removeCoPassengerBtn fa-solid fa-trash px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition">
-                    
-                </button>
-            </div>
-        `;
-
-        wrapper.insertBefore(div, document.getElementById("addCoPassengerBtn"));
-        this.coPassengerIndex++;
-    }
-
-    // Payment Method Management
-    initializePaymentMethod() {
-        const wrapper = document.getElementById("paymentInfoWrapper");
-        const addBtn = document.getElementById("addPaymentInfo");
-
-        addBtn.addEventListener("click", () => this.addPaymentEntry(wrapper));
-        this.addPaymentEntry(wrapper); // Add initial payment entry
-    }
-
-    addPaymentEntry(wrapper) {
-        const div = document.createElement("div");
-        div.classList.add("payment-entry", "grid", "grid-cols-7", "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg", "bg-white", "dark:bg-gray-800");
-
-        div.innerHTML = `
-    <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Payment Method <span class="text-red-500">*</span>
-        </label>
-        <select name="payment_methods[${this.paymentIndex}][method]" 
-            class="payment-method-select w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
-            <option value="">Select method</option>
-            <option value="Cash">Cash</option>
-            <option value="Bkash">Bkash</option>
-            <option value="Nagad">Nagad</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-        </select>
-    </div>
-
-    <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-           Receive Amount (৳) <span class="text-red-500">*</span>
-        </label>
-        <input type="number" name="payment_methods[${this.paymentIndex}][amount]" 
-            placeholder="Enter amount"
-            class="payment-amount-input w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
-            step="0.01" min="0" value="0">
-    </div>
-
-    <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-           Date <span class="text-red-500">*</span>
-        </label>
-        <input type="date"
-            name="payment_methods[${this.paymentIndex}][paid_date]"
-            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
-            value="${new Date().toISOString().slice(0, 10)}">
-    </div>
-
-    <!-- ✅ Remark full width -->
-    <div class="col-span-6">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Remarks (optional)
-        </label>
-        <textarea
-            name="payment_methods[${this.paymentIndex}][remark]"
-            placeholder="Enter remarks"
-            rows="3"
-            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
-        ></textarea>
-    </div>
-
-    <div class="flex items-end col-span-1">
-        <button type="button"
-            class="removePaymentBtn fa-solid fa-trash w-full px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-lg">
-        </button>
-    </div>
-`;
-
-
-        wrapper.insertBefore(div, document.getElementById("addPaymentInfo"));
-        this.attachPaymentEventListeners(div);
-        this.paymentIndex++;
-    }
-
-    attachPaymentEventListeners(div) {
-        const amountInput = div.querySelector('.payment-amount-input');
-        const methodSelect = div.querySelector('.payment-method-select');
-        const removeBtn = div.querySelector('.removePaymentBtn');
-
-        amountInput.addEventListener('input', () => {
-            this.calculatePaymentTotals();
-            this.calculateTotalPayable();
-        });
-
-        methodSelect.addEventListener('change', () => {
-            this.calculateTotalPayable();
-        });
-
-        removeBtn.addEventListener('click', () => {
-            div.remove();
-            this.calculatePaymentTotals();
-            this.calculateTotalPayable();
-        });
-    }
-
-    calculatePaymentTotals() {
-        let totalReceived = 0;
-        document.querySelectorAll('.payment-amount-input').forEach(input => {
-            totalReceived += parseFloat(input.value) || 0;
-        });
-        this.setValue("received_amount", totalReceived.toFixed(2));
-        this.calculateDue();
-    }
-
-    // Utility Methods
     isValidMobile(mobile) {
-        return /^01[2-9]\d{8}$/.test(mobile);
+        return this.constants.MOBILE_REGEX.test(mobile);
     }
 
     escapeHtml(unsafe) {
@@ -1007,32 +1080,31 @@ class TicketSalesSystem {
             .replace(/'/g, "&#039;");
     }
 
-    getFieldLabel(fieldName) {
-        const labels = {
-            customer_name: "Customer Name",
-            customer_mobile: "Mobile Number",
-            ship_id: "Ship Name",
-            journey_date: "Journey Date",
-            ticket_fee: "Ticket Fee",
-            received_amount: "Received Amount",
-            company_id: "Company Name",
-            issued_date: "Issued Date",
-            sold_by: "Sold By",
-            total_tickets: "Total Tickets",
+    initBftnIssueDateToggle() {
+        const bftnSelect = this.getElement(this.selectors.elements.bftnSelect);
+        const issueWrapper = this.getElement(this.selectors.elements.bftnIssueDateWrapper);
+
+        if (!bftnSelect || !issueWrapper) return;
+
+        const toggleBftnIssueDate = () => {
+            if (bftnSelect.value === 'yes') {
+                issueWrapper.classList.remove('hidden');
+            } else {
+                issueWrapper.classList.add('hidden');
+            }
         };
-        return labels[fieldName] || fieldName;
+
+        toggleBftnIssueDate();
+        bftnSelect.addEventListener('change', toggleBftnIssueDate);
     }
 
-    // Error Handling
+    // ==================== ERROR HANDLING ====================
     showFieldError(field, message) {
-        // Remove any existing error
         this.clearFieldError(field);
 
-        // Add error styling to field
         field.classList.add("border-red-500", "dark:border-red-500", "focus:ring-red-500", "focus:border-red-500");
         field.classList.remove("border-gray-300", "dark:border-gray-600", "focus:ring-blue-500", "focus:border-blue-500");
 
-        // Create error message element
         const errorDiv = document.createElement("div");
         errorDiv.className = "text-red-600 dark:text-red-400 text-sm mt-1 flex items-start animate-fadeIn";
         errorDiv.innerHTML = `
@@ -1042,7 +1114,6 @@ class TicketSalesSystem {
             ${message}
         `;
 
-        // Add error message after the field
         const parent = field.parentNode;
         parent.appendChild(errorDiv);
         field._errorElement = errorDiv;
@@ -1061,7 +1132,7 @@ class TicketSalesSystem {
     clearAllErrors() {
         const topError = document.getElementById("topValidationError");
         if (topError) topError.remove();
-        document.querySelectorAll("input, select").forEach(field => this.clearFieldError(field));
+        this.getElements("input, select").forEach(field => this.clearFieldError(field));
     }
 
     showTopError(message) {
@@ -1083,7 +1154,6 @@ class TicketSalesSystem {
         `;
         document.body.appendChild(errorDiv);
 
-        // Auto remove after 5 seconds
         setTimeout(() => {
             if (errorDiv.parentNode) {
                 errorDiv.remove();
@@ -1092,13 +1162,6 @@ class TicketSalesSystem {
     }
 
     showNotification(message, type = 'info') {
-        const colors = {
-            success: 'green',
-            error: 'red',
-            warning: 'yellow',
-            info: 'blue'
-        };
-
         Swal.fire({
             title: message,
             icon: type,

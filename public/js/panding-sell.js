@@ -180,6 +180,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 },
                 {
+                    data: 'whatsapp',
+                    render: function (data) {
+                        if (!data) return 'N/A';
+                        return `
+                        <div class="flex items-center gap-2">
+                            <span>${data}</span>
+                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>`;
+                    }
+                },
+                {
                     data: null,
                     render: function (row) {
                         return row.ship?.name || row.ships?.name || 'Not available';
@@ -196,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-              if (status === 'pending') {
+            if (status === 'pending') {
                 columns.push({
                     data: 'received_amount',
                     render: function (data) {
@@ -205,22 +218,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-             if (status === 'pending') {
-    columns.push({
-        data: 'payments',
-        title: 'Payment Info',
-        orderable: false,
-        searchable: false,
-        render: function (payments) {
+            if (status === 'pending') {
+                columns.push({
+                    data: 'payments',
+                    title: 'Payment Info',
+                    orderable: false,
+                    searchable: false,
+                    render: function (payments) {
 
-            if (!payments || payments.length === 0) {
-                return '<span class="text-gray-400 text-sm">Not paid yet</span>';
-            }
+                        if (!payments || payments.length === 0) {
+                            return '<span class="text-gray-400 text-sm">Not paid yet</span>';
+                        }
 
-            let html = '<ul class="space-y-1 text-sm">';
+                        let html = '<ul class="space-y-1 text-sm">';
 
-            payments.forEach(payment => {
-                html += `
+                        payments.forEach(payment => {
+                            html += `
                     <li>
                         <span class="font-medium">${payment.payment_method}</span>
                         :
@@ -229,14 +242,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         </span>
                     </li>
                 `;
-            });
+                        });
 
-            html += '</ul>';
+                        html += '</ul>';
 
-            return html;
-        }
-    });
-}
+                        return html;
+                    }
+                });
+            }
 
             columns.push(
                 {
@@ -341,30 +354,47 @@ document.addEventListener("DOMContentLoaded", () => {
             //     data-id="${sale.id}" data-status="ticket-issued" 
             //     title="payment-verified by: ${verifyByName}">Ticket Issued</button>`,
             'ticket-issued': (() => {
-                const printedCount = sale.print_status?.total_printed_number ?? 0;
+                const printedFiles = sale.printed_tickets || []; // array of PDFs
+                const printedCount = printedFiles.length;
 
-                return `
-        <button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
-            data-id="${sale.id}" data-status="ticket-printed" 
-            title="ticket-issued by: ${verifyByName}">
-            Ticket Printed
-        </button>
+                let html = `
+    <button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
+        data-id="${sale.id}" data-status="ticket-printed" 
+        title="ticket-issued by: ${verifyByName}">
+        Ticket Printed
+    </button>
+    `;
 
+             html += `<div class="flex flex-col gap-2">`; // start vertical flex
+
+printedFiles.forEach(file => {
+    html += `
         <a
-            href="/tickets/open/${sale.id}"
+            href="/tickets/open/${sale.id}/${encodeURIComponent(file.filename)}"
             target="_blank"
             class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700
                    text-white px-3 py-1 rounded text-sm font-semibold"
-            title="Open Ticket in Google Drive"
+            title="${file.filename}"
         >
-            Open Ticket <span class="text-red-600 bg-white rounded-full px-2">${printedCount}</span>
+            ${file.filename}
         </a>
-
-        <button class="fa-solid fa-print px-2 py-1 rounded printBtn" 
-            data-id="${sale.id}">
-        </button>
     `;
+});
+
+html += `</div>`; // close vertical flex
+
+
+                // Optional: single print button for all PDFs
+                html += `
+    <button class="fa-solid fa-print px-2 py-1 rounded printBtn" 
+        data-id="${sale.id}" title="Print All">
+        
+    </button>
+    `;
+
+                return html;
             })(),
+
 
 
             'ticket-printed': `<button class="bg-red-500 text-white px-2 py-1 rounded shipmentIdEntryBtn" 

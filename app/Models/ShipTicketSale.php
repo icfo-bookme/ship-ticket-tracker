@@ -155,4 +155,11 @@ public function printStatus()
     return $this->hasOne(PrintStatus::class, 'sales_id', 'id');
 }
 
+// In ShipTicketSale model
+public function printedTickets()
+{
+    return $this->hasMany(PrintedTicket::class, 'sales_id', 'id');
+}
+
+
 }

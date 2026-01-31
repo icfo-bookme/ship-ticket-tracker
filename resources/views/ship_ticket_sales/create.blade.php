@@ -404,9 +404,20 @@
                                 <option value="">Select Status</option>
                                 <option value="yes" {{ old('bftn_status') == 'yes' ? 'selected' : '' }}>Yes
                                 </option>
-                                <option value="no" {{ old('bftn_status') == 'no' ? 'selected' : '' }}>No</option>
+                                <option value="no" {{ old('bftn_status') == '' ? 'selected' : '' }}>No</option>
                             </select>
                         </div>
+
+                        <div id="bftnIssueDateWrapper" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                BFTN Issue Date & Time
+                            </label>
+
+                            <input type="datetime-local" name="bftn_issue_datetime"
+                                value="{{ old('bftn_issue_datetime') }}"
+                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 shadow-sm">
+                        </div>
+
                     </div>
                 </div>
 
@@ -427,7 +438,8 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Full Address
                             <span class="text-xs text-gray-500">(Format: Fla# A1, House# 17/1, Road# 3/A, Dhanmondi,
-                                Dhaka-1209)</span> <span class="text-red-500 font-bold"> N.B: Please follow Steadfast Courier address format</span>
+                                Dhaka-1209)</span> <span class="text-red-500 font-bold"> N.B: Please follow Steadfast
+                                Courier address format</span>
                         </label>
                         <textarea id="address" name="address" placeholder="Enter your address here" rows="3" required
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('address') }}</textarea>

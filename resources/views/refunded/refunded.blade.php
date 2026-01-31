@@ -1,7 +1,7 @@
 <div class="py-6">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
         <div id="statusFilter" data-status="{{ "refunded" }}" class="hidden"></div>
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800  leading-tight">
             Refunded Ship Ticket Sales
         </h2>
         <div class="mt-6 mb-4 grid grid-cols-3 gap-10">

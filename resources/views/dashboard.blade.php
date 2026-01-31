@@ -352,16 +352,7 @@
                             <h2 class="text-2xl font-bold text-gray-900">📈 Advanced Distribution Analytics</h2>
                             <p class="text-gray-600">Visual insights into ticket distribution patterns</p>
                         </div>
-                        <div class="flex space-x-2">
-                            <button
-                                class="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                                This Month
-                            </button>
-                            <button
-                                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                                Last 3 Months
-                            </button>
-                        </div>
+                        
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

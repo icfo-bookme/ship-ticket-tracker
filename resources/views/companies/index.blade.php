@@ -2,7 +2,7 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="flex items-center justify-between pb-5">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
+                <h2 class="font-semibold text-xl text-gray-800  leading-tight">
                     Companies Details
                 </h2>
                 <button data-modal-target="add-modal" data-modal-toggle="add-modal"

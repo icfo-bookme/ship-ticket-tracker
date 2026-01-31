@@ -6,10 +6,11 @@
             Ship Ticket Sale #{{ $sale->id }}
             
         </h2>
-        <a href="/sales/status/pending"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5">
-            <i class="fas fa-arrow-left mr-2"></i>Back to List
-        </a>
+      <a href="/sales/status/{{ $sale->status }}"
+   class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5">
+    <i class="fas fa-arrow-left mr-2"></i> Back to List
+</a>
+
     </div>
 
     <!-- Flash Messages -->
@@ -295,20 +296,7 @@
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
-                                <div>
-                                    <div class="flex items-center justify-between mb-2">
-                                        <label for="ticket_category"
-                                            class="block text-sm font-semibold text-gray-700">Ticket Category</label>
-                                        <button type="button"
-                                            class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
-                                            data-field="ticket_category" title="Copy Ticket Category">
-                                            <i class="fas fa-copy text-xs"></i>
-                                        </button>
-                                    </div>
-                                    <input type="text" name="ticket_category" id="ticket_category"
-                                        value="{{ old('ticket_category', $sale->ticket_category) }}"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
-                                </div>
+                                
                             </div>
                         </div>
 
@@ -818,12 +806,12 @@
                             </button>
 
                             <!-- Update and Next Button -->
-                            @if ($nextSale)
+                            @if ($nextSale && $sale->status == 'payment-verified')
                                 <button type="submit" name="action" value="update_and_next"
                                     class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
                                     <i class="fas fa-save mr-2"></i>
                                     <i class="fas fa-arrow-right mr-2"></i>
-                                    Update & Next
+                                    Verify & Next
                                 </button>
                             @endif
                         </div>

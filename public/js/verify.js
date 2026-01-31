@@ -1,4 +1,4 @@
-// Function to delete sale
+
     async function varifySale(btn) {
         const saleId = btn.dataset.id;
         const status = btn.dataset.status;

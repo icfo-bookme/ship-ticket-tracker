@@ -4,7 +4,7 @@
 @endphp
 
 <div class="">
-    <div id="statusTabs" class="flex flex-wrap gap-2 sm:gap-3 mb-2 bg-gray-50 dark:bg-gray-800 p-2 sm:p-3 shadow-sm">
+    <div id="statusTabs" class="flex flex-wrap gap-2 sm:gap-3 mb-2 bg-gray-50  p-2 sm:p-3 shadow-sm">
         @php
             $statuses = [
                 'pending' => 'Pending',

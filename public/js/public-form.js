@@ -219,7 +219,7 @@ class TicketSalesSystem {
     }
 
     showNoCategoriesMessage(departureContainer, returnContainer) {
-        const messageHTML = '<div class="text-gray-500 dark:text-gray-400">No ticket categories available for this ship.</div>';
+        const messageHTML = '<div class="text-gray-500 ">No ticket categories available for this ship.</div>';
         departureContainer.innerHTML = messageHTML;
         returnContainer.innerHTML = messageHTML;
     }
@@ -234,7 +234,7 @@ class TicketSalesSystem {
 
         div.innerHTML = `
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700  mb-2">
                     ${pkg.name || 'Unnamed Category'} (${type === 'departure' ? 'Departure' : 'Return'})
                 </label>
                 <input type="hidden" name="ticket_categories[${type}][${index}][name]" value="${this.escapeHtml(pkg.name || '')}">
@@ -242,7 +242,7 @@ class TicketSalesSystem {
                 <input type="hidden" class="ticket-price" data-package-id="${pkg.id}" data-type="${type}" value="${singlePrice}">
                 <input type="hidden" class="ticket-round-trip-price" data-package-id="${pkg.id}" data-type="${type}" value="${roundTripPrice}">
                 <input type="hidden" class="ticket-return-price" data-package-id="${pkg.id}" data-type="${type}" value="${returnTripPrice}">
-                <p class="text-sm text-gray-600 dark:text-gray-400">
+                <p class="text-sm text-gray-600 ">
                     Category: ${this.escapeHtml(pkg.name || 'Unnamed')}<br>
                     ${type === 'departure' ?
                 `Departure: ৳${singlePrice.toFixed(2)}` :
@@ -252,14 +252,14 @@ class TicketSalesSystem {
                 </p>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700  mb-2">
                     Quantity
                 </label>
                 <input type="number" 
                     name="ticket_categories[${type}][${index}][quantity]" 
                     value="0" 
                     min="0" 
-                    class="ticket-quantity w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+                    class="ticket-quantity w-full border border-gray-300  rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
                     data-package-id="${pkg.id}"
                     data-type="${type}">
             </div>
@@ -827,37 +827,37 @@ class TicketSalesSystem {
 
     addCoPassengerField(wrapper) {
         const div = document.createElement("div");
-        div.classList.add("co-passenger", "grid", "lg:grid-cols-3",  "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg", "bg-white", "dark:bg-gray-800", "animate-fadeIn");
+        div.classList.add("co-passenger", "grid", "lg:grid-cols-3",  "gap-4", "p-4", "border", "border-gray-200",  "rounded-lg", "bg-white",  "animate-fadeIn");
 
         div.innerHTML = `
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700  mb-2">
                     Co-Passenger Name ${this.coPassengerIndex+1} <span class="text-red-500">*</span>
                 </label>
                 <input type="text" name="co_passengers[${this.coPassengerIndex}][name]" placeholder="Enter co-passenger name" 
-                    class="co-passenger-name w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+                    class="co-passenger-name w-full border border-gray-300  rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
                     data-required="true">
             </div>
 
             <div class="flex items-end gap-2">
                 <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label class="block text-sm font-medium text-gray-700  mb-2">
                         Co-Passenger NID
                     </label>
                     <input type="text" name="co_passengers[${this.coPassengerIndex}][nid]" placeholder="Enter NID"
-                        class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+                        class="w-full border border-gray-300  rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
                 </div>
             </div>
 
             <div class="flex items-end gap-2">
                 <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label class="block text-sm font-medium text-gray-700  mb-2">
                         Co-Passenger Mobile Number
                     </label>
                     <input type="text" name="co_passengers[${this.coPassengerIndex}][co_passernger_number]" placeholder="Enter Mobile Number"
-                        class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+                        class="w-full border border-gray-300  rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
                 </div>
-                <button type="button" class="removeCoPassengerBtn px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-lg">
+                <button type="button" class="removeCoPassengerBtn px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition bg-red-50 hover:bg-red-100  rounded-lg">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -903,15 +903,15 @@ class TicketSalesSystem {
 
     addPaymentEntry(wrapper) {
         const div = document.createElement("div");
-        div.classList.add("payment-entry", "md:grid", "grid-cols-7", "gap-4", "p-4", "border", "border-gray-200", "dark:border-gray-700", "rounded-lg", "bg-white", "dark:bg-gray-800");
+        div.classList.add("payment-entry", "md:grid", "grid-cols-7", "gap-4", "p-4", "border", "border-gray-200", "rounded-lg", "bg-white");
 
         div.innerHTML = `
             <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700  mb-2">
                    Paid Via <span class="text-red-500">*</span>
                 </label>
                 <select name="payment_methods[${this.paymentIndex}][method]" 
-                    class="payment-method-select w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+                    class="payment-method-select w-full border border-gray-300  rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
                     <option value="">Select method</option>
                     <option value="Cash">Cash</option>
                     <option value="Bkash">Bkash</option>
@@ -921,31 +921,31 @@ class TicketSalesSystem {
             </div>
 
             <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700  mb-2">
                    Bikas/Nogod/Bank acc. Number <span class="text-red-500">*</span>
                 </label>
                 <input type="number" name="payment_methods[${this.paymentIndex}][bank_acc]" 
                     placeholder="Bikas/Nogod/ Bank acc. Number"
-                    class="payment-bank_acc-input w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+                    class="payment-bank_acc-input w-full border border-gray-300  rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
                     step="0.01" min="0" >
             </div>
 
             <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700  mb-2">
                    Paid Amount (৳) <span class="text-red-500">*</span>
                 </label>
                 <input type="number" name="payment_methods[${this.paymentIndex}][amount]" 
                     placeholder="Enter amount"
-                    class="payment-amount-input w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+                    class="payment-amount-input w-full border border-gray-300  rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
                     step="0.01" min="0" value="0">
             </div>
             <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700  mb-2">
                  Payment Date <span class="text-red-500">*</span>
                 </label>
                 <input type="date"
                     name="payment_methods[${this.paymentIndex}][paid_date]"
-                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+                    class="w-full border border-gray-300  rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
                     value="${new Date().toISOString().slice(0, 10)}">
             </div>
 

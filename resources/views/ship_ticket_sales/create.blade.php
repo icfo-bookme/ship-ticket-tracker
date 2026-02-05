@@ -54,7 +54,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div>
+                        <div >
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Passenger Name <span class="text-red-500">*</span>
                             </label>
@@ -410,7 +410,7 @@
 
                         <div id="bftnIssueDateWrapper" class="hidden">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                BFTN Issue Date & Time
+                                Tentative Deposit Date & Time
                             </label>
 
                             <input type="datetime-local" name="bftn_issue_datetime"

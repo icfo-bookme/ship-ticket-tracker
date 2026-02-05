@@ -43,6 +43,8 @@ class ShipTicketSale extends Model
         'ticket_category',
         'status',
         'date_of_birth',
+        'other_fee',
+        'total_payable',
         'address',
         'remark1',
         'remark2',
@@ -150,16 +152,14 @@ class ShipTicketSale extends Model
         return $this->hasOne(Shipment::class, 'ticket_id', 'id');
     }
 
-public function printStatus()
-{
-    return $this->hasOne(PrintStatus::class, 'sales_id', 'id');
-}
+    public function printStatus()
+    {
+        return $this->hasOne(PrintStatus::class, 'sales_id', 'id');
+    }
 
-// In ShipTicketSale model
-public function printedTickets()
-{
-    return $this->hasMany(PrintedTicket::class, 'sales_id', 'id');
-}
-
-
+    // In ShipTicketSale model
+    public function printedTickets()
+    {
+        return $this->hasMany(PrintedTicket::class, 'sales_id', 'id');
+    }
 }

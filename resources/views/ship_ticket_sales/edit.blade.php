@@ -4,12 +4,12 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             <i class="fas fa-edit mr-2 text-blue-600"></i>
             Ship Ticket Sale #{{ $sale->id }}
-            
+
         </h2>
-      <a href="/sales/status/{{ $sale->status }}"
-   class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5">
-    <i class="fas fa-arrow-left mr-2"></i> Back to List
-</a>
+        <a href="/sales/status/{{ $sale->status }}"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5">
+            <i class="fas fa-arrow-left mr-2"></i> Back to List
+        </a>
 
     </div>
 
@@ -72,7 +72,7 @@
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                 <div>
+                                <div>
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="customer_name"
                                             class="block text-sm font-semibold text-gray-700">Customer ID *</label>
@@ -86,7 +86,7 @@
                                         value="{{ old('id', $sale->id) }}"
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
-                                <div>
+                                <div class="bg-red-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="customer_name"
                                             class="block text-sm font-semibold text-gray-700">Customer Name *</label>
@@ -98,10 +98,10 @@
                                     </div>
                                     <input type="text" name="customer_name" id="customer_name" required
                                         value="{{ old('customer_name', $sale->customer_name) }}"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
+                                        class="copyable-field bg-red-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
-                                <div>
+                                <div class="bg-red-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="customer_mobile"
                                             class="block text-sm font-semibold text-gray-700">Mobile Number *</label>
@@ -113,7 +113,7 @@
                                     </div>
                                     <input type="text" name="customer_mobile" id="customer_mobile" required
                                         value="{{ old('customer_mobile', $sale->customer_mobile) }}"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
+                                        class="copyable-field w-full bg-red-500 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
                                 <div>
@@ -131,7 +131,7 @@
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
-                                <div>
+                                <div class="bg-red-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="email"
                                             class="block text-sm font-semibold text-gray-700">Email</label>
@@ -143,14 +143,14 @@
                                     </div>
                                     <input type="email" name="email" id="email"
                                         value="{{ old('email', $sale->email) }}"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
+                                        class="copyable-field bg-red-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
 
                                 <input type="number" value={{ $nextSale->id ?? '' }} name="next_sale_id" hidden>
 
 
-                                <div>
+                                <div class="bg-red-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="nid"
                                             class="block text-sm font-semibold text-gray-700">NID</label>
@@ -162,10 +162,10 @@
                                     </div>
                                     <input type="text" name="nid" id="nid"
                                         value="{{ old('nid', $sale->nid) }}"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
+                                        class="copyable-field bg-red-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
-                                <div>
+                                <div class="bg-red-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="date_of_birth"
                                             class="block text-sm font-semibold text-gray-700">Date of Birth</label>
@@ -177,7 +177,7 @@
                                     </div>
                                     <input type="date" name="date_of_birth" id="date_of_birth"
                                         value="{{ old('date_of_birth', $sale->date_of_birth) }}"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
+                                        class="copyable-field bg-red-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
                                 <div class="md:col-span-3">
@@ -250,7 +250,7 @@
                                     </select>
                                 </div>
 
-                                <div>
+                                <div class="bg-red-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="journey_date"
                                             class="block text-sm font-semibold text-gray-700">Journey Date *</label>
@@ -262,10 +262,10 @@
                                     </div>
                                     <input type="date" name="journey_date" id="journey_date"
                                         value="{{ old('journey_date', $sale->journey_date) }}"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
+                                        class="copyable-field bg-red-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
-                                <div>
+                                <div class="bg-red-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="return_date"
                                             class="block text-sm font-semibold text-gray-700">Return Date</label>
@@ -277,10 +277,10 @@
                                     </div>
                                     <input type="date" name="return_date" id="return_date"
                                         value="{{ old('return_date', $sale->return_date) }}"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
+                                        class="copyable-field bg-red-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
-                                <div>
+                                <div class="bg-green-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="number_of_ticket"
                                             class="block text-sm font-semibold text-gray-700">Number of Tickets
@@ -293,10 +293,10 @@
                                     </div>
                                     <input type="number" name="number_of_ticket" id="number_of_ticket" required
                                         min="1" value="{{ old('number_of_ticket', $sale->number_of_ticket) }}"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
+                                        class="copyable-field bg-green-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4">
                                 </div>
 
-                                
+
                             </div>
                         </div>
 
@@ -384,8 +384,10 @@
                                                     <label for="return_package_{{ $package->id }}"
                                                         class="ml-3 block text-sm font-medium text-gray-700">
                                                         <span class="font-semibold">{{ $package->name }}</span>
-                                                        <span
-                                                            class="text-blue-600 font-bold ml-2">৳{{ number_format($package->round_trip_price, 2) - number_format($package->price, 2) }}</span>
+                                                        <span class="text-blue-600 font-bold ml-2">
+                                                            ৳{{ number_format($package->round_trip_price - $package->price, 2) }}
+                                                        </span>
+
                                                     </label>
                                                 </div>
                                                 <div class="flex items-center justify-end space-x-2">
@@ -411,14 +413,15 @@
                                 <div class="bg-blue-600 p-2 rounded-lg mr-3">
                                     <i class="fas fa-money-bill-wave text-white text-sm"></i>
                                 </div>
-                                <h3 class="text-xl font-bold text-gray-800">Financial Information</h3>
+                                <h3 class="text-xl font-bold text-gray-800">Financial Summary</h3>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                <!-- Ticket Fee -->
                                 <div class="bg-white rounded-xl p-6 shadow-sm border border-blue-200">
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="ticket_fee"
-                                            class="block text-sm font-semibold text-blue-700">Total Ticket Fee
+                                            class="block text-sm font-semibold text-gray-700">Total Ticket Fee
                                             *</label>
                                         <button type="button"
                                             class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
@@ -426,29 +429,76 @@
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
-                                    <input type="number" step="0.01" name="ticket_fee" id="ticket_fee" required
-                                        value="{{ old('ticket_fee', $sale->ticket_fee) }}"
-                                        class="copyable-field w-full border-blue-200 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4 text-lg font-bold text-blue-800">
+                                    <div class="flex items-center">
+                                        <span class="text-gray-500 mr-2">৳</span>
+                                        <input type="number" step="0.01" name="ticket_fee" id="ticket_fee"
+                                            required value="{{ old('ticket_fee', $sale->ticket_fee) }}"
+                                            class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4 text-lg font-bold text-gray-800">
+                                    </div>
                                 </div>
 
+                                <!-- Other Fee -->
+                                <div class="bg-white rounded-xl p-6 shadow-sm border border-blue-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label for="other_fee" class="block text-sm font-semibold text-gray-700">Other
+                                            Fee</label>
+                                        <button type="button"
+                                            class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
+                                            data-field="other_fee" title="Copy Other Fee">
+                                            <i class="fas fa-copy text-xs"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="text-gray-500 mr-2">৳</span>
+                                        <input type="number" step="0.01" name="other_fee" id="other_fee"
+                                            value="{{ old('other_fee', $sale->other_fee) }}"
+                                            class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-3 px-4 text-lg font-bold text-gray-800">
+                                    </div>
+                                </div>
+
+                                <!-- Total Payable -->
+                                <div class="bg-white rounded-xl p-6 shadow-sm border border-green-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label for="total_payable"
+                                            class="block text-sm font-semibold text-gray-700">Total Payable</label>
+                                        <button type="button"
+                                            class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
+                                            data-field="total_payable" title="Copy Total Payable">
+                                            <i class="fas fa-copy text-xs"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="text-gray-500 mr-2">৳</span>
+                                        <input type="number" step="0.01" name="total_payable" id="total_payable"
+                                            readonly value="{{ old('total_payable', $sale->total_payable) }}"
+                                            class="copyable-field w-full border-green-200 bg-green-50 rounded-lg shadow-sm py-3 px-4 text-lg font-bold text-green-700">
+                                    </div>
+                                </div>
+
+                                <!-- Received Amount -->
                                 <div class="bg-white rounded-xl p-6 shadow-sm border border-blue-200">
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="received_amount"
-                                            class="block text-sm font-semibold text-green-700">Total Received</label>
+                                            class="block text-sm font-semibold text-gray-700">Total Received</label>
                                         <button type="button"
                                             class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
                                             data-field="received_amount" title="Copy Received Amount">
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
-                                    <input type="number" step="0.01" name="received_amount" id="received_amount"
-                                        readonly value="{{ old('received_amount', $sale->received_amount) }}"
-                                        class="copyable-field w-full border-green-200 bg-green-50 rounded-lg shadow-sm py-3 px-4 text-lg font-bold text-green-800">
+                                    <div class="flex items-center">
+                                        <span class="text-gray-500 mr-2">৳</span>
+                                        <input type="number" step="0.01" name="received_amount"
+                                            id="received_amount" readonly
+                                            value="{{ old('received_amount', $sale->received_amount) }}"
+                                            class="copyable-field w-full border-blue-200 bg-blue-50 rounded-lg shadow-sm py-3 px-4 text-lg font-bold text-blue-700">
+                                    </div>
                                 </div>
 
-                                <div class="bg-white rounded-xl p-6 shadow-sm border border-blue-200">
+                                <!-- Due Amount -->
+                                <div class="bg-white rounded-xl p-6 shadow-sm border border-red-200">
                                     <div class="flex items-center justify-between mb-2">
-                                        <label for="due_amount" class="block text-sm font-semibold text-red-700">Due
+                                        <label for="due_amount" class="block text-sm font-semibold text-gray-700">Due
                                             Amount</label>
                                         <button type="button"
                                             class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
@@ -456,24 +506,34 @@
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
-                                    <input type="number" step="0.01" name="due_amount" id="due_amount"
-                                        value="{{ old('due_amount', $sale->due_amount) }}"
-                                        class="copyable-field w-full border-red-200 bg-red-50 rounded-lg shadow-sm py-3 px-4 text-lg font-bold text-red-800">
+                                    <div class="flex items-center">
+                                        <span class="text-gray-500 mr-2">৳</span>
+                                        <input type="number" step="0.01" name="due_amount" id="due_amount"
+                                            readonly value="{{ old('due_amount', $sale->due_amount) }}"
+                                            class="copyable-field w-full border-red-200 bg-red-50 rounded-lg shadow-sm py-3 px-4 text-lg font-bold text-red-600">
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Multiple Payments Section -->
-                            <div class="mt-6">
-                                <h4 class="font-bold text-lg text-gray-800 mb-4 flex items-center">
-                                    <i class="fas fa-credit-card mr-2 text-blue-600"></i>
-                                    Payment Records
-                                </h4>
+                            <!-- Payment Records Section -->
+                            <div class="mt-8">
+                                <div class="flex items-center justify-between mb-6">
+                                    <h4 class="font-bold text-lg text-gray-800 flex items-center">
+                                        <i class="fas fa-credit-card mr-2 text-blue-600"></i>
+                                        Payment Records
+                                    </h4>
+                                    <div class="text-sm text-gray-600 bg-gray-100 px-4 py-2 rounded-lg">
+                                        Total Payments: <span id="total-payment-count"
+                                            class="font-bold">{{ count($sale->payments) }}</span>
+                                    </div>
+                                </div>
 
-                                <div id="payments-container" class="space-y-4">
+                                <div id="payments-container" class="space-y-6">
                                     @foreach ($sale->payments as $index => $payment)
                                         <div
                                             class="payment-item bg-white rounded-xl p-6 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out">
-                                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                                <!-- Payment Method -->
                                                 <div>
                                                     <div class="flex items-center justify-between mb-2">
                                                         <label
@@ -499,7 +559,7 @@
                                                         <option value="Nagad"
                                                             {{ $payment->payment_method == 'Nagad' ? 'selected' : '' }}>
                                                             Nagad</option>
-                                                        <option value="Bank"
+                                                        <option value="Bank Transfer"
                                                             {{ $payment->payment_method == 'Bank Transfer' ? 'selected' : '' }}>
                                                             Bank Transfer</option>
                                                         <option value="Card"
@@ -507,6 +567,8 @@
                                                             Card</option>
                                                     </select>
                                                 </div>
+
+                                                <!-- Amount -->
                                                 <div>
                                                     <div class="flex items-center justify-between mb-2">
                                                         <label class="block text-sm font-semibold text-gray-700">Amount
@@ -518,27 +580,55 @@
                                                             <i class="fas fa-copy text-xs"></i>
                                                         </button>
                                                     </div>
-                                                    <input type="number" step="0.01"
-                                                        name="payments[{{ $index }}][received_amount]" required
-                                                        value="{{ $payment->received_amount }}"
-                                                        class="copyable-field payment-amount w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
+                                                    <div class="flex items-center">
+                                                        <span class="text-gray-500 mr-2">৳</span>
+                                                        <input type="number" step="0.01"
+                                                            name="payments[{{ $index }}][received_amount]"
+                                                            required value="{{ $payment->received_amount }}"
+                                                            class="copyable-field payment-amount w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
+                                                    </div>
                                                 </div>
+
+                                                <!-- Transaction ID -->
                                                 <div>
                                                     <div class="flex items-center justify-between mb-2">
-                                                        <label class="block text-sm font-semibold text-gray-700">Paid
-                                                            Date</label>
+                                                        <label
+                                                            class="block text-sm font-semibold text-gray-700">Transaction
+                                                            ID</label>
                                                         <button type="button"
                                                             class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
-                                                            data-field="payments[{{ $index }}][paid_date]"
-                                                            title="Copy Paid Date">
+                                                            data-field="payments[{{ $index }}][transaction_id]"
+                                                            title="Copy Transaction ID">
                                                             <i class="fas fa-copy text-xs"></i>
                                                         </button>
                                                     </div>
-                                                    <input type="date"
-                                                        name="payments[{{ $index }}][paid_date]"
-                                                        value="{{ $payment->paid_date }}"
+                                                    <input type="text"
+                                                        name="payments[{{ $index }}][transaction_id]"
+                                                        value="{{ $payment->transaction_id }}"
+                                                        placeholder="TRX-123456"
                                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
                                                 </div>
+
+                                                <!-- Payment Date & Time -->
+                                                <div>
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <label
+                                                            class="block text-sm font-semibold text-gray-700">Payment
+                                                            Date & Time *</label>
+                                                        <button type="button"
+                                                            class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
+                                                            data-field="payments[{{ $index }}][payment_datetime]"
+                                                            title="Copy Payment Date & Time">
+                                                            <i class="fas fa-copy text-xs"></i>
+                                                        </button>
+                                                    </div>
+                                                    <input type="datetime-local"
+                                                        name="payments[{{ $index }}][payment_datetime]"
+                                                        value="{{ $payment->payment_datetime ? \Carbon\Carbon::parse($payment->payment_datetime)->format('Y-m-d\TH:i') : '' }}"
+                                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
+                                                </div>
+
+                                                <!-- Remark -->
                                                 <div>
                                                     <div class="flex items-center justify-between mb-2">
                                                         <label
@@ -552,21 +642,26 @@
                                                     </div>
                                                     <input type="text"
                                                         name="payments[{{ $index }}][remark]"
-                                                        value="{{ $payment->remark }}"
+                                                        value="{{ $payment->remark }}" placeholder="Optional note"
                                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
                                                 </div>
                                             </div>
-                                            <button type="button"
-                                                class="mt-3 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-200 ease-in-out transform hover:scale-105 remove-payment">
-                                                <i class="fas fa-trash mr-1"></i>Remove Payment
-                                            </button>
+
+                                            <!-- Remove Button -->
+                                            <div class="flex justify-end mt-4">
+                                                <button type="button"
+                                                    class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-200 ease-in-out transform hover:scale-105 remove-payment">
+                                                    <i class="fas fa-trash mr-1"></i>Remove Payment
+                                                </button>
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
 
+                                <!-- Add Payment Button -->
                                 <button type="button" id="add-payment"
-                                    class="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md">
-                                    <i class="fas fa-plus-circle mr-2"></i>Add Another Payment
+                                    class="mt-6 w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md hover:shadow-lg">
+                                    <i class="fas fa-plus-circle mr-2"></i>Add Another Payment Record
                                 </button>
                             </div>
                         </div>
@@ -712,12 +807,11 @@
                             <div id="co-passengers-container" class="space-y-4">
                                 @foreach ($sale->coPassengers as $index => $passenger)
                                     <div
-                                        class="co-passenger-item bg-white rounded-xl p-6 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out">
+                                        class="co-passenger-item bg-red-600  rounded-xl p-6 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out">
                                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div>
                                                 <div class="flex items-center justify-between mb-2">
-                                                    <label
-                                                        class="block text-sm font-semibold text-gray-700">Name</label>
+                                                    <label class="block text-sm font-semibold text-white">Name</label>
                                                     <button type="button"
                                                         class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
                                                         data-field="co_passengers[{{ $index }}][name]"
@@ -731,8 +825,7 @@
                                             </div>
                                             <div>
                                                 <div class="flex items-center justify-between mb-2">
-                                                    <label
-                                                        class="block text-sm font-semibold text-gray-700">NID</label>
+                                                    <label class="block text-sm font-semibold text-white">NID</label>
                                                     <button type="button"
                                                         class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
                                                         data-field="co_passengers[{{ $index }}][nid]"
@@ -746,7 +839,7 @@
                                             </div>
                                             <div>
                                                 <div class="flex items-center justify-between mb-2">
-                                                    <label class="block text-sm font-semibold text-gray-700">Mobile
+                                                    <label class="block text-sm font-semibold text-white">Mobile
                                                         Number</label>
                                                     <button type="button"
                                                         class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
@@ -758,6 +851,22 @@
                                                 <input type="text"
                                                     name="co_passengers[{{ $index }}][co_passernger_number]"
                                                     value="{{ $passenger->co_passernger_number }}"
+                                                    class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
+                                            </div>
+                                            <div>
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <label class="block text-sm font-semibold text-white">Date of
+                                                        Birth</label>
+                                                    <button type="button"
+                                                        class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
+                                                        data-field="co_passengers[{{ $index }}][date_of_birth]"
+                                                        title="Copy Passenger Date of Birth">
+                                                        <i class="fas fa-copy text-xs"></i>
+                                                    </button>
+                                                </div>
+                                                <input type="date"
+                                                    name="co_passengers[{{ $index }}][date_of_birth]"
+                                                    value="{{ $passenger->date_of_birth }}"
                                                     class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
                                             </div>
                                         </div>
@@ -774,6 +883,180 @@
                                 <i class="fas fa-user-plus mr-2"></i>Add Co-Passenger
                             </button>
                         </div>
+                        @if ($sale->status == 'payment-verified')
+                            <div class="bg-blue-950 rounded-2xl p-6">
+                                <div id="pdf-fields"
+                                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4  shadow-sm mt-6">
+                                    @php $count = 1; @endphp
+
+                                    @for ($i = 1; $i <= $totalDepartureTickets; $i += 5)
+                                        <div class="pdf-item mb-4 border p-3 rounded-lg relative">
+                                            <div class="flex items-center justify-between m-2">
+                                                <label for="pdf-{{ $i }}"
+                                                    class="text-sm font-semibold text-gray-100">
+                                                    Pdf-{{ $count }}
+                                                </label>
+
+                                                <div class="flex gap-2">
+                                                    <button type="button" class="copy-field-btn text-blue-600"
+                                                        data-field="pdf-{{ $i }}">
+                                                        <i class="fas fa-copy text-xs"></i>
+                                                    </button>
+                                                </div>
+
+                                                <button type="button" class="remove-pdf-btn text-red-600"
+                                                    title="Remove">
+                                                    <i class="fas fa-times text-xs"></i>
+                                                </button>
+                                            </div>
+
+                                            <input type="text" id="pdf-{{ $i }}" readonly
+                                                name="pdf[{{ $i }}]"
+                                                value="{{ ($sale->whatsapp ?? 'whatsapp') . '-' . $count }}"
+                                                class="copyable-field w-full border-gray-300 rounded-lg py-2 px-3">
+                                        </div>
+
+                                        @php $count++; @endphp
+                                    @endfor
+
+
+
+                                </div>
+
+                                <div class="">
+                                    <button type="button" id="addPdfField"
+                                        class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg rounded-lg hover:bg-blue-700">
+                                        + Add New PDF Field
+                                    </button>
+                                </div>
+                            </div>
+
+                            <script>
+                                let pdfIndex = {{ $count - 1 }};
+                                const whatsappPrefix = "{{ $sale->whatsapp ?? 'whatsapp' }}";
+
+                                const container = document.getElementById('pdf-fields');
+
+                                document.getElementById('addPdfField').addEventListener('click', () => {
+                                    pdfIndex++;
+
+                                    const div = document.createElement('div');
+                                    div.className = 'pdf-item mb-4 border p-3 rounded-lg relative';
+
+                                    div.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+                <label for="pdf-${pdfIndex}" class="text-sm font-semibold text-gray-100">
+                    Pdf-${pdfIndex}
+                </label>
+
+                <div class="flex gap-2">
+                    <button type="button"
+                        class="copy-field-btn text-blue-600"
+                        data-field="pdf-${pdfIndex}">
+                        <i class="fas fa-copy text-xs"></i>
+                    </button>
+
+                    <button type="button"
+                        class="remove-pdf-btn text-red-600">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <input
+                type="text"
+                id="pdf-${pdfIndex}"
+                name="pdf[${pdfIndex}]"
+                readonly
+                value="${whatsappPrefix}-${pdfIndex}"
+                class="copyable-field w-full border-gray-300 rounded-lg py-2 px-3"
+            >
+        `;
+
+                                    container.appendChild(div);
+                                });
+
+                                container.addEventListener('click', (e) => {
+
+                                    if (e.target.closest('.remove-pdf-btn')) {
+                                        e.target.closest('.pdf-item').remove();
+                                    }
+
+                                    if (e.target.closest('.copy-field-btn')) {
+                                        const btn = e.target.closest('.copy-field-btn');
+                                        const input = document.getElementById(btn.dataset.field);
+                                        input.select();
+                                        document.execCommand('copy');
+                                    }
+                                });
+                            </script>
+                        @endif
+
+
+
+                      <!-- PDF Section -->
+<div class="bg-blue-50 rounded-2xl p-6 shadow-sm border border-blue-100 mt-6">
+
+    <!-- Existing PDF Files -->
+    @if ($sale->printedTickets->count() > 0)
+        <div class="mb-8">
+            <h4 class="font-bold text-lg text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-list mr-2 text-blue-600"></i>
+                Existing PDF Files
+            </h4>
+            
+            <div id="existing-pdfs-container" class="space-y-4">
+                @foreach ($sale->printedTickets as $index => $ticket)
+                    <div class="existing-pdf-item bg-white rounded-xl p-4 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-sm font-semibold text-gray-700">
+                                        PDF-{{ $index + 1 }} Filename
+                                    </label>
+                                    <button type="button"
+                                        class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
+                                        data-field="existing_pdf_{{ $ticket->id }}"
+                                        title="Copy Filename">
+                                        <i class="fas fa-copy text-xs"></i>
+                                    </button>
+                                </div>
+                                <input type="text" 
+                                    id="existing_pdf_{{ $ticket->id }}"
+                                    value="{{ $ticket->filename }}"
+                                    readonly
+                                    class="copyable-field w-full border-gray-300 rounded-lg shadow-sm py-2 px-3 bg-gray-50">
+                            </div>
+                           
+                        </div>                      
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                         @if ($sale->status == 'shipped' || $sale->status == 'ticket-printed' || $sale->status == 'shipment_id_entered')
                             <!-- Shipment Info Section -->
@@ -814,7 +1097,19 @@
                                     Verify & Next
                                 </button>
                             @endif
+
+                            @if ($sale->status != 'payment-verified' && $sale->status != 'pending')
+                                <button type="submit" name="action" value="update_and_reverify"
+                                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
+                                    <i class="fas fa-save mr-2"></i>
+                                    <i class="fas fa-arrow-right mr-2"></i>
+                                    Update & Re-verify
+                                </button>
+                            @endif
+
                         </div>
+
+
                     </form>
 
                     <!-- Verification Status Section -->
@@ -839,7 +1134,7 @@
                                              {{ $verification->name == 'ticket-printed' ? 'bg-blue-100 text-blue-800' : '' }}
                                                {{ $verification->name == 'shipped' ? 'bg-red-100 text-red-800' : '' }}"
                                                     {{ $verification->name == 'Shipment_id_entered' ? 'bg-blue-100 text-blue-800' : '' }}"
-                                                    {{ $verification->name == 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
+                                                    {{ $verification->name == 'cancelled' ? 'bg-red-100 text-red-800' : '' }}>
                                                     {{ ucfirst(str_replace('-', ' ', $verification->name)) }}
                                                 </span>
                                                 <p class="text-sm text-gray-600 mt-1">
@@ -871,6 +1166,8 @@
             <span id="toastMessage">Data copied to clipboard!</span>
         </div>
     </div>
+
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -915,6 +1212,17 @@
                             <input type="text" name="co_passengers[${passengerIndex}][co_passernger_number]" 
                                    class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
                         </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-sm font-semibold text-gray-700">Date of Birth</label>
+                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="co_passengers[${passengerIndex}][date_of_birth]" title="Copy Passenger Date of Birth">
+                                    <i class="fas fa-copy text-xs"></i>
+                                </button>
+                            </div>
+                            <input type="date" name="co_passengers[${passengerIndex}][date_of_birth]" 
+                                   class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
+                        </div>
                     </div>
                     <button type="button" class="mt-3 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-200 ease-in-out transform hover:scale-105 remove-passenger">
                         <i class="fas fa-user-times mr-1"></i>Remove Passenger
@@ -931,7 +1239,7 @@
                 newPayment.className =
                     'payment-item bg-white rounded-xl p-6 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out';
                 newPayment.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <label class="block text-sm font-semibold text-gray-700">Payment Method *</label>
@@ -945,7 +1253,7 @@
                                 <option value="Cash">Cash</option>
                                 <option value="Bkash">Bkash</option>
                                 <option value="Nagad">Nagad</option>
-                                <option value="Bank">Bank Transfer</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
                                 <option value="Card">Card</option>
                             </select>
                         </div>
@@ -956,17 +1264,31 @@
                                     <i class="fas fa-copy text-xs"></i>
                                 </button>
                             </div>
-                            <input type="number" step="0.01" name="payments[${paymentIndex}][received_amount]" required
-                                   class="copyable-field payment-amount w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
+                            <div class="flex items-center">
+                                <span class="text-gray-500 mr-2">৳</span>
+                                <input type="number" step="0.01" name="payments[${paymentIndex}][received_amount]" required
+                                       class="copyable-field payment-amount w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
+                            </div>
                         </div>
                         <div>
                             <div class="flex items-center justify-between mb-2">
-                                <label class="block text-sm font-semibold text-gray-700">Paid Date</label>
-                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="payments[${paymentIndex}][paid_date]" title="Copy Paid Date">
+                                <label class="block text-sm font-semibold text-gray-700">Transaction ID</label>
+                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="payments[${paymentIndex}][transaction_id]" title="Copy Transaction ID">
                                     <i class="fas fa-copy text-xs"></i>
                                 </button>
                             </div>
-                            <input type="date" name="payments[${paymentIndex}][paid_date]"
+                            <input type="text" name="payments[${paymentIndex}][transaction_id]"
+                                   placeholder="TRX-123456"
+                                   class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-sm font-semibold text-gray-700">Payment Date & Time *</label>
+                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="payments[${paymentIndex}][payment_datetime]" title="Copy Payment Date & Time">
+                                    <i class="fas fa-copy text-xs"></i>
+                                </button>
+                            </div>
+                            <input type="datetime-local" name="payments[${paymentIndex}][payment_datetime]" required
                                    class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
                         </div>
                         <div>
@@ -977,40 +1299,72 @@
                                 </button>
                             </div>
                             <input type="text" name="payments[${paymentIndex}][remark]"
+                                   placeholder="Optional note"
                                    class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-2 px-3">
                         </div>
                     </div>
-                    <button type="button" class="mt-3 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-200 ease-in-out transform hover:scale-105 remove-payment">
-                        <i class="fas fa-trash mr-1"></i>Remove Payment
-                    </button>
+                    <div class="flex justify-end mt-4">
+                        <button type="button" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-200 ease-in-out transform hover:scale-105 remove-payment">
+                            <i class="fas fa-trash mr-1"></i>Remove Payment
+                        </button>
+                    </div>
                 `;
                 container.appendChild(newPayment);
                 paymentIndex++;
+                updatePaymentCount();
+
+                // Set current datetime for the new payment only
+                const datetimeInput = newPayment.querySelector('input[type="datetime-local"]');
+                const now = new Date();
+                const timezoneOffset = now.getTimezoneOffset() * 60000;
+                const localISOTime = new Date(now - timezoneOffset).toISOString().slice(0, 16);
+                datetimeInput.value = localISOTime;
+
+                // Trigger calculation for new payment
+                calculateFinancials();
             });
 
-            // Calculate total received amount
-            function calculateTotalReceived() {
-                let total = 0;
+            // Calculate all financial values
+            function calculateFinancials() {
+                // Calculate total received amount from all payments
+                let totalReceived = 0;
                 document.querySelectorAll('.payment-amount').forEach(input => {
                     const value = parseFloat(input.value) || 0;
-                    total += value;
+                    totalReceived += value;
                 });
 
-                document.getElementById('received_amount').value = total.toFixed(2);
+                // Update received amount field
+                const receivedAmountInput = document.getElementById('received_amount');
+                receivedAmountInput.value = totalReceived.toFixed(2);
 
-                // Calculate due amount
+                // Get ticket fee and other fee
                 const ticketFee = parseFloat(document.getElementById('ticket_fee').value) || 0;
-                const dueAmount = ticketFee - total;
+                const otherFee = parseFloat(document.getElementById('other_fee').value) || 0;
+
+                // Calculate total payable (ticket fee + other fee)
+                const totalPayable = ticketFee + otherFee;
+                document.getElementById('total_payable').value = totalPayable.toFixed(2);
+
+                // Calculate due amount (total payable - total received)
+                const dueAmount = totalPayable - totalReceived;
                 document.getElementById('due_amount').value = dueAmount.toFixed(2);
+
+                // Update payment count
+                updatePaymentCount();
             }
 
-            // Event listeners for payment calculations
+            // Update payment count
+            function updatePaymentCount() {
+                const paymentCount = document.querySelectorAll('.payment-item').length;
+                document.getElementById('total-payment-count').textContent = paymentCount;
+            }
+
+            // Event listeners for financial calculations
             document.addEventListener('input', function(e) {
-                if (e.target.classList.contains('payment-amount')) {
-                    calculateTotalReceived();
-                }
-                if (e.target.id === 'ticket_fee') {
-                    calculateTotalReceived();
+                if (e.target.classList.contains('payment-amount') ||
+                    e.target.id === 'ticket_fee' ||
+                    e.target.id === 'other_fee') {
+                    calculateFinancials();
                 }
             });
 
@@ -1021,7 +1375,7 @@
                 }
                 if (e.target.classList.contains('remove-payment')) {
                     e.target.closest('.payment-item').remove();
-                    calculateTotalReceived();
+                    calculateFinancials();
                 }
             });
 
@@ -1085,7 +1439,7 @@
             });
 
             // Initial calculation
-            calculateTotalReceived();
+            calculateFinancials();
         });
     </script>
 

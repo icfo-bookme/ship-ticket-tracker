@@ -142,9 +142,13 @@ document.addEventListener("DOMContentLoaded", () => {
                             });
                         }
                     },
+                    { data: 'number_of_ticket' },
                     { data: 'ticket_fee' },
-                    { data: 'companies.name' },
-                    { data: 'status' },
+                    { data: 'other_fee' },
+                    { data: 'total_payable' },
+                    
+                    { data: 'received_amount' },
+                    { data: 'due_amount' },
                     {
                         data: null,
                         orderable: false,

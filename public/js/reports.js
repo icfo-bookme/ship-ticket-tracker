@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const totalRefundedTickets = document.getElementById("totalRefundedTickets");
     const totalRefundedAmount = document.getElementById("totalRefundedAmount");
     const totalSellTickets = document.getElementById("totalSellTickets");
+    const totalSoldTicketsAmount = document.getElementById("totalSoldTicketsAmount");
+    const totalSold = document.getElementById("totalSold");
+    const totalOtherFees = document.getElementById("totalOtherFees");
     const totalSellAmount = document.getElementById("totalSellAmount");
 
     let dataTableInitialized = false;
@@ -193,8 +196,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     dataSrc: function (json) {
                         // Safe totals update - match your HTML structure
                         if (json.totals) {
-                            if (totalSellTickets) totalSellTickets.textContent = json.totals.total_sold_tickets || '0';
-                            if (totalSellAmount) totalSellAmount.textContent = json.totals.total_sales_amount || '0.00';
+                            if (totalSellTickets) totalSellTickets.textContent = json.totals.total_number_of_tickets || '0';
+                            if (totalSoldTicketsAmount) totalSoldTicketsAmount.textContent = json.totals.total_ticket_fee || '0.00';
+                            if (totalOtherFees) totalOtherFees.textContent = json.totals.total_other_fee || '0.00';
+                            if (totalSold) totalSold.textContent = json.totals.total_payable || '0.00';
                             if (totalRefundedTickets) totalRefundedTickets.textContent = json.totals.total_refunded_tickets || '0';
                             if (totalRefundedAmount) totalRefundedAmount.textContent = json.totals.total_refunded_amount || '0.00';
                         }
@@ -254,8 +259,22 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     },
                     { 
-                        data: 'received_amount',
+                        data: 'ticket_fee',
                         title: 'Total Ticket Price',
+                        render: function (data) {
+                            return formatCurrency(data);
+                        }
+                    },
+                    { 
+                        data: 'other_fee',
+                        title: 'Other Fee',
+                        render: function (data) {
+                            return formatCurrency(data);
+                        }
+                    },
+                    { 
+                        data: 'total_payable',
+                        title: 'Total Payable',
                         render: function (data) {
                             return formatCurrency(data);
                         }
@@ -263,6 +282,28 @@ document.addEventListener("DOMContentLoaded", () => {
                     { 
                         data: 'received_amount',
                         title: 'Received Amount',
+                        render: function (data) {
+                            return formatCurrency(data);
+                        }
+                    },
+                     { 
+                        data: 'refunded_number_of_tickets',
+                        title: 'Refunded Tickets',
+                        render: function (data) {
+                            return data || 0;
+                        }
+                    },
+                    { 
+                        data: 'refunded_amount',
+                        title: 'Refunded Amount',
+                        render: function (data) {
+                            return formatCurrency(data);
+                        }
+                    },
+                      
+                    { 
+                        data: 'due_amount',
+                        title: 'Due Amount',
                         render: function (data) {
                             return formatCurrency(data);
                         }

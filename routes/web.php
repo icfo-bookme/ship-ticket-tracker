@@ -12,6 +12,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\CashCollectionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExcelSettingController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\WhatsappDetailsController;
 
 Route::resource('ships', ShipController::class);
@@ -43,6 +44,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('ship-ticket-sales', ShipTicketSaleController::class);
 
     Route::get('/sales/{status}', [ShipTicketSaleController::class, 'pendingCS']);
+    Route::get('/gdrive/verify', [ShipTicketSaleController::class, 'printedCS'])->name('gdrive.verify') ;
+    Route::get('/gdrive/re-verify/{id}', [ShipTicketSaleController::class, 'reprintedCS'])->name('gdrive.reverify') ;
     Route::get('/sales/status/{status}', [ShipTicketSaleController::class, 'showPendingSales']);
     Route::put('/sales/status/{id}', [ShipTicketSaleController::class, 'update']);
     Route::put('/sale/verify/{id}/{status}', [ShipTicketSaleController::class, 'verify']);
@@ -84,13 +87,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/whatsapp', [WhatsappDetailsController::class, 'showTableList']);
     Route::resource('whatsapp', WhatsappDetailsController::class);
 
-     Route::get(
-    '/tickets/open/{saleId}/{filename}',
-    [ShipTicketSaleController::class, 'openTicket']
-)->name('tickets.open');
- Route::get('/excel', [ExcelSettingController::class, 'showTableList']);
-Route::apiResource('excel-settings', ExcelSettingController::class);
+    Route::get(
+        '/tickets/open/{saleId}/{filename}',
+        [ShipTicketSaleController::class, 'openTicket']
+    )->name('tickets.open');
+    Route::get('/excel', [ExcelSettingController::class, 'showTableList']);
+    Route::apiResource('excel-settings', ExcelSettingController::class);
 
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notification/verify/{id}', [NotificationController::class, 'verify'])
+    ->name('notification.verify');
 });
 
 

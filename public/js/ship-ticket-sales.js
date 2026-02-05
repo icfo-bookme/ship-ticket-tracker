@@ -108,7 +108,7 @@ class TicketSalesSystem {
             this.setupMainActionListeners();
             this.setupShipAndJourneyListeners();
             this.setupMobileAndWhatsAppListeners();
-            
+
             this.initializeComponents();
         } catch (error) {
             console.error('Error setting up event listeners:', error);
@@ -143,7 +143,7 @@ class TicketSalesSystem {
             const checkbox = this.getElement(this.selectors.elements.sameAsMobileCheckbox);
             if (checkbox.checked) this.handleSameAsMobileCheckbox();
         });
-        
+
         this.addEventListener('sameAsMobileCheckbox', 'change', () => this.handleSameAsMobileCheckbox());
     }
 
@@ -617,7 +617,7 @@ class TicketSalesSystem {
 
         if (totalDepartureTickets > currentRows) {
             const rowsToAdd = totalDepartureTickets - currentRows;
-            for (let i = 0; i < rowsToAdd-1; i++) {
+            for (let i = 0; i < rowsToAdd - 1; i++) {
                 this.addCoPassengerField(wrapper);
             }
         } else if (totalDepartureTickets < currentRows) {
@@ -708,16 +708,30 @@ class TicketSalesSystem {
                 </div>
             </div>
 
+            
+
             <div class="flex items-end gap-2">
                 <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Co-Passenger Mobile Number
                     </label>
-                    <input type="text" name="co_passengers[${this.coPassengerIndex}][co_passernger_number]" placeholder="Enter Mobile Number"
+                    <input type="number" name="co_passengers[${this.coPassengerIndex}][co_passernger_number]" placeholder="Enter Mobile Number"
                         class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
                 </div>
                 <button type="button" class="removeCoPassengerBtn fa-solid fa-trash px-3 py-2 text-red-600 hover:text-red-800 font-semibold transition"></button>
             </div>
+
+            
+
+            <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Date Of Birth
+                            </label>
+                            <input type="date" name="co_passengers[${this.coPassengerIndex}][date_of_birth]" 
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                        </div>
+
+             
         `;
 
         wrapper.insertBefore(div, this.getElement(this.selectors.elements.addCoPassengerBtn));
@@ -771,6 +785,36 @@ class TicketSalesSystem {
                     class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
                     value="${new Date().toISOString().slice(0, 10)}">
             </div>
+
+            <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                   Transection Id <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="payment_methods[${this.paymentIndex}][transaction_id]" 
+                    placeholder="Enter transaction ID"
+                    class="payment-transaction-id-input w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition"
+                   >
+            </div>
+
+            <div class="col-span-2">
+  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+    Date & Time
+  </label>
+
+  <input
+  type="datetime-local"
+  name="payment_methods[${this.paymentIndex}][payment_datetime]"
+  value="${(() => {
+                const d = new Date();
+                d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                return d.toISOString().slice(0, 16);
+            })()}"
+  class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 shadow-sm"
+>
+
+</div>
+
+
 
             <div class="col-span-6">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -992,12 +1036,13 @@ class TicketSalesSystem {
             const name = group.querySelector('input[name^="co_passengers"][name$="[name]"]')?.value?.trim() || "Not specified";
             const nid = group.querySelector('input[name^="co_passengers"][name$="[nid]"]')?.value?.trim() || "Not specified";
             const number = group.querySelector('input[name^="co_passengers"][name$="[co_passernger_number]"]')?.value?.trim() || "Not specified";
-
+            const dob = group.querySelector('input[name^="co_passengers"][name$="[date_of_birth]"]')?.value?.trim() || "Not specified";
             html += `
                 <div class="border-b flex item-center gap-5 border-gray-100 dark:border-gray-700 pb-2">
                     <p class="text-sm font-medium text-gray-900 dark:text-white">#${index + 1}. ${this.escapeHtml(name)}</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">NID: ${this.escapeHtml(nid)}</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">Number: ${this.escapeHtml(number)}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">DOB: ${this.escapeHtml(dob)}</p>
                 </div>`;
         });
 

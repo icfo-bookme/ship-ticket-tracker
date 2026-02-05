@@ -56,7 +56,10 @@
                         <th class="border px-4 py-2">Journey Date</th>
                         <th class="border px-4 py-2">Number Of Ticket</th>
                         <th class="border px-4 py-2">Total Ticket Price</th>
-                        <th class="border px-4 py-2">Received Amount</th>
+                        <th class="border px-4 py-2">Other Fee</th>
+                        <th class="border px-4 py-2">Total Payable</th>
+                        <th class="border px-4 py-2">Total Received Amount</th>
+                         <th class="border px-4 py-2">Due Amount</th>
                         <th class="border px-4 py-2">Action</th>
                     </tr>
                 </thead>

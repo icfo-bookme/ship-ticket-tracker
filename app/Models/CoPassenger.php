@@ -13,7 +13,8 @@ class CoPassenger extends Model
         'ship_ticket_sale_id',
         'name',
         'nid',
-        'co_passernger_number'
+        'co_passernger_number',
+        'date_of_birth',
     ];
 
     /**

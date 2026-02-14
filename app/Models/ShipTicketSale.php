@@ -162,4 +162,10 @@ class ShipTicketSale extends Model
     {
         return $this->hasMany(PrintedTicket::class, 'sales_id', 'id');
     }
+
+    public function groupedTickets()
+{
+    return $this->hasMany(PrintedTicket::class, 'group_by_id', 'id');
+}
+
 }

@@ -64,10 +64,14 @@ class ShipTicketSaleController extends Controller
             'payments',
             'PrintStatus',
             'printedTickets',
+            'groupedTickets',
             'verifyby.verifiedByUser'
         ])
             ->withCount('printedTickets')
             ->where('status', $status);
+        $sales = $query->get();
+
+
 
         // Apply filters
         if (!empty($shipId)) {
@@ -469,7 +473,38 @@ class ShipTicketSaleController extends Controller
             'printedTickets',
             'verifyby.verifiedByUser:id,name'
         ])->findOrFail($id);
-// dd($sale->printedTickets);
+
+
+        $maxNumber = PrintedTicket::where('filename', 'like', $sale->whatsapp . '-%')
+            ->selectRaw('MAX(CAST(SUBSTRING_INDEX(filename, "-", -1) AS UNSIGNED)) as number')
+            ->value('number');
+
+        $number = $maxNumber ?? 0;
+
+        $groupByStatus = 'no';
+        $groupById = null;
+        if ($number > 0) {
+
+            $latestTicket = PrintedTicket::where('filename', 'like', $sale->whatsapp . '-%')
+                ->orderByRaw('CAST(SUBSTRING_INDEX(filename, "-", -1) AS UNSIGNED) DESC')
+                ->first();
+
+
+            if ($latestTicket) {
+                $saleStatus = ShipTicketSale::where('id', $latestTicket->sales_id)
+                    ->value('status');
+
+                if (in_array($saleStatus, ['ticket-issued', 'ticket-printed'])) {
+                    $groupByStatus = 'yes';
+                    $groupById = $latestTicket->group_by_id ?? $latestTicket->sales_id;
+                }
+            }
+        }
+
+
+
+
+
 
         $totalDepartureTickets = $sale->categories
             ->where('type', 'departure')
@@ -499,7 +534,7 @@ class ShipTicketSaleController extends Controller
         $ships = Ship::all();
         $companies = Company::all();
 
-        return view('ship_ticket_sales.edit', compact('sale', 'ships', 'companies', 'nextSale', 'totalReturnTickets', 'totalDepartureTickets'));
+        return view('ship_ticket_sales.edit', compact('sale', 'number', 'groupByStatus', 'groupById', 'ships', 'companies', 'nextSale', 'totalReturnTickets', 'totalDepartureTickets'));
     }
 
     /**
@@ -516,6 +551,8 @@ class ShipTicketSaleController extends Controller
      */
     public function update(Request $request, $id)
     {
+
+
         $action = $request->input('action');
 
         // Validate the request
@@ -544,6 +581,8 @@ class ShipTicketSaleController extends Controller
             'status' => 'required',
             'remark1' => 'nullable|string',
             'remark2' => 'nullable|string',
+            'group_by_id' => 'nullable|integer',
+            'group_tickets' => 'nullable|in:yes,no',
             'departure_quantity' => 'nullable|array',
             'return_quantity' => 'nullable|array',
             'departure_quantity.*' => 'nullable|integer|min:0',
@@ -604,6 +643,7 @@ class ShipTicketSaleController extends Controller
             // ✅ Commit first
             DB::commit();
 
+
             if ($request->status === 'payment-verified') {
 
                 if ($request->has('pdf') && is_array($request->pdf)) {
@@ -612,12 +652,21 @@ class ShipTicketSaleController extends Controller
 
                         $pdfName = $pdfValue . '.pdf';
 
-                        $sale->printedTickets()->create([
-                            'sales_id'  => $sale->id,
-                            'filename'  => $pdfName,
+                        $data = [
+                            'sales_id'   => $sale->id,
+                            'filename'   => $pdfName,
+                            'group_by_id' => ($validated['group_tickets'] ?? null) == 'yes'
+                                ? $validated['group_by_id']
+                                : $sale->id,
                             'created_at' => now(),
                             'updated_at' => now(),
-                        ]);
+                        ];
+
+                        // Add group_by_id only if printed_tickets = yes
+
+
+
+                        $sale->printedTickets()->create($data);
                     }
                 }
 
@@ -625,6 +674,9 @@ class ShipTicketSaleController extends Controller
                     'status' => 'ticket-issued',
                 ]);
             }
+
+
+
             if ($request->next_sale_id) {
                 return redirect()
                     ->route('ship-ticket-sales.show', $request->next_sale_id)
@@ -793,6 +845,39 @@ class ShipTicketSaleController extends Controller
     {
 
 
+        if ($status == "ticket-printed") {
+
+            $tickets = PrintedTicket::where('group_by_id', $id)
+                ->latest()
+                ->get()
+                ->unique('sales_id')
+                ->values();
+
+            $tickets->each(function ($ticket) {
+
+                $sale = ShipTicketSale::find($ticket->sales_id);
+              
+                if ($sale) {
+
+                    $sale->update([
+                        'status' => 'ticket-printed'
+                    ]);
+
+                    VerifyTracker::create([
+                        'name'        => 'ticket-printed',
+                        'ticket_id'   => $sale->id,
+                        'verified_by' => auth()->id(),
+                    ]);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sales updated to ticket-printed successfully'
+            ]);
+        }
+
+
         $sale = ShipTicketSale::findOrFail($id);
         if ($status == "shipment_id_entered") {
             $bulkParcelData = [
@@ -811,20 +896,7 @@ class ShipTicketSaleController extends Controller
 
             // Use the injected service
             $steadfastResult = $this->steadfast->bulkCreate($bulkParcelData);
-            // $response = Http::withHeaders([
-            //     'Api-Key'      => config('steadfast.api_key'),
-            //     'Secret-Key'   => config('steadfast.secret_key'),
-            //     'Content-Type' => 'application/json',
-            //     'Accept'       => 'application/json',
-            // ])->post(config('steadfast.base_url') . '/create_order/bulk-order', [
-            //     'data' => $bulkParcelData
-            // ]);
 
-            // dd(
-            //     $response->status(),
-            //     $response->headers(),
-            //     $response->body()
-            // );
 
             $consignmentId = null;
 

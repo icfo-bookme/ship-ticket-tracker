@@ -49,7 +49,7 @@
                         </div>
                     @endif
                     <form action="{{ route('ship-ticket-sales.update', $sale->id) }}" method="POST" class=""
-                        id="ticketForm">
+                        id="ticketForm" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -884,10 +884,10 @@
                             </button>
                         </div>
                         @if ($sale->status == 'payment-verified')
+                            @php $count = $number + 1; @endphp
                             <div class="bg-blue-950 rounded-2xl p-6">
                                 <div id="pdf-fields"
                                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4  shadow-sm mt-6">
-                                    @php $count = 1; @endphp
 
                                     @for ($i = 1; $i <= $totalDepartureTickets; $i += 5)
                                         <div class="pdf-item mb-4 border p-3 rounded-lg relative">
@@ -919,8 +919,6 @@
                                         @php $count++; @endphp
                                     @endfor
 
-
-
                                 </div>
 
                                 <div class="">
@@ -930,115 +928,124 @@
                                     </button>
                                 </div>
                             </div>
-
-                            <script>
-                                let pdfIndex = {{ $count - 1 }};
-                                const whatsappPrefix = "{{ $sale->whatsapp ?? 'whatsapp' }}";
-
-                                const container = document.getElementById('pdf-fields');
-
-                                document.getElementById('addPdfField').addEventListener('click', () => {
-                                    pdfIndex++;
-
-                                    const div = document.createElement('div');
-                                    div.className = 'pdf-item mb-4 border p-3 rounded-lg relative';
-
-                                    div.innerHTML = `
-            <div class="flex items-center justify-between mb-2">
-                <label for="pdf-${pdfIndex}" class="text-sm font-semibold text-gray-100">
-                    Pdf-${pdfIndex}
-                </label>
-
-                <div class="flex gap-2">
-                    <button type="button"
-                        class="copy-field-btn text-blue-600"
-                        data-field="pdf-${pdfIndex}">
-                        <i class="fas fa-copy text-xs"></i>
-                    </button>
-
-                    <button type="button"
-                        class="remove-pdf-btn text-red-600">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
-                </div>
-            </div>
-
-            <input
-                type="text"
-                id="pdf-${pdfIndex}"
-                name="pdf[${pdfIndex}]"
-                readonly
-                value="${whatsappPrefix}-${pdfIndex}"
-                class="copyable-field w-full border-gray-300 rounded-lg py-2 px-3"
-            >
-        `;
-
-                                    container.appendChild(div);
-                                });
-
-                                container.addEventListener('click', (e) => {
-
-                                    if (e.target.closest('.remove-pdf-btn')) {
-                                        e.target.closest('.pdf-item').remove();
-                                    }
-
-                                    if (e.target.closest('.copy-field-btn')) {
-                                        const btn = e.target.closest('.copy-field-btn');
-                                        const input = document.getElementById(btn.dataset.field);
-                                        input.select();
-                                        document.execCommand('copy');
-                                    }
-                                });
-                            </script>
                         @endif
 
 
 
-                      <!-- PDF Section -->
-<div class="bg-blue-50 rounded-2xl p-6 shadow-sm border border-blue-100 mt-6">
+                        <!-- PDF Section -->
+                        <div class="bg-blue-50 rounded-2xl p-6 shadow-sm border border-blue-100 mt-6">
 
-    <!-- Existing PDF Files -->
-    @if ($sale->printedTickets->count() > 0)
-        <div class="mb-8">
-            <h4 class="font-bold text-lg text-gray-800 mb-4 flex items-center">
-                <i class="fas fa-list mr-2 text-blue-600"></i>
-                Existing PDF Files
-            </h4>
-            
-            <div id="existing-pdfs-container" class="space-y-4">
-                @foreach ($sale->printedTickets as $index => $ticket)
-                    <div class="existing-pdf-item bg-white rounded-xl p-4 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="block text-sm font-semibold text-gray-700">
-                                        PDF-{{ $index + 1 }} Filename
-                                    </label>
-                                    <button type="button"
-                                        class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
-                                        data-field="existing_pdf_{{ $ticket->id }}"
-                                        title="Copy Filename">
-                                        <i class="fas fa-copy text-xs"></i>
+                            <!-- Existing PDF Files -->
+                            @if ($sale->printedTickets->count() > 0)
+                                <div class="mb-8">
+                                    <h4 class="font-bold text-lg text-gray-800 mb-4 flex items-center">
+                                        <i class="fas fa-list mr-2 text-blue-600"></i>
+                                        Existing PDF Files
+                                    </h4>
+
+                                    <div id="existing-pdfs-container" class="space-y-4">
+                                        @foreach ($sale->printedTickets as $index => $ticket)
+                                            <div
+                                                class="existing-pdf-item bg-white rounded-xl p-4 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out">
+                                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div>
+                                                        <div class="flex items-center justify-between mb-2">
+                                                            <label class="block text-sm font-semibold text-gray-700">
+                                                                PDF-{{ $index + 1 }} Filename
+                                                            </label>
+                                                            <button type="button"
+                                                                class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
+                                                                data-field="existing_pdf_{{ $ticket->id }}"
+                                                                title="Copy Filename">
+                                                                <i class="fas fa-copy text-xs"></i>
+                                                            </button>
+                                                        </div>
+                                                        <input type="text" id="existing_pdf_{{ $ticket->id }}"
+                                                            value="{{ $ticket->filename }}" readonly
+                                                            class="copyable-field w-full border-gray-300 rounded-lg shadow-sm py-2 px-3 bg-gray-50">
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+
+                        </div>
+
+                        <!-- ADD MORE PDF FIELDS SECTION -->
+                        @if ($sale->status != 'pending' && $sale->status != 'payment-verified')
+                            <div class="bg-yellow-50 rounded-2xl p-6 shadow-sm border border-yellow-200 mt-6">
+                                <div class="flex items-center mb-4">
+                                    <div class="bg-yellow-600 p-2 rounded-lg mr-3">
+                                        <i class="fas fa-file-pdf text-white text-sm"></i>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gray-800">Add More PDF Fields</h3>
+                                </div>
+
+                                <div class="mb-6">
+                                    <p class="text-gray-600 mb-4">Add more PDF filename fields. Format:
+                                        {{ $sale->whatsapp ?? 'whatsapp' }}-{number}</p>
+
+                                    @php
+                                        $existingPdfCount = $sale->printedTickets->count();
+                                        $nextPdfNumber = $existingPdfCount + 1;
+                                    @endphp
+
+                                    <div id="additional-pdf-fields" class="space-y-4">
+                                        <!-- Additional PDF fields will be added here -->
+                                    </div>
+
+                                    <button type="button" id="add-additional-pdf"
+                                        class="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md">
+                                        <i class="fas fa-plus-circle mr-2"></i>Add PDF Field
                                     </button>
                                 </div>
-                                <input type="text" 
-                                    id="existing_pdf_{{ $ticket->id }}"
-                                    value="{{ $ticket->filename }}"
-                                    readonly
-                                    class="copyable-field w-full border-gray-300 rounded-lg shadow-sm py-2 px-3 bg-gray-50">
                             </div>
-                           
-                        </div>                      
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
-
-  
-</div>
+                        @endif
 
 
+                        @if ($sale->status == 'payment-verified' && $number > 0)
+                            <div class="bg-yellow-50 rounded-2xl p-6 shadow-sm border border-yellow-200 mt-6">
+
+                                <div class="flex items-center mb-4">
+                                    <div class="bg-yellow-600 p-2 rounded-lg mr-3">
+                                        <i class="fas fa-exclamation-triangle text-white text-sm"></i>
+                                    </div>
+
+                                    <h3 class="text-xl font-bold text-gray-800">
+                                        Important Notice
+                                    </h3>
+                                </div>
+
+                                <p class="text-gray-700 text-sm leading-relaxed">
+                                    Tickets PDF document has already been generated and sent using this WhatsApp number.
+                                    Please review the existing document before requesting a new one.
+                                </p>
+                                @if ($groupByStatus)
+                                    <p class="font-bold text-xl">Do You Want to group tickets:</p>
+                                    <div class="flex justify-around">
+                                        <div>
+                                            <input type="radio" id="group_tickets_yes" name="group_tickets"
+                                                value="yes">
+                                            <label for="group_tickets_yes">Yes</label><br>
+                                        </div>
+                                        <div>
+                                            <input type="radio" id="group_tickets_no" name="group_tickets"
+                                                value="no" checked>
+                                            <label for="group_tickets_no">No</label><br>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <input type="hidden" name="group_by_id" value="{{ $groupById }}">
+                                    </div>
+                                @endif
+
+                            </div>
+                        @endif
 
 
 
@@ -1174,6 +1181,12 @@
             // Add co-passenger functionality
             let passengerIndex = {{ count($sale->coPassengers) }};
             let paymentIndex = {{ count($sale->payments) }};
+
+            // For additional PDF fields
+            let additionalPdfIndex = 0;
+            const whatsappNumber = "{{ $sale->whatsapp ?? 'whatsapp' }}";
+            const existingPdfCount = {{ $sale->printedTickets->count() }};
+            let currentPdfNumber = existingPdfCount + 1;
 
             document.getElementById('add-passenger').addEventListener('click', function() {
                 const container = document.getElementById('co-passengers-container');
@@ -1324,6 +1337,57 @@
                 calculateFinancials();
             });
 
+            // Add additional PDF field functionality
+            const addAdditionalPdfBtn = document.getElementById('add-additional-pdf');
+            if (addAdditionalPdfBtn) {
+                addAdditionalPdfBtn.addEventListener('click', function() {
+                    const container = document.getElementById('additional-pdf-fields');
+                    const newPdfField = document.createElement('div');
+                    newPdfField.className =
+                        'additional-pdf-item bg-white rounded-xl p-4 shadow-sm border border-yellow-200 hover:shadow-md transition duration-200 ease-in-out';
+                    newPdfField.innerHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-sm font-semibold text-gray-700">
+                                        Additional PDF-${additionalPdfIndex + 1} *
+                                    </label>
+                                    <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="additional_pdf_${additionalPdfIndex}" title="Copy PDF Name">
+                                        <i class="fas fa-copy text-xs"></i>
+                                    </button>
+                                </div>
+                                <input type="text" 
+                                       name="additional_pdf[${additionalPdfIndex}]" 
+                                       id="additional_pdf_${additionalPdfIndex}"
+                                       value="${whatsappNumber}-${currentPdfNumber}.pdf"
+                                       readonly
+                                       class="copyable-field w-full border-gray-300 rounded-lg shadow-sm py-2 px-3 bg-gray-50">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="button" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-200 ease-in-out transform hover:scale-105 remove-additional-pdf">
+                                    <i class="fas fa-trash mr-1"></i>Remove Field
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-500">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Filename: ${whatsappNumber}-${currentPdfNumber}.pdf
+                        </div>
+                    `;
+                    container.appendChild(newPdfField);
+                    additionalPdfIndex++;
+                    currentPdfNumber++;
+                });
+            }
+
+            // Remove additional PDF field
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-additional-pdf')) {
+                    e.target.closest('.additional-pdf-item').remove();
+                    // Don't decrement currentPdfNumber to maintain sequence
+                }
+            });
+
             // Calculate all financial values
             function calculateFinancials() {
                 // Calculate total received amount from all payments
@@ -1440,6 +1504,65 @@
 
             // Initial calculation
             calculateFinancials();
+
+            // Initialize PDF fields from payment-verified section (only if it exists)
+            @if ($sale->status == 'payment-verified')
+                let pdfIndex = {{ $count - 1 }};
+                const container = document.getElementById('pdf-fields');
+                if (container && document.getElementById('addPdfField')) {
+                    document.getElementById('addPdfField').addEventListener('click', () => {
+                        pdfIndex++;
+
+                        const div = document.createElement('div');
+                        div.className = 'pdf-item mb-4 border p-3 rounded-lg relative';
+
+                        div.innerHTML = `
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="pdf-${pdfIndex}" class="text-sm font-semibold text-gray-100">
+                                    Pdf-${pdfIndex}
+                                </label>
+
+                                <div class="flex gap-2">
+                                    <button type="button"
+                                        class="copy-field-btn text-blue-600"
+                                        data-field="pdf-${pdfIndex}">
+                                        <i class="fas fa-copy text-xs"></i>
+                                    </button>
+
+                                    <button type="button"
+                                        class="remove-pdf-btn text-red-600">
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <input
+                                type="text"
+                                id="pdf-${pdfIndex}"
+                                name="pdf[${pdfIndex}]"
+                                readonly
+                                value="${whatsappNumber}-${pdfIndex}"
+                                class="copyable-field w-full border-gray-300 rounded-lg py-2 px-3"
+                            >
+                        `;
+
+                        container.appendChild(div);
+                    });
+
+                    container.addEventListener('click', (e) => {
+                        if (e.target.closest('.remove-pdf-btn')) {
+                            e.target.closest('.pdf-item').remove();
+                        }
+
+                        if (e.target.closest('.copy-field-btn')) {
+                            const btn = e.target.closest('.copy-field-btn');
+                            const input = document.getElementById(btn.dataset.field);
+                            input.select();
+                            document.execCommand('copy');
+                        }
+                    });
+                }
+            @endif
         });
     </script>
 

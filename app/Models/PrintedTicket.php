@@ -13,6 +13,7 @@ class PrintedTicket extends Model
     protected $fillable = [
         'sales_id',
         'filename',
+        'group_by_id',
     ];
 
     // Enable timestamps (created_at, updated_at)

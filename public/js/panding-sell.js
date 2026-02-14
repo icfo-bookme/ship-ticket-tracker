@@ -218,6 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
+
             if (status === 'pending') {
                 columns.push({
                     data: 'payments',
@@ -287,6 +288,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             );
 
+
+
             dataTable = $("#salesTable").DataTable({
                 processing: true,
                 serverSide: true,
@@ -354,47 +357,73 @@ document.addEventListener("DOMContentLoaded", () => {
             //     data-id="${sale.id}" data-status="ticket-issued" 
             //     title="payment-verified by: ${verifyByName}">Ticket Issued</button>`,
             'ticket-issued': (() => {
-                const printedFiles = sale.printed_tickets || []; // array of PDFs
+
+                const printedFiles = sale.grouped_tickets || [];
                 const printedCount = printedFiles.length;
 
-                let html = `
-    <button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
-        data-id="${sale.id}" data-status="ticket-printed" 
-        title="ticket-issued by: ${verifyByName}">
-        Ticket Printed
-    </button>
-    `;
+                let html = '';
 
-             html += `<div class="flex flex-col gap-2">`; // start vertical flex
+                if (printedCount > 0) {
 
-printedFiles.forEach(file => {
-    html += `
-        <a
-            href="/tickets/open/${sale.id}/${encodeURIComponent(file.filename)}"
-            target="_blank"
-            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700
-                   text-white px-3 py-1 rounded text-sm font-semibold"
-            title="${file.filename}"
-        >
-            ${file.filename}
-        </a>
-    `;
-});
+                    html += `
+        <button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
+            data-id="${sale.id}" 
+            data-status="ticket-printed" 
+            title="Ticket Issued by: ${verifyByName}">
+            Ticket Printed
+        </button>
+        `;
 
-html += `</div>`; // close vertical flex
+                    html += `<div class="flex flex-col gap-2 mt-2">`;
+
+                    printedFiles.forEach(file => {
+                        html += `
+            <div class="flex items-center gap-2">
+
+                <a
+                    href="/ship-ticket-sales/${file.sales_id}"
+                    target="_blank"
+                    class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700
+                           text-white px-3 py-1 rounded text-sm font-semibold"
+                    title="View Sale"
+                >
+                    ${file.sales_id}
+                </a>
+
+                <a
+                    href="/tickets/open/${sale.id}/${encodeURIComponent(file.filename)}"
+                    target="_blank"
+                    class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700
+                           text-white px-3 py-1 rounded text-sm font-semibold"
+                    title="${file.filename}"
+                >
+                    <i class="fas fa-file-pdf"></i> ${file.filename}
+                </a>
+
+            </div>
+            `;
+                    });
+
+                    html += `</div>`;
+                }
+                else {
+
+                    const groupId = sale.printed_tickets?.[0]?.group_by_id;
+
+                    if (groupId) {
+                        html += `
+        <p class="text-sm font-semibold text-gray-700">
+           Reference By ${groupId}
+        </p>
+        `;
+                    }
+                }
 
 
-                // Optional: single print button for all PDFs
-                html += `
-    <button class="fa-solid fa-print px-2 py-1 rounded printBtn" 
-        data-id="${sale.id}" title="Print All">
-        
-    </button>
-    `;
 
                 return html;
-            })(),
 
+            })(),
 
 
             'ticket-printed': `<button class="bg-red-500 text-white px-2 py-1 rounded shipmentIdEntryBtn" 

@@ -1021,7 +1021,7 @@
                                 </div>
 
                                 <p class="text-gray-700 text-sm leading-relaxed">
-                                    Tickets PDF document has already been generated and sent using this WhatsApp number.
+                                    Tickets PDF document has already been generated using this WhatsApp number.
                                     Please review the existing document before requesting a new one.
                                 </p>
                                 @if ($groupByStatus)

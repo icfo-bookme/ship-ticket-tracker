@@ -349,6 +349,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function createStatusButton(sale, verifyByName) {
+        const printedFiles = sale.grouped_tickets || [];
+        const printedCount = printedFiles.length;
         const statusButtons = {
             'pending': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
                 data-id="${sale.id}" data-status="payment-verified" 
@@ -358,8 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
             //     title="payment-verified by: ${verifyByName}">Ticket Issued</button>`,
             'ticket-issued': (() => {
 
-                const printedFiles = sale.grouped_tickets || [];
-                const printedCount = printedFiles.length;
+
 
                 let html = '';
 
@@ -426,9 +427,63 @@ document.addEventListener("DOMContentLoaded", () => {
             })(),
 
 
-            'ticket-printed': `<button class="bg-red-500 text-white px-2 py-1 rounded shipmentIdEntryBtn" 
+            'ticket-printed': (() => {
+
+
+
+                let html = '';
+
+                if (printedCount > 0) {
+
+                    html += `
+       <button class="bg-red-500 text-white px-2 py-1 rounded shipmentIdEntryBtn" 
                 data-id="${sale.id}" data-status="shipment_id_entered" 
-                title="ticket-printed by: ${verifyByName}">Add To Parcel</button>`,
+                title="ticket-printed by: ${verifyByName}">Add To Parcel</button>
+        `;
+
+                    html += `<div class="flex flex-col gap-2 mt-2">`;
+
+                    printedFiles.forEach(file => {
+                        html += `
+            <div class="flex items-center gap-2">
+
+                <a
+                    href="/ship-ticket-sales/${file.sales_id}"
+                    target="_blank"
+                    class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700
+                           text-white px-3 py-1 rounded text-sm font-semibold"
+                    title="View Sale"
+                >
+                    ${file.sales_id}
+                </a>
+
+                
+
+            </div>
+            `;
+                    });
+
+                    html += `</div>`;
+                }
+                else {
+
+                    const groupId = sale.printed_tickets?.[0]?.group_by_id;
+
+                    if (groupId) {
+                        html += `
+        <p class="text-sm font-semibold text-gray-700">
+           Reference By ${groupId}
+        </p>
+        `;
+                    }
+                }
+
+
+
+                return html;
+
+            })(),
+
             'shipment_id_entered': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
                 data-id="${sale.id}" data-status="shipped" 
                 title="shipment_id_entered by: ${verifyByName}">Shipped</button>`

@@ -670,9 +670,19 @@ class ShipTicketSaleController extends Controller
                     }
                 }
 
-                $sale->update([
+                if ($validated['group_tickets'] && $validated['group_tickets'] == 'yes') {
+                    $groupbysalesStaus = ShipTicketSale::find($validated['group_by_id'])->status;
+                     $sale->update([
+                    'status' => $groupbysalesStaus, 
+                ]);
+                } else {
+                     $sale->update([
                     'status' => 'ticket-issued',
                 ]);
+                }
+                
+
+               
             }
 
 
@@ -843,8 +853,6 @@ class ShipTicketSaleController extends Controller
 
     public function verify(Request $request, $id, $status)
     {
-
-
         if ($status == "ticket-printed") {
 
             $tickets = PrintedTicket::where('group_by_id', $id)
@@ -856,7 +864,7 @@ class ShipTicketSaleController extends Controller
             $tickets->each(function ($ticket) {
 
                 $sale = ShipTicketSale::find($ticket->sales_id);
-              
+
                 if ($sale) {
 
                     $sale->update([
@@ -920,9 +928,39 @@ class ShipTicketSaleController extends Controller
                 return response()->json(['success' => false, 'message' => 'Failed to create shipment'], 500);
             }
 
-            Shipment::create([
-                'ticket_id' => $sale->id,
-                'shipment_id' => $consignmentId, // Use the extracted value
+            $tickets = PrintedTicket::where('group_by_id', $id)
+                ->latest()
+                ->get()
+                ->unique('sales_id')
+                ->values();
+
+            $tickets->each(function ($ticket) use ($consignmentId) {
+
+                $sale = ShipTicketSale::find($ticket->sales_id);
+
+                if ($sale) {
+
+                    Shipment::create([
+                        'ticket_id'   => $sale->id,
+                        'shipment_id' => $consignmentId,
+                    ]);
+
+                    $sale->update([
+                        'status' => 'shipment_id_entered'
+                    ]);
+
+                    VerifyTracker::create([
+                        'name'        => 'shipment_id_entered',
+                        'ticket_id'   => $sale->id,
+                        'verified_by' => auth()->id(),
+                    ]);
+                }
+            });
+
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sales updated to ticket-printed successfully'
             ]);
         }
 

@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Bftn;
 use Google\Client;
 use Google\Service\Drive;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Response;
 use Illuminate\Http\Request;
 use App\Services\GoogleSheetService;
 use Illuminate\Support\Facades\Http;
@@ -680,9 +678,6 @@ class ShipTicketSaleController extends Controller
                     'status' => 'ticket-issued',
                 ]);
                 }
-                
-
-               
             }
 
 
@@ -940,7 +935,7 @@ class ShipTicketSaleController extends Controller
 
                 if ($sale) {
 
-                    Shipment::create([
+                    Shipment::create([ 
                         'ticket_id'   => $sale->id,
                         'shipment_id' => $consignmentId,
                     ]);
@@ -1278,7 +1273,7 @@ class ShipTicketSaleController extends Controller
             return redirect()->back()->with('error', 'Ticket not found in Google Drive');
         }
 
-        $fileId = $files->getFiles()[0]->getId();
+        $fileId = $files->getFiles()[0]->getId(); 
 
         // Correct URL using Drive file ID
         $driveUrl = "https://drive.google.com/file/d/{$fileId}/view?print=true";

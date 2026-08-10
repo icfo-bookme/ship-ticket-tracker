@@ -1047,24 +1047,6 @@
                             </div>
                         @endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                         @if ($sale->status == 'shipped' || $sale->status == 'ticket-printed' || $sale->status == 'shipment_id_entered')
                             <!-- Shipment Info Section -->
                             <div class="bg-blue-50 rounded-2xl p-6 shadow-sm border border-blue-100">

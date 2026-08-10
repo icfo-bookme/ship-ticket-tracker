@@ -18,11 +18,13 @@ use App\Http\Controllers\WhatsappDetailsController;
 Route::resource('ships', ShipController::class);
 
 
-// Route::get('/', function () {
-//     return view('auth.login');
-// });
+// NOTE: Welcome / booking form temporarily disabled (commented out).
+// Route::get('/', [ShipTicketSaleController::class, 'bookingForm'])->name('booking.form');
 
-Route::get('/', [ShipTicketSaleController::class, 'bookingForm'])->name('booking.form');
+// Root shows login first
+Route::get('/', function () {
+    return view('auth.login');
+});
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');;
 // Route::get('/dashboard', function () {
 //     return view('dashboard');

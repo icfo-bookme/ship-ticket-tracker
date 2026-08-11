@@ -15,9 +15,6 @@ use App\Http\Controllers\ExcelSettingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\WhatsappDetailsController;
 
-Route::resource('ships', ShipController::class);
-
-
 // NOTE: Welcome / booking form temporarily disabled (commented out).
 // Route::get('/', [ShipTicketSaleController::class, 'bookingForm'])->name('booking.form');
 
@@ -25,7 +22,7 @@ Route::resource('ships', ShipController::class);
 Route::get('/', function () {
     return view('auth.login');
 });
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');;
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 // Route::get('/dashboard', function () {
 //     return view('dashboard');
 // })->middleware(['auth', 'verified'])->name('dashboard');
@@ -35,7 +32,6 @@ Route::get('/documentation', function () {
 })->name('documentation');
 Route::post('/ship-ticket/sales', [ShipTicketSaleController::class, 'publicStore'])->name('publicForm.store');
 Route::get('/sales-create/success', [ShipTicketSaleController::class, 'success'])->name('publicForm.success');
-Route::post('/ship-ticket-sales/check-duplicate', [ShipTicketSaleController::class, 'checkDuplicate']);
 Route::get('/ship/packages/{id}', [ShipPackageController::class, 'showPackages']);
 Route::get('/ship-packages/{id}', [ShipPackageController::class, 'index']);
 
@@ -44,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::resource('ship-ticket-sales', ShipTicketSaleController::class);
+    Route::post('/ship-ticket-sales/check-duplicate', [ShipTicketSaleController::class, 'checkDuplicate']);
 
     Route::get('/sales/{status}', [ShipTicketSaleController::class, 'pendingCS']);
     Route::get('/gdrive/verify', [ShipTicketSaleController::class, 'printedCS'])->name('gdrive.verify') ;

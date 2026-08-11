@@ -65,17 +65,6 @@ class ShipTicketSale extends Model
     ];
 
     /**
-     * Get the attributes that should be mutated to dates.
-     *
-     * @var array
-     */
-    protected $dates = [
-
-        'created_at',
-        'updated_at',
-    ];
-
-    /**
      * Scope a query to only include pending dues.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query
@@ -131,22 +120,27 @@ class ShipTicketSale extends Model
     {
         return $this->hasOne(Refund::class, 'sales_id', 'id');
     }
+
     public function coPassengers()
     {
         return $this->hasMany(CoPassenger::class, 'ship_ticket_sale_id');
     }
+
     public function verifyby()
     {
-        return $this->hasMany(VerifyTracker::class,  'ticket_id', 'id');
+        return $this->hasMany(VerifyTracker::class, 'ticket_id', 'id');
     }
+
     public function payments()
     {
         return $this->hasMany(Payment::class, 'sales_id');
     }
+
     public function categories()
     {
         return $this->hasMany(Category::class, 'ticket_id');
     }
+
     public function shipment()
     {
         return $this->hasOne(Shipment::class, 'ticket_id', 'id');
@@ -164,8 +158,7 @@ class ShipTicketSale extends Model
     }
 
     public function groupedTickets()
-{
-    return $this->hasMany(PrintedTicket::class, 'group_by_id', 'id');
-}
-
+    {
+        return $this->hasMany(PrintedTicket::class, 'group_by_id', 'id');
+    }
 }

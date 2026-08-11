@@ -341,7 +341,7 @@
                                     Other Fee(bikas,nogod,vat etc if include ) (৳)
                                 </label>
                                 <input type="number" id="other_fee" name="other_fee"
-                                    value="{{ old('ticket_fee', 0) }}" step="0.01" min="0"
+                                    value="{{ old('other_fee', 0) }}" step="0.01" min="0"
                                     placeholder="0.00"
                                     class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                             </div>
@@ -404,7 +404,7 @@
                                 <option value="">Select Status</option>
                                 <option value="yes" {{ old('bftn_status') == 'yes' ? 'selected' : '' }}>Yes
                                 </option>
-                                <option value="no" {{ old('bftn_status') == '' ? 'selected' : '' }}>No</option>
+                                <option value="no" {{ old('bftn_status') == 'no' ? 'selected' : '' }}>No</option>
                             </select>
                         </div>
 
@@ -451,14 +451,14 @@
                                 Remark-1
                             </label>
                             <textarea id="remark1" name="remark1" placeholder="Enter Remark here" rows="3"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('address') }}</textarea>
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('remark1') }}</textarea>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Remark-2
                             </label>
                             <textarea id="remark2" name="remark2" placeholder="Enter your Remark here" rows="3"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('address') }}</textarea>
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('remark2') }}</textarea>
                         </div>
                     </div>
                 </div>

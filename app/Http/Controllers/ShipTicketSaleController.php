@@ -3,37 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bftn;
-use Google\Client;
-use Google\Service\Drive;
-use Illuminate\Http\Request;
-use App\Services\GoogleSheetService;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\DB;
-use App\Models\ShipTicketSale;
-use App\Models\Ship;
-use App\Models\VerifyTracker;
-use App\Models\CoPassenger;
-use App\Models\Shipment;
-use App\Models\Company;
 use App\Models\Category;
+use App\Models\Company;
+use App\Models\CoPassenger;
 use App\Models\Payment;
 use App\Models\PrintedTicket;
 use App\Models\PrintStatus;
+use App\Models\Ship;
+use App\Models\Shipment;
+use App\Models\ShipTicketSale;
 use App\Models\User;
+use App\Models\VerifyTracker;
 use App\Models\WhatsappDetail;
+use App\Services\GoogleSheetService;
 use App\Services\SteadfastService;
+use Google\Client;
+use Google\Service\Drive;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
 
 class ShipTicketSaleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+   
     public function index()
     {
         $sales = ShipTicketSale::with('ships')->latest()->get();
         $ships = Ship::all();
+
         return view('ship_ticket_sales.index', compact('sales', 'ships'));
     }
 
@@ -48,10 +45,6 @@ class ShipTicketSaleController extends Controller
         $length = $request->input('length', 10);
         $searchValue = $request->input('search.value', '');
 
-        // if ($status == 'payment-verified') {
-        //     $this->printedCS();
-        // }
-
         // Base query
         $query = ShipTicketSale::with([
             'ships.packages',
@@ -63,22 +56,20 @@ class ShipTicketSaleController extends Controller
             'PrintStatus',
             'printedTickets',
             'groupedTickets',
-            'verifyby.verifiedByUser'
+            'verifyby.verifiedByUser',
         ])
             ->withCount('printedTickets')
             ->where('status', $status);
         $sales = $query->get();
 
-
-
         // Apply filters
-        if (!empty($shipId)) {
+        if (! empty($shipId)) {
             $query->where('ship_id', $shipId);
         }
-        if (!empty($companyId)) {
+        if (! empty($companyId)) {
             $query->where('company_id', $companyId);
         }
-        if (!empty($journeyDate)) {
+        if (! empty($journeyDate)) {
             $query->whereDate('journey_date', $journeyDate);
         }
 
@@ -86,7 +77,7 @@ class ShipTicketSaleController extends Controller
         $totalRecords = ShipTicketSale::where('status', $status)->count();
 
         // Apply search
-        if (!empty($searchValue)) {
+        if (! empty($searchValue)) {
             $query->where(function ($q) use ($searchValue) {
                 $q->where('customer_name', 'like', "%{$searchValue}%")
                     ->orWhere('customer_mobile', 'like', "%{$searchValue}%")
@@ -128,20 +119,15 @@ class ShipTicketSaleController extends Controller
             'draw' => $request->input('draw'),
             'recordsTotal' => $totalRecords,
             'recordsFiltered' => $filteredRecords,
-            'data' => $sales
+            'data' => $sales,
         ]);
     }
 
-
-
     public function showPendingSales($status)
     {
-
         return view('ship_ticket_sales.index', compact('status'));
     }
-    /**
-     * Show the form for creating a new resource.
-     */
+
     public function create()
     {
         $ships = Ship::all();
@@ -149,124 +135,124 @@ class ShipTicketSaleController extends Controller
         return view('ship_ticket_sales.create', compact('ships', 'companies'));
     }
 
-
     public function bookingForm(Request $request)
     {
         $form = $request->query('form');
 
         $ships = Ship::all();
         $companies = Company::all();
+
         return view('welcome', compact('ships', 'companies', 'form'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(Request $request)
     {
 
         $validated = $request->validate([
-            'customer_name'   => 'required|string|max:100',
+            'customer_name' => 'required|string|max:100',
             'customer_mobile' => 'required|string|max:20',
-            'whatsapp'        => 'nullable|string|max:20',
-            'nid'             => 'nullable|string|max:50',
-            'email'           => 'nullable|string|max:100',
-            'sales_source'    => 'nullable|string|max:255',
-            'ship_id'         => 'required|string|max:100',
-            'address'         => 'nullable|string',
-            'journey_date'    => 'nullable|date',
-            'date_of_birth'   => 'nullable|date',
-            'return_date'     => 'nullable|date',
-            'ticket_fee'      => 'required|numeric',
+            'whatsapp' => 'nullable|string|max:20',
+            'nid' => 'nullable|string|max:50',
+            'email' => 'nullable|string|max:100',
+            'sales_source' => 'nullable|string|max:255',
+            'ship_id' => 'required|exists:ships,id',
+            'address' => 'nullable|string',
+            'journey_date' => 'nullable|date',
+            'date_of_birth' => 'nullable|date',
+            'return_date' => 'nullable|date',
+            'ticket_fee' => 'required|numeric',
             'received_amount' => 'required|numeric',
             'number_of_ticket' => 'required|numeric',
             'ticket_category' => 'nullable|string|max:255',
-            'due_amount'      => 'nullable|numeric',
-            'bftn_status'      => 'nullable',
-            'company_id'      => 'nullable|string|max:100',
-            'issued_date'     => 'required|date',
-            'sold_by'         => 'required|string|max:100',
-            'remark1'         => 'nullable|string',
-            'remark2'         => 'nullable|string',
-            'other_fee'       => 'nullable|numeric',
-            'total_payable'   => 'nullable|numeric',
+            'due_amount' => 'nullable|numeric',
+            'bftn_status' => 'nullable',
+            'company_id' => 'nullable',
+            'issued_date' => 'required|date',
+            'sold_by' => 'required|string|max:100',
+            'remark1' => 'nullable|string',
+            'remark2' => 'nullable|string',
+            'other_fee' => 'nullable|numeric',
+            'total_payable' => 'nullable|numeric',
         ]);
 
-        $ticketSale = ShipTicketSale::create($validated);
+        $ticketSale = DB::transaction(function () use ($request, $validated) {
+            $ticketSale = ShipTicketSale::create($validated);
 
-
-        if ($request->filled('co_passengers')) {
-            foreach ($request->co_passengers as $coPassenger) {
-                if (!empty($coPassenger['name'])) {
-                    CoPassenger::create([
-                        'ship_ticket_sale_id' => $ticketSale->id,
-                        'name' => $coPassenger['name'],
-                        'nid'  => $coPassenger['nid'],
-                        'co_passernger_number'  => $coPassenger['co_passernger_number'],
-                        'date_of_birth'  => $coPassenger['date_of_birth'],
-
-                    ]);
-                }
-            }
-        }
-
-        if ($request->filled('payment_methods')) {
-            foreach ($request->payment_methods as $payment_method) {
-                if (!empty($payment_method['method']) && !empty($payment_method['amount'])) {
-                    Payment::create([
-                        'sales_id' => $ticketSale->id,
-                        'payment_method' => $payment_method['method'],
-                        'received_amount'  => $payment_method['amount'],
-                        'transaction_id'  => $payment_method['transaction_id'] ?? null,
-                        'payment_datetime'  => $payment_method['payment_datetime'] ?? null,
-                        'paid_date'  => $payment_method['paid_date'],
-                        'remark'  => $payment_method['remark'],
-                    ]);
-                }
-            }
-        }
-
-        if ($request->bftn_status == "yes" && $request->bftn_issue_datetime) {
-
-            Bftn::create([
-                'sales_id' => $ticketSale->id,
-                'bftn_date_time' => $request->bftn_issue_datetime,
-                'status'  => 0,
-                'notifications_status'  => 1,
-            ]);
-        }
-
-        if ($request->filled('ticket_categories')) {
-
-            foreach ($request->ticket_categories as $type => $categories) {
-
-
-                foreach ($categories as $category) {
-                    if (
-                        $category['quantity'] > 0
-                    ) {
-                        Category::create([
-                            'ticket_id'  => $ticketSale->id,
-                            'package_id' => $category['package_id'],
-                            'quantity'   => $category['quantity'],
-                            'type'       => $type,
+            if ($request->filled('co_passengers')) {
+                foreach ($request->co_passengers as $coPassenger) {
+                    if (! empty($coPassenger['name'])) {
+                        CoPassenger::create([
+                            'ship_ticket_sale_id' => $ticketSale->id,
+                            'name' => $coPassenger['name'],
+                            'nid' => $coPassenger['nid'],
+                            'co_passernger_number' => $coPassenger['co_passernger_number'],
+                            'date_of_birth' => $coPassenger['date_of_birth'],
 
                         ]);
                     }
                 }
             }
-        }
+
+            if ($request->filled('payment_methods')) {
+                foreach ($request->payment_methods as $payment_method) {
+                    if (! empty($payment_method['method']) && ! empty($payment_method['amount'])) {
+                        Payment::create([
+                            'sales_id' => $ticketSale->id,
+                            'payment_method' => $payment_method['method'],
+                            'received_amount' => $payment_method['amount'],
+                            'transaction_id' => $payment_method['transaction_id'] ?? null,
+                            'payment_datetime' => $payment_method['payment_datetime'] ?? null,
+                            'paid_date' => $payment_method['paid_date'],
+                            'remark' => $payment_method['remark'],
+                        ]);
+                    }
+                }
+            }
+
+            if ($request->bftn_status == 'yes' && $request->bftn_issue_datetime) {
+
+                Bftn::create([
+                    'sales_id' => $ticketSale->id,
+                    'bftn_date_time' => $request->bftn_issue_datetime,
+                    'status' => 0,
+                    'notifications_status' => 1,
+                ]);
+            }
+
+            if ($request->filled('ticket_categories')) {
+
+                foreach ($request->ticket_categories as $type => $categories) {
+
+                    foreach ($categories as $category) {
+                        if (
+                            $category['quantity'] > 0
+                        ) {
+                            Category::create([
+                                'ticket_id' => $ticketSale->id,
+                                'package_id' => $category['package_id'],
+                                'quantity' => $category['quantity'],
+                                'type' => $type,
+
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            return $ticketSale;
+        });
 
         $ship = Ship::find($request->ship_id);
         $user = User::find($request->sold_by);
 
         // Prepare payment methods as a single string
         $paymentString = '';
-        if (!empty($request->payment_methods)) {
+        if (! empty($request->payment_methods)) {
             $payments = [];
             foreach ($request->payment_methods as $payment_method) {
-                if (!empty($payment_method['method']) && !empty($payment_method['amount'])) {
-                    $payments[] = $payment_method['method'] . '=' . $payment_method['amount'];
+                if (! empty($payment_method['method']) && ! empty($payment_method['amount'])) {
+                    $payments[] = $payment_method['method'].'='.$payment_method['amount'];
                 }
             }
             $paymentString = implode(', ', $payments); // e.g. "Cash=100, Bikas=300"
@@ -278,22 +264,22 @@ class ShipTicketSaleController extends Controller
             $validated['customer_mobile'],
             $validated['whatsapp'] ?? $validated['customer_mobile'],
             $validated['email'] ?? '',
-            $ship->name,
+            $ship?->name ?? '',
             $request->sales_source,
             $validated['ticket_fee'],
             $request->received_amount,
             $paymentString,
-            $user->name,
+            $user?->name ?? '',
             now()->format('Y-m-d'),
             $request->address,
             $request->remark1,
             $request->remark2,
         ]);
 
-
         return redirect()->back()
             ->with('success', 'Journey ticket saved!.');
     }
+
     protected $steadfast;
 
     public function __construct(SteadfastService $steadfast)
@@ -304,28 +290,28 @@ class ShipTicketSaleController extends Controller
     public function publicStore(Request $request)
     {
         $validated = $request->validate([
-            'customer_name'   => 'required|string|max:100',
+            'customer_name' => 'required|string|max:100',
             'customer_mobile' => 'required|string|max:20',
-            'whatsapp'        => 'nullable|string|max:20',
-            'nid'             => 'nullable|string|max:50',
-            'email'           => 'nullable|string|max:100',
-            'sales_source'    => 'nullable|string|max:255',
-            'ship_id'         => 'required|string|max:100',
-            'address'         => 'nullable|string',
-            'journey_date'    => 'nullable|date',
-            'date_of_birth'   => 'nullable|date',
-            'return_date'     => 'nullable|date',
-            'ticket_fee'      => 'required|numeric',
+            'whatsapp' => 'nullable|string|max:20',
+            'nid' => 'nullable|string|max:50',
+            'email' => 'nullable|string|max:100',
+            'sales_source' => 'nullable|string|max:255',
+            'ship_id' => 'required|string|max:100',
+            'address' => 'nullable|string',
+            'journey_date' => 'nullable|date',
+            'date_of_birth' => 'nullable|date',
+            'return_date' => 'nullable|date',
+            'ticket_fee' => 'required|numeric',
             'received_amount' => 'required|numeric',
             'number_of_ticket' => 'required|numeric',
             'ticket_category' => 'nullable|string|max:255',
-            'due_amount'      => 'nullable|numeric',
-            'bftn_status'      => 'nullable',
-            'company_id'      => 'nullable|string|max:100',
-            'issued_date'     => 'required|date',
-            'sold_by'         => 'nullable|string|max:100',
-            'remark1'         => 'nullable|string|max:255',
-            'remark2'         => 'nullable|string|max:255',
+            'due_amount' => 'nullable|numeric',
+            'bftn_status' => 'nullable',
+            'company_id' => 'nullable|string|max:100',
+            'issued_date' => 'required|date',
+            'sold_by' => 'nullable|string|max:100',
+            'remark1' => 'nullable|string|max:255',
+            'remark2' => 'nullable|string|max:255',
         ]);
 
         if ($request->sales_source) {
@@ -342,12 +328,12 @@ class ShipTicketSaleController extends Controller
 
         if ($request->filled('co_passengers')) {
             foreach ($request->co_passengers as $coPassenger) {
-                if (!empty($coPassenger['name']) && !empty($coPassenger['nid'])) {
+                if (! empty($coPassenger['name']) && ! empty($coPassenger['nid'])) {
                     CoPassenger::create([
                         'ship_ticket_sale_id' => $ticketSale->id,
                         'name' => $coPassenger['name'],
-                        'nid'  => $coPassenger['nid'],
-                        'co_passernger_number'  => $coPassenger['co_passernger_number'],
+                        'nid' => $coPassenger['nid'],
+                        'co_passernger_number' => $coPassenger['co_passernger_number'],
                     ]);
                 }
             }
@@ -355,12 +341,12 @@ class ShipTicketSaleController extends Controller
 
         if ($request->filled('payment_methods')) {
             foreach ($request->payment_methods as $payment_method) {
-                if (!empty($payment_method['method']) && !empty($payment_method['amount'])) {
+                if (! empty($payment_method['method']) && ! empty($payment_method['amount'])) {
                     Payment::create([
                         'sales_id' => $ticketSale->id,
                         'payment_method' => $payment_method['method'],
-                        'received_amount'  => $payment_method['amount'],
-                        'paid_date'  => $payment_method['paid_date'],
+                        'received_amount' => $payment_method['amount'],
+                        'paid_date' => $payment_method['paid_date'],
 
                     ]);
                 }
@@ -371,19 +357,17 @@ class ShipTicketSaleController extends Controller
 
             foreach ($request->ticket_categories as $type => $categories) {
 
-
                 foreach ($categories as $category) {
                     // Debug each category (optional)
-
 
                     if (
                         $category['quantity'] > 0
                     ) {
                         Category::create([
-                            'ticket_id'  => $ticketSale->id,
+                            'ticket_id' => $ticketSale->id,
                             'package_id' => $category['package_id'],
-                            'quantity'   => $category['quantity'],
-                            'type'       => $type,
+                            'quantity' => $category['quantity'],
+                            'type' => $type,
 
                         ]);
                     }
@@ -391,11 +375,11 @@ class ShipTicketSaleController extends Controller
             }
         }
         $paymentString = '';
-        if (!empty($request->payment_methods)) {
+        if (! empty($request->payment_methods)) {
             $payments = [];
             foreach ($request->payment_methods as $payment_method) {
-                if (!empty($payment_method['method']) && !empty($payment_method['amount'])) {
-                    $payments[] = $payment_method['method'] . '=' . $payment_method['amount'];
+                if (! empty($payment_method['method']) && ! empty($payment_method['amount'])) {
+                    $payments[] = $payment_method['method'].'='.$payment_method['amount'];
                 }
             }
             $paymentString = implode(', ', $payments); // e.g. "Cash=100, Bikas=300"
@@ -417,8 +401,6 @@ class ShipTicketSaleController extends Controller
             $request->remark1,
             $request->remark2,
         ]);
-
-
 
         return redirect()
             ->route('publicForm.success')
@@ -451,10 +433,9 @@ class ShipTicketSaleController extends Controller
             )
             ->orderBy('price', 'asc')
             ->get();
+
         return view('success', compact('hotels'));
     }
-
-
 
     /**
      * Display the specified resource.
@@ -466,14 +447,13 @@ class ShipTicketSaleController extends Controller
             'categories',
             'companies',
             'coPassengers',
-            "payments",
-            "shipment",
+            'payments',
+            'shipment',
             'printedTickets',
-            'verifyby.verifiedByUser:id,name'
+            'verifyby.verifiedByUser:id,name',
         ])->findOrFail($id);
 
-
-        $maxNumber = PrintedTicket::where('filename', 'like', $sale->whatsapp . '-%')
+        $maxNumber = PrintedTicket::where('filename', 'like', $sale->whatsapp.'-%')
             ->selectRaw('MAX(CAST(SUBSTRING_INDEX(filename, "-", -1) AS UNSIGNED)) as number')
             ->value('number');
 
@@ -483,10 +463,9 @@ class ShipTicketSaleController extends Controller
         $groupById = null;
         if ($number > 0) {
 
-            $latestTicket = PrintedTicket::where('filename', 'like', $sale->whatsapp . '-%')
+            $latestTicket = PrintedTicket::where('filename', 'like', $sale->whatsapp.'-%')
                 ->orderByRaw('CAST(SUBSTRING_INDEX(filename, "-", -1) AS UNSIGNED) DESC')
                 ->first();
-
 
             if ($latestTicket) {
                 $saleStatus = ShipTicketSale::where('id', $latestTicket->sales_id)
@@ -499,11 +478,6 @@ class ShipTicketSaleController extends Controller
             }
         }
 
-
-
-
-
-
         $totalDepartureTickets = $sale->categories
             ->where('type', 'departure')
             ->sum('quantity');
@@ -514,7 +488,6 @@ class ShipTicketSaleController extends Controller
 
         // Add these totals to the sale object for easy access in view
 
-
         if ($sale->status == 'payment-verified') {
             $sale->total_departure_tickets = $totalDepartureTickets;
             $sale->total_return_tickets = $totalReturnTickets;
@@ -522,7 +495,6 @@ class ShipTicketSaleController extends Controller
             $totalDepartureTickets = 0;
             $totalReturnTickets = 0;
         }
-
 
         // Find next sale with SAME STATUS
         $nextSale = ShipTicketSale::where('status', $sale->status)
@@ -541,6 +513,7 @@ class ShipTicketSaleController extends Controller
     public function edit($id)
     {
         $sale = ShipTicketSale::findOrFail($id);
+
         return view('ship_ticket_sales.edit', compact('sale'));
     }
 
@@ -549,7 +522,6 @@ class ShipTicketSaleController extends Controller
      */
     public function update(Request $request, $id)
     {
-
 
         $action = $request->input('action');
 
@@ -641,18 +613,17 @@ class ShipTicketSaleController extends Controller
             // ✅ Commit first
             DB::commit();
 
-
             if ($request->status === 'payment-verified') {
 
                 if ($request->has('pdf') && is_array($request->pdf)) {
 
                     foreach ($request->pdf as $pdfValue) {
 
-                        $pdfName = $pdfValue . '.pdf';
+                        $pdfName = $pdfValue.'.pdf';
 
                         $data = [
-                            'sales_id'   => $sale->id,
-                            'filename'   => $pdfName,
+                            'sales_id' => $sale->id,
+                            'filename' => $pdfName,
                             'group_by_id' => ($validated['group_tickets'] ?? null) == 'yes'
                                 ? $validated['group_by_id']
                                 : $sale->id,
@@ -662,25 +633,21 @@ class ShipTicketSaleController extends Controller
 
                         // Add group_by_id only if printed_tickets = yes
 
-
-
                         $sale->printedTickets()->create($data);
                     }
                 }
 
-                if ($validated['group_tickets'] && $validated['group_tickets'] == 'yes') {
+                if (($validated['group_tickets'] ?? null) == 'yes' && ! empty($validated['group_by_id'])) {
                     $groupbysalesStaus = ShipTicketSale::find($validated['group_by_id'])->status;
-                     $sale->update([
-                    'status' => $groupbysalesStaus, 
-                ]);
+                    $sale->update([
+                        'status' => $groupbysalesStaus,
+                    ]);
                 } else {
-                     $sale->update([
-                    'status' => 'ticket-issued',
-                ]);
+                    $sale->update([
+                        'status' => 'ticket-issued',
+                    ]);
                 }
             }
-
-
 
             if ($request->next_sale_id) {
                 return redirect()
@@ -691,30 +658,10 @@ class ShipTicketSaleController extends Controller
             return redirect()->back()
                 ->with('success', 'Ship ticket sale updated successfully!');
 
-
-
-            // Redirect logic
-            // if ($sale->status != 'payment-verified' && $action === 'update') {
-
-            //     return redirect()->back()
-            //         ->with('success', 'Ship ticket sale updated successfully!');
-            // }
-            // if ($sale->status != 'payment-verified' && $action === 'update_and_reverify') {
-
-            //     return redirect()->route('gdrive.reverify', ['id' => $sale->id])
-            //         ->with('success', 'Ship ticket sale updated successfully and ready for verification!');
-            // }
-
-            // if ($request->next_sale_id && $sale->status == 'payment-verified') {
-            //     return redirect()->route('gdrive.verify', [
-            //         'next_id' => $request->next_sale_id ?? null
-            //     ]);
-            // }
-            // return redirect()->route('gdrive.verify')
-            //     ->with('success', 'Ship ticket sale updated successfully and ready for verification!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Failed to update ship ticket sale: ' . $e->getMessage())
+
+            return back()->with('error', 'Failed to update ship ticket sale: '.$e->getMessage())
                 ->withInput();
         }
     }
@@ -728,7 +675,7 @@ class ShipTicketSaleController extends Controller
         $sale->categories()->delete();
 
         // Process departure packages
-        if (!empty($validated['departure_quantity'])) {
+        if (! empty($validated['departure_quantity'])) {
             foreach ($validated['departure_quantity'] as $packageId => $quantity) {
                 $quantity = (int) $quantity;
                 if ($quantity > 0) {
@@ -742,7 +689,7 @@ class ShipTicketSaleController extends Controller
         }
 
         // Process return packages
-        if (!empty($validated['return_quantity'])) {
+        if (! empty($validated['return_quantity'])) {
             foreach ($validated['return_quantity'] as $packageId => $quantity) {
                 $quantity = (int) $quantity;
                 if ($quantity > 0) {
@@ -766,7 +713,7 @@ class ShipTicketSaleController extends Controller
 
         // Create new payments
         foreach ($payments as $payment) {
-            if (!empty($payment['payment_method']) && !empty($payment['received_amount'])) {
+            if (! empty($payment['payment_method']) && ! empty($payment['received_amount'])) {
                 $sale->payments()->create([
                     'payment_method' => $payment['payment_method'],
                     'received_amount' => $payment['received_amount'],
@@ -787,12 +734,12 @@ class ShipTicketSaleController extends Controller
 
         // Create new co-passengers
         foreach ($coPassengers as $passenger) {
-            if (!empty($passenger['name'])) {
+            if (! empty($passenger['name'])) {
                 $sale->coPassengers()->create([
                     'name' => $passenger['name'],
                     'nid' => $passenger['nid'] ?? null,
                     'co_passenger_number' => $passenger['co_passenger_number'] ?? null,
-                    "date_of_birth" => $passenger['date_of_birth'] ?? null,
+                    'date_of_birth' => $passenger['date_of_birth'] ?? null,
                 ]);
             }
         }
@@ -817,7 +764,6 @@ class ShipTicketSaleController extends Controller
             return response()->json(['success' => false, 'message' => 'Sale not found'], 404);
         }
     }
-
 
     public function checkDuplicate(Request $request)
     {
@@ -845,10 +791,9 @@ class ShipTicketSaleController extends Controller
         ]);
     }
 
-
     public function verify(Request $request, $id, $status)
     {
-        if ($status == "ticket-printed") {
+        if ($status == 'ticket-printed') {
 
             $tickets = PrintedTicket::where('group_by_id', $id)
                 ->latest()
@@ -863,12 +808,12 @@ class ShipTicketSaleController extends Controller
                 if ($sale) {
 
                     $sale->update([
-                        'status' => 'ticket-printed'
+                        'status' => 'ticket-printed',
                     ]);
 
                     VerifyTracker::create([
-                        'name'        => 'ticket-printed',
-                        'ticket_id'   => $sale->id,
+                        'name' => 'ticket-printed',
+                        'ticket_id' => $sale->id,
                         'verified_by' => auth()->id(),
                     ]);
                 }
@@ -876,30 +821,26 @@ class ShipTicketSaleController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Sales updated to ticket-printed successfully'
+                'message' => 'Sales updated to ticket-printed successfully',
             ]);
         }
 
-
         $sale = ShipTicketSale::findOrFail($id);
-        if ($status == "shipment_id_entered") {
+        if ($status == 'shipment_id_entered') {
             $bulkParcelData = [
                 [
-                    'invoice'          => 'TICKET-' . $sale->id,
-                    'recipient_name'   => $sale->customer_name,
-                    'recipient_phone'  => $sale->customer_mobile,
+                    'invoice' => 'TICKET-'.$sale->id,
+                    'recipient_name' => $sale->customer_name,
+                    'recipient_phone' => $sale->customer_mobile,
                     'recipient_address' => $sale->address ?? 'N/A',
-                    'cod_amount'       => $sale->due_amount + 100 ?? 100,
-                    'note'             => 'Journey ticket booking ID: ' . $sale->id,
-                    'delivery_type'    => 0,
-                ]
+                    'cod_amount' => $sale->due_amount + 100 ?? 100,
+                    'note' => 'Journey ticket booking ID: '.$sale->id,
+                    'delivery_type' => 0,
+                ],
             ];
-
-
 
             // Use the injected service
             $steadfastResult = $this->steadfast->bulkCreate($bulkParcelData);
-
 
             $consignmentId = null;
 
@@ -909,7 +850,7 @@ class ShipTicketSaleController extends Controller
             }
 
             // Option 2: Safer approach with validation
-            if (!empty($steadfastResult['data']) && is_array($steadfastResult['data'])) {
+            if (! empty($steadfastResult['data']) && is_array($steadfastResult['data'])) {
                 $firstResult = $steadfastResult['data'][0] ?? null;
                 if ($firstResult && isset($firstResult['consignment_id'])) {
                     $consignmentId = $firstResult['consignment_id'];
@@ -917,9 +858,10 @@ class ShipTicketSaleController extends Controller
             }
 
             // Check if we got a consignment_id
-            if (!$consignmentId) {
+            if (! $consignmentId) {
                 // Handle error - log it or throw exception
                 Log::error('Failed to get consignment_id from Steadfast response', $steadfastResult);
+
                 return response()->json(['success' => false, 'message' => 'Failed to create shipment'], 500);
             }
 
@@ -935,27 +877,26 @@ class ShipTicketSaleController extends Controller
 
                 if ($sale) {
 
-                    Shipment::create([ 
-                        'ticket_id'   => $sale->id,
+                    Shipment::create([
+                        'ticket_id' => $sale->id,
                         'shipment_id' => $consignmentId,
                     ]);
 
                     $sale->update([
-                        'status' => 'shipment_id_entered'
+                        'status' => 'shipment_id_entered',
                     ]);
 
                     VerifyTracker::create([
-                        'name'        => 'shipment_id_entered',
-                        'ticket_id'   => $sale->id,
+                        'name' => 'shipment_id_entered',
+                        'ticket_id' => $sale->id,
                         'verified_by' => auth()->id(),
                     ]);
                 }
             });
 
-
             return response()->json([
                 'success' => true,
-                'message' => 'Sales updated to ticket-printed successfully'
+                'message' => 'Sales updated to ticket-printed successfully',
             ]);
         }
 
@@ -970,14 +911,12 @@ class ShipTicketSaleController extends Controller
         return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
     }
 
-
-
     public function printedCS(Request $request)
     {
         $nextId = $request->query('next_id', null);
 
         // Google Drive client setup
-        $client = new \Google\Client();
+        $client = new \Google\Client;
         $client->setAuthConfig(storage_path('app/google/service-account.json'));
         $client->addScope(\Google_Service_Drive::DRIVE_READONLY);
 
@@ -1021,9 +960,9 @@ class ShipTicketSaleController extends Controller
             // Match PDF names with whatsapp numbers
             foreach ($pdfNames as $pdfName) {
                 foreach ($salesByWhatsapp as $whatsapp => $saleId) {
-                    if (str_contains($pdfName, (string)$whatsapp)) {
+                    if (str_contains($pdfName, (string) $whatsapp)) {
 
-                        if (!PrintedTicket::where('filename', $pdfName)->exists()) {
+                        if (! PrintedTicket::where('filename', $pdfName)->exists()) {
                             $updatedIds[$saleId] = true;
 
                             $insertData[] = [
@@ -1037,20 +976,19 @@ class ShipTicketSaleController extends Controller
                 }
             }
 
-
-            if (!empty($updatedIds)) {
+            if (! empty($updatedIds)) {
                 break; // exit retry loop if found
             }
         }
 
         // ✅ DB transaction to update sale status and insert new PDFs
         DB::transaction(function () use ($updatedIds, $insertData) {
-            if (!empty($updatedIds)) {
+            if (! empty($updatedIds)) {
                 ShipTicketSale::whereIn('id', array_keys($updatedIds))
                     ->update(['status' => 'ticket-issued']);
             }
 
-            if (!empty($insertData)) {
+            if (! empty($insertData)) {
                 PrintedTicket::insert($insertData);
             }
         });
@@ -1059,23 +997,22 @@ class ShipTicketSaleController extends Controller
         if ($nextId) {
             return redirect()->route('ship-ticket-sales.show', ['ship_ticket_sale' => $nextId])->with(
                 'success',
-                count($updatedIds) . ' ticket(s) verified successfully.'
+                count($updatedIds).' ticket(s) verified successfully.'
             );
         } else {
             return back()->with(
                 'success',
-                count($updatedIds) . ' ticket(s) verified successfully.'
+                count($updatedIds).' ticket(s) verified successfully.'
             );
         }
     }
-
 
     public function reprintedCS(Request $request, $id)
     {
         $nextId = $request->query('next_id', null);
 
         // Google Drive client setup
-        $client = new \Google\Client();
+        $client = new \Google\Client;
         $client->setAuthConfig(storage_path('app/google/service-account.json'));
         $client->addScope(\Google_Service_Drive::DRIVE_READONLY);
 
@@ -1089,7 +1026,7 @@ class ShipTicketSaleController extends Controller
         // Get the single sale
         $sale = ShipTicketSale::find($id);
 
-        if (!$sale) {
+        if (! $sale) {
             return back()->with('error', 'No verified ticket found.');
         }
 
@@ -1119,9 +1056,9 @@ class ShipTicketSaleController extends Controller
             // Match PDF names with whatsapp number
             foreach ($pdfNames as $pdfName) {
                 foreach ($salesByWhatsapp as $whatsapp => $saleId) {
-                    if (str_contains($pdfName, (string)$whatsapp)) {
+                    if (str_contains($pdfName, (string) $whatsapp)) {
                         // Avoid duplicate insertion
-                        if (!PrintedTicket::where('filename', $pdfName)->exists()) {
+                        if (! PrintedTicket::where('filename', $pdfName)->exists()) {
                             $updatedIds[$saleId] = true;
 
                             $insertData[] = [
@@ -1135,19 +1072,19 @@ class ShipTicketSaleController extends Controller
                 }
             }
 
-            if (!empty($updatedIds)) {
+            if (! empty($updatedIds)) {
                 break; // exit retry loop if found
             }
         }
 
         // ✅ DB transaction to update sale status and insert new PDFs
         DB::transaction(function () use ($updatedIds, $insertData) {
-            if (!empty($updatedIds)) {
+            if (! empty($updatedIds)) {
                 ShipTicketSale::whereIn('id', array_keys($updatedIds))
                     ->update(['status' => 'ticket-issued']);
             }
 
-            if (!empty($insertData)) {
+            if (! empty($insertData)) {
                 PrintedTicket::insert($insertData);
             }
         });
@@ -1155,45 +1092,43 @@ class ShipTicketSaleController extends Controller
         // Redirect or back with success message
         if ($nextId) {
             return redirect()->route('ship-ticket-sales.show', ['ship_ticket_sale' => $nextId])
-                ->with('success', count($updatedIds) . ' ticket(s) verified successfully.');
+                ->with('success', count($updatedIds).' ticket(s) verified successfully.');
         } else {
-            return back()->with('success', count($updatedIds) . ' ticket(s) verified successfully.');
+            return back()->with('success', count($updatedIds).' ticket(s) verified successfully.');
         }
     }
-
-
-
 
     public function upload(Request $request)
     {
         $request->validate([
-            'pdfs'   => 'required|array',
+            'pdfs' => 'required|array',
             'pdfs.*' => 'required|mimes:pdf|max:10240',
         ]);
 
         $uploadedFiles = [];
 
         foreach ($request->file('pdfs') as $pdf) {
-            $filename = time() . '_' . uniqid() . '.' . $pdf->getClientOriginalExtension();
+            $filename = time().'_'.uniqid().'.'.$pdf->getClientOriginalExtension();
 
             $path = $pdf->storeAs('uploads/pdfs', $filename, 'public');
 
             $uploadedFiles[] = $path;
         }
         $this->printedCS();
+
         return back()->with('success', 'PDF files uploaded successfully.');
     }
 
     public function pdfDownload($id)
     {
-        $client = new Client();
+        $client = new Client;
         $client->setAuthConfig(storage_path('app/google/service-account.json'));
         $client->addScope(Drive::DRIVE_READONLY);
 
         $driveService = new Drive($client);
 
         $folderId = '1Kw6lNhhch4H0SbXrNNNRWp_4mTEGvvCv';
-        $fileName = $id . '.pdf';
+        $fileName = $id.'.pdf';
 
         // 1️⃣ Find file in Drive
         $query = "name='{$fileName}' and '{$folderId}' in parents and trashed=false";
@@ -1224,8 +1159,6 @@ class ShipTicketSaleController extends Controller
         );
     }
 
-
-
     // ShipTicketSaleController.php
     public function pdfPrintAll()
     {
@@ -1249,7 +1182,7 @@ class ShipTicketSaleController extends Controller
         }
 
         // Google Drive client
-        $client = new Client();
+        $client = new Client;
         $client->setAuthConfig(storage_path('app/google/service-account.json'));
         $client->addScope(Drive::DRIVE_READONLY);
 
@@ -1273,7 +1206,7 @@ class ShipTicketSaleController extends Controller
             return redirect()->back()->with('error', 'Ticket not found in Google Drive');
         }
 
-        $fileId = $files->getFiles()[0]->getId(); 
+        $fileId = $files->getFiles()[0]->getId();
 
         // Correct URL using Drive file ID
         $driveUrl = "https://drive.google.com/file/d/{$fileId}/view?print=true";

@@ -8,7 +8,7 @@ class TicketSalesSystem {
         this.init();
     }
 
-    // ==================== INITIALIZATION ====================
+    //  INITIALIZATION 
     init() {
         document.addEventListener("DOMContentLoaded", () => {
             this.setupEventListeners();
@@ -100,7 +100,7 @@ class TicketSalesSystem {
         };
     }
 
-    // ==================== EVENT HANDLERS ====================
+    //  EVENT HANDLERS 
     setupEventListeners() {
         try {
             this.setupCalculationListeners();
@@ -130,6 +130,20 @@ class TicketSalesSystem {
 
     setupMainActionListeners() {
         this.addEventListener('reviewButton', 'click', () => this.handleReviewClick());
+        this.setupFormSubmitGuard();
+    }
+
+    setupFormSubmitGuard() {
+        const form = this.getElement('#ticketForm');
+        if (!form) return;
+
+        form.addEventListener('submit', () => {
+            const submitBtn = document.querySelector('button[form="ticketForm"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        });
     }
 
     setupShipAndJourneyListeners() {
@@ -153,7 +167,7 @@ class TicketSalesSystem {
         this.initBftnIssueDateToggle();
     }
 
-    // ==================== DOM UTILITIES ====================
+    //  DOM UTILITIES 
     addEventListener(elementId, event, callback) {
         const element = document.getElementById(elementId);
         if (element) {
@@ -181,7 +195,7 @@ class TicketSalesSystem {
         if (element) element.value = value;
     }
 
-    // ==================== MOBILE & WHATSAPP ====================
+    //  MOBILE & WHATSAPP 
     handleSameAsMobileCheckbox() {
         const checkbox = this.getElement(this.selectors.elements.sameAsMobileCheckbox);
         const mobileField = this.getElement(this.selectors.elements.mobileField);
@@ -214,7 +228,7 @@ class TicketSalesSystem {
         }
     }
 
-    // ==================== TICKET CATEGORIES ====================
+    // TICKET CATEGORIES 
     async loadTicketCategories() {
         const shipId = this.getValue("ship_id");
         const returnDate = this.getValue("return_date");
@@ -304,7 +318,7 @@ class TicketSalesSystem {
         div.innerHTML = `
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    ${pkg.name || 'Unnamed Category'} (${type === 'departure' ? 'Departure' : 'Return'})
+                    ${this.escapeHtml(pkg.name || 'Unnamed Category')} (${type === 'departure' ? 'Departure' : 'Return'})
                 </label>
                 <input type="hidden" name="ticket_categories[${type}][${index}][name]" value="${this.escapeHtml(pkg.name || '')}">
                 <input type="hidden" name="ticket_categories[${type}][${index}][package_id]" value="${pkg.id || ''}">
@@ -334,8 +348,9 @@ class TicketSalesSystem {
     }
 
     attachTicketQuantityListeners() {
+        // Elements are freshly rebuilt on every render, so attaching directly is
+        // safe and avoids the previous dead removeEventListener call.
         this.getElements(this.selectors.classes.ticketQuantity).forEach(input => {
-            input.removeEventListener('input', this.handleTicketQuantityChange);
             input.addEventListener('input', () => this.handleTicketQuantityChange());
         });
     }
@@ -346,7 +361,7 @@ class TicketSalesSystem {
         this.updateCoPassengerRows();
     }
 
-    // ==================== CALCULATION METHODS ====================
+    //  CALCULATION METHODS 
     calculateTicketFee() {
         const hasReturnJourney = !!this.getValue("return_date");
         const totalTicketFee = hasReturnJourney ?
@@ -445,7 +460,7 @@ class TicketSalesSystem {
         this.setValue("due_amount", dueAmount.toFixed(2));
     }
 
-    // ==================== FORM VALIDATION ====================
+    //  FORM VALIDATION 
     async handleReviewClick() {
         this.clearAllErrors();
 
@@ -591,7 +606,7 @@ class TicketSalesSystem {
         return { isValid, firstErrorField };
     }
 
-    // ==================== CO-PASSENGER MANAGEMENT ====================
+    //  CO-PASSENGER MANAGEMENT 
     initializeCoPassenger() {
         const wrapper = this.getElement(this.selectors.elements.coPassengersWrapper);
         const addBtn = this.getElement(this.selectors.elements.addCoPassengerBtn);
@@ -612,16 +627,17 @@ class TicketSalesSystem {
 
     updateCoPassengerRows() {
         const totalDepartureTickets = this.calculateTotalDepartureTickets();
+        const requiredRows = Math.max(1, totalDepartureTickets); // always keep at least 1 row
         const wrapper = this.getElement(this.selectors.elements.coPassengersWrapper);
         const currentRows = wrapper.querySelectorAll(this.selectors.classes.coPassenger).length;
 
-        if (totalDepartureTickets > currentRows) {
-            const rowsToAdd = totalDepartureTickets - currentRows;
-            for (let i = 0; i < rowsToAdd - 1; i++) {
+        if (requiredRows > currentRows) {
+            const rowsToAdd = requiredRows - currentRows;
+            for (let i = 0; i < rowsToAdd; i++) {
                 this.addCoPassengerField(wrapper);
             }
-        } else if (totalDepartureTickets < currentRows) {
-            const rowsToRemove = currentRows - totalDepartureTickets;
+        } else if (requiredRows < currentRows) {
+            const rowsToRemove = currentRows - requiredRows;
             const rows = wrapper.querySelectorAll(this.selectors.classes.coPassenger);
 
             for (let i = 0; i < rowsToRemove && rows.length > 1; i++) {
@@ -738,7 +754,7 @@ class TicketSalesSystem {
         this.coPassengerIndex++;
     }
 
-    // ==================== PAYMENT MANAGEMENT ====================
+    // PAYMENT MANAGEMENT 
     initializePaymentMethod() {
         const wrapper = this.getElement(this.selectors.elements.paymentInfoWrapper);
         const addBtn = this.getElement(this.selectors.elements.addPaymentInfo);
@@ -870,7 +886,7 @@ class TicketSalesSystem {
         this.calculateDue();
     }
 
-    // ==================== REVIEW MODAL ====================
+    // REVIEW MODAL 
     showReviewModal() {
         this.fillReviewContent();
 
@@ -878,14 +894,19 @@ class TicketSalesSystem {
         modal.classList.remove("hidden");
         modal.classList.add("flex");
 
-        modal.addEventListener("click", (e) => {
-            if (e.target === modal || e.target.id === "modalBackdrop") this.closeModal();
-        });
+        // Attach close handlers only once to avoid stacking listeners on repeated opens.
+        if (modal.dataset.initialized === undefined) {
+            modal.dataset.initialized = '1';
 
-        this.getElement('#editInfoButton').addEventListener("click", () => this.closeModal());
-        this.getElements('[data-modal-hide="reviewModal"]').forEach((btn) => {
-            btn.addEventListener("click", () => this.closeModal());
-        });
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal || e.target.id === "modalBackdrop") this.closeModal();
+            });
+
+            this.getElement('#editInfoButton').addEventListener("click", () => this.closeModal());
+            this.getElements('[data-modal-hide="reviewModal"]').forEach((btn) => {
+                btn.addEventListener("click", () => this.closeModal());
+            });
+        }
     }
 
     closeModal() {
@@ -1050,7 +1071,7 @@ class TicketSalesSystem {
         return html;
     }
 
-    // ==================== UTILITY METHODS ====================
+    //  UTILITY METHODS 
     toggleReturnJourneySection() {
         const returnDate = this.getValue("return_date");
         const returnSection = this.getElement("#returnJourneySection");
@@ -1143,7 +1164,7 @@ class TicketSalesSystem {
         bftnSelect.addEventListener('change', toggleBftnIssueDate);
     }
 
-    // ==================== ERROR HANDLING ====================
+    //  ERROR HANDLING 
     showFieldError(field, message) {
         this.clearFieldError(field);
 
@@ -1221,5 +1242,4 @@ class TicketSalesSystem {
     }
 }
 
-// Initialize the application
 const ticketSystem = new TicketSalesSystem();

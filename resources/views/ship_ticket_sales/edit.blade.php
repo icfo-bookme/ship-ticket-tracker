@@ -1007,7 +1007,7 @@
                         @endif
 
 
-                        @if ($sale->status == 'payment-verified' && $number > 0)
+                        @if ($sale->status == 'payment-verified')
                             <div class="bg-yellow-50 rounded-2xl p-6 shadow-sm border border-yellow-200 mt-6">
 
                                 <div class="flex items-center mb-4">

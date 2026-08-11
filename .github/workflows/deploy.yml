@@ -57,7 +57,8 @@ jobs:
         run: |
           mkdir -p artifact
           # Build a single tarball, excluding anything that must NOT be
-          # shipped to the server (git, node_modules, local .env, storage).
+          # shipped to the server (git, node_modules, local .env, storage)
+          # AND excluding artifact/ itself (we write the tarball inside it).
           tar \
             --exclude='./.git' \
             --exclude='./.github' \
@@ -65,6 +66,7 @@ jobs:
             --exclude='./node_modules' \
             --exclude='./.env' \
             --exclude='./storage' \
+            --exclude='./artifact' \
             -czf artifact/ship-deploy.tar.gz .
 
       - name: Upload artifact to server

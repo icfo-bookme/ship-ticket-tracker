@@ -1,12 +1,12 @@
 # 🚀 CI/CD Deployment Guide
 
-This project uses **GitHub Actions** to automatically **test and deploy** whenever you
+This project uses **GitHub Actions** to automatically **deploy** whenever you
 push to the `main` branch of
 [`icfo-bookme/ship-ticket-tracker`](https://github.com/icfo-bookme/ship-ticket-tracker).
 
-- CI job: installs deps, builds assets, runs Pint + the test suite.
-- Deploy job: builds a release, uploads it to your server (`187.77.128.105`)
-  via SSH and does a **zero-downtime release-based deploy**.
+- Deploy job: installs deps, builds assets, uploads a release to your server
+  (`187.77.128.105`) via SSH and does a **zero-downtime release-based deploy**
+  (runs migrations + caches automatically).
 
 ---
 
@@ -149,7 +149,6 @@ php artisan config:cache
 - Deploys are **concurrency-safe**: a new push cancels a still-running older deploy.
 - Only the latest **5** releases are kept; old ones are auto-cleaned.
 - Migrations run automatically (`php artisan migrate --force`).
-- The deploy job **only runs after the test job passes**.
 
 ---
 

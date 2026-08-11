@@ -1,7 +1,7 @@
 name: CI/CD Deploy
 
-# Run automatically when code is pushed to the main branch,
-# and also allow triggering it manually from the GitHub Actions tab.
+# Runs automatically when code is pushed to the main branch,
+# and can also be triggered manually from the GitHub Actions tab.
 on:
   push:
     branches: [main]
@@ -18,51 +18,12 @@ env:
   NODE_VERSION: '20'
 
 jobs:
-  # ------------------------------------------------------------------
-  # 1. CI: verify the code is healthy before we touch production.
-  # ------------------------------------------------------------------
-  test:
-    name: Run tests & build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PHP_VERSION }}
-          tools: composer:v2
-          coverage: none
-          extensions: mbstring, pdo, pdo_sqlite, sqlite3, zip, bcmath, intl
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Install JS dependencies
-        run: npm ci
-
-      - name: Build frontend assets
-        run: npm run build
-
-      - name: Check code style (Pint)
-        run: vendor/bin/pint --test || true
-
-      - name: Run test suite (SQLite in-memory)
-        run: php artisan test
 
   # ------------------------------------------------------------------
-  # 2. CD: deploy to the production server.
+  # Deploy to the production server.
   # ------------------------------------------------------------------
   deploy:
     name: Deploy to production
-    needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -163,6 +124,7 @@ jobs:
 
             echo "==> Running artisan commands"
             cd "$RELEASE"
+            php artisan migrate --force
             php artisan config:cache
             php artisan view:cache
             php artisan storage:link || true

@@ -92,50 +92,52 @@ jobs:
 
             DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
             ARTIFACT="/tmp/ship-deploy/artifact/ship-deploy.tar.gz"
-            RELEASE="$DEPLOY_PATH/releases/$(date +'%Y%m%d%H%M%S')"
+            TMP_DIR="/tmp/ship-deploy/extract"
 
-            echo "==> Preparing release directory"
-            mkdir -p "$DEPLOY_PATH/releases"
-            mkdir -p "$DEPLOY_PATH/shared/storage/app"
-            mkdir -p "$DEPLOY_PATH/shared/storage/framework/cache/data"
-            mkdir -p "$DEPLOY_PATH/shared/storage/framework/sessions"
-            mkdir -p "$DEPLOY_PATH/shared/storage/framework/views"
-            mkdir -p "$DEPLOY_PATH/shared/storage/logs"
-            mkdir -p "$RELEASE"
+            echo "==> Preparing deploy directory"
+            mkdir -p "$DEPLOY_PATH"
+            rm -rf "$TMP_DIR"
+            mkdir -p "$TMP_DIR"
 
             echo "==> Extracting artifact"
-            tar -xzf "$ARTIFACT" -C "$RELEASE"
+            tar -xzf "$ARTIFACT" -C "$TMP_DIR"
             rm -f "$ARTIFACT"
 
-            # Shared .env: create from example the first time, afterwards keep it.
-            if [ ! -f "$DEPLOY_PATH/shared/.env" ]; then
-              cp "$RELEASE/.env.example" "$DEPLOY_PATH/shared/.env"
+            # First deploy: create .env from example (kept for all future deploys).
+            if [ ! -f "$DEPLOY_PATH/.env" ]; then
+              cp "$TMP_DIR/.env.example" "$DEPLOY_PATH/.env"
               echo "!! Created a fresh .env from .env.example. EDIT IT NOW with real credentials."
             fi
 
-            # Use shared storage + shared .env (they survive across releases).
-            rm -rf "$RELEASE/storage"
-            ln -s "$DEPLOY_PATH/shared/storage" "$RELEASE/storage"
-            ln -sfn "$DEPLOY_PATH/shared/.env" "$RELEASE/.env"
+            # Preserve .env and storage across deploys.
+            cp "$DEPLOY_PATH/.env" "$TMP_DIR/.env"
+            if [ -d "$DEPLOY_PATH/storage" ]; then
+              cp -a "$DEPLOY_PATH/storage" "$TMP_DIR/storage"
+            else
+              mkdir -p "$TMP_DIR/storage/app"
+              mkdir -p "$TMP_DIR/storage/framework/cache/data"
+              mkdir -p "$TMP_DIR/storage/framework/sessions"
+              mkdir -p "$TMP_DIR/storage/framework/views"
+              mkdir -p "$TMP_DIR/storage/logs"
+            fi
 
-            # Prepare writable dirs.
-            chmod -R 775 "$DEPLOY_PATH/shared/storage" "$RELEASE/bootstrap/cache"
+            # Swap: remove old code, put new code in (also drops stale files).
+            find "$DEPLOY_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            cp -a "$TMP_DIR"/. "$DEPLOY_PATH"/
+            rm -rf "$TMP_DIR"
 
-            # Point "current" at the new release.
-            ln -sfn "$RELEASE" "$DEPLOY_PATH/current"
+            echo "==> Setting permissions"
+            chmod -R 775 "$DEPLOY_PATH/storage" "$DEPLOY_PATH/bootstrap/cache"
 
             echo "==> Running artisan commands"
-            cd "$RELEASE"
+            cd "$DEPLOY_PATH"
+            php artisan migrate --force
             php artisan config:cache
             php artisan view:cache
             php artisan storage:link || true
             php artisan queue:restart || true
 
             # Fix ownership for the web / PHP-FPM user (adjust if not www-data).
-            chown -R www-data:www-data "$RELEASE" "$DEPLOY_PATH/shared" 2>/dev/null || true
+            chown -R www-data:www-data "$DEPLOY_PATH" 2>/dev/null || true
 
-            # Keep only the latest 5 releases.
-            ls -1dt "$DEPLOY_PATH"/releases/* 2>/dev/null | tail -n +6 | xargs -r rm -rf
-
-            echo "==> Deployment finished: $RELEASE"
-            echo "==> current -> $(readlink "$DEPLOY_PATH/current")"
+            echo "==> Deployment finished: $DEPLOY_PATH"

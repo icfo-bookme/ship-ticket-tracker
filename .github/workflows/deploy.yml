@@ -1,0 +1,178 @@
+name: CI/CD Deploy
+
+# Run automatically when code is pushed to the main branch,
+# and also allow triggering it manually from the GitHub Actions tab.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Only one deployment per branch at a time. If a new push arrives while
+# an older one is still running, cancel the older run.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: '8.2'
+  NODE_VERSION: '20'
+
+jobs:
+  # ------------------------------------------------------------------
+  # 1. CI: verify the code is healthy before we touch production.
+  # ------------------------------------------------------------------
+  test:
+    name: Run tests & build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          tools: composer:v2
+          coverage: none
+          extensions: mbstring, pdo, pdo_sqlite, sqlite3, zip, bcmath, intl
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Check code style (Pint)
+        run: vendor/bin/pint --test || true
+
+      - name: Run test suite (SQLite in-memory)
+        run: php artisan test
+
+  # ------------------------------------------------------------------
+  # 2. CD: deploy to the production server.
+  # ------------------------------------------------------------------
+  deploy:
+    name: Deploy to production
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          tools: composer:v2
+          coverage: none
+          extensions: mbstring, pdo_mysql, zip, bcmath, intl
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install PHP dependencies (production, no dev)
+        run: composer install --no-interaction --prefer-dist --no-progress --no-dev --optimize-autoloader
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Package release artifact
+        run: |
+          mkdir -p artifact
+          # Build a single tarball, excluding anything that must NOT be
+          # shipped to the server (git, node_modules, local .env, storage).
+          tar \
+            --exclude='./.git' \
+            --exclude='./.github' \
+            --exclude='./.vscode' \
+            --exclude='./node_modules' \
+            --exclude='./.env' \
+            --exclude='./storage' \
+            -czf artifact/ship-deploy.tar.gz .
+
+      - name: Upload artifact to server
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "artifact/ship-deploy.tar.gz"
+          target: "/tmp/ship-deploy"
+
+      - name: Deploy release on server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script_stop: true
+          script: |
+            set -e
+
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            ARTIFACT="/tmp/ship-deploy/artifact/ship-deploy.tar.gz"
+            RELEASE="$DEPLOY_PATH/releases/$(date +'%Y%m%d%H%M%S')"
+
+            echo "==> Preparing release directory"
+            mkdir -p "$DEPLOY_PATH/releases"
+            mkdir -p "$DEPLOY_PATH/shared/storage/app"
+            mkdir -p "$DEPLOY_PATH/shared/storage/framework/cache/data"
+            mkdir -p "$DEPLOY_PATH/shared/storage/framework/sessions"
+            mkdir -p "$DEPLOY_PATH/shared/storage/framework/views"
+            mkdir -p "$DEPLOY_PATH/shared/storage/logs"
+            mkdir -p "$RELEASE"
+
+            echo "==> Extracting artifact"
+            tar -xzf "$ARTIFACT" -C "$RELEASE"
+            rm -f "$ARTIFACT"
+
+            # Shared .env: create from example the first time, afterwards keep it.
+            if [ ! -f "$DEPLOY_PATH/shared/.env" ]; then
+              cp "$RELEASE/.env.example" "$DEPLOY_PATH/shared/.env"
+              echo "!! Created a fresh .env from .env.example. EDIT IT NOW with real credentials."
+            fi
+
+            # Use shared storage + shared .env (they survive across releases).
+            rm -rf "$RELEASE/storage"
+            ln -s "$DEPLOY_PATH/shared/storage" "$RELEASE/storage"
+            ln -sfn "$DEPLOY_PATH/shared/.env" "$RELEASE/.env"
+
+            # Prepare writable dirs.
+            chmod -R 775 "$DEPLOY_PATH/shared/storage" "$RELEASE/bootstrap/cache"
+
+            # Point "current" at the new release.
+            ln -sfn "$RELEASE" "$DEPLOY_PATH/current"
+
+            echo "==> Running artisan commands"
+            cd "$RELEASE"
+            php artisan config:cache
+            php artisan view:cache
+            php artisan storage:link || true
+            php artisan queue:restart || true
+
+            # Fix ownership for the web / PHP-FPM user (adjust if not www-data).
+            chown -R www-data:www-data "$RELEASE" "$DEPLOY_PATH/shared" 2>/dev/null || true
+
+            # Keep only the latest 5 releases.
+            ls -1dt "$DEPLOY_PATH"/releases/* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+
+            echo "==> Deployment finished: $RELEASE"
+            echo "==> current -> $(readlink "$DEPLOY_PATH/current")"

@@ -2,7 +2,6 @@
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
-
             <!-- Left Side -->
             <div class="flex items-center">
                 <!-- Logo -->
@@ -15,7 +14,6 @@
 
             <!-- Right Side -->
             <div class="hidden sm:flex sm:items-center gap-4">
-
                 <!-- Documentation Button -->
                 <a href="{{ url('/documentation') }}"
                     class="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition">
@@ -177,23 +175,16 @@
             const active = (n.isActive === 0 || n.isActive === true);
 
             html += `
-<div class="notification-item px-4 py-3 border-b
-    ${active ? 'bg-blue-900 text-gray-200' : 'hover:bg-gray-50'}"
-    data-id="${n.id}">
-
-    <a href="/notification/verify/${n.id}" class="block">
-        <p class="text-sm font-medium">
-            ${n.notification}
-        </p>
-        <p class="text-xs ${active ? 'text-blue-100' : 'text-gray-500'}">
-  Ticket(s) purchased ${getTimeAgo(n.created_at)}
-</p>
-
-    </a>
-</div>
-`;
-
-
+                <div class="notification-item px-4 py-3 border-b ${active ? 'bg-blue-900 text-gray-200' : 'hover:bg-gray-50'}"
+                    data-id="${n.id}">
+                    <a href="/notification/verify/${n.id}" class="block">
+                        <p class="text-sm font-medium">${n.notification}</p>
+                        <p class="text-xs ${active ? 'text-blue-100' : 'text-gray-500'}">
+                            Ticket(s) purchased ${getTimeAgo(n.created_at)}
+                        </p>
+                    </a>
+                </div>
+            `;
         });
 
         content.innerHTML = html;

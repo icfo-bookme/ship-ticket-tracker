@@ -1,11 +1,10 @@
-<div id="sidebar" class=" bg-slate-200 h-[100%] border-r border-[#006172]">
+<div id="sidebar" class="bg-slate-200 h-[100%] border-r border-[#006172]">
     <!-- Sidebar Container -->
-    <div class="flex flex-col  h-full transition-all duration-300 ease-in-out" id="sidebar-container">
+    <div class="flex flex-col h-full transition-all duration-300 ease-in-out" id="sidebar-container">
         <!-- Sidebar Header -->
         <div id="divHide" class="flex items-center w-60 justify-between h-16 px-4 bg-blue-900 shadow-md">
             <span id="sidebar-logo-text"
-                class="text-white text-xl font-semibold whitespace-nowrap transition-all duration-300 sidebar-text truncate">Ship
-                Booking</span>
+                class="text-white text-xl font-semibold whitespace-nowrap transition-all duration-300 sidebar-text truncate">Ship Booking</span>
             <button id="sidebar-toggle"
                 class="p-2 rounded-md text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
                 title="Collapse sidebar">
@@ -20,8 +19,6 @@
         <!-- Navigation -->
         <div class="flex flex-col flex-grow px-2 py-4 overflow-y-auto scrollbar-hide" id="nav-container">
             <nav class="flex-1 space-y-1">
-
-
                 <!-- Sell Section -->
                 <div class="px-2 pt-2">
                     <div id="sell-dropdown" class="mb-1 relative">
@@ -48,8 +45,7 @@
                             <a href="/ship-ticket-sales/create"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Create
-                                    Tickets</span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Create Tickets</span>
                             </a>
                             <a href="/sales/status/pending"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
@@ -81,7 +77,6 @@
                             class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-gray-700 rounded-lg hover:bg-blue-50 group transition focus:outline-none">
                             <div class="flex items-center">
                                 <i class="fas text-blue-600 fa-undo-alt"></i>
-
                                 <span
                                     class="ml-3 whitespace-nowrap transition-all duration-300 sidebar-text truncate text-left">Refund</span>
                             </div>
@@ -95,11 +90,9 @@
                         <div id="refund-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
                             <!-- Make Refund Link -->
                             <a href="/refunds/create"
-                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition 
-              {{ request()->is('refunds/create') ? 'bg-blue-100 text-blue-600' : '' }}">
+                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition {{ request()->is('refunds/create') ? 'bg-blue-100 text-blue-600' : '' }}">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Make
-                                    Refund</span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Make Refund</span>
                             </a>
 
                             <!-- Refunded Sell Link -->
@@ -107,8 +100,7 @@
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span
-                                    class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Refunded
-                                    Sell</span>
+                                    class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Refunded Sell</span>
                             </a>
 
 
@@ -142,14 +134,12 @@
                             <a href="/ships-details"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">New
-                                    Ship</span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">New Ship</span>
                             </a>
                             <a href="/companies-details"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">New
-                                    Company</span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">New Company</span>
                             </a>
 
                         </div>
@@ -203,8 +193,7 @@
                                     </path>
                                 </svg>
                                 <span
-                                    class="ml-3 whitespace-nowrap transition-all duration-300 sidebar-text truncate text-left">Show
-                                    Reports</span>
+                                    class="ml-3 whitespace-nowrap transition-all duration-300 sidebar-text truncate text-left">Show Reports</span>
                             </div>
                             <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200 text-gray-500"
                                 id="reports-dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -217,8 +206,7 @@
                             <a href="/admin/sales-reports"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sales
-                                    Reports</span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sales Reports</span>
                             </a>
                             <a href="/show/cash-collections"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
@@ -252,8 +240,7 @@
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span
-                                    class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Whatsapp
-                                    Details</span>
+                                    class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Whatsapp Details</span>
                             </a>
 
                         </div>

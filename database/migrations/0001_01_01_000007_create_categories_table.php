@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('ticket_id');
             $table->unsignedBigInteger('package_id');
+            $table->integer('quantity')->default(0);
             $table->string('type', 100);
             $table->timestamps();
         });

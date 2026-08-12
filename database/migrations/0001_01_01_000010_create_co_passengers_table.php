@@ -15,7 +15,9 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('ship_ticket_sale_id')->index();
             $table->string('name');
-            $table->string('nid');
+            $table->string('nid')->nullable();
+            $table->string('co_passernger_number')->nullable();
+            $table->date('date_of_birth')->nullable();
             $table->timestamps();
 
             $table->foreign('ship_ticket_sale_id')

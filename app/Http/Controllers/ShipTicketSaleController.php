@@ -175,7 +175,20 @@ class ShipTicketSaleController extends Controller
             'remark2' => 'nullable|string',
             'other_fee' => 'nullable|numeric',
             'total_payable' => 'nullable|numeric',
+            'co_passengers' => 'nullable|array',
+            'co_passengers.*.name' => 'required|string|max:255',
+            'co_passengers.*.nid' => 'nullable|string',
+            'co_passengers.*.co_passernger_number' => 'nullable|string',
+            'co_passengers.*.date_of_birth' => 'nullable|date',
         ]);
+
+        // Co-passengers are the extra passengers (tickets minus the primary passenger).
+        // $expectedCoPassengers = max(0, ((int) $request->number_of_ticket) - 1);
+        // if (count((array) $request->co_passengers) !== $expectedCoPassengers) {
+        //     return back()
+        //         ->withErrors(['co_passengers' => "Co-passengers must be exactly {$expectedCoPassengers} (tickets minus primary passenger)."])
+        //         ->withInput();
+        // }
 
         $ticketSale = DB::transaction(function () use ($request, $validated) {
             $ticketSale = ShipTicketSale::create($validated);
@@ -259,25 +272,30 @@ class ShipTicketSaleController extends Controller
             $paymentString = implode(', ', $payments); // e.g. "Cash=100, Bikas=300"
         }
 
-        // Now append row
-        GoogleSheetService::appendRow([
-            $validated['customer_name'],
-            $validated['customer_mobile'],
-            $validated['whatsapp'] ?? $validated['customer_mobile'],
-            $validated['email'] ?? '',
-            $ship?->name ?? '',
-            $request->sales_source,
-            $validated['ticket_fee'],
-            $request->received_amount,
-            $paymentString,
-            $user?->name ?? '',
-            now()->format('Y-m-d'),
-            $request->address,
-            $request->remark1,
-            $request->remark2,
-        ]);
+        // Append to Google Sheet — external side effect; a failure here
+        // must not break an already-committed sale, so we log instead of throwing.
+        try {
+            GoogleSheetService::appendRow([
+                $validated['customer_name'],
+                $validated['customer_mobile'],
+                $validated['whatsapp'] ?? $validated['customer_mobile'],
+                $validated['email'] ?? '',
+                $ship?->name ?? '',
+                $request->sales_source,
+                $validated['ticket_fee'],
+                $request->received_amount,
+                $paymentString,
+                $user?->name ?? '',
+                now()->format('Y-m-d'),
+                $request->address,
+                $request->remark1,
+                $request->remark2,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('GoogleSheet append failed for sale: '.($ticketSale->id ?? 'unknown').' | '.$e->getMessage());
+        }
 
-        return redirect()->back()
+        return redirect()->route('ship-ticket-sales.create')
             ->with('success', 'Journey ticket saved!.');
     }
 

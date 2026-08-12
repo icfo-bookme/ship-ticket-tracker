@@ -627,7 +627,7 @@ class TicketSalesSystem {
 
     updateCoPassengerRows() {
         const totalDepartureTickets = this.calculateTotalDepartureTickets();
-        const requiredRows = Math.max(1, totalDepartureTickets); // always keep at least 1 row
+        const requiredRows = Math.max(0, totalDepartureTickets); // one co-passenger row per departure ticket, min 0 
         const wrapper = this.getElement(this.selectors.elements.coPassengersWrapper);
         const currentRows = wrapper.querySelectorAll(this.selectors.classes.coPassenger).length;
 
@@ -640,7 +640,7 @@ class TicketSalesSystem {
             const rowsToRemove = currentRows - requiredRows;
             const rows = wrapper.querySelectorAll(this.selectors.classes.coPassenger);
 
-            for (let i = 0; i < rowsToRemove && rows.length > 1; i++) {
+            for (let i = 0; i < rowsToRemove && rows.length > 0; i++) {
                 rows[rows.length - 1 - i].remove();
             }
         }
@@ -668,7 +668,7 @@ class TicketSalesSystem {
                 <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-200">
                     <p class="text-sm font-medium">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        No departure tickets selected. At least 1 co-passenger row is required.
+                        No departure tickets selected. Co-passengers are not required.
                     </p>
                 </div>
             `;
@@ -692,9 +692,9 @@ class TicketSalesSystem {
 
             const removeBtn = row.querySelector(this.selectors.classes.removeCoPassengerBtn);
             if (removeBtn) {
-                removeBtn.disabled = rows.length === 1;
-                removeBtn.classList.toggle('opacity-50', rows.length === 1);
-                removeBtn.classList.toggle('cursor-not-allowed', rows.length === 1);
+                removeBtn.disabled = rows.length === 0;
+                removeBtn.classList.toggle('opacity-50', rows.length === 0);
+                removeBtn.classList.toggle('cursor-not-allowed', rows.length === 0);
             }
         });
 

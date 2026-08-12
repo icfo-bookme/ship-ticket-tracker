@@ -30,8 +30,6 @@ class ShipTicketSaleController extends Controller
         $sales = ShipTicketSale::with('ships')->latest()->get();
         $ships = Ship::all();
 
-        // The shared list view requires a default status. The per-status tab
-        // page (/sales/status/{status}) is the canonical entry point.
         return view('ship_ticket_sales.index', compact('sales', 'ships'))
             ->with('status', 'pending');
     }
@@ -182,14 +180,6 @@ class ShipTicketSaleController extends Controller
             'co_passengers.*.date_of_birth' => 'nullable|date',
         ]);
 
-        // Co-passengers are the extra passengers (tickets minus the primary passenger).
-        // $expectedCoPassengers = max(0, ((int) $request->number_of_ticket) - 1);
-        // if (count((array) $request->co_passengers) !== $expectedCoPassengers) {
-        //     return back()
-        //         ->withErrors(['co_passengers' => "Co-passengers must be exactly {$expectedCoPassengers} (tickets minus primary passenger)."])
-        //         ->withInput();
-        // }
-
         $ticketSale = DB::transaction(function () use ($request, $validated) {
             $ticketSale = ShipTicketSale::create($validated);
 
@@ -272,8 +262,6 @@ class ShipTicketSaleController extends Controller
             $paymentString = implode(', ', $payments); // e.g. "Cash=100, Bikas=300"
         }
 
-        // Append to Google Sheet — external side effect; a failure here
-        // must not break an already-committed sale, so we log instead of throwing.
         try {
             GoogleSheetService::appendRow([
                 $validated['customer_name'],

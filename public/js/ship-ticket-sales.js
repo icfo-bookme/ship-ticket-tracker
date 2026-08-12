@@ -627,7 +627,7 @@ class TicketSalesSystem {
 
     updateCoPassengerRows() {
         const totalDepartureTickets = this.calculateTotalDepartureTickets();
-        const requiredRows = Math.max(0, totalDepartureTickets); // one co-passenger row per departure ticket, min 0 
+        const requiredRows = Math.max(0, totalDepartureTickets - 1); // main passenger is in the main form: co-passengers = departure tickets - 1, min 0 
         const wrapper = this.getElement(this.selectors.elements.coPassengersWrapper);
         const currentRows = wrapper.querySelectorAll(this.selectors.classes.coPassenger).length;
 
@@ -653,12 +653,12 @@ class TicketSalesSystem {
         const infoDiv = this.getElement(this.selectors.elements.coPassengerInfo);
         if (!infoDiv) return;
 
-        if (totalDepartureTickets > 0) {
+        if (totalDepartureTickets > 1) {
             infoDiv.innerHTML = `
                 <div class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-200">
                     <p class="text-sm font-medium">
                         <i class="fas fa-info-circle mr-2"></i>
-                        ${totalDepartureTickets} departure ticket(s) require ${totalDepartureTickets} co-passenger row(s). All co-passenger names are required.
+                        ${totalDepartureTickets} departure ticket(s) require ${Math.max(0, totalDepartureTickets - 1)} co-passenger row(s). The main passenger is entered in the main form.
                     </p>
                 </div>
             `;
@@ -668,7 +668,7 @@ class TicketSalesSystem {
                 <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-200">
                     <p class="text-sm font-medium">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        No departure tickets selected. Co-passengers are not required.
+                        One or fewer departure tickets - no co-passengers required (main passenger is in the main form).
                     </p>
                 </div>
             `;

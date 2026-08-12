@@ -3,324 +3,218 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Ticket Tracker Detailed Documentation
+            Ship Booking User Manual
         </h2>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            {{-- Overview --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">1. Overview</h3>
+                <h3 class="text-lg font-bold mb-3">1. Purpose of This Manual</h3>
                 <p class="text-gray-700 mb-2">
-                    Ticket Tracker is a comprehensive web-based software designed to help organizations manage ticket
-                    sales,
-                    customer information, journey schedules, and payments in an organized manner. The system ensures
-                    accurate
-                    tracking of each ticket, prevents duplicate entries, and simplifies reporting for daily operations.
+                    This documentation explains how a user will operate the Ship Booking system from login to ticket
+                    delivery. It is written for daily users who create tickets, verify payments, print tickets, collect
+                    due payments, create parcels through Steadfast, process refunds, and check reports.
                 </p>
                 <p class="text-gray-700">
-                    The software is fully responsive, meaning it works seamlessly on desktop, tablet, and mobile
-                    devices. It is
-                    built to be intuitive and user-friendly, so even non-technical staff can operate it with minimal
-                    training.
-                    Security features ensure that only authorized users can access sensitive information.
-                </p>
-            </div>
-
-            {{-- System Requirements --}}
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">2. System Requirements</h3>
-                <p class="text-gray-700 mb-2">
-                    To use Ticket Tracker efficiently, users need to meet certain requirements. First, a modern web
-                    browser
-                    such as Google Chrome, Mozilla Firefox, or Microsoft Edge is required to ensure full compatibility
-                    with
-                    all features and layouts. The system is web-based, so a stable internet connection is necessary for
-                    real-time data updates.
-                </p>
-                <p class="text-gray-700">
-                    Users must also have valid login credentials, which are assigned by the system administrator.
-                    Attempting
-                    to access the system without proper credentials will result in denial of access to protect sensitive
-                    data.
-                </p>
-            </div>
-
-            {{-- Login & Logout --}}
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">3. User Authentication</h3>
-                <p class="text-gray-700 mb-2">
-                    Ticket Tracker employs a secure login system to ensure that only authorized users can access the
-                    system.
-                    Each user is provided with a unique email or username along with a password. These credentials are
-                    required
-                    to access the dashboard and other features.
-                </p>
-
-                <p class="font-semibold text-gray-800 mb-1">Login Process:</p>
-                <p class="text-gray-700 mb-2">
-                    To log in, navigate to the Ticket Tracker URL using your browser. Enter your registered email or
-                    username
-                    and password in the login form, then click the "Login" button. If the credentials are valid, you
-                    will be
-                    redirected to the dashboard where you can access all permitted features. Invalid login attempts will
-                    display an error message.
-                </p>
-
-                <p class="font-semibold text-gray-800 mb-1">Logout Process:</p>
-                <p class="text-gray-700">
-                    After completing your work, it is essential to log out to protect your account and sensitive data.
-                    To log out, click on your name in the top navigation bar, then select "Log Out" from the dropdown
-                    menu.
-                    This action will end your session and redirect you back to the login page.
-                </p>
-            </div>
-
-            {{-- Navigation Bar --}}
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">4. Navigation Bar</h3>
-                <p class="text-gray-700 mb-2">
-                    The navigation bar is located at the top of every page and provides quick access to the main areas
-                    of
-                    the Ticket Tracker system. On the left, users will see the system logo, which also functions as a
-                    shortcut to return to the dashboard at any time.
-                </p>
-                <p class="text-gray-700 mb-2">
-                    On the right side, several interactive elements are available. A documentation button is provided
-                    for easy access to this user guide. Next to it, a notification bell icon alerts users about
-                    new updates or pending tasks. The user profile dropdown provides links to edit your profile
-                    or log out securely. The navigation bar is responsive and adapts to smaller screens using
-                    a hamburger menu.
-                </p>
-            </div>
-
-            {{-- Dashboard --}}
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">5. Dashboard</h3>
-                <p class="text-gray-700 mb-2">
-                    The dashboard serves as the central hub of Ticket Tracker. It provides an at-a-glance view of key
-                    system metrics including total tickets, today's sales, pending tickets, confirmed tickets, cancelled
-                    tickets, and total received payments. These statistics help users quickly assess the status of
-                    ticket
-                    operations and make informed decisions.
-                </p>
-                <p class="text-gray-700">
-                    The dashboard is updated in real time, ensuring that users always have the most current information
-                    available. Visual indicators and tables make it easy to interpret data without requiring advanced
-                    technical knowledge.
-                </p>
-            </div>
-
-            {{-- Ticket Creation --}}
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">6. Ticket Creation</h3>
-
-                <p class="text-gray-700 mb-2">
-                    Ticket creation is the process of recording customer bookings into the Ticket Tracker system. This
-                    feature allows users to enter all relevant passenger, journey, ticket, and payment details in a
-                    structured
-                    form to ensure accurate tracking and reporting.
-                </p>
-
-                <p class="text-gray-700 mb-2">
-                    To create a new ticket, navigate to the "Create Ticket" section. The form is divided into multiple
-                    sections
-                    to guide users through the process:
-                </p>
-
-                <ul class="list-disc list-inside text-gray-700 mb-2">
-                    <li><strong>Passenger Information:</strong> Enter the primary passenger’s full name, mobile number,
-                        WhatsApp number (optional), date of birth, NID or passport number, email address, sales source,
-                        and
-                        associated company.</li>
-                    <li><strong>Journey Details:</strong> Provide the ship name, journey date, and optional return date.
-                        Accurate journey details ensure proper scheduling and reporting.</li>
-                    <li><strong>Ticket Categories:</strong> Select the ticket types for departure and return journeys.
-                        The system may display available categories based on the selected ship and journey date.</li>
-                    <li><strong>Payment Details:</strong> Add payment information, including payment method, received
-                        amount,
-                        payment date, and any remarks. The system automatically calculates the total payable, total
-                        received,
-                        and due amounts.</li>
-                    <li><strong>Additional Information:</strong> Include passenger address and optional remarks for
-                        internal
-                        tracking or customer reference.</li>
-                    <li><strong>Co-Passenger Details:</strong> If additional passengers are traveling, you can add
-                        co-passenger
-                        information here. Each co-passenger entry should include name, NID, and contact information.
-                    </li>
-                </ul>
-
-                <p class="text-gray-700 mb-2">
-                    After filling out all required and optional fields, click the <strong>"Review & Submit"</strong>
-                    button.
-                    The system will display a summary of all entered data for final verification. Review each section
-                    carefully
-                    to ensure accuracy.
-                </p>
-
-                <p class="text-gray-700 mb-2">
-                    Once you confirm that all details are correct, click the <strong>"Submit"</strong> button in the
-                    review
-                    section. The system will create the ticket sale, generate a unique ticket record, and update all
-                    relevant dashboards, including ticket counts, payments, and pending status.
-                </p>
-
-                <p class="text-gray-700">
-                    Proper use of the ticket creation form ensures that all passenger, journey, and payment information
-                    is
-                    accurately recorded, preventing errors and simplifying reporting and reconciliation.
+                    Follow the steps in order for the cleanest workflow. If a ticket is moved to the wrong status,
+                    contact the system administrator before taking further action.
                 </p>
             </div>
 
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">7. Ship Ticket Sales</h3>
-
-                <p class="text-gray-700 mb-2">
-                    The Ship Ticket Sales page is designed to manage all ticket transactions from booking to shipment.
-                    Tickets are categorized by their current status to help staff track, verify, and process them
-                    efficiently.
-                </p>
-
-                <p class="text-gray-700 mb-2">
-                    Ticket statuses are displayed as tabs or filters, allowing users to quickly view tickets based on
-                    their progress:
-                </p>
-
-                <ul class="list-disc list-inside text-gray-700 mb-2">
-                    <li><strong>Pending:</strong> Tickets that have been created but not yet verified or paid. Actions
-                        include verifying payment or marking payment as due.</li>
-                    <li><strong>Payment Verified:</strong> Tickets with confirmed payments. Actions include issuing
-                        tickets for printing.</li>
-                    <li><strong>Ticket Issued:</strong> Tickets that have been issued but not yet printed. Actions
-                        include printing tickets or opening ticket details.</li>
-                    <li><strong>Ticket Printed:</strong> Tickets that have been printed. Actions include adding them to
-                        a parcel for shipment.</li>
-                    <li><strong>Parcel Created:</strong> Tickets grouped into parcels for shipment. Actions include
-                        shipment tracking and confirmation.</li>
-                    <li><strong>Shipped:</strong> Tickets that have been delivered or dispatched. This status confirms
-                        completion of the ticket delivery process.</li>
-                </ul>
-
-                <p class="text-gray-700 mb-2">
-                    The table displays the following ticket details for each entry:
-                </p>
-
-                <ul class="list-disc list-inside text-gray-700 mb-2">
-                    <li><strong>ID:</strong> Unique ticket number generated by the system.</li>
-                    <li><strong>Customer Name:</strong> Name of the primary passenger.</li>
-                    <li><strong>Mobile:</strong> Contact number of the customer.</li>
-                    <li><strong>Ship Name:</strong> Name of the ship for the journey.</li>
-                    <li><strong>Shipment ID:</strong> Applicable when tickets are grouped into parcels for shipment.
-                    </li>
-                    <li><strong>Remark 1 & 2:</strong> Additional notes entered during ticket creation.</li>
-                    <li><strong>Action:</strong> Context-specific buttons for processing the ticket, such as <em>Pay
-                            Due</em>, <em>Verify Payment</em>, <em>Ticket Issued</em>, <em>Open Ticket</em>, or
-                        <em>Shipped</em>.
-                    </li>
-                </ul>
-
-                <p class="text-gray-700 mb-2">
-                    Users can apply filters to streamline ticket management:
-                </p>
-
-                <ul class="list-disc list-inside text-gray-700 mb-2">
-                    <li><strong>Filter by Source Company:</strong> Select a company to view only tickets associated with
-                        that sales source.</li>
-                    <li><strong>Filter by Ship:</strong> Choose a ship to see tickets for that particular journey.</li>
-                    <li><strong>Filter by Journey Date:</strong> Select a date to display tickets scheduled for a
-                        specific day.</li>
-                    <li><strong>Clear Filters:</strong> Resets all filters to show all tickets across statuses.</li>
-                </ul>
-
-                <p class="text-gray-700 mb-2">
-                    The page also includes search functionality and pagination to quickly locate tickets by customer
-                    name, mobile number, or remarks.
-                    The "Show entries" dropdown allows adjusting the number of tickets displayed per page.
-                </p>
-
-                <p class="text-gray-700 mb-2">
-                    Workflow Summary:
-                </p>
-
-                <ol class="list-decimal list-inside text-gray-700 mb-2">
-                    <li>Create a new ticket and fill in all necessary details.</li>
-                    <li>Pending tickets are verified for payment.</li>
-                    <li>Once payment is verified, tickets are issued and can be printed.</li>
-                    <li>Printed tickets are grouped into parcels for shipment if required.</li>
-                    <li>Shipped tickets are marked as completed, ensuring full traceability.</li>
+                <h3 class="text-lg font-bold mb-3">2. Login and Basic Navigation</h3>
+                <ol class="list-decimal list-inside text-gray-700 space-y-2">
+                    <li>Open the application URL in a modern browser such as Chrome, Edge, or Firefox.</li>
+                    <li>Enter your registered email and password, then click Login.</li>
+                    <li>After login, use the left sidebar to open Sell, Refund, Create, Show Reports, WhatsApp, and other modules.</li>
+                    <li>Use the top documentation link any time you need this guide.</li>
+                    <li>After finishing work, open the user menu and log out to keep the account secure.</li>
                 </ol>
+            </div>
 
-                <p class="text-gray-700">
-                    By using this page effectively, administrators can manage ticket sales from creation to shipment
-                    while maintaining accurate records of payments, passenger details, and journey statuses.
+            <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3">3. Main Sidebar Menus</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <p class="font-semibold text-gray-900 mb-1">Sell</p>
+                        <p>Create Tickets, manage Sales by status, and configure Excel settings.</p>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <p class="font-semibold text-gray-900 mb-1">Refund</p>
+                        <p>Create refund requests and review refunded sales.</p>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <p class="font-semibold text-gray-900 mb-1">Create</p>
+                        <p>Add or update ships and companies before using them in ticket forms.</p>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <p class="font-semibold text-gray-900 mb-1">Show Reports</p>
+                        <p>Check sales reports and cash collection information for reconciliation.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3">4. Before Creating Tickets</h3>
+                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                    <li>Add the ship from Create > New Ship if it is not already available.</li>
+                    <li>Add ticket packages/categories for the ship so users can select departure and return ticket types.</li>
+                    <li>Add the source company from Create > New Company if the company is not listed.</li>
+                    <li>Keep WhatsApp details updated from the WhatsApp menu if your team uses those numbers for customers.</li>
+                </ul>
+            </div>
+
+            <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3">5. Create a New Ticket</h3>
+                <p class="text-gray-700 mb-3">
+                    Go to Sell > Create Tickets. Fill up the form carefully. Required fields are marked with a red star.
+                </p>
+                <ol class="list-decimal list-inside text-gray-700 space-y-2">
+                    <li>Enter passenger name, mobile number, WhatsApp number, date of birth, NID, email, sales source, and company.</li>
+                    <li>Select journey date, optional return date, and ship name.</li>
+                    <li>Select departure ticket category and quantity. If return date is selected, fill return ticket category and quantity too.</li>
+                    <li>Add one or more payment rows using Add Payment. Choose payment method, amount, paid date, and remark if needed.</li>
+                    <li>Check ticket summary: total ticket count, ticket value, and other fee.</li>
+                    <li>Check payment summary: Total Payable, Total Received, and Due Amount. These values are calculated from ticket and payment information.</li>
+                    <li>Select BFTN Status if applicable. If BFTN is Yes, add the tentative deposit date and time.</li>
+                    <li>Enter the customer address in Steadfast-friendly format because this address will be sent to courier during parcel creation.</li>
+                    <li>Add Remark-1 and Remark-2 for internal notes if needed.</li>
+                    <li>Add co-passenger details with Add Co-Passenger when more passengers are included in the booking.</li>
+                    <li>Click Review & Submit, verify the modal information, then click Confirm & Save Ticket.</li>
+                </ol>
+            </div>
+
+            <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3">6. Sales Status Workflow</h3>
+                <p class="text-gray-700 mb-3">
+                    Go to Sell > Sales. The status tabs show where each ticket is in the operation flow.
+                </p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left text-gray-700 border border-gray-200">
+                        <thead class="bg-gray-100 text-gray-900">
+                            <tr>
+                                <th class="px-4 py-3 border">Status</th>
+                                <th class="px-4 py-3 border">Meaning</th>
+                                <th class="px-4 py-3 border">User Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-4 py-3 border font-semibold">Pending</td>
+                                <td class="px-4 py-3 border">New booking waiting for payment verification.</td>
+                                <td class="px-4 py-3 border">Verify payment or collect due payment if due exists.</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 border font-semibold">Payment Verified</td>
+                                <td class="px-4 py-3 border">Payment has been checked and accepted.</td>
+                                <td class="px-4 py-3 border">Open ticket details, attach/confirm PDF ticket, then issue ticket.</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 border font-semibold">Ticket Issued</td>
+                                <td class="px-4 py-3 border">Ticket PDF has been issued and is ready for printing.</td>
+                                <td class="px-4 py-3 border">Open or print the ticket, then mark it as Ticket Printed.</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 border font-semibold">Ticket Printed</td>
+                                <td class="px-4 py-3 border">Printed ticket is ready for courier parcel creation.</td>
+                                <td class="px-4 py-3 border">Create parcel. This connects with Steadfast and saves the consignment ID.</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 border font-semibold">Parcel Created</td>
+                                <td class="px-4 py-3 border">Steadfast parcel was created and shipment ID is available.</td>
+                                <td class="px-4 py-3 border">After dispatch or delivery confirmation, mark as Shipped.</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 border font-semibold">Shipped</td>
+                                <td class="px-4 py-3 border">Ticket delivery process is complete.</td>
+                                <td class="px-4 py-3 border">No further regular action is required.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3">7. Due Payment Modal</h3>
+                <p class="text-gray-700 mb-3">
+                    If a ticket has due amount, the Sales table shows a Pay Due action. Use it when the customer pays
+                    full or partial due after ticket creation.
+                </p>
+                <ol class="list-decimal list-inside text-gray-700 space-y-2">
+                    <li>Click Pay Due from the ticket row.</li>
+                    <li>Check Total Due Amount in the modal.</li>
+                    <li>Enter Paid Amount. The Remaining Due Amount will update automatically.</li>
+                    <li>Select payment method: Cash, Bkash, Nagad, or Bank Transfer.</li>
+                    <li>Add remark if needed for accounts or customer reference.</li>
+                    <li>Click Pay Due and confirm the alert.</li>
+                    <li>The system adds a payment record, increases Total Received, and reduces Due Amount.</li>
+                </ol>
+            </div>
+
+            <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3">8. Steadfast Parcel and Shipment</h3>
+                <p class="text-gray-700 mb-3">
+                    Steadfast is used when printed tickets need courier delivery. Parcel creation happens from the
+                    Ticket Printed status.
+                </p>
+                <ol class="list-decimal list-inside text-gray-700 space-y-2">
+                    <li>Make sure the ticket is already in Ticket Printed status.</li>
+                    <li>Click the parcel creation action from the ticket row.</li>
+                    <li>The system sends invoice, customer name, mobile number, address, COD amount, note, and delivery type to Steadfast.</li>
+                    <li>Steadfast returns a consignment ID. The system saves it as Shipment ID.</li>
+                    <li>The ticket moves to Parcel Created status.</li>
+                    <li>After courier dispatch or delivery confirmation, click Shipped to complete the flow.</li>
+                </ol>
+                <p class="text-gray-700 mt-3">
+                    Important: customer address and mobile number must be correct before creating the parcel. Wrong
+                    address information can cause courier failure.
                 </p>
             </div>
 
-
-
-            {{-- Ticket List and Management --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">7. Ticket List and Management</h3>
-                <p class="text-gray-700 mb-2">
-                    The ticket list provides a comprehensive view of all tickets stored in the system. Users can search,
-                    filter, and sort tickets to locate specific records efficiently. Each ticket displays customer
-                    details,
-                    journey information, payment status, and ticket status.
-                </p>
-                <p class="text-gray-700">
-                    Filtering options allow users to view tickets based on their status, such as pending, confirmed, or
-                    cancelled. Pagination and search functionality help manage large volumes of tickets effectively.
-                </p>
+                <h3 class="text-lg font-bold mb-3">9. Ticket Search, Filter, and Opening Details</h3>
+                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                    <li>Use status tabs to switch between Pending, Payment Verified, Ticket Issued, Ticket Printed, Parcel Created, and Shipped tickets.</li>
+                    <li>Use company, ship, and journey date filters to narrow the table.</li>
+                    <li>Use the table search box to find tickets by customer name, mobile, status, due amount, shipment ID, or remarks.</li>
+                    <li>Open a ticket row to view details, edit information, verify ticket PDFs, and move to the next sale if available.</li>
+                    <li>Use Clear Filters when you want to return to the full list.</li>
+                </ul>
             </div>
 
-            {{-- Payment Management --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">8. Payment Management</h3>
-                <p class="text-gray-700 mb-2">
-                    Ticket Tracker includes automated payment management. When creating or editing tickets, the system
-                    calculates the due amount by subtracting the received amount from the total ticket fee. This ensures
-                    accurate tracking of payments and simplifies accounting.
-                </p>
-                <p class="text-gray-700">
-                    Users can view payment details directly in the ticket list, helping them monitor pending and
-                    completed
-                    payments. Reports can be generated based on payment status for accounting and reconciliation
-                    purposes.
-                </p>
+                <h3 class="text-lg font-bold mb-3">10. Refund Workflow</h3>
+                <ol class="list-decimal list-inside text-gray-700 space-y-2">
+                    <li>Go to Refund > Make Refund.</li>
+                    <li>Find the sale that needs refund and review ticket/payment information.</li>
+                    <li>Choose full refund or partial refund based on the customer case.</li>
+                    <li>Enter refund amount and required remarks accurately.</li>
+                    <li>Submit the refund. Refunded records can be checked from Refund > Refunded Sell.</li>
+                    <li>Refunded and partially refunded tickets are tracked separately from the active sales flow.</li>
+                </ol>
             </div>
 
-            {{-- Ticket Status --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">9. Ticket Status</h3>
-                <p class="text-gray-700 mb-2">
-                    Each ticket in the system has a defined status that reflects its current stage in the booking
-                    process.
-                    The statuses include Pending, Confirmed, and Cancelled. These statuses help staff track tickets and
-                    respond appropriately to customer requests.
-                </p>
-                <p class="text-gray-700">
-                    Status changes can occur automatically based on payments or manually by authorized users. Proper use
-                    of statuses ensures accurate reporting and prevents errors in ticket management.
-                </p>
+                <h3 class="text-lg font-bold mb-3">11. Reports and Cash Collection</h3>
+                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                    <li>Open Show Reports > Sales Reports to review sales data for a selected period or filter.</li>
+                    <li>Open Show Reports > Cash Collection to check collected amounts and reconcile payments.</li>
+                    <li>Use reports for daily closing, company-wise review, and payment method checking.</li>
+                    <li>Always match due collection and refund entries before final accounts submission.</li>
+                </ul>
             </div>
 
-            {{-- Additional Notes --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">10. Additional Notes</h3>
-                <p class="text-gray-700 mb-2">
-                    For best practices, users should always log out after finishing their work, double-check customer
-                    information before submitting tickets, and avoid creating duplicate entries. The system is designed
-                    to prevent common errors, but careful data entry ensures maximum efficiency.
-                </p>
-                <p class="text-gray-700">
-                    The documentation button and notifications on the navbar provide quick access to guides and alerts.
-                    Regular review of dashboard metrics and ticket statuses helps maintain smooth operations and
-                    improves
-                    overall productivity.
-                </p>
+                <h3 class="text-lg font-bold mb-3">12. Best Practices</h3>
+                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                    <li>Check duplicate warning before saving a new ticket for the same mobile and journey date.</li>
+                    <li>Never create a Steadfast parcel before confirming address, mobile number, and due/COD amount.</li>
+                    <li>Use remarks for any unusual payment, refund, customer request, or manual correction.</li>
+                    <li>Keep ticket status updated immediately after each operational step.</li>
+                    <li>Log out after work, especially on shared office computers.</li>
+                </ul>
             </div>
 
         </div>

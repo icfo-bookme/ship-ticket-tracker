@@ -4,7 +4,6 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             <i class="fas fa-edit mr-2 text-blue-600"></i>
             Ship Ticket Sale #{{ $sale->id }}
-
         </h2>
         <a href="/sales/status/{{ $sale->status }}"
             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5">
@@ -63,12 +62,6 @@
                                     <h3 class="text-xl font-bold text-gray-800">Customer Information</h3>
                                 </div>
 
-                                @if ($sale->status == 'ticket-issued')
-                                    <a href="{{ route('print.pdf', $sale->id) }}" target="_blank"
-                                        class="px-4 py-2 bg-blue-950 text-white rounded">
-                                        Ticket
-                                    </a>
-                                @endif
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

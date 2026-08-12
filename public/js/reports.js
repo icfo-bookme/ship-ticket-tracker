@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Safely get all elements with null checks
     const loader = document.getElementById("loader");
     const table = document.getElementById("salesTable");
     const salesBody = document.getElementById("salesBody");
@@ -14,391 +13,204 @@ document.addEventListener("DOMContentLoaded", () => {
     const createdDateFilter = document.getElementById("createdDateFilter");
     const startCreateDateFilter = document.getElementById("startCreateDate");
     const endCreateDateFilter = document.getElementById("endCreateDate");
+    const totalElements = {
+        total_number_of_tickets: document.getElementById("totalSellTickets"),
+        total_ticket_fee: document.getElementById("totalSoldTicketsAmount"),
+        total_other_fee: document.getElementById("totalOtherFees"),
+        total_payable: document.getElementById("totalSold"),
+        total_refunded_tickets: document.getElementById("totalRefundedTickets"),
+        total_refunded_amount: document.getElementById("totalRefundedAmount"),
+    };
 
-    // Totals elements with null checks
-    const totalRefundedTickets = document.getElementById("totalRefundedTickets");
-    const totalRefundedAmount = document.getElementById("totalRefundedAmount");
-    const totalSellTickets = document.getElementById("totalSellTickets");
-    const totalSoldTicketsAmount = document.getElementById("totalSoldTicketsAmount");
-    const totalSold = document.getElementById("totalSold");
-    const totalOtherFees = document.getElementById("totalOtherFees");
-    const totalSellAmount = document.getElementById("totalSellAmount");
-
-    let dataTableInitialized = false;
-    let dataTable;
-    let ships = [];
-    let companies = [];
-
-    async function fetchShips() {
-        try {
-            const response = await fetch("/ships");
-            ships = await response.json();
-            if (shipFilter) {
-                populateDropdown(shipFilter, ships, "All Ships");
-            }
-        } catch (error) {
-            console.error("Error fetching ships:", error);
-        }
-    }
-
-    async function fetchCompanies() {
-        try {
-            const response = await fetch("/companies");
-            companies = await response.json();
-            if (companyFilter) {
-                populateDropdown(companyFilter, companies, "All Companies");
-            }
-        } catch (error) {
-            console.error("Error fetching companies:", error);
-        }
-    }
-
-    function populateDropdown(selectElement, data, defaultText) {
-        if (!selectElement) return;
-
-        selectElement.innerHTML = "";
-        const defaultOption = document.createElement("option");
-        defaultOption.value = "";
-        defaultOption.textContent = defaultText;
-        defaultOption.selected = true;
-        selectElement.appendChild(defaultOption);
-
-        data.forEach((item) => {
-            const option = document.createElement("option");
-            option.value = item.id;
-            option.textContent = item.name;
-            selectElement.appendChild(option);
-        });
-    }
+    let dataTable = null;
 
     function formatDate(dateString) {
-        if (!dateString || dateString === "Not specified") return dateString;
-        
-        try {
-            return new Date(dateString).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-            });
-        } catch (error) {
-            return dateString;
-        }
+        if (!dateString || dateString === "Not specified") return dateString || "N/A";
+
+        return new Date(dateString).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
     }
 
     function formatCurrency(amount) {
-        if (!amount) return '0.00';
-        return new Intl.NumberFormat('en-US', {
+        if (!amount) return "0.00";
+
+        return new Intl.NumberFormat("en-US", {
             minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+            maximumFractionDigits: 2,
         }).format(amount);
     }
 
-    // Safely add event listeners only if elements exist
-    function initializeEventListeners() {
-        const elements = [
-            { element: shipFilter, event: 'change' },
-            { element: companyFilter, event: 'change' },
-            { element: journeyDateFilter, event: 'change' },
-            { element: returnDateFilter, event: 'change' },
-            { element: paymentMethodFilter, event: 'change' },
-            { element: startDateFilter, event: 'change' },
-            { element: endDateFilter, event: 'change' },
-            { element: createdDateFilter, event: 'change' },
-            { element: startCreateDateFilter, event: 'change' },
-            { element: endCreateDateFilter, event: 'change' }
-        ];
+    async function loadDropdown(url, selectElement, defaultText) {
+        if (!selectElement) return;
 
-        elements.forEach(({ element, event }) => {
-            if (element) {
-                element.addEventListener(event, getList);
-            }
-        });
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
 
-        // Clear filters with safe element access
-        if (clearFiltersBtn) {
-            clearFiltersBtn.addEventListener("click", () => {
-                const filters = [
-                    shipFilter, companyFilter, journeyDateFilter, returnDateFilter,
-                    paymentMethodFilter, startDateFilter, endDateFilter, createdDateFilter,
-                    startCreateDateFilter, endCreateDateFilter
-                ];
-                
-                filters.forEach(filter => {
-                    if (filter) filter.value = "";
-                });
-                
-                getList();
-            });
+            selectElement.innerHTML = "";
+            selectElement.add(new Option(defaultText, ""));
+            data.forEach((item) => selectElement.add(new Option(item.name, item.id)));
+        } catch (error) {
+            console.error(`Error loading ${defaultText.toLowerCase()}:`, error);
         }
     }
 
-    async function getList() {
-        try {
-            // Safe loader handling
-            if (loader) {
-                loader.style.display = "block";
-            }
+    function filterElements() {
+        return [
+            shipFilter,
+            companyFilter,
+            journeyDateFilter,
+            returnDateFilter,
+            paymentMethodFilter,
+            startDateFilter,
+            endDateFilter,
+            createdDateFilter,
+            startCreateDateFilter,
+            endCreateDateFilter,
+        ];
+    }
 
-            const filters = {
-                ship_id: shipFilter ? shipFilter.value : "",
-                company_id: companyFilter ? companyFilter.value : "",
-                journey_date: journeyDateFilter ? journeyDateFilter.value : "",
-                return_date: returnDateFilter ? returnDateFilter.value : "",
-                payment_method: paymentMethodFilter ? paymentMethodFilter.value : "",
-                start_date: startDateFilter ? startDateFilter.value : "",
-                end_date: endDateFilter ? endDateFilter.value : "",
-                created_date: createdDateFilter ? createdDateFilter.value : "",
-                start_create_date: startCreateDateFilter ? startCreateDateFilter.value : "",
-                end_create_date: endCreateDateFilter ? endCreateDateFilter.value : "",
-            };
+    function getFilters() {
+        return {
+            ship_id: shipFilter?.value || "",
+            company_id: companyFilter?.value || "",
+            journey_date: journeyDateFilter?.value || "",
+            return_date: returnDateFilter?.value || "",
+            payment_method: paymentMethodFilter?.value || "",
+            start_date: startDateFilter?.value || "",
+            end_date: endDateFilter?.value || "",
+            created_date: createdDateFilter?.value || "",
+            start_create_date: startCreateDateFilter?.value || "",
+            end_create_date: endCreateDateFilter?.value || "",
+        };
+    }
 
-            // Destroy existing DataTable if initialized
-            if (dataTableInitialized && dataTable) {
-                dataTable.destroy();
-                dataTableInitialized = false;
-            }
-
-            // Clear table body if it exists
-            if (salesBody) {
-                salesBody.innerHTML = "";
-            }
-
-            // Safe DOM manipulation
-            if (loader) {
-                loader.style.display = "none";
-            }
-            if (table) {
-                table.classList.remove("hidden");
-            }
-
-            // Check if table exists before initializing DataTable
-            if (!document.getElementById('salesTable')) {
-                console.error('salesTable element not found');
-                return;
-            }
-
-            // Initialize DataTable with server-side processing
-            dataTable = $("#salesTable").DataTable({
-                processing: true,
-                serverSide: true,
-                ordering: false,
-                ajax: {
-                    url: "/reports",
-                    type: 'GET',
-                    data: function (d) {
-                        // Add custom filters to DataTables request
-                        Object.keys(filters).forEach(key => {
-                            if (filters[key]) {
-                                d[key] = filters[key];
-                            }
-                        });
-                    },
-                    dataSrc: function (json) {
-                        // Safe totals update - match your HTML structure
-                        if (json.totals) {
-                            if (totalSellTickets) totalSellTickets.textContent = json.totals.total_number_of_tickets || '0';
-                            if (totalSoldTicketsAmount) totalSoldTicketsAmount.textContent = json.totals.total_ticket_fee || '0.00';
-                            if (totalOtherFees) totalOtherFees.textContent = json.totals.total_other_fee || '0.00';
-                            if (totalSold) totalSold.textContent = json.totals.total_payable || '0.00';
-                            if (totalRefundedTickets) totalRefundedTickets.textContent = json.totals.total_refunded_tickets || '0';
-                            if (totalRefundedAmount) totalRefundedAmount.textContent = json.totals.total_refunded_amount || '0.00';
-                        }
-                        
-                        // Return data or empty array
-                        return json.data || [];
-                    },
-                    error: function (xhr, error, thrown) {
-                        console.error('AJAX error:', error);
-                        if (loader) {
-                            loader.textContent = "Failed to load data from server.";
-                        }
-                        return [];
-                    }
-                },
-                columns: [
-                    { 
-                        data: 'id',
-                        title: 'ID',
-                        render: function(data) {
-                            return data || 'N/A';
-                        }
-                    },
-                    { 
-                        data: 'customer_name',
-                        title: 'Customer Name',
-                        render: function(data) {
-                            return data || 'N/A';
-                        }
-                    },
-                    { 
-                        data: 'customer_mobile',
-                        title: 'Mobile',
-                        render: function(data) {
-                            return data || 'N/A';
-                        }
-                    },
-                    { 
-                        data: 'ship_name',
-                        title: 'Ship Name',
-                        render: function(data) {
-                            return data || 'N/A';
-                        }
-                    },
-                    {
-                        data: 'journey_date',
-                        title: 'Journey Date',
-                        render: function (data) {
-                            return formatDate(data);
-                        }
-                    },
-                    { 
-                        data: 'number_of_ticket',
-                        title: 'Number Of Ticket',
-                        render: function(data) {
-                            return data || '0';
-                        }
-                    },
-                    { 
-                        data: 'ticket_fee',
-                        title: 'Total Ticket Price',
-                        render: function (data) {
-                            return formatCurrency(data);
-                        }
-                    },
-                    { 
-                        data: 'other_fee',
-                        title: 'Other Fee',
-                        render: function (data) {
-                            return formatCurrency(data);
-                        }
-                    },
-                    { 
-                        data: 'total_payable',
-                        title: 'Total Payable',
-                        render: function (data) {
-                            return formatCurrency(data);
-                        }
-                    },
-                    { 
-                        data: 'received_amount',
-                        title: 'Received Amount',
-                        render: function (data) {
-                            return formatCurrency(data);
-                        }
-                    },
-                     { 
-                        data: 'refunded_number_of_tickets',
-                        title: 'Refunded Tickets',
-                        render: function (data) {
-                            return data || 0;
-                        }
-                    },
-                    { 
-                        data: 'refunded_amount',
-                        title: 'Refunded Amount',
-                        render: function (data) {
-                            return formatCurrency(data);
-                        }
-                    },
-                      
-                    { 
-                        data: 'due_amount',
-                        title: 'Due Amount',
-                        render: function (data) {
-                            return formatCurrency(data);
-                        }
-                    },
-                    {
-                        data: null,
-                        title: 'Action',
-                        orderable: false,
-                        searchable: false,
-                        render: function (data, type, row) {
-                            return createActionButtons(row);
-                        }
-                    }
-                ],
-                dom: "lBfrtip",
-                lengthChange: true,
-                lengthMenu: [
-                    [10, 25, 50, 100],
-                    [10, 25, 50, 100]
-                ],
-                language: {
-                    processing: "Processing...",
-                    search: "Search:",
-                    lengthMenu: "Show _MENU_ entries",
-                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                    infoEmpty: "Showing 0 to 0 of 0 entries",
-                    infoFiltered: "(filtered from _MAX_ total entries)",
-                    loadingRecords: "Loading...",
-                    zeroRecords: "No matching records found",
-                    emptyTable: "No data available in table",
-                    paginate: {
-                        first: "First",
-                        last: "Last",
-                        next: "Next",
-                        previous: "Previous"
-                    }
-                },
-                buttons: [
-                    "copy",
-                    "excel", 
-                    "csv",
-                    "pdf",
-                    "print",
-                    {
-                        extend: "colvis",
-                        text: "Column Visibility",
-                    }
-                ],
-                
-                error: function (xhr, error, thrown) {
-                    console.error("DataTables error:", error);
-                    if (loader) {
-                        loader.textContent = "Failed to load data. Please try again.";
-                    }
-                }
-            });
-
-            dataTableInitialized = true;
-
-        } catch (error) {
-            console.error("Error initializing DataTable:", error);
-            if (loader) {
-                loader.textContent = "Failed to load data. Please try again later.";
-            }
+    function reloadTable() {
+        if (dataTable) {
+            dataTable.ajax.reload();
+            return;
         }
+
+        initDataTable();
+    }
+
+    function updateTotals(totals = {}) {
+        Object.entries(totalElements).forEach(([key, element]) => {
+            if (element) element.textContent = totals[key] || (key.includes("tickets") ? "0" : "0.00");
+        });
+    }
+
+    function initDataTable() {
+        if (!document.getElementById("salesTable")) {
+            console.error("salesTable element not found");
+            return;
+        }
+
+        if (loader) loader.style.display = "block";
+        if (salesBody) salesBody.innerHTML = "";
+        if (table) table.classList.remove("hidden");
+
+        dataTable = $("#salesTable").DataTable({
+            processing: true,
+            serverSide: true,
+            ordering: false,
+            ajax: {
+                url: "/reports",
+                type: "GET",
+                data: (request) => {
+                    Object.entries(getFilters()).forEach(([key, value]) => {
+                        if (value) request[key] = value;
+                    });
+                },
+                dataSrc: (json) => {
+                    updateTotals(json.totals);
+                    return json.data || [];
+                },
+                error: (xhr, error) => {
+                    console.error("AJAX error:", error);
+                    if (loader) loader.textContent = "Failed to load data from server.";
+                    return [];
+                },
+            },
+            columns: [
+                { data: "id", title: "ID", render: (data) => data || "N/A" },
+                { data: "customer_name", title: "Customer Name", render: (data) => data || "N/A" },
+                { data: "customer_mobile", title: "Mobile", render: (data) => data || "N/A" },
+                { data: "ship_name", title: "Ship Name", render: (data) => data || "N/A" },
+                { data: "journey_date", title: "Journey Date", render: formatDate },
+                { data: "number_of_ticket", title: "Number Of Ticket", render: (data) => data || "0" },
+                { data: "ticket_fee", title: "Total Ticket Price", render: formatCurrency },
+                { data: "other_fee", title: "Other Fee", render: formatCurrency },
+                { data: "total_payable", title: "Total Payable", render: formatCurrency },
+                { data: "received_amount", title: "Received Amount", render: formatCurrency },
+                { data: "refunded_number_of_tickets", title: "Refunded Tickets", render: (data) => data || 0 },
+                { data: "refunded_amount", title: "Refunded Amount", render: formatCurrency },
+                { data: "due_amount", title: "Due Amount", render: formatCurrency },
+                { data: null, title: "Action", orderable: false, searchable: false, render: (data, type, row) => createActionButtons(row) },
+            ],
+            dom: "lBfrtip",
+            lengthChange: true,
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            language: {
+                processing: "Processing...",
+                search: "Search:",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)",
+                loadingRecords: "Loading...",
+                zeroRecords: "No matching records found",
+                emptyTable: "No data available in table",
+                paginate: {
+                    first: "First",
+                    last: "Last",
+                    next: "Next",
+                    previous: "Previous",
+                },
+            },
+            buttons: ["copy", "excel", "csv", "pdf", "print", { extend: "colvis", text: "Column Visibility" }],
+            initComplete: () => {
+                if (loader) loader.style.display = "none";
+            },
+            error: (error) => {
+                console.error("DataTables error:", error);
+                if (loader) loader.textContent = "Failed to load data. Please try again.";
+            },
+        });
     }
 
     function createActionButtons(row) {
-        if (!row || !row.id) return '';
-        
+        if (!row?.id) return "";
+
         return `
             <div class="flex gap-2 items-center justify-center">
                 <a href="/ship-ticket-sales/${row.id}">
                     <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
                 </a>
-                
-            </div>
-        `;
+            </div>`;
     }
 
-    
+    function bindEvents() {
+        filterElements().forEach((filter) => filter?.addEventListener("change", reloadTable));
 
+        clearFiltersBtn?.addEventListener("click", () => {
+            filterElements().forEach((filter) => {
+                if (filter) filter.value = "";
+            });
+            reloadTable();
+        });
+    }
 
-  
-
-    // Initialize the page
     async function initializePage() {
-        try {
-            initializeEventListeners();
-            await fetchShips();
-            await fetchCompanies();
-            getList();
-        } catch (error) {
-            console.error("Error initializing page:", error);
-        }
+        bindEvents();
+        await Promise.all([
+            loadDropdown("/ships", shipFilter, "All Ships"),
+            loadDropdown("/companies", companyFilter, "All Companies"),
+        ]);
+        initDataTable();
     }
 
     initializePage();

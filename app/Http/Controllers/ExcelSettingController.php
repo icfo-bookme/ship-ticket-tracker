@@ -10,13 +10,14 @@ class ExcelSettingController extends Controller
     /**
      * Display a listing of the resource.
      */
-   public function index()
+    public function index()
     {
-        $ships = ExcelSetting::all();
-        return response()->json($ships);
+        $settings = ExcelSetting::all();
+
+        return response()->json($settings);
     }
 
-     public function showTableList()
+    public function showTableList()
     {
         return view('Excel.componentItem');
     }
@@ -28,7 +29,7 @@ class ExcelSettingController extends Controller
     {
         $validated = $request->validate([
             'spreadsheetId' => 'required|string|max:255',
-            'range'         => 'required|string|max:255',
+            'range' => 'required|string|max:255',
         ]);
 
         $setting = ExcelSetting::create($validated);
@@ -36,7 +37,7 @@ class ExcelSettingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Excel setting created successfully',
-            'data' => $setting
+            'data' => $setting,
         ], 201);
     }
 
@@ -47,7 +48,7 @@ class ExcelSettingController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => $excelSetting
+            'data' => $excelSetting,
         ], 200);
     }
 
@@ -58,7 +59,7 @@ class ExcelSettingController extends Controller
     {
         $validated = $request->validate([
             'spreadsheetId' => 'required|string|max:255',
-            'range'         => 'required|string|max:255',
+            'range' => 'required|string|max:255',
         ]);
 
         $excelSetting->update($validated);
@@ -66,7 +67,7 @@ class ExcelSettingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Excel setting updated successfully',
-            'data' => $excelSetting
+            'data' => $excelSetting,
         ], 200);
     }
 
@@ -79,7 +80,7 @@ class ExcelSettingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Excel setting deleted successfully'
+            'message' => 'Excel setting deleted successfully',
         ], 200);
     }
 }

@@ -4,7 +4,6 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
                 Excel Setting
             </h2>
-            
         </div>
         <!-- Loader -->
         <div id="loader" class="text-center my-4">
@@ -12,19 +11,17 @@
             <p class="mt-2 text-gray-600">Loading data...</p>
         </div>
 
-        <!-- Sales Table -->
         <div class="overflow-x-auto">
-            <table id="shipsTable" class="min-w-full border border-gray-300 hidden">
+            <table id="excelTable" class="min-w-full border border-gray-300 hidden">
                 <thead class="bg-gray-100">
                     <tr>
                         <th class="border px-4 py-2">ID</th>
-                        <th class="border px-4 py-2">spreadsheetId</th>
-                        <th class="border px-4 py-2">range</th>
-                        <th class="border px-4 py-2">Status</th>
+                        <th class="border px-4 py-2">Spreadsheet ID</th>
+                        <th class="border px-4 py-2">Range</th>
                         <th class="border px-4 py-2">Action</th>
                     </tr>
                 </thead>
-                <tbody id="shipsBody"></tbody>
+                <tbody id="excelBody"></tbody>
             </table>
         </div>
     </div>
@@ -32,9 +29,18 @@
 
 <script>
     const loader = document.getElementById('loader');
-    const table = document.getElementById('shipsTable');
-    const salesBody = document.getElementById('shipsBody');
+    const table = document.getElementById('excelTable');
+    const excelBody = document.getElementById('excelBody');
     let dataTableInitialized = false;
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
     async function getList() {
         try {
@@ -46,64 +52,42 @@
             loader.style.display = 'none';
             table.classList.remove('hidden');
 
-            salesBody.innerHTML = '';
+            excelBody.innerHTML = '';
 
-            data.forEach(excel => {
-                const status = excel.status == 1 ? 'Yes' : 'No';
+            data.forEach(setting => {
                 const tr = document.createElement('tr');
-
                 tr.innerHTML = `
-                    <td class="border border-gray-300 px-4 py-2">${excel.id}</td>
-                    <td class="border border-gray-300 px-4 py-2">${excel.spreadsheetId}</td>
-                    <td class="border border-gray-300 px-4 py-2">${excel.range}</td>
-                    <td class="border border-gray-300 px-4 py-2">${status}</td>
+                    <td class="border border-gray-300 px-4 py-2">${setting.id}</td>
+                    <td class="border border-gray-300 px-4 py-2">${escapeHtml(setting.spreadsheetId)}</td>
+                    <td class="border border-gray-300 px-4 py-2">${escapeHtml(setting.range)}</td>
                     <td class="border border-gray-300 px-4 py-2">
-                        <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" 
-                            data-id="${excel.id}" 
-                            data-name="${excel.name}" 
-                            data-route="${excel.route}" 
-                            data-status="${excel.status}">
-                            Edit  
+                        <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn"
+                            data-id="${setting.id}"
+                            data-spreadsheet_id="${escapeHtml(setting.spreadsheetId)}"
+                            data-range="${escapeHtml(setting.range)}">
+                            Edit
                         </button>
-                        
-                        
                     </td>
                 `;
-                shipsBody.appendChild(tr);
+                excelBody.appendChild(tr);
             });
 
-            // Initialize DataTable if not already initialized
             if (!dataTableInitialized) {
-                $('#shipsTable').DataTable({
+                $('#excelTable').DataTable({
                     dom: 'lBfrtip',
                     lengthChange: true,
-                    lengthMenu: [
-                        [10, 25, 50, 75, 100, 200, 300, 400, 500],
-                        [10, 25, 50, 75, 100, 200, 300, 400, 500]
-                    ],
-                    language: {
-                        lengthMenu: '_MENU_' // Display dropdown only
-                    },
-                    buttons: [
-                        'copy', 'excel', 'csv', 'pdf', 'print',
-                        {
-                            extend: 'colvis',
-                            text: 'Column Visibility'
-                        }
-                    ]
+                    lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                    language: { lengthMenu: '_MENU_' },
+                    buttons: ['copy', 'excel', 'csv', 'pdf', 'print', { extend: 'colvis', text: 'Column Visibility' }]
                 });
                 dataTableInitialized = true;
             }
+
             document.querySelectorAll('.editBtn').forEach(btn => {
                 btn.addEventListener('click', () => showEditModal(btn));
             });
-
-          
-
-
-
         } catch (error) {
-            console.error('Error fetching sales data:', error);
+            console.error('Error fetching excel settings:', error);
             loader.textContent = 'Failed to load data. Please try again later.';
         }
     }

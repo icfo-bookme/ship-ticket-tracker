@@ -645,7 +645,8 @@ class ShipTicketSaleController extends Controller
                 }
 
                 if (($validated['group_tickets'] ?? null) == 'yes' && ! empty($validated['group_by_id'])) {
-                    $groupbysalesStaus = ShipTicketSale::find($validated['group_by_id'])->status;
+                    $groupSale = ShipTicketSale::find($validated['group_by_id']);
+                    $groupbysalesStaus = $groupSale?->status ?? 'ticket-issued';
                     $sale->update([
                         'status' => $groupbysalesStaus,
                     ]);

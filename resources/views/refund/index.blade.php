@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
         <div id="statusFilter" data-status="shipped" class="hidden"></div>
         <h2 class="font-semibold text-xl text-gray-800  leading-tight">
-            Ship Ticket Sales
+            Refundable Sales
         </h2>
         <div class="mt-6 mb-4 grid grid-cols-3 gap-10">
             <div class="">

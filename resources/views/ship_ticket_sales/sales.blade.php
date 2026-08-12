@@ -22,8 +22,6 @@
              Print All Tickets
          </button>
 
-
-         {{-- @include('ship_ticket_sales.fileupload') --}}
          <div class="mt-6 mb-4 grid grid-cols-4 gap-10">
              <div class="">
                  <label for="companyFilter" class="block text-sm font-medium text-gray-700">Filter by Source

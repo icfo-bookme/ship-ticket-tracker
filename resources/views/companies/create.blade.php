@@ -5,7 +5,7 @@
         <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
             <div
                 class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Add New item </h3>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Add New Company</h3>
                 <button data-modal-hide="add-modal" type="button"
                     class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg p-2.5">
                     <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
@@ -19,10 +19,10 @@
             </div>
 
             <!-- Form for creating a new item -->
-            <form id="createitemForm">
+            <form id="createCompanyForm">
                 <div class="px-6 py-4">
                     <div class="mb-4">
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">item
+                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Name</label>
                         <input type="text" name="name" id="name" required
                             class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
@@ -39,8 +39,8 @@
                     </div>
 
                     <div class="mt-4 text-right">
-                        <button
-                            class="px-4 submit py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400">Save</button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400">Save</button>
                         <button type="button" data-modal-hide="add-modal"
                             class="ml-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
                     </div>
@@ -52,7 +52,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('createitemForm');
+        const form = document.getElementById('createCompanyForm');
         const closeButton = document.querySelector('[data-modal-hide="add-modal"]');
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -99,7 +99,12 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to add company. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                    });
                 });
         });
 

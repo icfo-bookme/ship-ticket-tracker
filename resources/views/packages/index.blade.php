@@ -2,11 +2,11 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="flex items-center justify-between pb-5">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
-                Ships Details
+                Ship Packages
             </h2>
             <button data-modal-target="add-modal" data-modal-toggle="add-modal"
                 class="bg-red-500 text-white px-2 py-1 rounded addBtn">
-                + Add New Ship
+                + Add New Package
             </button>
         </div>
         <!-- Loader -->
@@ -43,6 +43,15 @@
     const salesBody = document.getElementById('shipsBody');
     let dataTableInitialized = false;
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     async function getList() {
         try {
             loader.style.display = 'block';
@@ -61,15 +70,15 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="border border-gray-300 px-4 py-2">${package.id}</td>
-                    <td class="border border-gray-300 px-4 py-2">${package.name}</td>
-                    <td class="border border-gray-300 px-4 py-2">${package.price}</td>
-                    <td class="border border-gray-300 px-4 py-2">${package.round_trip_price}</td>
+                    <td class="border border-gray-300 px-4 py-2">${escapeHtml(package.name)}</td>
+                    <td class="border border-gray-300 px-4 py-2">${escapeHtml(package.price)}</td>
+                    <td class="border border-gray-300 px-4 py-2">${escapeHtml(package.round_trip_price)}</td>
                     <td class="border border-gray-300 px-4 py-2">
                         <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" 
                             data-id="${package.id}" 
-                            data-name="${package.name}"
-                            data-price="${package.price}"
-                            data-round_trip_price="${package.round_trip_price}">
+                            data-name="${escapeHtml(package.name)}"
+                            data-price="${escapeHtml(package.price)}"
+                            data-round_trip_price="${escapeHtml(package.round_trip_price)}">
                             Edit  
                         </button>
                         <button class="bg-red-500 text-white px-2 py-1 rounded deleteBtn" 

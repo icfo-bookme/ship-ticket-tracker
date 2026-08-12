@@ -3,10 +3,17 @@
 
 async function handleDeleteClick(btn) {
     const id = btn.dataset.id;
-    const isConfirmed = confirm('Are you sure you want to delete this sale?');
+    const { isConfirmed } = await Swal.fire({
+        title: 'Are you sure?',
+        text: 'Do you want to delete this ship?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete',
+        cancelButtonText: 'Cancel',
+    });
         if (isConfirmed) {
             try {
-                // Send DELETE request to delete the sale
+                // Send DELETE request to delete the ship
                 const response = await fetch(`/ships/${id}`, {
                     method: 'DELETE',
                     headers: {
@@ -20,7 +27,7 @@ async function handleDeleteClick(btn) {
                     // Show success message
                     Swal.fire({
                         title: 'Deleted!',
-                        text: 'Sale has been successfully deleted.',
+                        text: 'Ship has been successfully deleted.',
                         icon: 'success',
                         confirmButtonText: 'OK',
                         customClass: {
@@ -28,12 +35,12 @@ async function handleDeleteClick(btn) {
                         }
                     });
 
-                    // Reload the sales list
+                    // Reload the ship list
                     getList();
                 } else {
                     Swal.fire({
                         title: 'Error!',
-                        text: 'Failed to delete sale. Please try again later.',
+                        text: 'Failed to delete ship. Please try again later.',
                         icon: 'error',
                         confirmButtonText: 'OK',
                         customClass: {
@@ -45,7 +52,7 @@ async function handleDeleteClick(btn) {
                 console.error('Error deleting sale:', error);
                 Swal.fire({
                     title: 'Error!',
-                    text: 'An error occurred while deleting the sale.',
+                    text: 'An error occurred while deleting the ship.',
                     icon: 'error',
                     confirmButtonText: 'OK',
                     customClass: {

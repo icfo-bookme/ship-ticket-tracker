@@ -46,8 +46,8 @@
                     </div>
 
                     <div class="mt-4 text-right">
-                        <button
-                            class="px-4 submit py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400">Save</button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400">Save</button>
                         <button type="button" data-modal-hide="add-modal"
                             class="ml-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
                     </div>
@@ -108,7 +108,12 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to add ship. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                    });
                 });
         });
 

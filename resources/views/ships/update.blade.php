@@ -109,34 +109,35 @@
             });
 
             if (response.status==200) {
-                // Assuming the server returns the updated ship
-                getList()
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Ship updated successfully!',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                });
 
-                // Close the modal;
+                getList();
+
+                // Close the modal
                 closeModal();
             } else {
-                alert('Failed to update the ship');
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to update the ship. Please try again later.',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
             }
         } catch (error) {
             console.error('Error updating ship:', error);
-            alert('There was an error updating the ship');
+            Swal.fire({
+                title: 'Error!',
+                text: 'There was an error updating the ship.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
         }
     });
 
-    // Function to update the ship data in the DOM
-    function updateShipInDOM(updatedShip) {
-        const row = document.querySelector(`#shipRow${updatedShip.id}`);
-
-        // Update the relevant columns with the new data
-        row.querySelector('.customer-name').textContent = updatedShip.name;
-        row.querySelector('.customer-mobile').textContent = updatedShip.route;
-        row.querySelector('.status').textContent = updatedShip.status == 1 ? 'Active' : 'Inactive';
-    }
-
-    // Add event listener for the Edit buttons
-    document.querySelectorAll('.editBtn').forEach(button => {
-        button.addEventListener('click', function() {
-            showEditModal(this);
-        });
-    });
+    
 </script>

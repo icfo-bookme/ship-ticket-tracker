@@ -25,13 +25,15 @@ use Illuminate\Support\Facades\Log;
 
 class ShipTicketSaleController extends Controller
 {
-   
     public function index()
     {
         $sales = ShipTicketSale::with('ships')->latest()->get();
         $ships = Ship::all();
 
-        return view('ship_ticket_sales.index', compact('sales', 'ships'));
+        // The shared list view requires a default status. The per-status tab
+        // page (/sales/status/{status}) is the canonical entry point.
+        return view('ship_ticket_sales.index', compact('sales', 'ships'))
+            ->with('status', 'pending');
     }
 
     public function pendingCS(Request $request, $status)
@@ -60,7 +62,6 @@ class ShipTicketSaleController extends Controller
         ])
             ->withCount('printedTickets')
             ->where('status', $status);
-        $sales = $query->get();
 
         // Apply filters
         if (! empty($shipId)) {
@@ -132,6 +133,7 @@ class ShipTicketSaleController extends Controller
     {
         $ships = Ship::all();
         $companies = Company::all();
+
         return view('ship_ticket_sales.create', compact('ships', 'companies'));
     }
 
@@ -144,7 +146,6 @@ class ShipTicketSaleController extends Controller
 
         return view('welcome', compact('ships', 'companies', 'form'));
     }
-
 
     public function store(Request $request)
     {

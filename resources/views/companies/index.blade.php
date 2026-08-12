@@ -1,64 +1,72 @@
+<div class="py-6">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between pb-5">
+            <h2 class="font-semibold text-xl text-gray-800  leading-tight">
+                Companies Details
+            </h2>
+            <button data-modal-target="add-modal" data-modal-toggle="add-modal"
+                class="bg-red-500 text-white px-2 py-1 rounded addBtn">
+                + Add New Company
+            </button>
+        </div>
+        <!-- Loader -->
+        <div id="loader" class="text-center my-4">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="mt-2 text-gray-600">Loading data...</p>
+        </div>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between pb-5">
-                <h2 class="font-semibold text-xl text-gray-800  leading-tight">
-                    Companies Details
-                </h2>
-                <button data-modal-target="add-modal" data-modal-toggle="add-modal"
-                    class="bg-red-500 text-white px-2 py-1 rounded addBtn">
-                    + Add New Company
-                </button>
-            </div>
-            <!-- Loader -->
-            <div id="loader" class="text-center my-4">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <p class="mt-2 text-gray-600">Loading data...</p>
-            </div>
-
-            <!-- items Table -->
-            <div class="overflow-x-auto">
-                <table id="itemTable" class="min-w-full border border-gray-300 hidden">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="border px-4 py-2">ID</th>
-                            <th class="border px-4 py-2">Name</th>
-                             <th class="border px-4 py-2">Status</th>
-                             <th class="border px-4 py-2">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="itemBody"></tbody>
-                </table>
-            </div>
+        <!-- items Table -->
+        <div class="overflow-x-auto">
+            <table id="itemTable" class="min-w-full border border-gray-300 hidden">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="border px-4 py-2">ID</th>
+                        <th class="border px-4 py-2">Name</th>
+                        <th class="border px-4 py-2">Status</th>
+                        <th class="border px-4 py-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="itemBody"></tbody>
+            </table>
         </div>
     </div>
+</div>
 
-    <script>
-        const loader = document.getElementById('loader');
-        const table = document.getElementById('itemTable');
-        const itemsBody = document.getElementById('itemBody');
-        let dataTableInitialized = false;
+<script>
+    const loader = document.getElementById('loader');
+    const table = document.getElementById('itemTable');
+    const itemsBody = document.getElementById('itemBody');
+    let dataTableInitialized = false;
 
-        async function getList() {
-            try {
-                loader.style.display = 'block';
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
-                const response = await fetch('/companies');
-                const data = await response.json();
+    async function getList() {
+        try {
+            loader.style.display = 'block';
 
-                loader.style.display = 'none';
-                table.classList.remove('hidden');
+            const response = await fetch('/companies');
+            const data = await response.json();
 
-                itemsBody.innerHTML = '';
+            loader.style.display = 'none';
+            table.classList.remove('hidden');
 
-                // Render items data into the table
-                data.forEach(item => {
-                     const status = item.status == 1 ? 'Yes' : 'No';
-                    const tr = document.createElement('tr');
+            itemsBody.innerHTML = '';
 
-                    tr.innerHTML = `
+            // Render items data into the table
+            data.forEach(item => {
+                const status = item.status == 1 ? 'Yes' : 'No';
+                const tr = document.createElement('tr');
+
+                tr.innerHTML = `
                     <td class="border border-gray-300 px-4 py-2">${item.id}</td>
-                    <td class="border border-gray-300 px-4 py-2">${item.name}</td>
+                    <td class="border border-gray-300 px-4 py-2">${escapeHtml(item.name)}</td>
                   <td class="border border-gray-300 px-4 py-2">${status}</td>
                     <td class="border border-gray-300 px-4 py-2">
                         <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" 
@@ -74,48 +82,46 @@
                         </button>
                     </td>
                 `;
-                    itemBody.appendChild(tr);
+                itemBody.appendChild(tr);
+            });
+
+            // Initialize DataTable if not already initialized
+            if (!dataTableInitialized) {
+                $('#itemTable').DataTable({
+                    dom: 'lBfrtip',
+                    lengthChange: true,
+                    lengthMenu: [
+                        [10, 25, 50, 75, 100, 200, 300, 400, 500],
+                        [10, 25, 50, 75, 100, 200, 300, 400, 500]
+                    ],
+                    language: {
+                        lengthMenu: '_MENU_' // Display dropdown only
+                    },
+                    buttons: [
+                        'copy', 'excel', 'csv', 'pdf', 'print',
+                        {
+                            extend: 'colvis',
+                            text: 'Column Visibility'
+                        }
+                    ]
                 });
-
-                // Initialize DataTable if not already initialized
-                if (!dataTableInitialized) {
-                    $('#itemTable').DataTable({
-                        dom: 'lBfrtip',
-                        lengthChange: true,
-                        lengthMenu: [
-                            [10, 25, 50, 75, 100, 200, 300, 400, 500],
-                            [10, 25, 50, 75, 100, 200, 300, 400, 500]
-                        ],
-                        language: {
-                            lengthMenu: '_MENU_' // Display dropdown only
-                        },
-                        buttons: [
-                            'copy', 'excel', 'csv', 'pdf', 'print',
-                            {
-                                extend: 'colvis',
-                                text: 'Column Visibility'
-                            }
-                        ]
-                    });
-                    dataTableInitialized = true;
-                }
-                document.querySelectorAll('.editBtn').forEach(btn => {
-                    btn.addEventListener('click', () => showEditModal(btn));
-                });
-
-                document.querySelectorAll('.deleteBtn').forEach(btn => {
-                    btn.addEventListener('click', () => handleDeleteClick(btn));
-                });
-
-
-
-            } catch (error) {
-                console.error('Error fetching items data:', error);
-                loader.textContent = 'Failed to load data. Please try again later.';
+                dataTableInitialized = true;
             }
+            document.querySelectorAll('.editBtn').forEach(btn => {
+                btn.addEventListener('click', () => showEditModal(btn));
+            });
+
+            document.querySelectorAll('.deleteBtn').forEach(btn => {
+                btn.addEventListener('click', () => handleDeleteClick(btn));
+            });
+
+
+
+        } catch (error) {
+            console.error('Error fetching items data:', error);
+            loader.textContent = 'Failed to load data. Please try again later.';
         }
+    }
 
-        getList();
-    </script>
-
-
+    getList();
+</script>

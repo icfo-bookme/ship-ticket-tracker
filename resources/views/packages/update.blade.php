@@ -9,7 +9,7 @@
         <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
             <div
                 class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Edit Ship</h3>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Edit Package</h3>
                 <button data-modal-hide="update-modal" type="button"
                     class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg p-2.5">
                     <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
@@ -26,22 +26,20 @@
                 <input type="hidden" id="update-package-id" name="id">
                 <div class="px-6 py-4">
                     <div class="mb-4">
-                        <label for="update-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ship
+                        <label for="update-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Package
                             Name</label>
                         <input type="text" id="update-name" name="name" required
                             class="block w-full p-2 text-sm text-gray-900 bg-gray-50 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="Enter ship name">
+                            placeholder="Enter package name">
                     </div>
                     <div class="mb-4">
-                        <label for="update-price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ship
-                            Price</label>
+                        <label for="update-price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Price</label>
                         <input type="text" id="update-price" name="price" required
                             class="block w-full p-2 text-sm text-gray-900 bg-gray-50 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="Enter Price">
                     </div>
                     <div class="mb-4">
-                        <label for="update-round_trip_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ship
-                            Price</label>
+                        <label for="update-round_trip_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Round Trip Price</label>
                         <input type="number" id="update-round_trip_price" name="round_trip_price" required
                             class="block w-full p-2 text-sm text-gray-900 bg-gray-50 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="Enter round_trip_price">
@@ -117,34 +115,35 @@
             });
 
             if (response.status == 200) {
-                // Assuming the server returns the updated ship
-                getList()
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Package updated successfully!',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                });
 
-                // Close the modal;
+                getList();
+
+                // Close the modal
                 closeModal();
             } else {
-                alert('Failed to update the ship');
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to update the package. Please try again later.',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
             }
         } catch (error) {
-            console.error('Error updating ship:', error);
-            alert('There was an error updating the ship');
+            console.error('Error updating package:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: 'There was an error updating the package.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
         }
     });
 
-    // Function to update the ship data in the DOM
-    function updateShipInDOM(updatedShip) {
-        const row = document.querySelector(`#shipRow${updatedShip.id}`);
-
-        // Update the relevant columns with the new data
-        row.querySelector('.customer-name').textContent = updatedShip.name;
-        row.querySelector('.customer-mobile').textContent = updatedShip.route;
-        row.querySelector('.status').textContent = updatedShip.status == 1 ? 'Active' : 'Inactive';
-    }
-
-    // Add event listener for the Edit buttons
-    document.querySelectorAll('.editBtn').forEach(button => {
-        button.addEventListener('click', function() {
-            showEditModal(this);
-        });
-    });
+    // Edit buttons are wired via index.blade.php after each render.
 </script>

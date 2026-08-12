@@ -5,7 +5,7 @@
         <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
             <div
                 class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Add New Ship</h3>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Add New Package</h3>
                 <button data-modal-hide="add-modal" type="button"
                     class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg p-2.5">
                     <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
@@ -21,39 +21,31 @@
             <!-- Form for creating a new ship -->
             <form id="createShipForm">
                 <div class="px-6 py-4">
-                    <div class="mb-4 hidden">
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">ship
-                            id</label>
-                        <input type="int" name="ship_id" id="ship_id" value={{ $id }} required
+                    <div class="mb-4">
+                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Package Name</label>
+                        <input type="text" name="name" id="name" required placeholder="Enter package name"
                             class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
+
+                    <input type="hidden" name="ship_id" id="ship_id" value="{{ $id }}">
+
                     <div class="mb-4">
-                        <label for="price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Price</label>
-                        <input type="number" name="price" id="price" required
+                        <label for="price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Price</label>
+                        <input type="number" name="price" id="price" required min="0" step="0.01"
                             class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
 
                     <div class="mb-4">
-                        <label for="round_trip_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            round_trip_price</label>
-                        <input type="number" name="round_trip_price" id="round_trip_price" required
-                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Package
-                            Name</label>
-                        <input type="text" name="name" id="name" required
+                        <label for="round_trip_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Round Trip Price</label>
+                        <input type="number" name="round_trip_price" id="round_trip_price" required min="0" step="0.01"
                             class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
 
 
 
                     <div class="mt-4 text-right">
-                        <button
-                            class="px-4 submit py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400">Save</button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400">Save</button>
                         <button type="button" data-modal-hide="add-modal"
                             class="ml-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
                     </div>
@@ -103,7 +95,7 @@
             .then(data => {
                 Swal.fire({
                     title: 'Success!',
-                    text: 'Ship Added successfully!',
+                    text: 'Package added successfully!',
                     icon: 'success',
                     confirmButtonText: 'OK',
                     customClass: {
@@ -118,6 +110,12 @@
             })
             .catch(error => {
                 console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to add package. Please try again.',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
             });
     });
 });

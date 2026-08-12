@@ -11,36 +11,48 @@ document.addEventListener("DOMContentLoaded", () => {
     let dataTable;
     let ships = [];
     let companies = [];
+
+    //  HELPERS [its for special characters like <, >, &, etc. to be displayed correctly in HTML]
+    function escapeHtml(value) {
+        if (value === null || value === undefined) return "";
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function copyCell(data) {
+        const escaped = escapeHtml(data);
+        return `
+        <div class="flex items-center gap-2 justify-center">
+            <span>${escaped || 'N/A'}</span>
+            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${escaped}" title="Copy">
+                <i class="fas fa-copy"></i>
+            </button>
+        </div>`;
+    }
+
     function copyToClipboard(text) {
         if (!text) return;
-
         navigator.clipboard.writeText(text)
-            .then(() => {
-                showCopiedMessage(); // call toast
-            })
-            .catch(err => {
-                console.error("Copy failed:", err);
-            });
+            .then(() => showCopiedMessage())
+            .catch(err => console.error("Copy failed:", err));
     }
+
     function showCopiedMessage() {
-        // Create toast element
         const toast = document.createElement("div");
         toast.textContent = "Copied!";
         toast.className = "fixed bottom-4 right-4 bg-black text-white px-4 py-2 rounded shadow-lg opacity-0 transition-opacity duration-300 z-50";
-
         document.body.appendChild(toast);
-
-        // Trigger fade-in
-        requestAnimationFrame(() => {
-            toast.classList.add("opacity-100");
-        });
-
-        // Remove after 1.5s
+        requestAnimationFrame(() => toast.classList.add("opacity-100"));
         setTimeout(() => {
             toast.classList.remove("opacity-100");
             setTimeout(() => toast.remove(), 300);
         }, 1500);
     }
+
     document.querySelectorAll(".copyBtn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -48,33 +60,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-
-    const modal = {
-        element: document.getElementById("editModal"),
-        show: function () {
-            this.element.classList.remove("hidden");
-            this.element.classList.add("flex");
-        },
-        hide: function () {
-            this.element.classList.add("hidden");
-            this.element.classList.remove("flex");
-        },
-    };
-
-    function initializeModalEvents() {
-        document.getElementById("closeModalX").addEventListener("click", () => modal.hide());
-        document.getElementById("cancelBtn").addEventListener("click", () => modal.hide());
-        modal.element.addEventListener("click", (e) => {
-            if (e.target === modal.element) modal.hide();
-        });
-    }
-
+    // DATA FETCH 
     async function fetchShips() {
         try {
             const response = await fetch("/ships");
             ships = await response.json();
             populateDropdown(shipFilter, ships, "All Ships");
-            populateEditShipDropdown?.();
         } catch (error) {
             console.error("Error fetching ships:", error);
         }
@@ -85,7 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch("/companies");
             companies = await response.json();
             populateDropdown(companyFilter, companies, "All Companies");
-            populateEditCompanyDropdown?.();
         } catch (error) {
             console.error("Error fetching companies:", error);
         }
@@ -93,14 +83,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function populateDropdown(selectElement, data, defaultText) {
         if (!selectElement) return;
-
         selectElement.innerHTML = "";
         const defaultOption = document.createElement("option");
         defaultOption.value = "";
         defaultOption.textContent = defaultText;
         defaultOption.selected = true;
         selectElement.appendChild(defaultOption);
-
         data.forEach((item) => {
             const option = document.createElement("option");
             option.value = item.id;
@@ -121,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
         getList();
     });
 
+    //  DATA TABLE 
     async function getList() {
         try {
             loader.style.display = "block";
@@ -142,82 +131,20 @@ document.addEventListener("DOMContentLoaded", () => {
             table.classList.remove("hidden");
 
             let columns = [
-                {
-                    data: 'id',
-                    render: function (data) {
-                        return `
-                        <div class="flex items-center gap-2 justify-center">
-                            <span>${data}</span>
-                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>`;
-                    }
-                },
-                {
-                    data: 'customer_name',
-                    render: function (data) {
-                        return `
-                        <div class="flex items-center gap-2 justify-center">
-                            <span>${data}</span>
-                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>`;
-                    }
-                },
-                {
-                    data: 'customer_mobile',
-                    render: function (data) {
-                        if (!data) return 'N/A';
-                        return `
-                        <div class="flex items-center gap-2">
-                            <span>${data}</span>
-                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>`;
-                    }
-                },
-                {
-                    data: 'whatsapp',
-                    render: function (data) {
-                        if (!data) return 'N/A';
-                        return `
-                        <div class="flex items-center gap-2">
-                            <span>${data}</span>
-                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>`;
-                    }
-                },
-                {
-                    data: null,
-                    render: function (row) {
-                        return row.ship?.name || row.ships?.name || 'Not available';
-                    }
-                }
+                { data: 'id', render: (data) => copyCell(data) },
+                { data: 'customer_name', render: (data) => copyCell(data) },
+                { data: 'customer_mobile', render: (data) => copyCell(data) },
+                { data: 'whatsapp', render: (data) => copyCell(data) },
+                { data: null, render: (row) => escapeHtml(row.ship?.name || row.ships?.name || 'Not available') }
             ];
 
             if (status === 'shipment_id_entered') {
-                columns.push({
-                    data: 'shipment.shipment_id',
-                    render: function (data) {
-                        return data ?? 'Not available';
-                    }
-                });
+                columns.push({ data: 'shipment.shipment_id', render: (data) => escapeHtml(data ?? 'Not available') });
             }
 
             if (status === 'pending') {
-                columns.push({
-                    data: 'received_amount',
-                    render: function (data) {
-                        return data ?? 'Not available';
-                    }
-                });
+                columns.push({ data: 'received_amount', render: (data) => escapeHtml(data ?? 'Not available') });
             }
-
 
             if (status === 'pending') {
                 columns.push({
@@ -225,70 +152,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     title: 'Payment Info',
                     orderable: false,
                     searchable: false,
-                    render: function (payments) {
-
-                        if (!payments || payments.length === 0) {
-                            return '<span class="text-gray-400 text-sm">Not paid yet</span>';
-                        }
-
+                    render: (payments) => {
+                        if (!payments || payments.length === 0) return '<span class="text-gray-400 text-sm">Not paid yet</span>';
                         let html = '<ul class="space-y-1 text-sm">';
-
-                        payments.forEach(payment => {
-                            html += `
-                    <li>
-                        <span class="font-medium">${payment.payment_method}</span>
-                        :
-                        <span class="text-green-600 font-semibold">
-                            ৳${payment.received_amount}
-                        </span>
-                    </li>
-                `;
+                        payments.forEach((payment) => {
+                            html += `<li><span class="font-medium">${escapeHtml(payment.payment_method)}</span> : <span class="text-green-600 font-semibold">${escapeHtml(payment.received_amount)}</span></li>`;
                         });
-
                         html += '</ul>';
-
                         return html;
                     }
                 });
             }
 
             columns.push(
-                {
-                    data: 'remark1',
-                    render: function (data) {
-                        if (!data) return 'N/A';
-                        return `
-                        <div class="flex items-center gap-2">
-                            <span>${data}</span>
-                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>`;
-                    }
-                },
-                {
-                    data: 'remark2',
-                    render: function (data) {
-                        if (!data) return 'N/A';
-                        return `
-                        <div class="flex items-center gap-2">
-                            <span>${data}</span>
-                            <button class="copyBtn text-gray-500 hover:text-blue-950" data-copy="${data}">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>`;
-                    }
-                },
-                {
-                    data: null,
-                    orderable: false,
-                    render: function (data, type, row) {
-                        return createActionButtons(row);
-                    }
-                }
+                { data: 'remark1', render: (data) => copyCell(data) },
+                { data: 'remark2', render: (data) => copyCell(data) },
+                { data: null, orderable: false, render: (data, type, row) => createActionButtons(row) }
             );
-
-
 
             dataTable = $("#salesTable").DataTable({
                 processing: true,
@@ -297,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ajax: {
                     url: `/sales/${status}`,
                     type: 'GET',
-                    data: function (d) {
+                    data: (d) => {
                         d.ship_id = selectedShipId;
                         d.company_id = selectedCompanyId;
                         d.journey_date = selectedJourneyDate;
@@ -307,19 +187,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 dom: "lBfrtip",
                 lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
                 buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
-                drawCallback: function () {
-                    attachEventListeners();
-                }
+                drawCallback: () => attachEventListeners()
             });
 
             dataTableInitialized = true;
-
         } catch (error) {
             console.error("Error initializing DataTable:", error);
             loader.textContent = "Failed to load data.";
         }
     }
-
+    // ACTION BUTTONS 
     function createActionButtons(sale) {
         const verifyByName = sale.verifyby?.length > 0 ? sale.verifyby[0].verified_by_user?.name : 'Unknown';
 
@@ -331,8 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="fas fa-trash text-red-500 px-2 py-1 border border-gray-300 rounded deleteBtn" data-id="${sale.id}" title="Delete"></button>
         `;
 
-        const due = Number(sale.due_amount);
-        if (due > 0) {
+        if (Number(sale.due_amount) > 0) {
             html += `
             <button class="bg-yellow-500 text-black px-2 py-1 rounded dueBtn"
                 data-id="${sale.id}"
@@ -351,148 +227,63 @@ document.addEventListener("DOMContentLoaded", () => {
     function createStatusButton(sale, verifyByName) {
         const printedFiles = sale.grouped_tickets || [];
         const printedCount = printedFiles.length;
+        const escapedVerifyByName = escapeHtml(verifyByName);
+        const printedFileRows = () => {
+            let html = '<div class="flex flex-col gap-2 mt-2">';
+            printedFiles.forEach((file) => {
+                html += `
+            <div class="flex items-center gap-2">
+                <a href="/ship-ticket-sales/${file.sales_id}" target="_blank"
+                   class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-semibold">
+                    ${file.sales_id}
+                </a>
+                <a href="/tickets/open/${sale.id}/${encodeURIComponent(file.filename)}" target="_blank"
+                   class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold"
+                   title="${escapeHtml(file.filename)}">
+                    <i class="fas fa-file-pdf"></i> ${escapeHtml(file.filename)}
+                </a>
+            </div>`;
+            });
+            html += '</div>';
+            return html;
+        };
+        const referenceBy = () => {
+            const groupId = sale.printed_tickets?.[0]?.group_by_id;
+            return groupId ? `<p class="text-sm font-semibold text-gray-700">Reference By ${escapeHtml(groupId)}</p>` : '';
+        };
         const statusButtons = {
-            'pending': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
-                data-id="${sale.id}" data-status="payment-verified" 
-                title="Sold by: ${sale.sold_by}">Verify Payment</button>`,
-            // 'payment-verified': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
-            //     data-id="${sale.id}" data-status="ticket-issued" 
-            //     title="payment-verified by: ${verifyByName}">Ticket Issued</button>`,
+            'pending': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn"
+                data-id="${sale.id}" data-status="payment-verified"
+                title="Sold by: ${escapeHtml(sale.sold_by)}">Verify Payment</button>`,
             'ticket-issued': (() => {
-
-
-
-                let html = '';
-
                 if (printedCount > 0) {
-
-                    html += `
-        <button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
-            data-id="${sale.id}" 
-            data-status="ticket-printed" 
-            title="Ticket Issued by: ${verifyByName}">
+                    return `
+        <button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn"
+            data-id="${sale.id}"
+            data-status="ticket-printed"
+            title="Ticket Issued by: ${escapedVerifyByName}">
             Ticket Printed
-        </button>
-        `;
-
-                    html += `<div class="flex flex-col gap-2 mt-2">`;
-
-                    printedFiles.forEach(file => {
-                        html += `
-            <div class="flex items-center gap-2">
-
-                <a
-                    href="/ship-ticket-sales/${file.sales_id}"
-                    target="_blank"
-                    class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700
-                           text-white px-3 py-1 rounded text-sm font-semibold"
-                    title="View Sale"
-                >
-                    ${file.sales_id}
-                </a>
-
-                <a
-                    href="/tickets/open/${sale.id}/${encodeURIComponent(file.filename)}"
-                    target="_blank"
-                    class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700
-                           text-white px-3 py-1 rounded text-sm font-semibold"
-                    title="${file.filename}"
-                >
-                    <i class="fas fa-file-pdf"></i> ${file.filename}
-                </a>
-
-            </div>
-            `;
-                    });
-
-                    html += `</div>`;
+        </button>` + printedFileRows();
                 }
-                else {
-
-                    const groupId = sale.printed_tickets?.[0]?.group_by_id;
-
-                    if (groupId) {
-                        html += `
-        <p class="text-sm font-semibold text-gray-700">
-           Reference By ${groupId}
-        </p>
-        `;
-                    }
-                }
-
-
-
-                return html;
-
+                return referenceBy();
             })(),
-
-
             'ticket-printed': (() => {
-
-
-
-                let html = '';
-
                 if (printedCount > 0) {
-
-                    html += `
-       <button class="bg-red-500 text-white px-2 py-1 rounded shipmentIdEntryBtn" 
-                data-id="${sale.id}" data-status="shipment_id_entered" 
-                title="ticket-printed by: ${verifyByName}">Add To Parcel</button>
-        `;
-
-                    html += `<div class="flex flex-col gap-2 mt-2">`;
-
-                    printedFiles.forEach(file => {
-                        html += `
-            <div class="flex items-center gap-2">
-
-                <a
-                    href="/ship-ticket-sales/${file.sales_id}"
-                    target="_blank"
-                    class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700
-                           text-white px-3 py-1 rounded text-sm font-semibold"
-                    title="View Sale"
-                >
-                    ${file.sales_id}
-                </a>
-
-                
-
-            </div>
-            `;
-                    });
-
-                    html += `</div>`;
+                    return `
+        <button class="bg-red-500 text-white px-2 py-1 rounded shipmentIdEntryBtn"
+            data-id="${sale.id}" data-status="shipment_id_entered"
+            title="ticket-printed by: ${escapedVerifyByName}">Add To Parcel</button>` + printedFileRows();
                 }
-                else {
-
-                    const groupId = sale.printed_tickets?.[0]?.group_by_id;
-
-                    if (groupId) {
-                        html += `
-        <p class="text-sm font-semibold text-gray-700">
-           Reference By ${groupId}
-        </p>
-        `;
-                    }
-                }
-
-
-
-                return html;
-
+                return referenceBy();
             })(),
-
-            'shipment_id_entered': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn" 
-                data-id="${sale.id}" data-status="shipped" 
-                title="shipment_id_entered by: ${verifyByName}">Shipped</button>`
+            'shipment_id_entered': `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn"
+                data-id="${sale.id}" data-status="shipped"
+                title="shipment_id_entered by: ${escapedVerifyByName}">Shipped</button>`
         };
         return statusButtons[sale.status] || '';
     }
-
+    //  EVENT LISTENERS 
     function attachEventListeners() {
-        // Verify buttons
         document.querySelectorAll(".verifyBtn").forEach((btn) => {
             btn.addEventListener("click", () => varifySale(btn, getList));
         });
@@ -501,17 +292,14 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.addEventListener("click", () => deleteSale(btn, getList));
         });
 
-        // Shipment ID buttons
         document.querySelectorAll(".shipmentIdEntryBtn").forEach((btn) => {
             btn.addEventListener("click", () => varifyShipment(btn, getList));
         });
 
-        // Due buttons
         document.querySelectorAll(".dueBtn").forEach((btn) => {
             btn.addEventListener("click", () => due(btn, getList));
         });
 
-        // Copy buttons
         document.querySelectorAll(".copyBtn").forEach((btn) => {
             btn.addEventListener("click", (e) => {
                 e.stopPropagation();
@@ -519,51 +307,26 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        // Print buttons
-        // document.querySelectorAll(".printBtn").forEach((btn) => {
-        //     btn.addEventListener("click", () => {
-        //         const saleId = btn.dataset.id;
-        //         if (!saleId) return;
-
-        //         // Use your Laravel route
-        //         const pdfUrl = `/print-pdf/${saleId}`;
-
-        //         // Open PDF in a new tab
-        //         window.open(pdfUrl, "_blank");
-        //     });
-        // });
-
         document.querySelectorAll(".printBtn").forEach((btn) => {
             btn.addEventListener("click", () => {
                 const saleId = btn.dataset.id;
                 if (!saleId) return;
-
-                const pdfUrl = `/print-pdf/${saleId}`; // your Laravel route
-
-                // Create a hidden iframe
                 const iframe = document.createElement("iframe");
                 iframe.style.display = "none";
-                iframe.src = pdfUrl;
-
+                iframe.src = `/print-pdf/${saleId}`;
                 document.body.appendChild(iframe);
-
                 iframe.onload = () => {
                     iframe.contentWindow.focus();
                     iframe.contentWindow.print();
-                    // Optional: remove iframe after printing
                     setTimeout(() => iframe.remove(), 1000);
                 };
             });
         });
-
-
-
     }
 
+    //  INIT 
     async function initializePage() {
-        initializeModalEvents();
         await fetchShips();
-
         await fetchCompanies();
         getList();
     }

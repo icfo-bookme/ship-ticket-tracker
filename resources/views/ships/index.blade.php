@@ -39,6 +39,15 @@
     const salesBody = document.getElementById('shipsBody');
     let dataTableInitialized = false;
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     async function getList() {
         try {
             loader.style.display = 'block';
@@ -58,14 +67,14 @@
 
                 tr.innerHTML = `
                     <td class="border border-gray-300 px-4 py-2">${sale.id}</td>
-                    <td class="border border-gray-300 px-4 py-2">${sale.name}</td>
-                    <td class="border border-gray-300 px-4 py-2">${sale.route}</td>
+                    <td class="border border-gray-300 px-4 py-2">${escapeHtml(sale.name)}</td>
+                    <td class="border border-gray-300 px-4 py-2">${escapeHtml(sale.route)}</td>
                     <td class="border border-gray-300 px-4 py-2">${status}</td>
                     <td class="border border-gray-300 px-4 py-2">
                         <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" 
                             data-id="${sale.id}" 
-                            data-name="${sale.name}" 
-                            data-route="${sale.route}" 
+                            data-name="${escapeHtml(sale.name)}" 
+                            data-route="${escapeHtml(sale.route)}" 
                             data-status="${sale.status}">
                             Edit  
                         </button>
@@ -74,7 +83,7 @@
                             Delete  
                         </button>
                         <a href="/ship/packages/${sale.id}" class="bg-blue-500 text-white px-2 py-2 rounded addPackagesBtn">
-                Add Packages
+                Packages
             </a>
                     </td>
                 `;

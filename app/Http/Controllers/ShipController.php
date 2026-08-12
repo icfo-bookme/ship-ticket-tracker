@@ -7,40 +7,37 @@ use Illuminate\Http\Request;
 
 class ShipController extends Controller
 {
-
-     public function showTableList()
+    public function showTableList()
     {
-        return view('ships.componentItem');  
+        return view('ships.componentItem');
     }
+
     public function index()
     {
-        $ships = Ship::all();
-        return response()->json($ships);  
+        return response()->json(Ship::all());
     }
 
     public function create()
     {
-        return response()->json(['message' => 'Provide ship data to create'], 200);
+        return response()->json(['message' => 'Provide ship data to create.'], 200);
     }
 
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'route' => 'required|string|max:255',
-        'status' => 'required|string',
-    ]);
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'route' => 'required|string|max:255',
+            'status' => 'required|string',
+        ]);
 
-    $ship = new Ship($validated);
-    $ship->save();
+        $ship = Ship::create($validated);
 
-    return response()->json($ship, 201); 
-}
-
+        return response()->json($ship, 201);
+    }
 
     public function show(Ship $ship)
     {
-        return response()->json($ship);  
+        return response()->json($ship);
     }
 
     public function edit(Ship $ship)
@@ -48,32 +45,30 @@ class ShipController extends Controller
         return response()->json($ship);
     }
 
-
     public function update(Request $request, Ship $ship)
     {
-
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'route' => 'required|string|max:255',
+            'status' => 'required',
         ]);
 
-        $ship->update($request->all());
+        $ship->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Ship updated successfully',
-            'data' => $ship
-        ], 200);  
+            'message' => 'Ship updated successfully.',
+            'data' => $ship,
+        ], 200);
     }
 
-   
     public function destroy(Ship $ship)
     {
         $ship->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Ship deleted successfully',
-        ], 200);  
+            'message' => 'Ship deleted successfully.',
+        ], 200);
     }
 }

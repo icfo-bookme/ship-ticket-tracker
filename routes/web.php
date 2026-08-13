@@ -52,12 +52,7 @@ Route::middleware('auth')->group(function () {
         ->name('sales.index');
     Route::put('/sales/status/{id}', [ShipTicketSaleController::class, 'update']);
 
-    // Verification (Google Drive)
-    Route::get('/gdrive/verify', [ShipTicketSaleController::class, 'printedCS'])->name('gdrive.verify');
-    Route::get('/gdrive/re-verify/{id}', [ShipTicketSaleController::class, 'reprintedCS'])->name('gdrive.reverify');
     Route::put('/sale/verify/{id}/{status}', [ShipTicketSaleController::class, 'verify']);
-    Route::get('/printed/sales', [ShipTicketSaleController::class, 'printedCS'])->name('printed_ticket_sales.verify');
-    Route::post('/upload-pdf', [ShipTicketSaleController::class, 'upload'])->name('pdf.upload');
 
     // Printing / PDF
     Route::get('/print-all-ids', [ShipTicketSaleController::class, 'pdfPrintAll']);

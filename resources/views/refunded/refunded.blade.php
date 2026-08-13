@@ -1,3 +1,4 @@
+
 <div class="py-6">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
         <div id="statusFilter" data-status="{{ "refunded" }}" class="hidden"></div>
@@ -38,7 +39,7 @@
         </div>
 
         <!-- Loader -->
-        <div id="loader" class="text-center my-4">
+        <div id="loader" class="text-center my-4 min-h-[100vh]">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p class="mt-2 text-gray-600">Loading data...</p>
         </div>

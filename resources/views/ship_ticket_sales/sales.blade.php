@@ -4,13 +4,6 @@
              <h2 class="font-semibold text-xl text-gray-800  leading-tight">
                  Ship Ticket Sales ({{ $status }} )
              </h2>
-             @if ($status === 'payment-verified' || $status === 'ticket-issued')
-                 <button onclick="window.location.href='{{ route('printed_ticket_sales.verify') }}'"
-                     class="mt-4 px-4 py-2 bg-blue-950 text-white rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                     Verify Printed Tickets
-                 </button>
-             @endif
-
          </div>
          @if (session('success'))
              <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
@@ -55,7 +48,7 @@
          </div>
 
          <!-- Loader -->
-         <div id="loader" class="text-center my-4">
+         <div id="loader" class="text-center my-4 min-h-[100vh]">
              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
              <p class="mt-2 text-gray-600">Loading data...</p>
          </div>

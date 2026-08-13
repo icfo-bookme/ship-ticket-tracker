@@ -617,7 +617,7 @@ class ShipTicketSaleController extends Controller
             $this->updatePayments($sale, $validated['payments'] ?? []);
             $this->updateCoPassengers($sale, $validated['co_passengers'] ?? []);
 
-            // ✅ Commit first
+            // âœ… Commit first
             DB::commit();
 
             if ($request->status === 'payment-verified') {
@@ -919,214 +919,6 @@ class ShipTicketSaleController extends Controller
         return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
     }
 
-    public function printedCS(Request $request)
-    {
-        $nextId = $request->query('next_id', null);
-
-        // Google Drive client setup
-        $client = new \Google\Client;
-        $client->setAuthConfig(storage_path('app/google/service-account.json'));
-        $client->addScope(\Google_Service_Drive::DRIVE_READONLY);
-
-        $driveService = new \Google_Service_Drive($client);
-        $folderId = '1Kw6lNhhch4H0SbXrNNNRWp_4mTEGvvCv';
-
-        // ✅ Get last stored PDF time from DB
-        $lastStoredPdf = PrintedTicket::orderBy('created_at', 'desc')->first();
-        $lastStoredTime = $lastStoredPdf ? $lastStoredPdf->created_at->setTimezone('UTC')->toRfc3339String() : null;
-
-        // Get all payment-verified sales
-        $sales = ShipTicketSale::where('status', 'payment-verified')
-            ->get(['id', 'whatsapp']);
-
-        if ($sales->isEmpty()) {
-            return back()->with('success', 'No verified tickets found.');
-        }
-
-        $salesByWhatsapp = $sales->pluck('id', 'whatsapp')->toArray();
-
-        $updatedIds = [];
-        $insertData = [];
-
-        // 🔁 Retry loop for 5 times in case files not appear instantly
-        for ($i = 0; $i < 5; $i++) {
-            sleep(2); // wait 2 seconds between retries
-
-            $query = "'{$folderId}' in parents and mimeType='application/pdf' and trashed=false";
-            if ($lastStoredTime) {
-                $query .= " and createdTime > '{$lastStoredTime}'";
-            }
-
-            $files = $driveService->files->listFiles([
-                'q' => $query,
-                'fields' => 'files(name, createdTime)',
-                'pageSize' => 1000,
-            ]);
-
-            $pdfNames = collect($files->getFiles())->pluck('name')->toArray();
-
-            // Match PDF names with whatsapp numbers
-            foreach ($pdfNames as $pdfName) {
-                foreach ($salesByWhatsapp as $whatsapp => $saleId) {
-                    if (str_contains($pdfName, (string) $whatsapp)) {
-
-                        if (! PrintedTicket::where('filename', $pdfName)->exists()) {
-                            $updatedIds[$saleId] = true;
-
-                            $insertData[] = [
-                                'sales_id' => $saleId,
-                                'filename' => $pdfName,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ];
-                        }
-                    }
-                }
-            }
-
-            if (! empty($updatedIds)) {
-                break; // exit retry loop if found
-            }
-        }
-
-        // ✅ DB transaction to update sale status and insert new PDFs
-        DB::transaction(function () use ($updatedIds, $insertData) {
-            if (! empty($updatedIds)) {
-                ShipTicketSale::whereIn('id', array_keys($updatedIds))
-                    ->update(['status' => 'ticket-issued']);
-            }
-
-            if (! empty($insertData)) {
-                PrintedTicket::insert($insertData);
-            }
-        });
-
-        // Redirect or back with success message
-        if ($nextId) {
-            return redirect()->route('ship-ticket-sales.show', ['ship_ticket_sale' => $nextId])->with(
-                'success',
-                count($updatedIds).' ticket(s) verified successfully.'
-            );
-        } else {
-            return back()->with(
-                'success',
-                count($updatedIds).' ticket(s) verified successfully.'
-            );
-        }
-    }
-
-    public function reprintedCS(Request $request, $id)
-    {
-        $nextId = $request->query('next_id', null);
-
-        // Google Drive client setup
-        $client = new \Google\Client;
-        $client->setAuthConfig(storage_path('app/google/service-account.json'));
-        $client->addScope(\Google_Service_Drive::DRIVE_READONLY);
-
-        $driveService = new \Google_Service_Drive($client);
-        $folderId = '1Kw6lNhhch4H0SbXrNNNRWp_4mTEGvvCv';
-
-        // ✅ Get last stored PDF time from DB
-        $lastStoredPdf = PrintedTicket::orderBy('created_at', 'desc')->first();
-        $lastStoredTime = $lastStoredPdf ? $lastStoredPdf->created_at->setTimezone('UTC')->toRfc3339String() : null;
-
-        // Get the single sale
-        $sale = ShipTicketSale::find($id);
-
-        if (! $sale) {
-            return back()->with('error', 'No verified ticket found.');
-        }
-
-        // Make whatsapp lookup array
-        $salesByWhatsapp = [$sale->whatsapp => $sale->id];
-
-        $updatedIds = [];
-        $insertData = [];
-
-        // 🔁 Retry loop for 5 times
-        for ($i = 0; $i < 5; $i++) {
-            sleep(2); // wait 2 seconds between retries
-
-            $query = "'{$folderId}' in parents and mimeType='application/pdf' and trashed=false";
-            if ($lastStoredTime) {
-                $query .= " and createdTime > '{$lastStoredTime}'";
-            }
-
-            $files = $driveService->files->listFiles([
-                'q' => $query,
-                'fields' => 'files(name, createdTime)',
-                'pageSize' => 1000,
-            ]);
-
-            $pdfNames = collect($files->getFiles())->pluck('name')->toArray();
-
-            // Match PDF names with whatsapp number
-            foreach ($pdfNames as $pdfName) {
-                foreach ($salesByWhatsapp as $whatsapp => $saleId) {
-                    if (str_contains($pdfName, (string) $whatsapp)) {
-                        // Avoid duplicate insertion
-                        if (! PrintedTicket::where('filename', $pdfName)->exists()) {
-                            $updatedIds[$saleId] = true;
-
-                            $insertData[] = [
-                                'sales_id' => $saleId,
-                                'filename' => $pdfName,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ];
-                        }
-                    }
-                }
-            }
-
-            if (! empty($updatedIds)) {
-                break; // exit retry loop if found
-            }
-        }
-
-        // ✅ DB transaction to update sale status and insert new PDFs
-        DB::transaction(function () use ($updatedIds, $insertData) {
-            if (! empty($updatedIds)) {
-                ShipTicketSale::whereIn('id', array_keys($updatedIds))
-                    ->update(['status' => 'ticket-issued']);
-            }
-
-            if (! empty($insertData)) {
-                PrintedTicket::insert($insertData);
-            }
-        });
-
-        // Redirect or back with success message
-        if ($nextId) {
-            return redirect()->route('ship-ticket-sales.show', ['ship_ticket_sale' => $nextId])
-                ->with('success', count($updatedIds).' ticket(s) verified successfully.');
-        } else {
-            return back()->with('success', count($updatedIds).' ticket(s) verified successfully.');
-        }
-    }
-
-    public function upload(Request $request)
-    {
-        $request->validate([
-            'pdfs' => 'required|array',
-            'pdfs.*' => 'required|mimes:pdf|max:10240',
-        ]);
-
-        $uploadedFiles = [];
-
-        foreach ($request->file('pdfs') as $pdf) {
-            $filename = time().'_'.uniqid().'.'.$pdf->getClientOriginalExtension();
-
-            $path = $pdf->storeAs('uploads/pdfs', $filename, 'public');
-
-            $uploadedFiles[] = $path;
-        }
-        $this->printedCS();
-
-        return back()->with('success', 'PDF files uploaded successfully.');
-    }
-
     public function pdfDownload($id)
     {
         $client = new Client;
@@ -1138,7 +930,7 @@ class ShipTicketSaleController extends Controller
         $folderId = '1Kw6lNhhch4H0SbXrNNNRWp_4mTEGvvCv';
         $fileName = $id.'.pdf';
 
-        // 1️⃣ Find file in Drive
+        // 1ï¸âƒ£ Find file in Drive
         $query = "name='{$fileName}' and '{$folderId}' in parents and trashed=false";
         $files = $driveService->files->listFiles([
             'q' => $query,
@@ -1152,7 +944,7 @@ class ShipTicketSaleController extends Controller
 
         $fileId = $files->getFiles()[0]->getId();
 
-        // 2️⃣ Stream PDF directly to browser
+        // 2ï¸âƒ£ Stream PDF directly to browser
         $response = $driveService->files->get($fileId, ['alt' => 'media']);
 
         return response()->stream(

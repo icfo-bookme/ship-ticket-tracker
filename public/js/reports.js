@@ -4,13 +4,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const salesBody = document.getElementById("salesBody");
     const shipFilter = document.getElementById("shipFilter");
     const companyFilter = document.getElementById("companyFilter");
-    const journeyDateFilter = document.getElementById("journeyDateFilter");
     const returnDateFilter = document.getElementById("returnDateFilter");
     const clearFiltersBtn = document.getElementById("clearFilters");
     const paymentMethodFilter = document.getElementById("payment_method");
     const startDateFilter = document.getElementById("startDate");
     const endDateFilter = document.getElementById("endDate");
-    const createdDateFilter = document.getElementById("createdDateFilter");
     const startCreateDateFilter = document.getElementById("startCreateDate");
     const endCreateDateFilter = document.getElementById("endCreateDate");
     const totalElements = {
@@ -20,7 +18,17 @@ document.addEventListener("DOMContentLoaded", () => {
         total_payable: document.getElementById("totalSold"),
         total_refunded_tickets: document.getElementById("totalRefundedTickets"),
         total_refunded_amount: document.getElementById("totalRefundedAmount"),
+        total_received_amount: document.getElementById("totalReceivedAmount"),
+        total_due_amount: document.getElementById("totalDueAmount"),
+        net_sales_amount: document.getElementById("netSalesAmount"),
     };
+
+    // Endpoint config injected from Blade (falls back to hardcoded values if not present)
+    const cfg = window.salesReportsConfig || {};
+    const DATA_URL = cfg.dataUrl || "/reports";
+    const SHIPS_URL = cfg.shipsUrl || "/ships";
+    const COMPANIES_URL = cfg.companiesUrl || "/companies";
+    const EDIT_URL_PREFIX = cfg.editUrlPrefix || "/ship-ticket-sales";
 
     let dataTable = null;
 
@@ -62,12 +70,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return [
             shipFilter,
             companyFilter,
-            journeyDateFilter,
             returnDateFilter,
             paymentMethodFilter,
             startDateFilter,
             endDateFilter,
-            createdDateFilter,
             startCreateDateFilter,
             endCreateDateFilter,
         ];
@@ -77,12 +83,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
             ship_id: shipFilter?.value || "",
             company_id: companyFilter?.value || "",
-            journey_date: journeyDateFilter?.value || "",
             return_date: returnDateFilter?.value || "",
             payment_method: paymentMethodFilter?.value || "",
             start_date: startDateFilter?.value || "",
             end_date: endDateFilter?.value || "",
-            created_date: createdDateFilter?.value || "",
             start_create_date: startCreateDateFilter?.value || "",
             end_create_date: endCreateDateFilter?.value || "",
         };
@@ -118,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
             serverSide: true,
             ordering: false,
             ajax: {
-                url: "/reports",
+                url: DATA_URL,
                 type: "GET",
                 data: (request) => {
                     Object.entries(getFilters()).forEach(([key, value]) => {
@@ -187,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return `
             <div class="flex gap-2 items-center justify-center">
-                <a href="/ship-ticket-sales/${row.id}">
+                <a href="${EDIT_URL_PREFIX}/${row.id}">
                     <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
                 </a>
             </div>`;
@@ -207,8 +211,8 @@ document.addEventListener("DOMContentLoaded", () => {
     async function initializePage() {
         bindEvents();
         await Promise.all([
-            loadDropdown("/ships", shipFilter, "All Ships"),
-            loadDropdown("/companies", companyFilter, "All Companies"),
+            loadDropdown(SHIPS_URL, shipFilter, "All Ships"),
+            loadDropdown(COMPANIES_URL, companyFilter, "All Companies"),
         ]);
         initDataTable();
     }

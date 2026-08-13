@@ -3,7 +3,7 @@
         <div id="statusFilter" data-status="shipped" class="hidden"></div>
         <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800  leading-tight">
-                Ship Ticket Sales
+                Sales Reports
             </h2>
             <div class="flex items-end">
                 <button id="clearFilters"
@@ -63,23 +63,9 @@
             </div>
 
             <!-- Journey Date Filter -->
-            <div class=" flex-col hidden">
-                <label for="journeyDateFilter" class="text-sm font-semibold text-gray-700 mb-1">Journey Date</label>
-                <input type="date" id="journeyDateFilter"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-            </div>
-
             <div class="flex flex-col">
                 <label for="returnDateFilter" class="text-sm font-semibold text-gray-700 mb-1">Return Date</label>
                 <input type="date" id="returnDateFilter"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-            </div>
-
-            <div class="hidden flex-col">
-                <label for="createdDateFilter" class="text-sm font-semibold text-gray-700 mb-1">
-                    Created Date
-                </label>
-                <input type="date" id="createdDateFilter"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
             </div>
 
@@ -170,7 +156,7 @@
             <div
                 class="bg-green-500 dark:bg-gray-800 shadow-md rounded-lg p-6 flex items-center justify-between border border-gray-200 dark:border-gray-700">
                 <div>
-                    <p class="text-sm font-medium text-white dark:text-gray-400">Total Sold</p>
+                    <p class="text-sm font-medium text-white dark:text-gray-400">Total Payable</p>
                     <p id="totalSold" class="text-2xl font-bold text-white dark:text-blue-400">0</p>
                 </div>
                 <div class="text-blue-200 dark:text-blue-600 text-3xl">
@@ -199,9 +185,47 @@
                     <!-- Optional icon -->
                 </div>
             </div>
+
+            <!-- Total Received Amount -->
+            <div
+                class="bg-indigo-500 dark:bg-gray-800 shadow-md rounded-lg p-6 flex items-center justify-between border border-gray-200 dark:border-gray-700">
+                <div>
+                    <p class="text-sm font-medium text-white dark:text-gray-400">Total Received Amount</p>
+                    <p id="totalReceivedAmount" class="text-2xl font-bold text-white dark:text-blue-400">0</p>
+                </div>
+                <div class="text-blue-200 dark:text-blue-600 text-3xl"></div>
+            </div>
+
+            <!-- Total Due Amount -->
+            <div
+                class="bg-yellow-600 dark:bg-gray-800 shadow-md rounded-lg p-6 flex items-center justify-between border border-gray-200 dark:border-gray-700">
+                <div>
+                    <p class="text-sm font-medium text-white dark:text-gray-400">Total Due Amount</p>
+                    <p id="totalDueAmount" class="text-2xl font-bold text-white dark:text-blue-400">0</p>
+                </div>
+                <div class="text-blue-200 dark:text-blue-600 text-3xl"></div>
+            </div>
+
+            <!-- Net Sales Amount -->
+            <div
+                class="bg-teal-600 dark:bg-gray-800 shadow-md rounded-lg p-6 flex items-center justify-between border border-gray-200 dark:border-gray-700">
+                <div>
+                    <p class="text-sm font-medium text-white dark:text-gray-400">Net Sales Amount</p>
+                    <p id="netSalesAmount" class="text-2xl font-bold text-white dark:text-blue-400">0</p>
+                </div>
+                <div class="text-blue-200 dark:text-blue-600 text-3xl"></div>
+            </div>
         </div>
     </div>
 </div>
 
 
+<script>
+    window.salesReportsConfig = {
+        dataUrl: @json(route('reports.data')),
+        shipsUrl: @json(route('ships.index')),
+        companiesUrl: @json(route('companies.index')),
+        editUrlPrefix: @json(url('ship-ticket-sales')),
+    };
+</script>
 <script src="{{ asset('js/reports.js') }}"></script>

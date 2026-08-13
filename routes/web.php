@@ -84,9 +84,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/ship-packages/{id}', [ShipPackageController::class, 'update']);
     Route::delete('/ship-packages/{id}', [ShipPackageController::class, 'destroy']);
 
-    // REPORTS
-    Route::get('/admin/sales-reports', [ReportController::class, 'index']);
-    Route::get('/reports', [ReportController::class, 'reports']);
+    // REPORTS (role gate to be added later with the roles system)
+    Route::get('/admin/sales-reports', [ReportController::class, 'index'])->name('sales.reports');
+    Route::get('/reports', [ReportController::class, 'reports'])->name('reports.data');
 
     // PAYMENTS
     Route::post('/partial/paid/{id}', [PaymentController::class, 'partial_due_payment']);

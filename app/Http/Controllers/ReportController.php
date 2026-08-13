@@ -27,14 +27,14 @@ class ReportController extends Controller
         $end_create_date = $request->input('end_create_date');
 
         // DataTables parameters
-        $start = $request->input('start', 0);
-        $length = $request->input('length', 10);
+        $start = max(0, (int) $request->input('start', 0));
+        $length = min(100, max(1, (int) $request->input('length', 10)));
         $searchValue = $request->input('search.value', '');
         $draw = $request->input('draw', 1);
         $orderColumn = $request->input('order.0.column', 0);
         $orderDirection = $request->input('order.0.dir', 'asc');
 
-        $query = ShipTicketSale::with(['ships', 'companies', 'refund', 'payments'])
+        $query = ShipTicketSale::with(['ships', 'companies', 'refund'])
             ->where('status', '!=', 'pending');
 
         // Apply filters
@@ -43,9 +43,7 @@ class ReportController extends Controller
         if (!empty($journeyDate)) $query->whereDate('journey_date', $journeyDate);
         if (!empty($returnDate)) $query->whereDate('return_date', $returnDate);
         if (!empty($createdDate)) $query->whereDate('created_at', $createdDate);
-        if (!empty($paymentMethod)) $query->whereHas('payments', function ($q) use ($paymentMethod) {
-            $q->where('payment_method', $paymentMethod);
-        });
+        if (!empty($paymentMethod)) $query->where('payment_method', $paymentMethod);
         if (!empty($startDate)) $query->whereDate('journey_date', '>=', $startDate);
         if (!empty($endDate)) $query->whereDate('journey_date', '<=', $endDate);
         if (!empty($start_create_date)) $query->whereDate('created_at', '>=', $start_create_date);
@@ -112,43 +110,44 @@ class ReportController extends Controller
             ->take($length)
             ->get();
 
-        // Calculate totals for all filtered records (not just current page)
-        $totalsQuery = ShipTicketSale::with(['refund'])
-            ->where('status', '!=', 'pending');
+        // Calculate totals for all filtered records using SQL aggregates (not loading every row).
+        $totalsQuery = ShipTicketSale::query()
+            ->where('ship_ticket_sales.status', '!=', 'pending')
+            ->leftJoin('refunds', 'refunds.sales_id', '=', 'ship_ticket_sales.id');
 
-        // Reapply the same filters for accurate totals
-        if (!empty($shipId)) $totalsQuery->where('ship_id', $shipId);
-        if (!empty($companyId)) $totalsQuery->where('company_id', $companyId);
-        if (!empty($journeyDate)) $totalsQuery->whereDate('journey_date', $journeyDate);
-        if (!empty($returnDate)) $totalsQuery->whereDate('return_date', $returnDate);
-        if (!empty($createdDate)) $totalsQuery->whereDate('created_at', $createdDate);
-        if (!empty($paymentMethod)) $totalsQuery->where('payment_method', $paymentMethod);
-        if (!empty($startDate)) $totalsQuery->whereDate('journey_date', '>=', $startDate);
-        if (!empty($endDate)) $totalsQuery->whereDate('journey_date', '<=', $endDate);
-        if (!empty($start_create_date)) $totalsQuery->whereDate('created_at', '>=', $start_create_date);
-        if (!empty($end_create_date)) $totalsQuery->whereDate('created_at', '<=', $end_create_date);
+        // Reapply the same filters for accurate totals (all qualified to ship_ticket_sales to avoid ambiguity)
+        if (!empty($shipId)) $totalsQuery->where('ship_ticket_sales.ship_id', $shipId);
+        if (!empty($companyId)) $totalsQuery->where('ship_ticket_sales.company_id', $companyId);
+        if (!empty($journeyDate)) $totalsQuery->whereDate('ship_ticket_sales.journey_date', $journeyDate);
+        if (!empty($returnDate)) $totalsQuery->whereDate('ship_ticket_sales.return_date', $returnDate);
+        if (!empty($createdDate)) $totalsQuery->whereDate('ship_ticket_sales.created_at', $createdDate);
+        if (!empty($paymentMethod)) $totalsQuery->where('ship_ticket_sales.payment_method', $paymentMethod);
+        if (!empty($startDate)) $totalsQuery->whereDate('ship_ticket_sales.journey_date', '>=', $startDate);
+        if (!empty($endDate)) $totalsQuery->whereDate('ship_ticket_sales.journey_date', '<=', $endDate);
+        if (!empty($start_create_date)) $totalsQuery->whereDate('ship_ticket_sales.created_at', '>=', $start_create_date);
+        if (!empty($end_create_date)) $totalsQuery->whereDate('ship_ticket_sales.created_at', '<=', $end_create_date);
 
-        $allFilteredSales = $totalsQuery->get();
+        $totals = (clone $totalsQuery)
+            ->selectRaw('
+                COALESCE(SUM(ship_ticket_sales.number_of_ticket), 0) AS total_number_of_tickets,
+                COALESCE(SUM(ship_ticket_sales.ticket_fee), 0)      AS total_ticket_fee,
+                COALESCE(SUM(ship_ticket_sales.other_fee), 0)       AS total_other_fee,
+                COALESCE(SUM(ship_ticket_sales.total_payable), 0)   AS total_payable,
+                COALESCE(SUM(ship_ticket_sales.received_amount), 0) AS total_received_amount,
+                COALESCE(SUM(ship_ticket_sales.due_amount), 0)      AS total_due_amount,
+                COALESCE(SUM(refunds.refunded_number_of_tickets), 0) AS total_refunded_tickets,
+                COALESCE(SUM(refunds.refunded_amount), 0)            AS total_refunded_amount
+            ')
+            ->first();
 
-        $totalNumberOfTickets = $allFilteredSales->sum('number_of_ticket');
-        $totalTicketFee      = $allFilteredSales->sum('ticket_fee');
-        $totalOtherFee       = $allFilteredSales->sum('other_fee');
-        $totalPayable        = $allFilteredSales->sum('total_payable');
-        $totalReceivedAmount = $allFilteredSales->sum('received_amount');
-        $totalDueAmount      = $allFilteredSales->sum('due_amount');
-        
-        // Calculate total sales amount (this was missing in your code)
-        $totalSalesAmount = $allFilteredSales->sum('total_amount');
-
-        $totalRefundedTickets = 0;
-        $totalRefundedAmount  = 0;
-
-        foreach ($allFilteredSales as $sale) {
-            if ($sale->refund) {
-                $totalRefundedTickets += (int) $sale->refund->refunded_number_of_tickets;
-                $totalRefundedAmount  += (float) $sale->refund->refunded_amount;
-            }
-        }
+        $totalNumberOfTickets = $totals->total_number_of_tickets;
+        $totalTicketFee      = $totals->total_ticket_fee;
+        $totalOtherFee       = $totals->total_other_fee;
+        $totalPayable        = $totals->total_payable;
+        $totalReceivedAmount = $totals->total_received_amount;
+        $totalDueAmount      = $totals->total_due_amount;
+        $totalRefundedTickets = $totals->total_refunded_tickets;
+        $totalRefundedAmount  = $totals->total_refunded_amount;
 
         $netSalesAmount = $totalReceivedAmount - $totalRefundedAmount;
 
@@ -179,12 +178,10 @@ class ReportController extends Controller
                 'number_of_ticket' => $sale->number_of_ticket,
                 'ticket_fee' => $sale->ticket_fee,
                 'received_amount' => $sale->received_amount,
-                'total_amount' => $sale->total_amount,
                 'other_fee' => $sale->other_fee,
                 'total_payable' => $sale->total_payable,
                 'due_amount' => $sale->due_amount,
-                'refunded_number_of_tickets' => $sale->refund->refunded_number_of_tickets ?? 0,
-                'refunded_amount' => $sale->refund->refunded_amount ?? 0,
+                'refunded_number_of_tickets' => $refundedTickets,
                 'status' => $sale->status,
                 'payment_method' => $sale->payment_method,
                 'created_at' => $sale->created_at,
@@ -210,7 +207,6 @@ class ReportController extends Controller
                 'total_refunded_amount'   => number_format($totalRefundedAmount, 2),
                 'total_due_amount'        => number_format($totalDueAmount, 2),
                 'net_sales_amount'        => number_format($netSalesAmount, 2),
-                'total_sales_amount'      => number_format($totalSalesAmount, 2),
             ]
 
         ], 200);
@@ -234,7 +230,6 @@ class ReportController extends Controller
                 'total_refunded_amount'   => '0.00',
                 'total_due_amount'        => '0.00',
                 'net_sales_amount'        => '0.00',
-                'total_sales_amount'      => '0.00',
             ],
             'error' => 'An error occurred while generating the report.'
         ], 500);

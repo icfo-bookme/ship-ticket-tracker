@@ -16,9 +16,9 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet">
 
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.0/css/buttons.dataTables.min.css">
+    <!-- DataTables CSS (self-hosted) -->
+    <link rel="stylesheet" href="{{ asset('vendor/datatables/css/jquery.dataTables.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/datatables/css/buttons.dataTables.min.css') }}">
 
     <!-- Flowbite -->
     <link href="https://cdn.jsdelivr.net/npm/flowbite@1.6.5/dist/flowbite.min.css" rel="stylesheet">
@@ -92,18 +92,18 @@
         });
     </script>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- jQuery (self-hosted) -->
+    <script src="{{ asset('vendor/jquery/jquery-3.6.0.min.js') }}"></script>
 
-    <!-- DataTables -->
-    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.3.0/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.3.0/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.3.0/js/buttons.print.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.3.0/js/buttons.colVis.min.js"></script>
+    <!-- DataTables (self-hosted) -->
+    <script src="{{ asset('vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('vendor/datatables/js/dataTables.buttons.min.js') }}"></script>
+    <script src="{{ asset('vendor/jszip/jszip.min.js') }}"></script>
+    <script src="{{ asset('vendor/pdfmake/pdfmake.min.js') }}"></script>
+    <script src="{{ asset('vendor/pdfmake/vfs_fonts.js') }}"></script>
+    <script src="{{ asset('vendor/datatables/js/buttons.html5.min.js') }}"></script>
+    <script src="{{ asset('vendor/datatables/js/buttons.print.min.js') }}"></script>
+    <script src="{{ asset('vendor/datatables/js/buttons.colVis.min.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>

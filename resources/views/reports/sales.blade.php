@@ -1,7 +1,7 @@
 <div class="py-6">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
         <div id="statusFilter" data-status="shipped" class="hidden"></div>
-        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 max-w-[92%]">
             <h2 class="font-semibold text-xl text-gray-800  leading-tight">
                 Sales Reports
             </h2>
@@ -13,7 +13,7 @@
             </div>
         </div>
 
-        <div class="mt-6 mb-6 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
+        <div class="mt-6 mb-6 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 max-w-[92%]">
 
             <!-- Ship Filter -->
             <div class="flex flex-col">
@@ -118,7 +118,7 @@
             </table>
         </div>
 
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-6 max-w-[92%]">
 
             <div
                 class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 flex items-center justify-between border border-gray-200 dark:border-gray-700">

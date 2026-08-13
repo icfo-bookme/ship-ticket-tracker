@@ -34,7 +34,7 @@ class ReportController extends Controller
         $orderColumn = $request->input('order.0.column', 0);
         $orderDirection = $request->input('order.0.dir', 'asc');
 
-        $query = ShipTicketSale::with(['ships', 'companies', 'refund'])
+        $query = ShipTicketSale::with(['ships', 'companies', 'refund', 'payments'])
             ->where('status', '!=', 'pending');
 
         // Apply filters
@@ -193,7 +193,8 @@ class ReportController extends Controller
                 'due_amount' => $sale->due_amount,
                 'refunded_number_of_tickets' => $refundedTickets,
                 'status' => $sale->status,
-                'payment_method' => $sale->payment_method,
+                'payment_method' => $sale->payment_method
+                    ?: ($sale->payments->first()->payment_method ?? null),
                 'created_at' => $sale->created_at,
                 'refund_status' => $refundStatus,
                 'refunded_tickets' => $refundedTickets,

@@ -4,7 +4,7 @@
         <h2 class="font-semibold text-xl text-gray-800  leading-tight">
             Refundable Sales
         </h2>
-        <div class="mt-6 mb-4 grid grid-cols-3 gap-10">
+        <div class="mt-6 mb-4 grid grid-cols-3 gap-10 max-w-[92%]">
             <div class="">
                 <label for="companyFilter" class="block text-sm font-medium text-gray-700">Filter by Source
                     Company</label>
@@ -42,7 +42,7 @@
         </div>
 
         <!-- Sales Table -->
-        <div class="overflow-x-auto max-w-[60rem]">
+        <div class="overflow-x-auto max-w-[92%]">
             <table id="salesTable" class="min-w-full border border-gray-300 hidden">
                 <thead class="bg-[#003366] text-white">
                     <tr>

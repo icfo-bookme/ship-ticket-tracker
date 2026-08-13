@@ -94,7 +94,7 @@
         </div>
 
         <!-- Sales Table -->
-        <div class="overflow-x-auto max-w-[60rem]">
+        <div class="overflow-x-auto max-w-[92%]">
             <table id="salesTable" class=" border border-gray-400 border-collapse">
                 <thead class="bg-[#003366] text-white">
                     <tr>

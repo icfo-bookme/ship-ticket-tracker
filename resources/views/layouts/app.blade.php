@@ -39,13 +39,18 @@
 
         <!-- Content Area -->
         <div class="pt-16 min-h-screen flex">
-            <!-- Sidebar with transition and dynamic width -->
-            <div id="sidebar" class="fixed h-[calc(100vh-4rem)] transition-all duration-300 ease-in-out w-60">
+            <!-- Dark overlay for the mobile sidebar (hidden on lg+) -->
+            <div id="sidebar-overlay" class="fixed inset-0 z-[110] bg-black/40 hidden lg:hidden"></div>
+
+            <!-- Sidebar: fixed on desktop, off-canvas overlay on mobile/tablet -->
+            <div id="sidebar"
+                class="fixed top-16 left-0 z-[120] h-[calc(100vh-4rem)] w-60 transition-all duration-300 ease-in-out -translate-x-full lg:translate-x-0">
                 @include('layouts.sidebar')
             </div>
 
-            <!-- Main Content with dynamic margin -->
-            <main id="main-content" class="ml-60 flex-1 transition-all duration-300 ease-in-out">
+            <!-- Main Content: full width on mobile, offset on large screens -->
+            <main id="main-content"
+                class="ml-0 lg:ml-60 flex-1 transition-all duration-300 ease-in-out overflow-x-auto">
                 {{ $slot }}
             </main>
         </div>
@@ -56,39 +61,85 @@
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('main-content');
             const sidebarToggle = document.getElementById('sidebar-toggle');
+            const mobileToggle = document.getElementById('mobileSidebarToggle');
+            const overlay = document.getElementById('sidebar-overlay');
+            const lgMedia = window.matchMedia('(min-width: 1024px)');
 
-            // Check localStorage for saved state
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (!sidebar || !mainContent) return;
 
-            if (isCollapsed) {
-                collapseSidebar();
+            // ---------- Desktop collapse / expand ----------
+            function applyCollapse(collapsed) {
+                if (collapsed) {
+                    sidebar.classList.add('lg:w-20');
+                    sidebar.classList.remove('lg:w-60');
+                    mainContent.classList.add('lg:ml-20');
+                    mainContent.classList.remove('lg:ml-60');
+                } else {
+                    sidebar.classList.add('lg:w-60');
+                    sidebar.classList.remove('lg:w-20');
+                    mainContent.classList.add('lg:ml-60');
+                    mainContent.classList.remove('lg:ml-20');
+                }
             }
 
-            sidebarToggle.addEventListener('click', function () {
-                const isCollapsed = sidebar.classList.contains('w-20');
+            // Restore saved state (defaults to expanded)
+            applyCollapse(localStorage.getItem('sidebarCollapsed') === 'true');
 
-                if (isCollapsed) {
-                    expandSidebar();
-                    localStorage.setItem('sidebarCollapsed', 'false');
-                } else {
-                    collapseSidebar();
-                    localStorage.setItem('sidebarCollapsed', 'true');
-                }
+            // Toggle on desktop OR close on mobile
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function () {
+                    if (lgMedia.matches) {
+                        const isCollapsed = sidebar.classList.contains('lg:w-20');
+                        applyCollapse(!isCollapsed);
+                        localStorage.setItem('sidebarCollapsed', String(!isCollapsed));
+                    } else {
+                        closeMobileSidebar();
+                    }
+                });
+            }
+
+            // ---------- Mobile off-canvas sidebar ----------
+            function openMobileSidebar() {
+                document.body.style.overflow = 'hidden'; // prevent background scroll
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                if (overlay) overlay.classList.remove('hidden');
+            }
+
+            function closeMobileSidebar() {
+                document.body.style.overflow = '';
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+                if (overlay) overlay.classList.add('hidden');
+            }
+
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function () {
+                    if (sidebar.classList.contains('translate-x-0')) {
+                        closeMobileSidebar();
+                    } else {
+                        openMobileSidebar();
+                    }
+                });
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', closeMobileSidebar);
+            }
+
+            // Close mobile menu after clicking any sidebar link
+            document.querySelectorAll('#nav-container a').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (!lgMedia.matches) closeMobileSidebar();
+                });
             });
 
-            function collapseSidebar() {
-                sidebar.classList.remove('w-60');
-                sidebar.classList.add('w-20');
-                mainContent.classList.remove('ml-60');
-                mainContent.classList.add('ml-20');
-            }
-
-            function expandSidebar() {
-                sidebar.classList.remove('w-20');
-                sidebar.classList.add('w-60');
-                mainContent.classList.remove('ml-20');
-                mainContent.classList.add('ml-60');
-            }
+            // Clear inline body overflow if resized back to desktop
+            window.addEventListener('resize', function () {
+                if (lgMedia.matches) {
+                    document.body.style.overflow = '';
+                }
+            });
         });
     </script>
 
@@ -104,6 +155,13 @@
     <script src="{{ asset('vendor/datatables/js/buttons.html5.min.js') }}"></script>
     <script src="{{ asset('vendor/datatables/js/buttons.print.min.js') }}"></script>
     <script src="{{ asset('vendor/datatables/js/buttons.colVis.min.js') }}"></script>
+
+    <script>
+        if (window.jQuery && jQuery.fn && jQuery.fn.dataTable && jQuery.fn.dataTable.defaults) {
+            jQuery.extend(true, jQuery.fn.dataTable.defaults, { scrollX: true });
+        }
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>

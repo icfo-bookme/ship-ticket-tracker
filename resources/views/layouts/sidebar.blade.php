@@ -2,7 +2,7 @@
     <!-- Sidebar Container -->
     <div class="flex flex-col h-full transition-all duration-300 ease-in-out" id="sidebar-container">
         <!-- Sidebar Header -->
-        <div id="divHide" class="flex items-center w-60 justify-between h-16 px-4 bg-blue-900 shadow-md">
+        <div id="divHide" class="flex items-center w-full justify-between h-16 px-4 bg-blue-900 shadow-md">
             <span id="sidebar-logo-text"
                 class="text-white text-xl font-semibold whitespace-nowrap transition-all duration-300 sidebar-text truncate">Ship Booking</span>
             <button id="sidebar-toggle"

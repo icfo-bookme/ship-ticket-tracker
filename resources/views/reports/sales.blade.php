@@ -95,7 +95,7 @@
 
         <!-- Sales Table -->
         <div class="overflow-x-auto max-w-[92%]">
-            <table id="salesTable" class=" border border-gray-400 border-collapse">
+            <table id="salesTable" class="min-w-full w-full border border-gray-400 border-collapse">
                 <thead class="bg-[#003366] text-white">
                     <tr>
                         <th class="border px-4 py-1">ID</th>

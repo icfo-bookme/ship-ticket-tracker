@@ -182,3 +182,44 @@
 
 /* Optional: Hide label text but keep dropdown */
 
+
+/* =========================================================
+   Responsive Tables (global fix)
+   Make ALL tables full width (~90-100%) and horizontally
+   scrollable when the content is too wide for the screen.
+   ========================================================= */
+
+/* Table wrapper containers must scroll horizontally on small screens */
+.overflow-x-auto {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Every table fills its container (90-100% width) */
+table {
+    width: 100%;
+    max-width: 100%;
+}
+
+.overflow-x-auto table {
+    min-width: 100%;
+}
+
+/* DataTables keeps natural column widths instead of squishing,
+   so wide tables show a horizontal scrollbar when needed */
+.overflow-x-auto table.dataTable th,
+.overflow-x-auto table.dataTable td,
+.overflow-x-auto #salesTable th,
+.overflow-x-auto #salesTable td {
+    white-space: nowrap;
+}
+
+/* Keep the DataTables generated wrapper inside the scroll container */
+.overflow-x-auto .dataTables_wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+

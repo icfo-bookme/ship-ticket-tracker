@@ -17,7 +17,7 @@
 
             <!-- Ship Filter -->
             <div class="flex flex-col">
-                <label for="shipFilter" class="text-sm font-semibold text-gray-700 mb-1">Filter by Ship</label>
+                <label for="shipFilter" class="text-sm font-semibold text-gray-700 mb-1">Ship</label>
                 <select id="shipFilter"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     <!-- Options populated dynamically -->
@@ -26,7 +26,7 @@
 
             <!-- Company Filter -->
             <div class="flex flex-col">
-                <label for="companyFilter" class="text-sm font-semibold text-gray-700 mb-1">Filter by Source
+                <label for="companyFilter" class="text-sm font-semibold text-gray-700 mb-1">Source
                     Company</label>
                 <select id="companyFilter"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
@@ -50,7 +50,7 @@
             <!-- Start & End Date -->
             <div class="flex flex-col md:flex-row gap-2">
                 <div class="flex-1 flex flex-col">
-                    <label for="startDate" class="text-sm font-semibold text-gray-700 mb-1">Journey Date(range)
+                    <label for="startDate" class="text-sm font-semibold text-gray-700 mb-1">Journey Date
                         From</label>
                     <input type="date" id="startDate"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
@@ -71,7 +71,7 @@
 
             <div class="flex flex-col md:flex-row gap-2">
                 <div class="flex-1 flex flex-col">
-                    <label for="startCreateDate" class="text-sm font-semibold text-gray-700 mb-1">Created Date(range):
+                    <label for="startCreateDate" class="text-sm font-semibold text-gray-700 mb-1">Created Date:
                         From</label>
                     <input type="date" id="startCreateDate"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
@@ -94,8 +94,8 @@
         </div>
 
         <!-- Sales Table -->
-        <div class="overflow-x-auto">
-            <table id="salesTable" class="min-w-full border border-gray-400 border-collapse">
+        <div class="overflow-x-auto max-w-[60rem]">
+            <table id="salesTable" class=" border border-gray-400 border-collapse">
                 <thead class="bg-[#003366] text-white">
                     <tr>
                         <th class="border px-4 py-1">ID</th>

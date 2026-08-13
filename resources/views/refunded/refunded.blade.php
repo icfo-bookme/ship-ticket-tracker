@@ -45,7 +45,7 @@
         </div>
 
         <!-- Sales Table -->
-        <div class="overflow-x-auto ">
+        <div class="overflow-x-auto max-w-[60rem]">
             <table id="salesTable" class="min-w-full border border-gray-300 hidden">
                 <thead class="bg-[#003366] text-white">
                     <tr>

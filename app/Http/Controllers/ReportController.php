@@ -43,7 +43,12 @@ class ReportController extends Controller
         if (!empty($journeyDate)) $query->whereDate('journey_date', $journeyDate);
         if (!empty($returnDate)) $query->whereDate('return_date', $returnDate);
         if (!empty($createdDate)) $query->whereDate('created_at', $createdDate);
-        if (!empty($paymentMethod)) $query->where('payment_method', $paymentMethod);
+        if (!empty($paymentMethod)) $query->where(function ($q) use ($paymentMethod) {
+            $q->where('payment_method', $paymentMethod)
+                ->orWhereHas('payments', function ($sub) use ($paymentMethod) {
+                    $sub->where('payment_method', $paymentMethod);
+                });
+        });
         if (!empty($startDate)) $query->whereDate('journey_date', '>=', $startDate);
         if (!empty($endDate)) $query->whereDate('journey_date', '<=', $endDate);
         if (!empty($start_create_date)) $query->whereDate('created_at', '>=', $start_create_date);
@@ -121,7 +126,12 @@ class ReportController extends Controller
         if (!empty($journeyDate)) $totalsQuery->whereDate('ship_ticket_sales.journey_date', $journeyDate);
         if (!empty($returnDate)) $totalsQuery->whereDate('ship_ticket_sales.return_date', $returnDate);
         if (!empty($createdDate)) $totalsQuery->whereDate('ship_ticket_sales.created_at', $createdDate);
-        if (!empty($paymentMethod)) $totalsQuery->where('ship_ticket_sales.payment_method', $paymentMethod);
+        if (!empty($paymentMethod)) $totalsQuery->where(function ($q) use ($paymentMethod) {
+            $q->where('ship_ticket_sales.payment_method', $paymentMethod)
+                ->orWhereHas('payments', function ($sub) use ($paymentMethod) {
+                    $sub->where('payment_method', $paymentMethod);
+                });
+        });
         if (!empty($startDate)) $totalsQuery->whereDate('ship_ticket_sales.journey_date', '>=', $startDate);
         if (!empty($endDate)) $totalsQuery->whereDate('ship_ticket_sales.journey_date', '<=', $endDate);
         if (!empty($start_create_date)) $totalsQuery->whereDate('ship_ticket_sales.created_at', '>=', $start_create_date);

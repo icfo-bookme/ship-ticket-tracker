@@ -1,5 +1,5 @@
 <div class="py-6">
-    <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 ">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
         <div id="statusFilter" data-status="shipped" class="hidden"></div>
         <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 max-w-[92%]">
             <h2 class="font-semibold text-xl text-gray-800  leading-tight">

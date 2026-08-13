@@ -207,6 +207,25 @@
             </div>
 
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3">11.1 Available Cash Amount Calculation (Cash Collection)</h3>
+                <p class="text-gray-700 mb-3">
+                    The <strong>Available Cash Amount</strong> shown in the <em>Add New Cash Collection</em> modal is
+                    calculated automatically from the database. It is a <strong>read-only</strong> field and updates
+                    by itself whenever new sales, refunds, or cash-out entries are recorded.
+                </p>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3 font-mono text-sm">
+                    Available Cash = Total Received (received_amount) − Total Refunded (refunds.refunded_amount) − Total
+                    Cash-out (cashout_amount)
+                </div>
+                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                    <li><strong>Total Received:</strong> Sum of <code>received_amount</code> of all non-pending sales.</li>
+                    <li><strong>Total Refunded:</strong> Sum of <code>refunds.refunded_amount</code> returned to customers.</li>
+                    <li><strong>Total Cash-out:</strong> Sum of <code>cashout_amount</code> of all cash collection entries.</li>
+                    <li>A negative result means more money has been refunded / cashed out than was received.</li>
+                </ul>
+            </div>
+
+            <div class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-bold mb-3">12. Best Practices</h3>
                 <ul class="list-disc list-inside text-gray-700 space-y-2">
                     <li>Check duplicate warning before saving a new ticket for the same mobile and journey date.</li>

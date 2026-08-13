@@ -25,7 +25,7 @@
                         <label for="available_cash_amount"
                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Available Cash
                             Amount</label>
-                        <input type="text" name="available_cash_amount" id="available_cash_amount" required value={{ $totalRefundedAmount }} readonly
+                        <input type="text" name="available_cash_amount" id="available_cash_amount" required value="{{ number_format($availableCashAmount, 2) }}" readonly
                             class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
 
@@ -65,12 +65,10 @@
 
             const name = document.getElementById('name').value;
             const cashout_amount = document.getElementById('cashout_amount').value;
-            const status = document.getElementById('status').value;
- 
+
             const data = {
                 name: name,
-                cashout_amount: cashout_amount,
-                status: status
+                cashout_amount: cashout_amount
             };
 
             fetch('/cash-collections', {
@@ -88,24 +86,43 @@
                     return response.json();
                 })
                 .then(data => {
+                    // Refresh the table FIRST so nothing (modal close, Swal) can block it.
+                    getList();
+
+                    // Update the read-only available cash amount right away.
+                    const availableInput = document.getElementById('available_cash_amount');
+                    const enteredAmount = parseFloat(cashout_amount);
+                    if (availableInput && !isNaN(enteredAmount)) {
+                        const current = parseFloat(String(availableInput.value).replace(/,/g, '')) || 0;
+                        availableInput.value = (current - enteredAmount).toFixed(2);
+                    }
+
+                    // Refresh the table immediately, then close the modal.
+                   
+                    form.reset();
+                    closeButton.click();
+                    getList();
                     Swal.fire({
                         title: 'Success!',
-                        text: 'Company Added successfully!',
+                        text: 'Cash collection added successfully!',
                         icon: 'success',
                         confirmButtonText: 'OK',
                         customClass: {
                             confirmButton: 'bg-blue-950 text-white'
                         }
                     });
-
-                    getList();
-
-                    form.reset();
-                    closeButton.click();
                 })
                 .catch(error => {
                     console.error('Error:', error);
-
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to add cash collection. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        customClass: {
+                            confirmButton: 'bg-red-600 text-white'
+                        }
+                    });
                 });
         });
 

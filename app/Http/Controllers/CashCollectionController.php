@@ -21,25 +21,27 @@ class CashCollectionController extends Controller
      */
     public function showCashCollection()
     {
-        $sales = ShipTicketSale::with('refund')
-            ->where('status', '!=', 'pending')
-            ->get();
+        // Total cash received from paid (non-pending) sales — SQL aggregate, no full-table load.
+        $totalReceivedAmount = (float) ShipTicketSale::where('status', '!=', 'pending')
+            ->sum('received_amount');
 
-        $totalSalesAmount = $sales->sum('received_amount');
+        // Total refunded back to customers.
+        $totalRefundedAmount = (float) ShipTicketSale::query()
+            ->leftJoin('refunds', 'refunds.sales_id', '=', 'ship_ticket_sales.id')
+            ->where('ship_ticket_sales.status', '!=', 'pending')
+            ->sum('refunds.refunded_amount');
 
-        $totalRefundedAmount = 0;
+        // Total cash already taken out of the drawer (cash collections ledger).
+        $totalCashedOutAmount = (float) CashCollection::sum('cashout_amount');
 
-        foreach ($sales as $sale) {
-            if ($sale->refund) {
-                $totalRefundedAmount += (float) $sale->refund->refunded_amount;
-            }
-        }
+        // Available cash = what came in - refunds - what is already cashed out.
+        $availableCashAmount = $totalReceivedAmount - $totalRefundedAmount - $totalCashedOutAmount;
 
-        $netSalesAmount = $totalSalesAmount - $totalRefundedAmount;
         return view('cashCollection.componentItem', compact(
-            'totalSalesAmount',
+            'availableCashAmount',
+            'totalReceivedAmount',
             'totalRefundedAmount',
-            'netSalesAmount'
+            'totalCashedOutAmount'
         ));
     }
 
@@ -89,7 +91,6 @@ class CashCollectionController extends Controller
     {
         $request->validate([
             'name'           => 'nullable|string|max:255',
-            'entry_by'       => 'required|integer',
             'cashout_amount' => 'required|numeric',
         ]);
 
@@ -97,7 +98,7 @@ class CashCollectionController extends Controller
 
         $collection->update([
             'name'           => $request->name,
-            'entry_by'       => $request->entry_by,
+            'entry_by'       => $collection->entry_by ?? auth()->id(),
             'cashout_amount' => $request->cashout_amount,
         ]);
 

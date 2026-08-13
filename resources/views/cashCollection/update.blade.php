@@ -33,13 +33,10 @@
                     </div>
 
                     <div class="mb-4">
-                        <label for="update-status"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                        <select id="update-status" name="status" required
+                        <label for="update-cashout"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Cashout Amount</label>
+                        <input type="number" step="0.01" min="0" id="update-cashout" name="cashout_amount" required
                             class="block w-full p-2 text-sm text-gray-900 bg-gray-50 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                            <option value="1">Active</option>
-                            <option value="0">Inactive</option>
-                        </select>
                     </div>
 
                     <div class="flex justify-end">
@@ -58,8 +55,8 @@
     // Show Edit Modal
     function showEditModal(btn) {
         document.getElementById('update-item-id').value = btn.dataset.id;
-        document.getElementById('update-name').value = btn.dataset.name;
-        document.getElementById('update-status').value = btn.dataset.status;
+        document.getElementById('update-name').value = btn.dataset.name || '';
+        document.getElementById('update-cashout').value = btn.dataset.cashout ?? '';
 
         // Show the modal
         document.getElementById('update-modal').classList.remove('hidden');
@@ -89,12 +86,12 @@
         const id = document.getElementById('update-item-id').value;
         const data = {
             name: document.getElementById('update-name').value,
-            status: document.getElementById('update-status').value
+            cashout_amount: document.getElementById('update-cashout').value
         };
 
         try {
             // Send a PUT request to update the item
-            const response = await fetch(`/companies/${id}`, {
+            const response = await fetch(`/cash-collections/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -143,10 +140,4 @@
         }
     });
 
-    // Add event listener for the Edit buttons
-    document.querySelectorAll('.editBtn').forEach(button => {
-        button.addEventListener('click', function() {
-            showEditModal(this);
-        });
-    });
 </script>

@@ -2,20 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bftn;
-use App\Models\Category;
+use App\Http\Requests\Sales\CheckDuplicateTicketRequest;
+use App\Http\Requests\Sales\StorePublicShipTicketSaleRequest;
+use App\Http\Requests\Sales\StoreShipTicketSaleRequest;
+use App\Http\Requests\Sales\UpdateShipTicketSaleRequest;
 use App\Models\Company;
-use App\Models\CoPassenger;
-use App\Models\Payment;
 use App\Models\PrintedTicket;
 use App\Models\PrintStatus;
 use App\Models\Ship;
 use App\Models\Shipment;
 use App\Models\ShipTicketSale;
-use App\Models\User;
 use App\Models\VerifyTracker;
-use App\Models\WhatsappDetail;
-use App\Services\GoogleSheetService;
+use App\Services\Sales\ShipTicketSaleService;
 use App\Services\SteadfastService;
 use Google\Client;
 use Google\Service\Drive;
@@ -25,6 +23,11 @@ use Illuminate\Support\Facades\Log;
 
 class ShipTicketSaleController extends Controller
 {
+    public function __construct(
+        private readonly SteadfastService $steadfast,
+        private readonly ShipTicketSaleService $shipTicketSales,
+    ) {}
+
     public function index()
     {
         $sales = ShipTicketSale::with('ships')->latest()->get();
@@ -145,269 +148,17 @@ class ShipTicketSaleController extends Controller
         return view('welcome', compact('ships', 'companies', 'form'));
     }
 
-    public function store(Request $request)
+    public function store(StoreShipTicketSaleRequest $request)
     {
-
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:100',
-            'customer_mobile' => 'required|string|max:20',
-            'whatsapp' => 'nullable|string|max:20',
-            'nid' => 'nullable|string|max:50',
-            'email' => 'nullable|string|max:100',
-            'sales_source' => 'nullable|string|max:255',
-            'ship_id' => 'required|exists:ships,id',
-            'address' => 'nullable|string',
-            'journey_date' => 'nullable|date',
-            'date_of_birth' => 'nullable|date',
-            'return_date' => 'nullable|date',
-            'ticket_fee' => 'required|numeric',
-            'received_amount' => 'required|numeric',
-            'number_of_ticket' => 'required|numeric',
-            'ticket_category' => 'nullable|string|max:255',
-            'due_amount' => 'nullable|numeric',
-            'bftn_status' => 'nullable',
-            'company_id' => 'nullable',
-            'issued_date' => 'required|date',
-            'sold_by' => 'required|string|max:100',
-            'remark1' => 'nullable|string',
-            'remark2' => 'nullable|string',
-            'other_fee' => 'nullable|numeric',
-            'total_payable' => 'nullable|numeric',
-            'co_passengers' => 'nullable|array',
-            'co_passengers.*.name' => 'required|string|max:255',
-            'co_passengers.*.nid' => 'nullable|string',
-            'co_passengers.*.co_passernger_number' => 'nullable|string',
-            'co_passengers.*.date_of_birth' => 'nullable|date',
-        ]);
-
-        $ticketSale = DB::transaction(function () use ($request, $validated) {
-            $ticketSale = ShipTicketSale::create($validated);
-
-            if ($request->filled('co_passengers')) {
-                foreach ($request->co_passengers as $coPassenger) {
-                    if (! empty($coPassenger['name'])) {
-                        CoPassenger::create([
-                            'ship_ticket_sale_id' => $ticketSale->id,
-                            'name' => $coPassenger['name'],
-                            'nid' => $coPassenger['nid'],
-                            'co_passernger_number' => $coPassenger['co_passernger_number'],
-                            'date_of_birth' => $coPassenger['date_of_birth'],
-
-                        ]);
-                    }
-                }
-            }
-
-            if ($request->filled('payment_methods')) {
-                foreach ($request->payment_methods as $payment_method) {
-                    if (! empty($payment_method['method']) && ! empty($payment_method['amount'])) {
-                        Payment::create([
-                            'sales_id' => $ticketSale->id,
-                            'payment_method' => $payment_method['method'],
-                            'received_amount' => $payment_method['amount'],
-                            'transaction_id' => $payment_method['transaction_id'] ?? null,
-                            'payment_datetime' => $payment_method['payment_datetime'] ?? null,
-                            'paid_date' => $payment_method['paid_date'],
-                            'remark' => $payment_method['remark'],
-                        ]);
-                    }
-                }
-            }
-
-            if ($request->bftn_status == 'yes' && $request->bftn_issue_datetime) {
-
-                Bftn::create([
-                    'sales_id' => $ticketSale->id,
-                    'bftn_date_time' => $request->bftn_issue_datetime,
-                    'status' => 0,
-                    'notifications_status' => 1,
-                ]);
-            }
-
-            if ($request->filled('ticket_categories')) {
-
-                foreach ($request->ticket_categories as $type => $categories) {
-
-                    foreach ($categories as $category) {
-                        if (
-                            $category['quantity'] > 0
-                        ) {
-                            Category::create([
-                                'ticket_id' => $ticketSale->id,
-                                'package_id' => $category['package_id'],
-                                'quantity' => $category['quantity'],
-                                'type' => $type,
-
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            return $ticketSale;
-        });
-
-        $ship = Ship::find($request->ship_id);
-        $user = User::find($request->sold_by);
-
-        // Prepare payment methods as a single string
-        $paymentString = '';
-        if (! empty($request->payment_methods)) {
-            $payments = [];
-            foreach ($request->payment_methods as $payment_method) {
-                if (! empty($payment_method['method']) && ! empty($payment_method['amount'])) {
-                    $payments[] = $payment_method['method'].'='.$payment_method['amount'];
-                }
-            }
-            $paymentString = implode(', ', $payments); // e.g. "Cash=100, Bikas=300"
-        }
-
-        try {
-            GoogleSheetService::appendRow([
-                $validated['customer_name'],
-                $validated['customer_mobile'],
-                $validated['whatsapp'] ?? $validated['customer_mobile'],
-                $validated['email'] ?? '',
-                $ship?->name ?? '',
-                $request->sales_source,
-                $validated['ticket_fee'],
-                $request->received_amount,
-                $paymentString,
-                $user?->name ?? '',
-                now()->format('Y-m-d'),
-                $request->address,
-                $request->remark1,
-                $request->remark2,
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('GoogleSheet append failed for sale: '.($ticketSale->id ?? 'unknown').' | '.$e->getMessage());
-        }
+        $this->shipTicketSales->create($request->validated(), $request->all());
 
         return redirect()->route('ship-ticket-sales.create')
             ->with('success', 'Journey ticket saved!.');
     }
 
-    protected $steadfast;
-
-    public function __construct(SteadfastService $steadfast)
+    public function publicStore(StorePublicShipTicketSaleRequest $request)
     {
-        $this->steadfast = $steadfast;
-    }
-
-    public function publicStore(Request $request)
-    {
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:100',
-            'customer_mobile' => 'required|string|max:20',
-            'whatsapp' => 'nullable|string|max:20',
-            'nid' => 'nullable|string|max:50',
-            'email' => 'nullable|string|max:100',
-            'sales_source' => 'nullable|string|max:255',
-            'ship_id' => 'required|string|max:100',
-            'address' => 'nullable|string',
-            'journey_date' => 'nullable|date',
-            'date_of_birth' => 'nullable|date',
-            'return_date' => 'nullable|date',
-            'ticket_fee' => 'required|numeric',
-            'received_amount' => 'required|numeric',
-            'number_of_ticket' => 'required|numeric',
-            'ticket_category' => 'nullable|string|max:255',
-            'due_amount' => 'nullable|numeric',
-            'bftn_status' => 'nullable',
-            'company_id' => 'nullable|string|max:100',
-            'issued_date' => 'required|date',
-            'sold_by' => 'nullable|string|max:100',
-            'remark1' => 'nullable|string|max:255',
-            'remark2' => 'nullable|string|max:255',
-        ]);
-
-        if ($request->sales_source) {
-            $whatsapp = WhatsappDetail::where('form_no', $request->sales_source)->first();
-
-            if ($whatsapp) {
-                $validated['sales_source'] = $whatsapp->whatsapp_number;
-            } else {
-                $validated['sales_source'] = null;
-            }
-        }
-
-        $ticketSale = ShipTicketSale::create($validated);
-
-        if ($request->filled('co_passengers')) {
-            foreach ($request->co_passengers as $coPassenger) {
-                if (! empty($coPassenger['name']) && ! empty($coPassenger['nid'])) {
-                    CoPassenger::create([
-                        'ship_ticket_sale_id' => $ticketSale->id,
-                        'name' => $coPassenger['name'],
-                        'nid' => $coPassenger['nid'],
-                        'co_passernger_number' => $coPassenger['co_passernger_number'],
-                    ]);
-                }
-            }
-        }
-
-        if ($request->filled('payment_methods')) {
-            foreach ($request->payment_methods as $payment_method) {
-                if (! empty($payment_method['method']) && ! empty($payment_method['amount'])) {
-                    Payment::create([
-                        'sales_id' => $ticketSale->id,
-                        'payment_method' => $payment_method['method'],
-                        'received_amount' => $payment_method['amount'],
-                        'paid_date' => $payment_method['paid_date'],
-
-                    ]);
-                }
-            }
-        }
-
-        if ($request->filled('ticket_categories')) {
-
-            foreach ($request->ticket_categories as $type => $categories) {
-
-                foreach ($categories as $category) {
-                    // Debug each category (optional)
-
-                    if (
-                        $category['quantity'] > 0
-                    ) {
-                        Category::create([
-                            'ticket_id' => $ticketSale->id,
-                            'package_id' => $category['package_id'],
-                            'quantity' => $category['quantity'],
-                            'type' => $type,
-
-                        ]);
-                    }
-                }
-            }
-        }
-        $paymentString = '';
-        if (! empty($request->payment_methods)) {
-            $payments = [];
-            foreach ($request->payment_methods as $payment_method) {
-                if (! empty($payment_method['method']) && ! empty($payment_method['amount'])) {
-                    $payments[] = $payment_method['method'].'='.$payment_method['amount'];
-                }
-            }
-            $paymentString = implode(', ', $payments); // e.g. "Cash=100, Bikas=300"
-        }
-        $ship = Ship::find($request->ship_id);
-        GoogleSheetService::appendRow([
-            $validated['customer_name'],
-            $validated['customer_mobile'],
-            $validated['whatsapp'] ?? $validated['customer_mobile'],
-            $validated['email'] ?? '',
-            $ship->name,
-            $whatsapp->whatsapp_number ?? 'not found',
-            $validated['ticket_fee'],
-            $request->received_amount,
-            $paymentString,
-            'guest',
-            now()->format('Y-m-d'),
-            $request->address,
-            $request->remark1,
-            $request->remark2,
-        ]);
+        $this->shipTicketSales->createPublic($request->validated(), $request->all());
 
         return redirect()
             ->route('publicForm.success')
@@ -527,135 +278,14 @@ class ShipTicketSaleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(UpdateShipTicketSaleRequest $request, $id)
     {
-
-        $action = $request->input('action');
-
-        // Validate the request
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'customer_mobile' => 'required|string|max:20',
-            'whatsapp' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'nid' => 'nullable|string|max:255',
-            'date_of_birth' => 'nullable|date',
-            'address' => 'nullable|string',
-            'ship_id' => 'required|exists:ships,id',
-            'company_id' => 'required|exists:company,id',
-            'journey_date' => 'nullable|date',
-            'return_date' => 'nullable|date',
-            'number_of_ticket' => 'required|integer|min:1',
-            'ticket_fee' => 'required|numeric|min:0',
-            'other_fee' => 'nullable|numeric|min:0',
-            'total_payable' => 'nullable|numeric|min:0',
-            'received_amount' => 'nullable|numeric|min:0',
-            'due_amount' => 'nullable|numeric',
-            'bftn_status' => 'nullable',
-            'sales_source' => 'nullable|string|max:255',
-            'sold_by' => 'nullable|string|max:255',
-            'issued_date' => 'nullable|date',
-            'status' => 'required',
-            'remark1' => 'nullable|string',
-            'remark2' => 'nullable|string',
-            'group_by_id' => 'nullable|integer',
-            'group_tickets' => 'nullable|in:yes,no',
-            'departure_quantity' => 'nullable|array',
-            'return_quantity' => 'nullable|array',
-            'departure_quantity.*' => 'nullable|integer|min:0',
-            'return_quantity.*' => 'nullable|integer|min:0',
-            'payments' => 'nullable|array',
-            'payments.*.payment_method' => 'required|string',
-            'payments.*.received_amount' => 'required|numeric|min:0',
-            'payments.*.paid_date' => 'nullable|date',
-            'payments.*.remark' => 'nullable|string',
-            'co_passengers' => 'nullable|array',
-            'co_passengers.*.name' => 'nullable|string|max:255',
-            'co_passengers.*.nid' => 'nullable|string|max:255',
-            'co_passengers.*.co_passernger_number' => 'nullable|string|max:20',
-            'co_passengers.*.date_of_birth' => 'nullable|date',
-        ]);
-
-        DB::beginTransaction();
-
         try {
-            $sale = ShipTicketSale::findOrFail($id);
-
-            $sale->update([
-                'customer_name' => $validated['customer_name'],
-                'customer_mobile' => $validated['customer_mobile'],
-                'whatsapp' => $validated['whatsapp'],
-                'email' => $validated['email'],
-                'nid' => $validated['nid'],
-                'date_of_birth' => $validated['date_of_birth'],
-                'address' => $validated['address'],
-                'ship_id' => $validated['ship_id'],
-                'company_id' => $validated['company_id'],
-                'journey_date' => $validated['journey_date'],
-                'return_date' => $validated['return_date'],
-                'number_of_ticket' => $validated['number_of_ticket'],
-                'ticket_fee' => $validated['ticket_fee'],
-                'received_amount' => $validated['received_amount'] ?? 0,
-                'due_amount' => $validated['due_amount'] ?? $validated['ticket_fee'],
-                'other_fee' => $validated['other_fee'] ?? 0,
-                'total_payable' => $validated['total_payable'] ?? 0,
-                'bftn_status' => $validated['bftn_status'] ?? null,
-                'sales_source' => $validated['sales_source'],
-                'sold_by' => $validated['sold_by'],
-                'issued_date' => $validated['issued_date'],
-                'status' => $validated['status'],
-                'remark1' => $validated['remark1'],
-                'remark2' => $validated['remark2'],
-            ]);
-
-            // Update packages
-            if ($request->departure_quantity || $request->return_quantity) {
-                $this->updatePackageCategories($sale, $validated);
-            }
-
-            // Payments & co-passengers
-            $this->updatePayments($sale, $validated['payments'] ?? []);
-            $this->updateCoPassengers($sale, $validated['co_passengers'] ?? []);
-
-            // âœ… Commit first
-            DB::commit();
-
-            if ($request->status === 'payment-verified') {
-
-                if ($request->has('pdf') && is_array($request->pdf)) {
-
-                    foreach ($request->pdf as $pdfValue) {
-
-                        $pdfName = $pdfValue.'.pdf';
-
-                        $data = [
-                            'sales_id' => $sale->id,
-                            'filename' => $pdfName,
-                            'group_by_id' => ($validated['group_tickets'] ?? null) == 'yes'
-                                ? $validated['group_by_id']
-                                : $sale->id,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ];
-
-                        // Add group_by_id only if printed_tickets = yes
-
-                        $sale->printedTickets()->create($data);
-                    }
-                }
-
-                if (($validated['group_tickets'] ?? null) == 'yes' && ! empty($validated['group_by_id'])) {
-                    $groupSale = ShipTicketSale::find($validated['group_by_id']);
-                    $groupbysalesStaus = $groupSale?->status ?? 'ticket-issued';
-                    $sale->update([
-                        'status' => $groupbysalesStaus,
-                    ]);
-                } else {
-                    $sale->update([
-                        'status' => 'ticket-issued',
-                    ]);
-                }
-            }
+            $this->shipTicketSales->update(
+                ShipTicketSale::findOrFail($id),
+                $request->validated(),
+                $request->all()
+            );
 
             if ($request->next_sale_id) {
                 return redirect()
@@ -665,91 +295,9 @@ class ShipTicketSaleController extends Controller
 
             return redirect()->back()
                 ->with('success', 'Ship ticket sale updated successfully!');
-
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return back()->with('error', 'Failed to update ship ticket sale: '.$e->getMessage())
                 ->withInput();
-        }
-    }
-
-    /**
-     * Update package categories for departure and return
-     */
-    private function updatePackageCategories(ShipTicketSale $sale, array $validated)
-    {
-        // Delete existing categories
-        $sale->categories()->delete();
-
-        // Process departure packages
-        if (! empty($validated['departure_quantity'])) {
-            foreach ($validated['departure_quantity'] as $packageId => $quantity) {
-                $quantity = (int) $quantity;
-                if ($quantity > 0) {
-                    $sale->categories()->create([
-                        'package_id' => (int) $packageId,
-                        'type' => 'departure',
-                        'quantity' => $quantity,
-                    ]);
-                }
-            }
-        }
-
-        // Process return packages
-        if (! empty($validated['return_quantity'])) {
-            foreach ($validated['return_quantity'] as $packageId => $quantity) {
-                $quantity = (int) $quantity;
-                if ($quantity > 0) {
-                    $sale->categories()->create([
-                        'package_id' => (int) $packageId,
-                        'type' => 'return',
-                        'quantity' => $quantity,
-                    ]);
-                }
-            }
-        }
-    }
-
-    /**
-     * Update payments for the sale
-     */
-    private function updatePayments(ShipTicketSale $sale, array $payments)
-    {
-        // Delete existing payments
-        $sale->payments()->delete();
-
-        // Create new payments
-        foreach ($payments as $payment) {
-            if (! empty($payment['payment_method']) && ! empty($payment['received_amount'])) {
-                $sale->payments()->create([
-                    'payment_method' => $payment['payment_method'],
-                    'received_amount' => $payment['received_amount'],
-                    'paid_date' => $payment['paid_date'] ?? null,
-                    'remark' => $payment['remark'] ?? null,
-                ]);
-            }
-        }
-    }
-
-    /**
-     * Update co-passengers for the sale
-     */
-    private function updateCoPassengers(ShipTicketSale $sale, array $coPassengers)
-    {
-        // Delete existing co-passengers
-        $sale->coPassengers()->delete();
-
-        // Create new co-passengers
-        foreach ($coPassengers as $passenger) {
-            if (! empty($passenger['name'])) {
-                $sale->coPassengers()->create([
-                    'name' => $passenger['name'],
-                    'nid' => $passenger['nid'] ?? null,
-                    'co_passenger_number' => $passenger['co_passenger_number'] ?? null,
-                    'date_of_birth' => $passenger['date_of_birth'] ?? null,
-                ]);
-            }
         }
     }
 
@@ -773,30 +321,12 @@ class ShipTicketSaleController extends Controller
         }
     }
 
-    public function checkDuplicate(Request $request)
+    public function checkDuplicate(CheckDuplicateTicketRequest $request)
     {
-        $request->validate([
-            'customer_mobile' => 'nullable|string',
-            'journey_date' => 'nullable|date',
-        ]);
-
-        if (empty($request->customer_mobile) || empty($request->journey_date)) {
-            return response()->json([
-                'exists' => false,
-                'message' => null,
-            ]);
-        }
-
-        $existingTicket = ShipTicketSale::where('customer_mobile', $request->customer_mobile)
-            ->where('journey_date', $request->journey_date)
-            ->first();
-
-        return response()->json([
-            'exists' => $existingTicket !== null,
-            'message' => $existingTicket
-                ? "This customer already has a ticket for {$request->journey_date} on {$existingTicket->sales_source}"
-                : null,
-        ]);
+        return response()->json($this->shipTicketSales->duplicateMessage(
+            $request->customer_mobile,
+            $request->journey_date
+        ));
     }
 
     public function verify(Request $request, $id, $status)
@@ -809,22 +339,24 @@ class ShipTicketSaleController extends Controller
                 ->unique('sales_id')
                 ->values();
 
-            $tickets->each(function ($ticket) {
+            DB::transaction(function () use ($tickets): void {
+                $tickets->each(function ($ticket) {
 
-                $sale = ShipTicketSale::find($ticket->sales_id);
+                    $sale = ShipTicketSale::find($ticket->sales_id);
 
-                if ($sale) {
+                    if ($sale) {
 
-                    $sale->update([
-                        'status' => 'ticket-printed',
-                    ]);
+                        $sale->update([
+                            'status' => 'ticket-printed',
+                        ]);
 
-                    VerifyTracker::create([
-                        'name' => 'ticket-printed',
-                        'ticket_id' => $sale->id,
-                        'verified_by' => auth()->id(),
-                    ]);
-                }
+                        VerifyTracker::create([
+                            'name' => 'ticket-printed',
+                            'ticket_id' => $sale->id,
+                            'verified_by' => auth()->id(),
+                        ]);
+                    }
+                });
             });
 
             return response()->json([
@@ -879,27 +411,29 @@ class ShipTicketSaleController extends Controller
                 ->unique('sales_id')
                 ->values();
 
-            $tickets->each(function ($ticket) use ($consignmentId) {
+            DB::transaction(function () use ($tickets, $consignmentId): void {
+                $tickets->each(function ($ticket) use ($consignmentId) {
 
-                $sale = ShipTicketSale::find($ticket->sales_id);
+                    $sale = ShipTicketSale::find($ticket->sales_id);
 
-                if ($sale) {
+                    if ($sale) {
 
-                    Shipment::create([
-                        'ticket_id' => $sale->id,
-                        'shipment_id' => $consignmentId,
-                    ]);
+                        Shipment::create([
+                            'ticket_id' => $sale->id,
+                            'shipment_id' => $consignmentId,
+                        ]);
 
-                    $sale->update([
-                        'status' => 'shipment_id_entered',
-                    ]);
+                        $sale->update([
+                            'status' => 'shipment_id_entered',
+                        ]);
 
-                    VerifyTracker::create([
-                        'name' => 'shipment_id_entered',
-                        'ticket_id' => $sale->id,
-                        'verified_by' => auth()->id(),
-                    ]);
-                }
+                        VerifyTracker::create([
+                            'name' => 'shipment_id_entered',
+                            'ticket_id' => $sale->id,
+                            'verified_by' => auth()->id(),
+                        ]);
+                    }
+                });
             });
 
             return response()->json([
@@ -908,13 +442,15 @@ class ShipTicketSaleController extends Controller
             ]);
         }
 
-        $sale->update(['status' => $status]);
+        DB::transaction(function () use ($sale, $status, $id): void {
+            $sale->update(['status' => $status]);
 
-        VerifyTracker::create([
-            'name' => $status,
-            'ticket_id' => $id,
-            'verified_by' => auth()->id(),
-        ]);
+            VerifyTracker::create([
+                'name' => $status,
+                'ticket_id' => $id,
+                'verified_by' => auth()->id(),
+            ]);
+        });
 
         return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
     }

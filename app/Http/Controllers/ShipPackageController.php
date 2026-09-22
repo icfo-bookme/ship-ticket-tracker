@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\MasterData\StoreShipPackageRequest;
+use App\Http\Requests\MasterData\UpdateShipPackageRequest;
 use App\Models\ShipPackage;
+use App\Services\MasterData\ShipPackageService;
 use Illuminate\Http\Request;
 
 class ShipPackageController extends Controller
 {
-    public function index($id)
-    {
-        $packages = ShipPackage::where('ship_id', $id)->get();
+    public function __construct(private readonly ShipPackageService $shipPackages) {}
 
-        return response()->json($packages);
+    public function index(Request $request, $id)
+    {
+        return response()->json($this->shipPackages->dataTable($request, $id));
     }
 
     public function showPackages($id)
@@ -19,16 +22,9 @@ class ShipPackageController extends Controller
         return view('packages.componentItem', compact('id'));
     }
 
-    public function store(Request $request)
+    public function store(StoreShipPackageRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:250',
-            'ship_id' => 'required|integer|exists:ships,id',
-            'price' => 'required|numeric|min:0',
-            'round_trip_price' => 'required|numeric|min:0',
-        ]);
-
-        $package = ShipPackage::create($validated);
+        $package = $this->shipPackages->create($request->validated());
 
         return response()->json($package, 201);
     }
@@ -40,33 +36,19 @@ class ShipPackageController extends Controller
 
     public function edit(string $id)
     {
-        $shipPackage = ShipPackage::find($id);
-        abort_unless($shipPackage, 404, 'Ship package not found.');
-
-        return response()->json($shipPackage);
+        return response()->json($this->shipPackages->find($id));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateShipPackageRequest $request, $id)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:250',
-            'price' => 'required|numeric|min:0',
-            'round_trip_price' => 'required|numeric|min:0',
-        ]);
-
-        $shipPackage = ShipPackage::find($id);
-        abort_unless($shipPackage, 404, 'Ship package not found.');
-
-        $shipPackage->update($validated);
+        $shipPackage = $this->shipPackages->update($this->shipPackages->find($id), $request->validated());
 
         return response()->json($shipPackage);
     }
 
     public function destroy($id)
     {
-        $shipPackage = ShipPackage::find($id);
-        abort_unless($shipPackage, 404, 'Ship package not found.');
-
+        $shipPackage = $this->shipPackages->find($id);
         $shipPackage->delete();
 
         return response()->json(['success' => true, 'message' => 'Ship package deleted successfully.']);

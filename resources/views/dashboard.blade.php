@@ -469,10 +469,12 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
                                                 </svg>
                                             </a> --}}
+                                            @can('sales.edit')
                                             <button
                                                 class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                                                 Edit
                                             </button>
+                                            @endcan
                                         </div>
                                     </td>
                                 </tr>

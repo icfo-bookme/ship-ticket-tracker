@@ -92,5 +92,15 @@
         }
     }
 
+    getList = function() {
+        table.classList.remove('hidden');
+        $('#excelTable').DataTable({ processing: true, serverSide: true, destroy: true, ajax: '/excel-settings', dom: 'lBfrtip', buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
+            columns: [
+                { data: 'id' }, { data: null, render: row => escapeHtml(row.spreadsheetId ?? row.spreadsheet_id) }, { data: 'range' },
+                { data: null, orderable: false, searchable: false, render: row => '<button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" data-id="' + row.id + '" data-spreadsheet_id="' + escapeHtml(row.spreadsheetId ?? row.spreadsheet_id) + '" data-range="' + escapeHtml(row.range) + '">Edit</button>' }
+            ],
+            drawCallback: function() { document.querySelectorAll('.editBtn').forEach(btn => btn.addEventListener('click', () => showEditModal(btn))); }
+        });
+    };
     getList();
 </script>

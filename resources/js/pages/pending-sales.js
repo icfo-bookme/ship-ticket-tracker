@@ -165,26 +165,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function createActionButtons(sale) {
-        const dueButton = Number(sale.due_amount) > 0
+        const perms = window.appPermissions || {};
+        const dueButton = Number(sale.due_amount) > 0 && perms.canPay
             ? `<button class="bg-yellow-500 text-black px-2 py-1 rounded dueBtn"
                     data-id="${sale.id}"
                     data-due_amount="${sale.due_amount}"
                     title="Due Amount: ${escapeHtml(sale.due_amount)}">Due</button>`
             : "";
 
+        const editButton = perms.canEdit
+            ? `<a href="/ship-ticket-sales/${sale.id}">
+                    <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
+                </a>`
+            : "";
+
+        const deleteButton = perms.canDelete
+            ? `<button class="fas fa-trash text-red-500 px-2 py-1 border border-gray-300 rounded deleteBtn"
+                    data-id="${sale.id}" title="Delete"></button>`
+            : "";
+
         return `
             <div class="flex gap-2 items-center justify-center">
-                <a href="/ship-ticket-sales/${sale.id}">
-                    <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
-                </a>
-                <button class="fas fa-trash text-red-500 px-2 py-1 border border-gray-300 rounded deleteBtn"
-                    data-id="${sale.id}" title="Delete"></button>
+                ${editButton}
+                ${deleteButton}
                 ${dueButton}
                 ${createStatusButton(sale)}
             </div>`;
     }
 
     function createStatusButton(sale) {
+        if (! (window.appPermissions || {}).canVerify) return "";
+
         const verifiedBy = escapeHtml(sale.verifyby?.[0]?.verified_by_user?.name || "Unknown");
         const printedFiles = sale.grouped_tickets || [];
 

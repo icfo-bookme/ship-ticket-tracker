@@ -590,6 +590,5 @@
         </div>
     </div>
 
-    <!-- Include custom JavaScript -->
-    <script src="{{ asset('js/ship-ticket-sales.js') }}"></script>
+    @vite(['resources/js/pages/ship-ticket-sales.js'])
 </x-app-layout>

@@ -228,4 +228,10 @@
         editUrlPrefix: @json(url('ship-ticket-sales')),
     };
 </script>
-<script src="{{ asset('js/reports.js') }}"></script>
+<script>
+    
+    window.appPermissions = {
+        canEdit: @can('sales.edit') true @else false @endif,
+    };
+</script>
+@vite(['resources/js/pages/reports.js'])

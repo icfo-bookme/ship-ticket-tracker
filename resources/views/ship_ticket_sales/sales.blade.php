@@ -91,4 +91,13 @@
      </div>
      </div>
 
-     <script src="{{ asset('js/panding-sell.js') }}"></script>
+     <script>
+        // RBAC: permission flags used by js/panding-sell.js to render action buttons
+        window.appPermissions = {
+            canEdit: @can('sales.edit') true @else false @endif,
+            canDelete: @can('sales.delete') true @else false @endif,
+            canPay: @can('payments.manage') true @else false @endif,
+            canVerify: @can('sales.verify') true @else false @endif,
+        };
+    </script>
+    @vite(['resources/js/pages/pending-sales.js'])

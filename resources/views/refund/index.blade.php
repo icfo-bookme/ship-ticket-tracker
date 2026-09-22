@@ -75,4 +75,10 @@
     </div>
 </div>
 
-<script src="{{ asset('js/refund.js') }}"></script>
+<script>
+    // RBAC: permission flag used by js/refund.js to render action buttons
+    window.appPermissions = {
+        canManage: @can('refunds.manage') true @else false @endif,
+    };
+</script>
+@vite(['resources/js/pages/refund.js'])

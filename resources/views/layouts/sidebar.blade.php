@@ -20,6 +20,7 @@
         <div class="flex flex-col flex-grow px-2 py-4 overflow-y-auto scrollbar-hide" id="nav-container">
             <nav class="flex-1 space-y-1">
                 <!-- Sell Section -->
+                @canany(['sales.create', 'sales.view', 'excel.manage'])
                 <div class="px-2 pt-2">
                     <div id="sell-dropdown" class="mb-1 relative">
                         <button
@@ -42,23 +43,29 @@
                             </svg>
                         </button>
                         <div id="sell-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
+                            @can('sales.create')
                             <a href="/ship-ticket-sales/create"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Create Tickets</span>
                             </a>
+                            @endcan
+                            @can('sales.view')
                             <a href="/sales/status/pending"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span
                                     class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sales</span>
                             </a>
+                            @endcan
+                            @can('excel.manage')
                             <a href="/excel"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span
                                     class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Excel</span>
                             </a>
+                            @endcan
 
                              {{-- <a href="/g-drive"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
@@ -70,7 +77,9 @@
                         </div>
                     </div>
                 </div>
+                @endcanany
 
+                @canany(['refunds.manage', 'refunds.view'])
                 <div class="px-2 pt-2">
                     <div id="refund-dropdown" class="mb-1 relative">
                         <button
@@ -89,19 +98,23 @@
                         </button>
                         <div id="refund-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
                             <!-- Make Refund Link -->
+                            @can('refunds.manage')
                             <a href="/refunds/create"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition {{ request()->is('refunds/create') ? 'bg-blue-100 text-blue-600' : '' }}">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Make Refund</span>
                             </a>
+                            @endcan
 
                             <!-- Refunded Sell Link -->
+                            @can('refunds.view')
                             <a href="/refunded"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span
                                     class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Refunded Sell</span>
                             </a>
+                            @endcan
 
 
                         </div>
@@ -109,7 +122,9 @@
 
                     </div>
                 </div>
+                @endcanany
 
+                @canany(['ships.manage', 'companies.manage'])
                 <div class="px-2 pt-2">
                     <div id="create-dropdown" class="mb-1 relative">
                         <button
@@ -131,20 +146,25 @@
                             </svg>
                         </button>
                         <div id="create-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
+                            @can('ships.manage')
                             <a href="/ships-details"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">New Ship</span>
                             </a>
+                            @endcan
+                            @can('companies.manage')
                             <a href="/companies-details"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">New Company</span>
                             </a>
+                            @endcan
 
                         </div>
                     </div>
                 </div>
+                @endcanany
                 <!--<div class="px-2 pt-2">-->
                 <!--    <div id="preBooking-dropdown" class="mb-1 relative">-->
                 <!--        <button-->
@@ -181,6 +201,7 @@
                 <!--</div>-->
 
                 <!-- Reports Section -->
+                @canany(['reports.view', 'cash.manage'])
                 <div class="px-2 pt-2">
                     <div id="reports-dropdown" class="mb-1 relative">
                         <button
@@ -203,22 +224,28 @@
                             </svg>
                         </button>
                         <div id="reports-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
+                            @can('reports.view')
                             <a href="/admin/sales-reports"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sales Reports</span>
                             </a>
+                            @endcan
+                            @can('cash.manage')
                             <a href="/show/cash-collections"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">
                                     Cash Collection</span>
                             </a>
+                            @endcan
                         </div>
                     </div>
                 </div>
+                @endcanany
 
 
+                @can('whatsapp.manage')
                 <div class="px-2 pt-2">
                     <div id="whatsapp-dropdown" class="mb-1 relative">
                         <button
@@ -236,16 +263,71 @@
                             </svg>
                         </button>
                         <div id="whatsapp-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
+                            @can('whatsapp.manage')
                             <a href="/admin/whatsapp"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span
                                     class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Whatsapp Details</span>
                             </a>
+                            @endcan
 
                         </div>
                     </div>
                 </div>
+                @endcan
+
+                <!-- Admin Section (Users / Roles / Permissions) -->
+                @canany(['users.manage', 'roles.manage', 'permissions.manage'])
+                <div class="px-2 pt-2">
+                    <div id="admin-dropdown" class="mb-1 relative">
+                        <button
+                            class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-gray-700 rounded-lg hover:bg-blue-50 group transition focus:outline-none">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                    </path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span
+                                    class="ml-3 whitespace-nowrap transition-all duration-300 sidebar-text truncate text-left">Admin</span>
+                            </div>
+                            <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200 text-gray-500"
+                                id="admin-dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="admin-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
+                            @can('users.manage')
+                            <a href="/users-details"
+                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Users</span>
+                            </a>
+                            @endcan
+                            @can('roles.manage')
+                            <a href="/roles-details"
+                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Roles</span>
+                            </a>
+                            @endcan
+                            @can('permissions.manage')
+                            <a href="/permissions-details"
+                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Permissions</span>
+                            </a>
+                            @endcan
+                        </div>
+                    </div>
+                </div>
+                @endcanany
 
                 
 

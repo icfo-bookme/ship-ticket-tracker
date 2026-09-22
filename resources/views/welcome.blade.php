@@ -511,7 +511,7 @@
 
 
     <!-- Include custom JavaScript -->
-    <script src="{{ asset('js/public-form.js') }}"></script>
+    @vite(['resources/js/pages/public-form.js'])
 
 <script>  </script>
 </x-frontend-layout>

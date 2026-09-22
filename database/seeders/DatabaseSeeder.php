@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,11 +14,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Seed the RBAC system: permissions + default roles (Admin,
+        // Manager, Agent, Viewer). The first super admin user is created
+        // with: php artisan user:make-admin {email}
+        $this->call([
+            RolePermissionSeeder::class,
         ]);
     }
 }

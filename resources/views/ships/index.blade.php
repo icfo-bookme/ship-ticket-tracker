@@ -128,5 +128,21 @@
         }
     }
 
+    getList = function() {
+        table.classList.remove('hidden');
+        $('#shipsTable').DataTable({
+            processing: true, serverSide: true, destroy: true, ajax: '/ships',
+            dom: 'lBfrtip', buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
+            columns: [
+                { data: 'id' }, { data: 'name' }, { data: 'route' },
+                { data: 'status', render: value => value == 1 ? 'Yes' : 'No' },
+                { data: null, orderable: false, searchable: false, render: row => '<button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" data-id="' + row.id + '" data-name="' + escapeHtml(row.name) + '" data-route="' + escapeHtml(row.route) + '" data-status="' + row.status + '">Edit</button> <button class="bg-red-500 text-white px-2 py-1 rounded deleteBtn" data-id="' + row.id + '">Delete</button> <a href="/ship/packages/' + row.id + '" class="bg-blue-500 text-white px-2 py-2 rounded">Packages</a>' }
+            ],
+            drawCallback: function() {
+                document.querySelectorAll('.editBtn').forEach(btn => btn.addEventListener('click', () => showEditModal(btn)));
+                document.querySelectorAll('.deleteBtn').forEach(btn => btn.addEventListener('click', () => handleDeleteClick(btn)));
+            }
+        });
+    };
     getList();
 </script>

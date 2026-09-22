@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Company;
+use App\Http\Requests\MasterData\StoreCompanyRequest;
+use App\Http\Requests\MasterData\UpdateCompanyRequest;
+use App\Services\MasterData\CompanyService;
 use Illuminate\Http\Request;
 
 class CompanyController extends Controller
 {
+    public function __construct(private readonly CompanyService $companies) {}
+
     public function showTableList()
     {
         return view('companies.componentItem');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Company::all());
+        return response()->json($this->companies->dataTable($request));
     }
 
     public function create()
@@ -22,45 +26,26 @@ class CompanyController extends Controller
         return response()->json(['message' => 'Provide company data to create.'], 200);
     }
 
-    public function store(Request $request)
+    public function store(StoreCompanyRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'status' => 'required|string',
-        ]);
-
-        $company = Company::create($validated);
+        $company = $this->companies->create($request->validated());
 
         return response()->json($company, 201);
     }
 
     public function show(string $id)
     {
-        $company = Company::find($id);
-        abort_unless($company, 404, 'Company not found.');
-
-        return response()->json($company);
+        return response()->json($this->companies->find($id));
     }
 
     public function edit(string $id)
     {
-        $company = Company::find($id);
-        abort_unless($company, 404, 'Company not found.');
-
-        return response()->json($company);
+        return response()->json($this->companies->find($id));
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdateCompanyRequest $request, string $id)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'status' => 'required',
-        ]);
-
-        $company = Company::find($id);
-        abort_unless($company, 404, 'Company not found.');
-
-        $company->update($validated);
+        $this->companies->update($this->companies->find($id), $request->validated());
 
         return response()->json([
             'success' => true,
@@ -70,9 +55,7 @@ class CompanyController extends Controller
 
     public function destroy(string $id)
     {
-        $company = Company::find($id);
-        abort_unless($company, 404, 'Company not found.');
-
+        $company = $this->companies->find($id);
         $company->delete();
 
         return response()->json([

@@ -1,0 +1,40 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+
+class RolePermissionSeeder extends Seeder
+{
+    use WithoutModelEvents;
+
+    /**
+     * Seed the RBAC system: every permission, the default roles and
+     * their permission assignments. Safe to run multiple times.
+     */
+    public function run(): void
+    {
+        // 1. Create all application permissions (idempotent).
+        foreach (config('roles.permissions') as $permission) {
+            Permission::findOrCreate($permission, 'web');
+        }
+
+        // 2. Create the default roles and sync their permissions.
+        foreach (config('roles.default_roles') as $roleName => $permissions) {
+            $role = Role::findOrCreate($roleName, 'web');
+
+            $role->syncPermissions(
+                $permissions === '*'
+                    ? Permission::all()
+                    : $permissions
+            );
+        }
+
+        $this->command?->info('Roles and permissions seeded: '
+            .Permission::count().' permissions, '
+            .Role::count().' roles.');
+    }
+}

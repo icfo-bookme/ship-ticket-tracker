@@ -2,35 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\WhatsappDetail;
+use App\Http\Requests\MasterData\StoreWhatsappDetailRequest;
+use App\Services\MasterData\WhatsappDetailService;
 use Illuminate\Http\Request;
 
 class WhatsappDetailsController extends Controller
 {
+    public function __construct(private readonly WhatsappDetailService $whatsappDetails) {}
+
     public function showTableList()
     {
         return view('WhatsappDetail.componentItem');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $ships = WhatsappDetail::all();
-        return response()->json($ships);
+        return response()->json($this->whatsappDetails->dataTable($request));
     }
 
-   public function store(Request $request)
-{
-    $validated = $request->validate([
-        'tag' => 'required|string|max:255',
-        'whatsapp_number' => 'required|digits_between:10,15',
-        'form_no' => 'required|string|max:100',
-        'url' => 'required|url|max:255',
-    ]);
+    public function store(StoreWhatsappDetailRequest $request)
+    {
+        $whatsapp = $this->whatsappDetails->create($request->validated());
 
-    $whatsapp = new WhatsappDetail($validated);
-    $whatsapp->save();
-
-    return response()->json($whatsapp, 201);
-}
-
+        return response()->json($whatsapp, 201);
+    }
 }

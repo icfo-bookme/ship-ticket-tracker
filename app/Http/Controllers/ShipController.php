@@ -2,19 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\MasterData\StoreShipRequest;
+use App\Http\Requests\MasterData\UpdateShipRequest;
 use App\Models\Ship;
+use App\Services\MasterData\ShipService;
 use Illuminate\Http\Request;
 
 class ShipController extends Controller
 {
+    public function __construct(private readonly ShipService $ships) {}
+
     public function showTableList()
     {
         return view('ships.componentItem');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Ship::all());
+        return response()->json($this->ships->dataTable($request));
     }
 
     public function create()
@@ -22,15 +27,9 @@ class ShipController extends Controller
         return response()->json(['message' => 'Provide ship data to create.'], 200);
     }
 
-    public function store(Request $request)
+    public function store(StoreShipRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'route' => 'required|string|max:255',
-            'status' => 'required|string',
-        ]);
-
-        $ship = Ship::create($validated);
+        $ship = $this->ships->create($request->validated());
 
         return response()->json($ship, 201);
     }
@@ -45,15 +44,9 @@ class ShipController extends Controller
         return response()->json($ship);
     }
 
-    public function update(Request $request, Ship $ship)
+    public function update(UpdateShipRequest $request, Ship $ship)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'route' => 'required|string|max:255',
-            'status' => 'required',
-        ]);
-
-        $ship->update($validated);
+        $ship = $this->ships->update($ship, $request->validated());
 
         return response()->json([
             'success' => true,

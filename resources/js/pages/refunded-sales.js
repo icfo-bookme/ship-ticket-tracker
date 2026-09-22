@@ -114,6 +114,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function createActionButtons(row) {
+        if (! (window.appPermissions || {}).canManage) return "";
+
         return `
             <button class="text-white bg-yellow-700 px-2 py-1 rounded editRefundedBtn"
                 data-id="${row.refund?.id ?? ""}"

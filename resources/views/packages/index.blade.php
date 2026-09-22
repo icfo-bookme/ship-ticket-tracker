@@ -128,6 +128,20 @@
         }
     }
 
+    getList = function() {
+        table.classList.remove('hidden');
+        $('#shipsTable').DataTable({
+            processing: true, serverSide: true, destroy: true, ajax: '/ship-packages/' + shipPackageId,
+            dom: 'lBfrtip', buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
+            columns: [
+                { data: 'id' }, { data: 'name' }, { data: 'price' }, { data: 'round_trip_price' },
+                { data: null, orderable: false, searchable: false, render: row => '<button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" data-id="' + row.id + '" data-name="' + escapeHtml(row.name) + '" data-price="' + row.price + '" data-round_trip_price="' + row.round_trip_price + '">Edit</button> <button class="bg-red-500 text-white px-2 py-1 rounded deleteBtn" data-id="' + row.id + '">Delete</button>' }
+            ],
+            drawCallback: function() {
+                document.querySelectorAll('.editBtn').forEach(btn => btn.addEventListener('click', () => showEditModal(btn)));
+                document.querySelectorAll('.deleteBtn').forEach(btn => btn.addEventListener('click', () => handleDeleteClick(btn)));
+            }
+        });
+    };
     getList();
 </script>
-

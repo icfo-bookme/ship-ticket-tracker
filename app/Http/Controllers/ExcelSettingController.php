@@ -2,19 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Settings\SaveExcelSettingRequest;
 use App\Models\ExcelSetting;
+use App\Services\Settings\ExcelSettingService;
 use Illuminate\Http\Request;
 
 class ExcelSettingController extends Controller
 {
+    public function __construct(private readonly ExcelSettingService $excelSettings) {}
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $settings = ExcelSetting::all();
-
-        return response()->json($settings);
+        return response()->json($this->excelSettings->dataTable($request));
     }
 
     public function showTableList()
@@ -25,14 +27,9 @@ class ExcelSettingController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(SaveExcelSettingRequest $request)
     {
-        $validated = $request->validate([
-            'spreadsheetId' => 'required|string|max:255',
-            'range' => 'required|string|max:255',
-        ]);
-
-        $setting = ExcelSetting::create($validated);
+        $setting = $this->excelSettings->create($request->validated());
 
         return response()->json([
             'success' => true,
@@ -55,14 +52,9 @@ class ExcelSettingController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, ExcelSetting $excelSetting)
+    public function update(SaveExcelSettingRequest $request, ExcelSetting $excelSetting)
     {
-        $validated = $request->validate([
-            'spreadsheetId' => 'required|string|max:255',
-            'range' => 'required|string|max:255',
-        ]);
-
-        $excelSetting->update($validated);
+        $excelSetting = $this->excelSettings->update($excelSetting, $request->validated());
 
         return response()->json([
             'success' => true,

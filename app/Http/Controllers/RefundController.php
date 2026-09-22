@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Refunds\FullRefundRequest;
+use App\Http\Requests\Refunds\PartialRefundRequest;
+use App\Http\Requests\Refunds\StoreRefundRequest;
+use App\Http\Requests\Refunds\UpdateRefundRequest;
 use App\Models\Refund;
 use App\Models\ShipTicketSale;
+use App\Services\Refunds\RefundService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class RefundController extends Controller
 {
+    public function __construct(private readonly RefundService $refunds) {}
+
     public function index()
     {
         $refunds = Refund::all();
@@ -200,15 +206,9 @@ class RefundController extends Controller
         }
     }
 
-    public function store(Request $request)
+    public function store(StoreRefundRequest $request)
     {
-        $validated = $request->validate([
-            'sales_id' => 'required|integer',
-            'refunded_number_of_tickets' => 'required|integer|min:1',
-            'refunded_amount' => 'required|numeric|min:0',
-        ]);
-
-        $refund = Refund::create($validated);
+        $refund = $this->refunds->create($request->validated());
 
         return response()->json($refund, 201);
     }
@@ -218,57 +218,19 @@ class RefundController extends Controller
         return view('refunded.index');
     }
 
-    public function fullRefunds(Request $request)
+    public function fullRefunds(FullRefundRequest $request)
     {
-
-        $validated = $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'required|integer',
-        ]);
-
-        DB::transaction(function () use ($validated) {
-            foreach ($validated['ids'] as $id) {
-                $sale = ShipTicketSale::find($id);
-                if ($sale && $sale->status !== 'pending') {
-                    Refund::create([
-                        'sales_id' => $sale->id,
-                        'refunded_number_of_tickets' => $sale->number_of_ticket,
-                        'refunded_amount' => $sale->received_amount,
-                    ]);
-
-                    $sale->status = 'refunded';
-                    $sale->save();
-                }
-            }
-        });
+        $this->refunds->fullRefund($request->validated('ids'));
 
         return response()->json(['status' => 'success', 'message' => 'Refund processed successfully.']);
     }
 
-    public function partialRefund(Request $request, $id)
+    public function partialRefund(PartialRefundRequest $request, $id)
     {
-        $validated = $request->validate([
-            'refunded_number_of_tickets' => 'required|integer|min:1',
-            'refunded_amount' => 'required|numeric|min:0',
-            'remark' => 'nullable|string|max:255',
-        ]);
-
         $sale = ShipTicketSale::find($id);
         abort_unless($sale, 404, 'Sale not found.');
 
-        DB::transaction(function () use ($sale, $validated) {
-            Refund::create([
-                'sales_id' => $sale->id,
-                'refunded_number_of_tickets' => $validated['refunded_number_of_tickets'],
-                'refunded_amount' => $validated['refunded_amount'],
-                'remark' => $validated['remark'] ?? null,
-            ]);
-
-            $sale->status = ($sale->number_of_ticket == $validated['refunded_number_of_tickets'])
-                ? 'refunded'
-                : 'partial-refunded';
-            $sale->save();
-        });
+        $this->refunds->partialRefund($sale, $request->validated());
 
         return response()->json(['success' => true, 'message' => 'Refund processed successfully.']);
     }
@@ -289,13 +251,8 @@ class RefundController extends Controller
         // Not necessary for APIs, usually handled in web apps
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateRefundRequest $request, $id)
     {
-        $request->validate([
-            'refunded_number_of_tickets' => 'required|integer|min:1',
-            'refunded_amount' => 'required|numeric|min:0',
-        ]);
-
         $refund = Refund::find($id);
 
         if (! $refund) {
@@ -308,15 +265,7 @@ class RefundController extends Controller
             return response()->json(['message' => 'Associated sale not found'], 404);
         }
 
-        $refund->update([
-            'refunded_number_of_tickets' => $request->refunded_number_of_tickets,
-            'refunded_amount' => $request->refunded_amount,
-        ]);
-
-        $sale->status = ($sale->number_of_ticket == $request->refunded_number_of_tickets)
-            ? 'refunded'
-            : 'partial-refunded';
-        $sale->save();
+        $this->refunds->update($refund, $sale, $request->validated());
 
         return response()->json(['success' => true, 'message' => 'Refund updated successfully.']);
     }

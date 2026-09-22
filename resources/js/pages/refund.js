@@ -112,18 +112,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function createActionButtons(sale) {
-        return `
-            <div class="flex gap-2 items-center justify-center">
-                <a href="/ship-ticket-sales/${sale.id}">
+        const perms = window.appPermissions || {};
+        const editButton = perms.canManage
+            ? `<a href="/ship-ticket-sales/${sale.id}">
                     <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
-                </a>
-                <button class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund"
+                </a>`
+            : "";
+        const refundButton = perms.canManage
+            ? `<button class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund"
                     data-id="${sale.id}"
                     data-received_total_amount="${sale.received_amount}"
                     data-number_ticket="${sale.number_of_ticket}"
                     data-status="shipped">
                     Partial Refund
-                </button>
+                </button>`
+            : "";
+        return `
+            <div class="flex gap-2 items-center justify-center">
+                ${editButton}
+                ${refundButton}
             </div>`;
     }
 

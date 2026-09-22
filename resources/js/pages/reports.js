@@ -188,6 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function createActionButtons(row) {
         if (!row?.id) return "";
+        if (! (window.appPermissions || {}).canEdit) return "";
 
         return `
             <div class="flex gap-2 items-center justify-center">

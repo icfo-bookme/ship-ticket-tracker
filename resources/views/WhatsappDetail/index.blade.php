@@ -115,5 +115,15 @@
         }
     }
 
+    getList = function() {
+        table.classList.remove('hidden');
+        $('#shipsTable').DataTable({ processing: true, serverSide: true, destroy: true, ajax: '/whatsapp', dom: 'lBfrtip', buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
+            columns: [
+                { data: 'id' }, { data: 'tag' }, { data: 'whatsapp_number' }, { data: 'form_no' },
+                { data: 'url', render: value => '<span title="' + escapeHtml(value) + '">' + escapeHtml(value) + '</span> <button class="copyBtn bg-blue-500 text-white px-2 py-1 rounded text-sm" data-url="' + escapeHtml(value) + '">Copy</button>' }
+            ],
+            drawCallback: function() { document.querySelectorAll('.copyBtn').forEach(btn => btn.addEventListener('click', () => navigator.clipboard.writeText(btn.dataset.url).then(() => { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500); }))); }
+        });
+    };
     getList();
 </script>

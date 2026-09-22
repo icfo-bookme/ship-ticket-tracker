@@ -1,12 +1,12 @@
 <?php
 
-test('registration screen can be rendered', function () {
+test('registration is disabled: /register redirects to login', function () {
     $response = $this->get('/register');
 
-    $response->assertStatus(200);
+    $response->assertRedirect(route('login', absolute: false));
 });
 
-test('new users can register', function () {
+test('registration POST endpoint is closed', function () {
     $response = $this->post('/register', [
         'name' => 'Test User',
         'email' => 'test@example.com',
@@ -14,6 +14,7 @@ test('new users can register', function () {
         'password_confirmation' => 'password',
     ]);
 
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    // Only a GET redirect route exists for /register now.
+    $response->assertStatus(405);
+    $this->assertGuest();
 });

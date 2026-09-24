@@ -185,14 +185,7 @@
 
 
     function formatStatus(status) {
-        const statusMap = {
-            'pending': 'Pending',
-            'payment-verified': 'Payment Verified',
-            'ticket-issued': 'Ticket Issued',
-            'ticket-printed': 'Ticket Printed',
-            'shipment_id_entered': 'Shipment ID Entered',
-            'shipped': 'Shipped'
-        };
+        const statusMap = @json(config('sales.statuses'));
         return statusMap[status] || status;
     }
 

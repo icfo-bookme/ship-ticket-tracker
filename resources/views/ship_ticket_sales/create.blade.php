@@ -190,6 +190,7 @@
                             </label>
                             <input type="date" name="journey_date" id="journey_date"
                                 value="{{ old('journey_date') }}"
+                                min="{{ now()->format('Y-m-d') }}"
                                 class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 
@@ -199,6 +200,7 @@
                             </label>
                             <input type="date" name="return_date" id="return_date"
                                 value="{{ old('return_date') }}"
+                                min="{{ now()->format('Y-m-d') }}"
                                 class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 

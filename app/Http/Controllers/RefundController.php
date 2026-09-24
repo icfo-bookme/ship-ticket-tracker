@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SaleStatus;
 use App\Http\Requests\Refunds\FullRefundRequest;
 use App\Http\Requests\Refunds\PartialRefundRequest;
 use App\Http\Requests\Refunds\StoreRefundRequest;
@@ -39,7 +40,11 @@ class RefundController extends Controller
             'ships',
             'companies',
         ])
-            ->whereNotIn('status', ['pending', 'refunded', 'partial-refunded']);
+            ->whereNotIn('status', [
+                SaleStatus::Pending->value,
+                SaleStatus::Refunded->value,
+                SaleStatus::PartialRefunded->value,
+            ]);
 
         // Apply filters
         if ($shipId && ! empty($shipId)) {
@@ -133,7 +138,10 @@ class RefundController extends Controller
             $searchValue = $request->input('search.value', '');
 
             $query = ShipTicketSale::with(['ships', 'companies', 'refund'])
-                ->whereIn('status', ['refunded', 'partial-refunded']);
+                ->whereIn('status', [
+                    SaleStatus::Refunded->value,
+                    SaleStatus::PartialRefunded->value,
+                ]);
 
             if (! empty($shipId)) {
                 $query->where('ship_id', $shipId);

@@ -2,6 +2,7 @@
 
 namespace App\Services\Sales;
 
+use App\Enums\SaleStatus;
 use App\Models\Bftn;
 use App\Models\Category;
 use App\Models\CoPassenger;
@@ -109,7 +110,7 @@ class ShipTicketSaleService
             throw $e;
         }
 
-        if (($input['status'] ?? null) === 'payment-verified') {
+        if (($input['status'] ?? null) === SaleStatus::PaymentVerified->value) {
             $this->markPaymentVerified($sale, $data, $input);
         }
 
@@ -291,8 +292,8 @@ class ShipTicketSaleService
                         'sales_id' => $sale->id,
                         'filename' => $pdfValue.'.pdf',
                         'group_by_id' => ($data['group_tickets'] ?? null) == 'yes'
-                            ? $data['group_by_id']
-                            : $sale->id,
+                    ? $data['group_by_id']
+                    : $sale->id,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -301,12 +302,12 @@ class ShipTicketSaleService
 
             if (($data['group_tickets'] ?? null) == 'yes' && ! empty($data['group_by_id'])) {
                 $groupSale = ShipTicketSale::find($data['group_by_id']);
-                $sale->update(['status' => $groupSale?->status ?? 'ticket-issued']);
+                $sale->update(['status' => $groupSale?->status ?? SaleStatus::TicketIssued->value]);
 
                 return;
             }
 
-            $sale->update(['status' => 'ticket-issued']);
+            $sale->update(['status' => SaleStatus::TicketIssued->value]);
         });
     }
 

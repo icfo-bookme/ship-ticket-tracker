@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\SaleStatus;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,7 +14,7 @@ class EnsureSalesStatusAccess
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $status = $request->route('status') ?? 'pending';
+        $status = $request->route('status') ?? SaleStatus::Pending->value;
 
         abort_unless($request->user()?->can("sales.status.{$status}"), 403);
 

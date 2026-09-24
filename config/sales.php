@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\SaleStatus;
+
 return [
 
     /*
@@ -15,14 +17,14 @@ return [
     */
 
     'statuses' => [
-        'pending' => 'Pending',
-        'payment-verified' => 'Payment Verified',
-        'ticket-issued' => 'Ticket Issued',
-        'ticket-printed' => 'Ticket Printed',
-        'shipment_id_entered' => 'Parcel Created',
-        'shipped' => 'Shipped',
-        'partial-refunded' => 'Partially Refunded',
-        'refunded' => 'Refunded',
+        SaleStatus::Pending->value => SaleStatus::Pending->label(),
+        SaleStatus::PaymentVerified->value => SaleStatus::PaymentVerified->label(),
+        SaleStatus::TicketIssued->value => SaleStatus::TicketIssued->label(),
+        SaleStatus::TicketPrinted->value => SaleStatus::TicketPrinted->label(),
+        SaleStatus::ShipmentIdEntered->value => SaleStatus::ShipmentIdEntered->label(),
+        SaleStatus::Shipped->value => SaleStatus::Shipped->label(),
+        SaleStatus::PartialRefunded->value => SaleStatus::PartialRefunded->label(),
+        SaleStatus::Refunded->value => SaleStatus::Refunded->label(),
     ],
 
     /*
@@ -36,11 +38,11 @@ return [
     */
 
     'tabs' => [
-        'pending',
-        'payment-verified',
-        'ticket-issued',
-        'ticket-printed',
-        'shipment_id_entered',
-        'shipped',
+        SaleStatus::Pending->value,
+        SaleStatus::PaymentVerified->value,
+        SaleStatus::TicketIssued->value,
+        SaleStatus::TicketPrinted->value,
+        SaleStatus::ShipmentIdEntered->value,
+        SaleStatus::Shipped->value,
     ],
 ];

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SaleStatus;
 use App\Http\Requests\Sales\CheckDuplicateTicketRequest;
 use App\Http\Requests\Sales\StorePublicShipTicketSaleRequest;
 use App\Http\Requests\Sales\StoreShipTicketSaleRequest;
@@ -10,122 +11,36 @@ use App\Models\Company;
 use App\Models\PrintedTicket;
 use App\Models\PrintStatus;
 use App\Models\Ship;
-use App\Models\Shipment;
 use App\Models\ShipTicketSale;
-use App\Models\VerifyTracker;
+use App\Services\Sales\GoogleDriveTicketService;
+use App\Services\Sales\SalesDataTableService;
+use App\Services\Sales\SaleStatusWorkflowService;
 use App\Services\Sales\ShipTicketSaleService;
-use App\Services\SteadfastService;
-use Google\Client;
-use Google\Service\Drive;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ShipTicketSaleController extends Controller
 {
     public function __construct(
-        private readonly SteadfastService $steadfast,
         private readonly ShipTicketSaleService $shipTicketSales,
+        private readonly SalesDataTableService $salesDataTable,
+        private readonly SaleStatusWorkflowService $statusWorkflow,
+        private readonly GoogleDriveTicketService $googleDriveTickets,
     ) {}
 
     public function index()
     {
-        $sales = ShipTicketSale::with('ships')->latest()->get();
         $ships = Ship::all();
         $companies = Company::all();
 
-        return view('ship_ticket_sales.index', compact('sales', 'ships', 'companies'))
-            ->with('status', 'pending');
+        return view('ship_ticket_sales.index', compact('ships', 'companies'))
+            ->with('status', SaleStatus::Pending->value);
     }
 
     public function pendingCS(Request $request, $status)
     {
-        $shipId = $request->input('ship_id');
-        $companyId = $request->input('company_id');
-        $journeyDate = $request->input('journey_date');
-
-        // DataTables parameters
-        $start = $request->input('start', 0);
-        $length = $request->input('length', 10);
-        $searchValue = $request->input('search.value', '');
-
-        // Base query
-        $query = ShipTicketSale::with([
-            'ships.packages',
-            'categories',
-            'companies',
-            'coPassengers',
-            'shipment',
-            'payments',
-            'PrintStatus',
-            'printedTickets',
-            'groupedTickets',
-            'verifyby.verifiedByUser',
-        ])
-            ->withCount('printedTickets')
-            ->where('status', $status);
-
-        // Apply filters
-        if (! empty($shipId)) {
-            $query->where('ship_id', $shipId);
-        }
-        if (! empty($companyId)) {
-            $query->where('company_id', $companyId);
-        }
-        if (! empty($journeyDate)) {
-            $query->whereDate('journey_date', $journeyDate);
-        }
-
-        // Get total records BEFORE search
-        $totalRecords = ShipTicketSale::where('status', $status)->count();
-
-        // Apply search
-        if (! empty($searchValue)) {
-            $query->where(function ($q) use ($searchValue) {
-                $q->where('customer_name', 'like', "%{$searchValue}%")
-                    ->orWhere('customer_mobile', 'like', "%{$searchValue}%")
-                    ->orWhere('email', 'like', "%{$searchValue}%")
-                    ->orWhere('nid', 'like', "%{$searchValue}%")
-                    ->orWhere('sales_source', 'like', "%{$searchValue}%")
-                    ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
-                    ->orWhere('discount_amount', 'like', "%{$searchValue}%")
-                    ->orWhere('payment_method', 'like', "%{$searchValue}%")
-                    ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
-                    ->orWhere('received_amount', 'like', "%{$searchValue}%")
-                    ->orWhere('due_amount', 'like', "%{$searchValue}%")
-                    ->orWhere('sold_by', 'like', "%{$searchValue}%")
-                    ->orWhere('ticket_category', 'like', "%{$searchValue}%")
-                    ->orWhere('status', 'like', "%{$searchValue}%")
-                    ->orWhereDate('journey_date', $searchValue)
-                    ->orWhereDate('return_date', $searchValue)
-                    ->orWhereDate('issued_date', $searchValue)
-                    ->orWhereHas('ships', function ($shipQuery) use ($searchValue) {
-                        $shipQuery->where('name', 'like', "%{$searchValue}%");
-                    })
-                    ->orWhereHas('companies', function ($companyQuery) use ($searchValue) {
-                        $companyQuery->where('name', 'like', "%{$searchValue}%");
-                    })
-                    ->orWhereHas('shipment', function ($shipmentQuery) use ($searchValue) {
-                        $shipmentQuery->where('shipment_id', 'like', "%{$searchValue}%");
-                    })
-                    ->orWhere('id', $searchValue);
-            });
-        }
-
-        // Get filtered count
-        $filteredRecords = $query->count();
-
-        // Apply pagination
-        $sales = $query->skip($start)->take($length)->get();
-
-        // Return JSON for DataTables
-        return response()->json([
-            'draw' => $request->input('draw'),
-            'recordsTotal' => $totalRecords,
-            'recordsFiltered' => $filteredRecords,
-            'data' => $sales,
-        ]);
+        return $this->salesDataTable->response($request, $status);
     }
 
     public function showPendingSales($status)
@@ -234,7 +149,7 @@ class ShipTicketSaleController extends Controller
 
         // Add these totals to the sale object for easy access in view
 
-        if ($sale->status == 'payment-verified') {
+        if ($sale->status == SaleStatus::PaymentVerified->value) {
             $sale->total_departure_tickets = $totalDepartureTickets;
             $sale->total_return_tickets = $totalReturnTickets;
         } else {
@@ -293,7 +208,10 @@ class ShipTicketSaleController extends Controller
         }
 
         $latestStatus = ShipTicketSale::where('id', $latestTicket->sales_id)->value('status');
-        $groupByStatus = in_array($latestStatus, ['ticket-issued', 'ticket-printed'], true);
+        $groupByStatus = in_array($latestStatus, [
+            SaleStatus::TicketIssued->value,
+            SaleStatus::TicketPrinted->value,
+        ], true);
 
         return [
             'number' => $number,
@@ -358,181 +276,29 @@ class ShipTicketSaleController extends Controller
 
     public function verify(Request $request, $id, $status)
     {
-        if ($status == 'ticket-printed') {
+        $result = $this->statusWorkflow->verify((int) $id, $status);
 
-            $tickets = PrintedTicket::where('group_by_id', $id)
-                ->latest()
-                ->get()
-                ->unique('sales_id')
-                ->values();
-
-            DB::transaction(function () use ($tickets): void {
-                $tickets->each(function ($ticket) {
-
-                    $sale = ShipTicketSale::find($ticket->sales_id);
-
-                    if ($sale) {
-
-                        $sale->update([
-                            'status' => 'ticket-printed',
-                        ]);
-
-                        VerifyTracker::create([
-                            'name' => 'ticket-printed',
-                            'ticket_id' => $sale->id,
-                            'verified_by' => auth()->id(),
-                        ]);
-                    }
-                });
-            });
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Sales updated to ticket-printed successfully',
-            ]);
-        }
-
-        $sale = ShipTicketSale::findOrFail($id);
-        if ($status == 'shipment_id_entered') {
-            $bulkParcelData = [
-                [
-                    'invoice' => 'TICKET-'.$sale->id,
-                    'recipient_name' => $sale->customer_name,
-                    'recipient_phone' => $sale->customer_mobile,
-                    'recipient_address' => $sale->address ?? 'N/A',
-                    'cod_amount' => $sale->due_amount + 100 ?? 100,
-                    'note' => 'Journey ticket booking ID: '.$sale->id,
-                    'delivery_type' => 0,
-                ],
-            ];
-
-            // Use the injected service
-            $steadfastResult = $this->steadfast->bulkCreate($bulkParcelData);
-
-            $consignmentId = null;
-
-            // Option 1: Direct access if you know the structure
-            if (isset($steadfastResult['data'][0]['consignment_id'])) {
-                $consignmentId = $steadfastResult['data'][0]['consignment_id'];
-            }
-
-            // Option 2: Safer approach with validation
-            if (! empty($steadfastResult['data']) && is_array($steadfastResult['data'])) {
-                $firstResult = $steadfastResult['data'][0] ?? null;
-                if ($firstResult && isset($firstResult['consignment_id'])) {
-                    $consignmentId = $firstResult['consignment_id'];
-                }
-            }
-
-            // Check if we got a consignment_id
-            if (! $consignmentId) {
-                // Handle error - log it or throw exception
-                Log::error('Failed to get consignment_id from Steadfast response', $steadfastResult);
-
-                return response()->json(['success' => false, 'message' => 'Failed to create shipment'], 500);
-            }
-
-            $tickets = PrintedTicket::where('group_by_id', $id)
-                ->latest()
-                ->get()
-                ->unique('sales_id')
-                ->values();
-
-            DB::transaction(function () use ($tickets, $consignmentId): void {
-                $tickets->each(function ($ticket) use ($consignmentId) {
-
-                    $sale = ShipTicketSale::find($ticket->sales_id);
-
-                    if ($sale) {
-
-                        Shipment::create([
-                            'ticket_id' => $sale->id,
-                            'shipment_id' => $consignmentId,
-                        ]);
-
-                        $sale->update([
-                            'status' => 'shipment_id_entered',
-                        ]);
-
-                        VerifyTracker::create([
-                            'name' => 'shipment_id_entered',
-                            'ticket_id' => $sale->id,
-                            'verified_by' => auth()->id(),
-                        ]);
-                    }
-                });
-            });
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Sales updated to ticket-printed successfully',
-            ]);
-        }
-
-        DB::transaction(function () use ($sale, $status, $id): void {
-            $sale->update(['status' => $status]);
-
-            VerifyTracker::create([
-                'name' => $status,
-                'ticket_id' => $id,
-                'verified_by' => auth()->id(),
-            ]);
-        });
-
-        return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
+        return response()->json(
+            ['success' => $result['success'], 'message' => $result['message']],
+            $result['status'] ?? 200
+        );
     }
 
     public function pdfDownload($id)
     {
-        $client = new Client;
-        $client->setAuthConfig(storage_path('app/google/service-account.json'));
-        $client->addScope(Drive::DRIVE_READONLY);
-
-        $driveService = new Drive($client);
-
-        $folderId = '1Kw6lNhhch4H0SbXrNNNRWp_4mTEGvvCv';
-        $fileName = $id.'.pdf';
-
-        // 1ï¸âƒ£ Find file in Drive
-        $query = "name='{$fileName}' and '{$folderId}' in parents and trashed=false";
-        $files = $driveService->files->listFiles([
-            'q' => $query,
-            'fields' => 'files(id, name)',
-            'pageSize' => 1,
-        ]);
-
-        if (count($files->getFiles()) === 0) {
-            abort(404, 'PDF not found in Google Drive');
-        }
-
-        $fileId = $files->getFiles()[0]->getId();
-
-        // 2ï¸âƒ£ Stream PDF directly to browser
-        $response = $driveService->files->get($fileId, ['alt' => 'media']);
-
-        return response()->stream(
-            function () use ($response) {
-                echo $response->getBody()->getContents();
-            },
-            200,
-            [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => "inline; filename=\"{$fileName}\"",
-            ]
-        );
+        return $this->googleDriveTickets->streamPdf($id.'.pdf');
     }
 
     // ShipTicketSaleController.php
     public function pdfPrintAll()
     {
-        return ShipTicketSale::where('status', 'ticket-issued')
+        return ShipTicketSale::where('status', SaleStatus::TicketIssued->value)
             ->orderBy('id')
             ->pluck('id');
     }
 
     public function openTicket($saleId, $filename)
     {
-        // Increment print count
         $sales = PrintStatus::where('sales_id', $saleId)->first();
 
         if ($sales) {
@@ -544,36 +310,6 @@ class ShipTicketSaleController extends Controller
             ]);
         }
 
-        // Google Drive client
-        $client = new Client;
-        $client->setAuthConfig(storage_path('app/google/service-account.json'));
-        $client->addScope(Drive::DRIVE_READONLY);
-
-        $driveService = new Drive($client);
-
-        $folderId = '1Kw6lNhhch4H0SbXrNNNRWp_4mTEGvvCv';
-
-        // Use the actual filename passed
-        $query = "name='{$filename}' 
-              and '{$folderId}' in parents 
-              and mimeType='application/pdf' 
-              and trashed=false";
-
-        $files = $driveService->files->listFiles([
-            'q' => $query,
-            'fields' => 'files(id,name)',
-            'pageSize' => 1,
-        ]);
-
-        if (count($files->getFiles()) === 0) {
-            return redirect()->back()->with('error', 'Ticket not found in Google Drive');
-        }
-
-        $fileId = $files->getFiles()[0]->getId();
-
-        // Correct URL using Drive file ID
-        $driveUrl = "https://drive.google.com/file/d/{$fileId}/view?print=true";
-
-        return redirect()->away($driveUrl);
+        return $this->googleDriveTickets->redirectToPrintView($filename);
     }
 }

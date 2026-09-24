@@ -229,7 +229,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index']);
     });
     Route::middleware('can:sales.verify')->group(function () {
-        Route::get('/notification/verify/{id}', [NotificationController::class, 'verify'])->name('notification.verify');
+        Route::get('/notification/verify/{notification}', [NotificationController::class, 'verify'])->name('notification.verify');
     });
 });
 

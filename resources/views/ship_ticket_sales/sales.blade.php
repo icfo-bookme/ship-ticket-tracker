@@ -1,3 +1,12 @@
+@php
+    $pendingStatus = \App\Enums\SaleStatus::Pending->value;
+    $paymentVerifiedStatus = \App\Enums\SaleStatus::PaymentVerified->value;
+    $ticketIssuedStatus = \App\Enums\SaleStatus::TicketIssued->value;
+    $ticketPrintedStatus = \App\Enums\SaleStatus::TicketPrinted->value;
+    $shipmentIdEnteredStatus = \App\Enums\SaleStatus::ShipmentIdEntered->value;
+    $shippedStatus = \App\Enums\SaleStatus::Shipped->value;
+@endphp
+
 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
     <div class="flex items-center justify-between py-6">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -76,13 +85,13 @@
                 data: null,
                 render: (row) => escapeHtml(row.ship?.name || row.ships?.name || "Not available"),
             },
-            @if ($status == 'shipment_id_entered')
+            @if ($status == $shipmentIdEnteredStatus)
                 {
                     data: "shipment.shipment_id",
                     render: (data) => escapeHtml(data ?? "Not available"),
                 },
             @endif
-            @if ($status == 'pending')
+            @if ($status == $pendingStatus)
                 {
                     data: "payments",
                     title: "Transaction ID",
@@ -275,24 +284,24 @@
             const verifiedBy = escapeHtml(sale.verifyby?.[0]?.verified_by_user?.name || "Unknown");
             const printedFiles = sale.grouped_tickets || [];
 
-            if (sale.status === "pending") {
+            if (sale.status === @js($pendingStatus)) {
                 return `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn"
-                    data-id="${sale.id}" data-status="payment-verified"
+                    data-id="${sale.id}" data-status="{{ $paymentVerifiedStatus }}"
                     title="Sold by: ${escapeHtml(sale.sold_by)}">Verify Payment</button>`;
             }
 
-            if (sale.status === "ticket-issued") {
+            if (sale.status === @js($ticketIssuedStatus)) {
                 return printedFiles.length
-                    ? statusButton(sale.id, "ticket-printed", "Ticket Printed", `Ticket Issued by: ${verifiedBy}`)
+                    ? statusButton(sale.id, @js($ticketPrintedStatus), "Ticket Printed", `Ticket Issued by: ${verifiedBy}`)
                         + printedFileRows(sale, printedFiles)
                     : referenceBy(sale);
             }
 
-            if (sale.status === "ticket-printed") {
+            if (sale.status === @js($ticketPrintedStatus)) {
                 return printedFiles.length
                     ? statusButton(
                         sale.id,
-                        "shipment_id_entered",
+                        @js($shipmentIdEnteredStatus),
                         "Add To Parcel",
                         `ticket-printed by: ${verifiedBy}`,
                         "shipmentIdEntryBtn",
@@ -300,8 +309,8 @@
                     : referenceBy(sale);
             }
 
-            if (sale.status === "shipment_id_entered") {
-                return statusButton(sale.id, "shipped", "Shipped", `shipment_id_entered by: ${verifiedBy}`);
+            if (sale.status === @js($shipmentIdEnteredStatus)) {
+                return statusButton(sale.id, @js($shippedStatus), "Shipped", `shipment_id_entered by: ${verifiedBy}`);
             }
 
             return "";
@@ -390,12 +399,12 @@
         'Mobile',
         'WhatsApp',
         'Ship Name',
-        $status == 'shipment_id_entered' ? 'Shipment Id' : null,
-        $status == 'pending' ? 'Transaction ID' : null,
-        $status == 'pending' ? 'Total Received Amount' : null,
-        $status == 'pending' ? 'Payment Methods' : null,
-        $status == 'pending' ? 'Discount Amount' : null,
-        $status == 'pending' ? 'Payment Proof' : null,
+        $status == $shipmentIdEnteredStatus ? 'Shipment Id' : null,
+        $status == $pendingStatus ? 'Transaction ID' : null,
+        $status == $pendingStatus ? 'Total Received Amount' : null,
+        $status == $pendingStatus ? 'Payment Methods' : null,
+        $status == $pendingStatus ? 'Discount Amount' : null,
+        $status == $pendingStatus ? 'Payment Proof' : null,
         'Action',
     ]))" :url="'/sales/' . $status" :ordering="false" :delegateActions="false" :order="[]"
         :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />

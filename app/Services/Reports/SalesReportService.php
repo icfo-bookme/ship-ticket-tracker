@@ -2,6 +2,7 @@
 
 namespace App\Services\Reports;
 
+use App\Enums\SaleStatus;
 use App\Models\ShipTicketSale;
 use Illuminate\Http\Request;
 
@@ -18,7 +19,7 @@ class SalesReportService
         $orderDirection = $request->input('order.0.dir', 'asc');
 
         $query = ShipTicketSale::with(['ships', 'companies', 'refund', 'payments'])
-            ->where('status', '!=', 'pending');
+            ->where('status', '!=', SaleStatus::Pending->value);
 
         $this->applyFilters($query, $filters);
         $totalRecords = (clone $query)->count();
@@ -165,7 +166,7 @@ class SalesReportService
     private function totals(array $filters): object
     {
         $query = ShipTicketSale::query()
-            ->where('ship_ticket_sales.status', '!=', 'pending')
+            ->where('ship_ticket_sales.status', '!=', SaleStatus::Pending->value)
             ->leftJoin('refunds', 'refunds.sales_id', '=', 'ship_ticket_sales.id');
 
         $this->applyFilters($query, $filters, 'ship_ticket_sales.');

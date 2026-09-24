@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'google_drive' => [
+        'ticket_folder_id' => env('GOOGLE_DRIVE_TICKET_FOLDER_ID', '1Kw6lNhhch4H0SbXrNNNRWp_4mTEGvvCv'),
+    ],
+
 ];

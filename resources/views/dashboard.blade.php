@@ -446,12 +446,12 @@
                                     <td class="px-6 py-4">
                                         @php
                                             $statusColors = [
-                                                'pending' => 'yellow',
-                                                'payment_verified' => 'blue',
-                                                'ticket_issued' => 'indigo',
-                                                'ticket_printed' => 'purple',
-                                                'parcel_created' => 'green',
-                                                'shipped' => 'emerald',
+                                                \App\Enums\SaleStatus::Pending->value => 'yellow',
+                                                \App\Enums\SaleStatus::PaymentVerified->value => 'blue',
+                                                \App\Enums\SaleStatus::TicketIssued->value => 'indigo',
+                                                \App\Enums\SaleStatus::TicketPrinted->value => 'purple',
+                                                \App\Enums\SaleStatus::ShipmentIdEntered->value => 'green',
+                                                \App\Enums\SaleStatus::Shipped->value => 'emerald',
                                             ];
                                             $color = $statusColors[$ticket->status] ?? 'gray';
                                         @endphp

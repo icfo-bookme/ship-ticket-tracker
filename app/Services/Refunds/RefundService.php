@@ -2,6 +2,7 @@
 
 namespace App\Services\Refunds;
 
+use App\Enums\SaleStatus;
 use App\Models\Refund;
 use App\Models\ShipTicketSale;
 use Illuminate\Support\Facades\DB;
@@ -19,14 +20,14 @@ class RefundService
             foreach ($saleIds as $id) {
                 $sale = ShipTicketSale::find($id);
 
-                if ($sale && $sale->status !== 'pending') {
+                if ($sale && $sale->status !== SaleStatus::Pending->value) {
                     Refund::create([
                         'sales_id' => $sale->id,
                         'refunded_number_of_tickets' => $sale->number_of_ticket,
                         'refunded_amount' => $sale->received_amount,
                     ]);
 
-                    $sale->status = 'refunded';
+                    $sale->status = SaleStatus::Refunded->value;
                     $sale->save();
                 }
             }
@@ -44,8 +45,8 @@ class RefundService
             ]);
 
             $sale->status = ($sale->number_of_ticket == $data['refunded_number_of_tickets'])
-                ? 'refunded'
-                : 'partial-refunded';
+                ? SaleStatus::Refunded->value
+                : SaleStatus::PartialRefunded->value;
             $sale->save();
         });
     }
@@ -58,8 +59,8 @@ class RefundService
         ]);
 
         $sale->status = ($sale->number_of_ticket == $data['refunded_number_of_tickets'])
-            ? 'refunded'
-            : 'partial-refunded';
+            ? SaleStatus::Refunded->value
+            : SaleStatus::PartialRefunded->value;
         $sale->save();
     }
 }

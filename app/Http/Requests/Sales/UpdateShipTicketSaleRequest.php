@@ -18,8 +18,8 @@ class UpdateShipTicketSaleRequest extends FormRequest
     {
         return [
             'customer_name' => 'required|string|max:255',
-            'customer_mobile' => 'required|string|max:20',
-            'whatsapp' => 'nullable|string|max:20',
+            'customer_mobile' => 'required|string|min:11|max:20',
+            'whatsapp' => 'nullable|string|min:11|max:20',
             'email' => 'nullable|email|max:255',
             'nid' => 'nullable|string|max:255',
             'date_of_birth' => 'nullable|date',

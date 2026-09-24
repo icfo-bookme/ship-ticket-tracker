@@ -385,7 +385,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="">
                     <table class="w-full">
                         <thead class="bg-gray-50">
                             <tr>

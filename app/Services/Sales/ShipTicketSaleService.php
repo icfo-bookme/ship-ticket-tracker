@@ -10,12 +10,15 @@ use App\Models\Ship;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use App\Models\WhatsappDetail;
+use App\Services\Finance\PaymentProofStorage;
 use App\Services\GoogleSheetService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ShipTicketSaleService
 {
+    public function __construct(private readonly PaymentProofStorage $paymentProofs) {}
+
     public function create(array $data, array $input): ShipTicketSale
     {
         $ticketSale = DB::transaction(function () use ($data, $input): ShipTicketSale {
@@ -80,10 +83,12 @@ class ShipTicketSaleService
                 'received_amount' => $data['received_amount'] ?? 0,
                 'due_amount' => $data['due_amount'] ?? $data['ticket_fee'],
                 'other_fee' => $data['other_fee'] ?? 0,
+                'discount_amount' => $data['discount_amount'] ?? 0,
                 'total_payable' => $data['total_payable'] ?? 0,
                 'bftn_status' => $data['bftn_status'] ?? null,
                 'sales_source' => $data['sales_source'],
-                'sold_by' => $data['sold_by'],
+                // sold_by is locked after creation: the edit form shows it disabled.
+                'sold_by' => $sale->sold_by,
                 'issued_date' => $data['issued_date'],
                 'status' => $data['status'],
                 'remark1' => $data['remark1'],
@@ -162,9 +167,10 @@ class ShipTicketSaleService
                     ...($withExtraFields ? [
                         'transaction_id' => $paymentMethod['transaction_id'] ?? null,
                         'payment_datetime' => $paymentMethod['payment_datetime'] ?? null,
+                        'payment_proof' => $this->paymentProofs->store($paymentMethod['proof_file'] ?? null),
                     ] : []),
                     'paid_date' => $paymentMethod['paid_date'],
-                    ...($withExtraFields ? ['remark' => $paymentMethod['remark']] : []),
+                    ...($withExtraFields ? ['remark' => $paymentMethod['remark'] ?? null] : []),
                 ]);
             }
         }
@@ -227,17 +233,36 @@ class ShipTicketSaleService
 
     private function updatePayments(ShipTicketSale $sale, array $payments): void
     {
+        $existingProofs = $sale->payments()->pluck('payment_proof')->filter()->all();
+
         $sale->payments()->delete();
 
+        $retainedProofs = [];
+
         foreach ($payments as $payment) {
-            if (! empty($payment['payment_method']) && ! empty($payment['received_amount'])) {
-                $sale->payments()->create([
-                    'payment_method' => $payment['payment_method'],
-                    'received_amount' => $payment['received_amount'],
-                    'paid_date' => $payment['paid_date'] ?? null,
-                    'remark' => $payment['remark'] ?? null,
-                ]);
+            if (empty($payment['payment_method']) || empty($payment['received_amount'])) {
+                continue;
             }
+
+            $proof = $this->paymentProofs->store($payment['proof_file'] ?? null) ?? ($payment['payment_proof'] ?? null);
+
+            if ($proof) {
+                $retainedProofs[] = $proof;
+            }
+
+            $sale->payments()->create([
+                'payment_method' => $payment['payment_method'],
+                'received_amount' => $payment['received_amount'],
+                'paid_date' => $payment['paid_date'] ?? null,
+                'transaction_id' => $payment['transaction_id'] ?? null,
+                'payment_datetime' => $payment['payment_datetime'] ?? null,
+                'payment_proof' => $proof,
+                'remark' => $payment['remark'] ?? null,
+            ]);
+        }
+
+        foreach (array_diff($existingProofs, $retainedProofs) as $removedProof) {
+            $this->paymentProofs->delete($removedProof);
         }
     }
 
@@ -306,6 +331,7 @@ class ShipTicketSaleService
                 $input['address'] ?? null,
                 $input['remark1'] ?? null,
                 $input['remark2'] ?? null,
+                $data['discount_amount'] ?? 0,
             ]);
         } catch (\Throwable $e) {
             Log::error('GoogleSheet append failed for sale: '.($ticketSale->id ?? 'unknown').' | '.$e->getMessage());

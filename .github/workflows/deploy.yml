@@ -1,0 +1,145 @@
+name: CI/CD Deploy
+
+# Runs automatically when code is pushed to the main branch,
+# and can also be triggered manually from the GitHub Actions tab.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Only one deployment per branch at a time. If a new push arrives while
+# an older one is still running, cancel the older run.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: '8.2'
+  NODE_VERSION: '20'
+
+jobs:
+
+  # ------------------------------------------------------------------
+  # Deploy to the production server.
+  # ------------------------------------------------------------------
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          tools: composer:v2
+          coverage: none
+          extensions: mbstring, pdo_mysql, zip, bcmath, intl
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install PHP dependencies (production, no dev)
+        run: composer install --no-interaction --prefer-dist --no-progress --no-dev --optimize-autoloader
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Package release artifact
+        run: |
+          mkdir -p artifact
+          # Build a single tarball, excluding anything that must NOT be
+          # shipped to the server (git, node_modules, local .env, storage)
+          # AND excluding artifact/ itself (we write the tarball inside it).
+          tar \
+            --exclude='./.git' \
+            --exclude='./.github' \
+            --exclude='./.vscode' \
+            --exclude='./node_modules' \
+            --exclude='./.env' \
+            --exclude='./storage' \
+            --exclude='./artifact' \
+            -czf artifact/ship-deploy.tar.gz .
+
+      - name: Upload artifact to server
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          timeout: 60s
+          source: "artifact/ship-deploy.tar.gz"
+          target: "/tmp/ship-deploy"
+
+      - name: Deploy release on server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          script_stop: true
+          script: |
+            set -e
+
+            DEPLOY_PATH="/var/www/ticket-tracker"
+            ARTIFACT="/tmp/ship-deploy/artifact/ship-deploy.tar.gz"
+            TMP_DIR="/tmp/ship-deploy/extract"
+
+            echo "==> Preparing deploy directory"
+            mkdir -p "$DEPLOY_PATH"
+            rm -rf "$TMP_DIR"
+            mkdir -p "$TMP_DIR"
+
+            echo "==> Extracting artifact"
+            tar -xzf "$ARTIFACT" -C "$TMP_DIR"
+            rm -f "$ARTIFACT"
+
+            # First deploy: create .env from example (kept for all future deploys).
+            if [ ! -f "$DEPLOY_PATH/.env" ]; then
+              cp "$TMP_DIR/.env.example" "$DEPLOY_PATH/.env"
+              echo "!! Created a fresh .env from .env.example. EDIT IT NOW with real credentials."
+            fi
+
+            # Preserve .env and storage across deploys.
+            cp "$DEPLOY_PATH/.env" "$TMP_DIR/.env"
+            if [ -d "$DEPLOY_PATH/storage" ]; then
+              cp -a "$DEPLOY_PATH/storage" "$TMP_DIR/storage"
+            else
+              mkdir -p "$TMP_DIR/storage/app"
+              mkdir -p "$TMP_DIR/storage/framework/cache/data"
+              mkdir -p "$TMP_DIR/storage/framework/sessions"
+              mkdir -p "$TMP_DIR/storage/framework/views"
+              mkdir -p "$TMP_DIR/storage/logs"
+            fi
+
+            # Swap: remove old code, put new code in (also drops stale files).
+            find "$DEPLOY_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            cp -a "$TMP_DIR"/. "$DEPLOY_PATH"/
+            rm -rf "$TMP_DIR"
+
+            echo "==> Setting permissions"
+            chmod -R 775 "$DEPLOY_PATH/storage" "$DEPLOY_PATH/bootstrap/cache"
+
+            echo "==> Running artisan commands"
+            cd "$DEPLOY_PATH"
+       
+            /usr/bin/php8.2 artisan migrate --force
+            /usr/bin/php8.2 artisan config:cache
+            /usr/bin/php8.2 artisan view:cache
+            /usr/bin/php8.2 artisan storage:link || true
+            /usr/bin/php8.2 artisan queue:restart || true
+
+            # Fix ownership for the web / PHP-FPM user (adjust if not www-data).
+            chown -R www-data:www-data "$DEPLOY_PATH" 2>/dev/null || true
+
+            echo "==> Deployment finished: $DEPLOY_PATH"

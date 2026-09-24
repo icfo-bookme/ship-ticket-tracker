@@ -3,6 +3,8 @@ class TicketSalesSystem {
         this.currentPackages = [];
         this.paymentIndex = 0;
         this.coPassengerIndex = 0;
+        this.draftSaveTimeout = null;
+        this.isRestoringDraft = false;
         this.selectors = this.initializeSelectors();
         this.constants = this.initializeConstants();
         this.init();
@@ -10,8 +12,10 @@ class TicketSalesSystem {
 
     //  INITIALIZATION 
     init() {
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", async () => {
+            this.clearDraftAfterSuccessfulSubmit();
             this.setupEventListeners();
+            await this.restoreDraft();
             this.calculateAll();
             this.toggleReturnJourneySection();
         });
@@ -29,6 +33,7 @@ class TicketSalesSystem {
                 ticketFee: '#ticket_fee',
                 receivedAmount: '#received_amount',
                 otherFee: '#other_fee',
+                discountAmount: '#discount_amount',
                 totalTickets: '#total_tickets',
                 totalPayable: '#total_payable',
                 dueAmount: '#due_amount',
@@ -41,6 +46,7 @@ class TicketSalesSystem {
                 coPassengerInfo: '#coPassengerInfo',
                 paymentInfoWrapper: '#paymentInfoWrapper',
                 addPaymentInfo: '#addPaymentInfo',
+                resetDraftButton: '#resetDraftButton',
                 reviewModal: '#reviewModal',
                 reviewContent: '#reviewContent',
                 bftnSelect: 'select[name="bftn_status"]',
@@ -60,6 +66,7 @@ class TicketSalesSystem {
 
     initializeConstants() {
         return {
+            DRAFT_KEY: "ship_ticket_sale_create_draft",
             MOBILE_REGEX: /^01[2-9]\d{8}$/,
             FIELD_LABELS: {
                 customer_name: "Customer Name",
@@ -75,6 +82,7 @@ class TicketSalesSystem {
                 return_date: "Return Date",
                 company_id: "Company Name",
                 ticket_fee: "Total Ticket Price",
+                discount_amount: "Discount Amount",
                 total_payable: "Total Payable",
                 received_amount: "Received Amount",
                 due_amount: "Due Amount",
@@ -108,8 +116,8 @@ class TicketSalesSystem {
             this.setupMainActionListeners();
             this.setupShipAndJourneyListeners();
             this.setupMobileAndWhatsAppListeners();
-
             this.initializeComponents();
+            this.setupDraftPersistence();
         } catch (error) {
             console.error('Error setting up event listeners:', error);
             this.showNotification('Error initializing form. Please refresh the page.', 'error');
@@ -120,6 +128,7 @@ class TicketSalesSystem {
         this.addEventListener('ticket_fee', 'input', () => this.calculateAll());
         this.addEventListener('received_amount', 'input', () => this.calculateDue());
         this.addEventListener('other_fee', 'input', () => this.calculateAll());
+        this.addEventListener('discount_amount', 'input', () => this.calculateAll());
     }
 
     setupFormValidationListeners() {
@@ -130,6 +139,7 @@ class TicketSalesSystem {
 
     setupMainActionListeners() {
         this.addEventListener('reviewButton', 'click', () => this.handleReviewClick());
+        this.addEventListener('resetDraftButton', 'click', () => this.resetDraftForm());
         this.setupFormSubmitGuard();
     }
 
@@ -146,6 +156,248 @@ class TicketSalesSystem {
         });
     }
 
+    setupDraftPersistence() {
+        const form = this.getElement('#ticketForm');
+        if (!form) return;
+
+        form.addEventListener('input', () => this.saveDraftSoon());
+        form.addEventListener('change', () => this.saveDraftSoon());
+    }
+
+    clearDraftAfterSuccessfulSubmit() {
+        if (window.ticketSaleSaved) {
+            this.removeDraft();
+        }
+    }
+
+    saveDraftSoon() {
+        if (this.isRestoringDraft) return;
+
+        clearTimeout(this.draftSaveTimeout);
+        this.draftSaveTimeout = setTimeout(() => this.saveDraft(), 250);
+    }
+
+    saveDraft() {
+        const form = this.getElement('#ticketForm');
+        if (!form || this.isRestoringDraft) return;
+
+        const fields = {};
+        new FormData(form).forEach((value, key) => {
+            if (key !== '_token') {
+                fields[key] = value;
+            }
+        });
+
+        const sameAsMobileCheckbox = this.getElement(this.selectors.elements.sameAsMobileCheckbox);
+        const draft = {
+            fields,
+            sameAsMobile: sameAsMobileCheckbox?.checked || false,
+        };
+
+        this.storeDraft(draft);
+    }
+
+    async restoreDraft() {
+        const rawDraft = this.getStoredDraft();
+        if (!rawDraft) return;
+
+        let draft = null;
+        try {
+            draft = JSON.parse(rawDraft);
+        } catch (error) {
+            console.error('Invalid ticket sale draft:', error);
+            this.removeDraft();
+            return;
+        }
+
+        this.isRestoringDraft = true;
+
+        try {
+            const fields = draft.fields || {};
+            this.restoreSimpleFields(fields);
+
+            const sameAsMobileCheckbox = this.getElement(this.selectors.elements.sameAsMobileCheckbox);
+            if (sameAsMobileCheckbox) {
+                sameAsMobileCheckbox.checked = Boolean(draft.sameAsMobile);
+                if (sameAsMobileCheckbox.checked) {
+                    this.handleSameAsMobileCheckbox();
+                }
+            }
+
+            if (fields.ship_id) {
+                await this.loadTicketCategories();
+                this.restoreNamedFields(fields, 'ticket_categories[');
+                this.calculateTotalTickets();
+                this.calculateTicketFee();
+                this.updateCoPassengerRows();
+            }
+
+            this.restorePaymentMethods(fields);
+            this.restoreCoPassengers(fields);
+            this.restoreNamedFields(fields, 'payment_methods[');
+            this.restoreNamedFields(fields, 'co_passengers[');
+            this.calculatePaymentTotals();
+            this.calculateAll();
+            this.initBftnIssueDateToggle();
+        } finally {
+            this.isRestoringDraft = false;
+        }
+    }
+
+    restoreSimpleFields(fields) {
+        Object.entries(fields).forEach(([name, value]) => {
+            if (
+                name.startsWith('ticket_categories[') ||
+                name.startsWith('payment_methods[') ||
+                name.startsWith('co_passengers[')
+            ) {
+                return;
+            }
+
+            const field = this.getFormField(name);
+            if (field && field.type !== 'file') {
+                field.value = value;
+            }
+        });
+    }
+
+    restoreNamedFields(fields, prefix) {
+        Object.entries(fields).forEach(([name, value]) => {
+            if (!name.startsWith(prefix)) return;
+
+            const field = this.getFormField(name);
+            if (field && field.type !== 'file') {
+                field.value = value;
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
+
+    restorePaymentMethods(fields) {
+        const wrapper = this.getElement(this.selectors.elements.paymentInfoWrapper);
+        if (!wrapper) return;
+
+        this.removeDynamicRows(wrapper, this.selectors.classes.paymentEntry);
+        this.paymentIndex = 0;
+
+        const indexes = this.extractFieldIndexes(fields, 'payment_methods');
+        const lastIndex = indexes.length > 0 ? indexes[indexes.length - 1] : 0;
+        const rowsToAdd = Math.max(1, lastIndex + 1);
+
+        for (let i = 0; i < rowsToAdd; i++) {
+            this.addPaymentEntry(wrapper);
+        }
+    }
+
+    restoreCoPassengers(fields) {
+        const wrapper = this.getElement(this.selectors.elements.coPassengersWrapper);
+        if (!wrapper) return;
+
+        const indexes = this.extractFieldIndexes(fields, 'co_passengers');
+        let currentRows = wrapper.querySelectorAll(this.selectors.classes.coPassenger).length;
+
+        while (currentRows < indexes.length) {
+            this.addCoPassengerField(wrapper);
+            currentRows++;
+        }
+    }
+
+    extractFieldIndexes(fields, groupName) {
+        const indexes = new Set();
+        const pattern = new RegExp(`^${groupName}\\[(\\d+)\\]`);
+
+        Object.keys(fields).forEach((name) => {
+            const match = name.match(pattern);
+            if (match) {
+                indexes.add(Number(match[1]));
+            }
+        });
+
+        return [...indexes].sort((a, b) => a - b);
+    }
+
+    resetDraftForm() {
+        const form = this.getElement('#ticketForm');
+        if (!form) return;
+
+        const confirmed = confirm('Are you sure you want to reset this form?');
+        if (!confirmed) return;
+
+        this.removeDraft();
+        form.reset();
+        this.resetDynamicState();
+        this.clearAllErrors();
+        this.calculateAll();
+        this.showNotification('Form reset successfully.', 'success');
+    }
+
+    resetDynamicState() {
+        const departureContainer = this.getElement(this.selectors.elements.departureContainer);
+        const returnContainer = this.getElement(this.selectors.elements.returnContainer);
+        const noDepartureMessage = this.getElement(this.selectors.elements.noDepartureMessage);
+        const noReturnMessage = this.getElement(this.selectors.elements.noReturnMessage);
+        const returnSection = this.getElement("#returnJourneySection");
+        const paymentWrapper = this.getElement(this.selectors.elements.paymentInfoWrapper);
+        const coPassengerWrapper = this.getElement(this.selectors.elements.coPassengersWrapper);
+
+        this.currentPackages = [];
+        this.paymentIndex = 0;
+        this.coPassengerIndex = 0;
+
+        if (departureContainer) departureContainer.innerHTML = '';
+        if (returnContainer) returnContainer.innerHTML = '';
+        if (noDepartureMessage) noDepartureMessage.classList.remove('hidden');
+        if (noReturnMessage) noReturnMessage.classList.remove('hidden');
+        if (returnSection) returnSection.style.display = 'none';
+
+        if (paymentWrapper) {
+            this.removeDynamicRows(paymentWrapper, this.selectors.classes.paymentEntry);
+            this.addPaymentEntry(paymentWrapper);
+        }
+
+        if (coPassengerWrapper) {
+            this.removeDynamicRows(coPassengerWrapper, this.selectors.classes.coPassenger);
+        }
+
+        this.setValue('total_tickets', '0');
+        this.setValue('ticket_fee', '0');
+        this.setValue('other_fee', '0');
+        this.setValue('total_payable', '0.00');
+        this.setValue('received_amount', '0.00');
+        this.setValue('due_amount', '0.00');
+        this.initBftnIssueDateToggle();
+    }
+
+    removeDynamicRows(wrapper, selector) {
+        wrapper.querySelectorAll(selector).forEach((row) => row.remove());
+    }
+
+    getStoredDraft() {
+        try {
+            return localStorage.getItem(this.constants.DRAFT_KEY);
+        } catch (error) {
+            console.error('Unable to read ticket sale draft:', error);
+            return null;
+        }
+    }
+
+    storeDraft(draft) {
+        try {
+            localStorage.setItem(this.constants.DRAFT_KEY, JSON.stringify(draft));
+        } catch (error) {
+            console.error('Unable to save ticket sale draft:', error);
+        }
+    }
+
+    removeDraft() {
+        try {
+            localStorage.removeItem(this.constants.DRAFT_KEY);
+        } catch (error) {
+            console.error('Unable to remove ticket sale draft:', error);
+        }
+    }
+
     setupShipAndJourneyListeners() {
         this.addEventListener('ship_id', 'change', () => this.loadTicketCategories());
         this.addEventListener('return_date', 'change', () => this.toggleReturnJourneySection());
@@ -153,9 +405,11 @@ class TicketSalesSystem {
 
     setupMobileAndWhatsAppListeners() {
         const mobileField = this.getElement(this.selectors.elements.mobileField);
+        if (!mobileField) return;
+
         mobileField.addEventListener('input', () => {
             const checkbox = this.getElement(this.selectors.elements.sameAsMobileCheckbox);
-            if (checkbox.checked) this.handleSameAsMobileCheckbox();
+            if (checkbox?.checked) this.handleSameAsMobileCheckbox();
         });
 
         this.addEventListener('sameAsMobileCheckbox', 'change', () => this.handleSameAsMobileCheckbox());
@@ -183,6 +437,13 @@ class TicketSalesSystem {
 
     getElements(selector) {
         return document.querySelectorAll(selector);
+    }
+
+    getFormField(name) {
+        const form = this.getElement('#ticketForm');
+        if (!form) return null;
+
+        return form.elements.namedItem(name);
     }
 
     getValue(elementId) {
@@ -250,10 +511,11 @@ class TicketSalesSystem {
         noReturnMessage.classList.add("hidden");
 
         try {
-            const response = await fetch(`/ship-packages/${shipId}`);
+            const response = await fetch(`/ship-packages/${shipId}?length=100`);
             if (!response.ok) throw new Error(`Server error: ${response.status}`);
 
-            const packages = await response.json();
+            const payload = await response.json();
+            const packages = this.normalizePackageResponse(payload);
             this.currentPackages = packages;
             this.renderTicketCategories(packages, returnDate);
 
@@ -261,6 +523,18 @@ class TicketSalesSystem {
             console.error("Error fetching packages:", error);
             this.showErrorState(departureContainer, returnContainer);
         }
+    }
+
+    normalizePackageResponse(payload) {
+        if (Array.isArray(payload)) {
+            return payload;
+        }
+
+        if (Array.isArray(payload?.data)) {
+            return payload.data;
+        }
+
+        return [];
     }
 
     showLoadingState(departureContainer, returnContainer) {
@@ -448,7 +722,8 @@ class TicketSalesSystem {
     calculateTotalPayable() {
         const ticketFee = parseFloat(this.getValue("ticket_fee")) || 0;
         const otherChargesFee = parseFloat(this.getValue("other_fee")) || 0;
-        const totalPayable = ticketFee + otherChargesFee;
+        const discountAmount = parseFloat(this.getValue("discount_amount")) || 0;
+        const totalPayable = Math.max(0, ticketFee + otherChargesFee - discountAmount);
         this.setValue("total_payable", totalPayable.toFixed(2));
         this.calculateDue();
     }
@@ -617,11 +892,15 @@ class TicketSalesSystem {
                 if (coPassengerRow) {
                     coPassengerRow.remove();
                     this.updateCoPassengerIndex();
+                    this.saveDraftSoon();
                 }
             }
         });
 
-        addBtn.addEventListener("click", () => this.addCoPassengerField(wrapper));
+        addBtn.addEventListener("click", () => {
+            this.addCoPassengerField(wrapper);
+            this.saveDraftSoon();
+        });
         // this.addCoPassengerField(wrapper);
     }
 
@@ -689,6 +968,9 @@ class TicketSalesSystem {
 
             const mobileInput = row.querySelector('input[name$="[co_passernger_number]"]');
             if (mobileInput) mobileInput.name = `co_passengers[${index}][co_passernger_number]`;
+
+            const dateOfBirthInput = row.querySelector('input[name$="[date_of_birth]"]');
+            if (dateOfBirthInput) dateOfBirthInput.name = `co_passengers[${index}][date_of_birth]`;
 
             const removeBtn = row.querySelector(this.selectors.classes.removeCoPassengerBtn);
             if (removeBtn) {
@@ -759,7 +1041,10 @@ class TicketSalesSystem {
         const wrapper = this.getElement(this.selectors.elements.paymentInfoWrapper);
         const addBtn = this.getElement(this.selectors.elements.addPaymentInfo);
 
-        addBtn.addEventListener("click", () => this.addPaymentEntry(wrapper));
+        addBtn.addEventListener("click", () => {
+            this.addPaymentEntry(wrapper);
+            this.saveDraftSoon();
+        });
         this.addPaymentEntry(wrapper);
     }
 
@@ -832,6 +1117,17 @@ class TicketSalesSystem {
 
 
 
+            <div class="col-span-3">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Payment Proof (screenshot)
+                    <span class="text-xs text-gray-500">(transaction ID না থাকলে আপলোড করুন)</span>
+                </label>
+                <input type="file" name="payment_methods[${this.paymentIndex}][proof_file]"
+                    accept="image/*,application/pdf"
+                    class="payment-proof-input w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 transition">
+                <div class="payment-proof-preview mt-2 text-xs text-gray-500 dark:text-gray-400"></div>
+            </div>
+
             <div class="col-span-6">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Remarks (optional)
@@ -860,21 +1156,66 @@ class TicketSalesSystem {
         const amountInput = div.querySelector(this.selectors.classes.paymentAmountInput);
         const methodSelect = div.querySelector(this.selectors.classes.paymentMethodSelect);
         const removeBtn = div.querySelector(this.selectors.classes.removePaymentBtn);
+        const proofInput = div.querySelector('.payment-proof-input');
 
         amountInput.addEventListener('input', () => {
             this.calculatePaymentTotals();
             this.calculateTotalPayable();
+            this.saveDraftSoon();
         });
 
         methodSelect.addEventListener('change', () => {
             this.calculateTotalPayable();
+            this.saveDraftSoon();
         });
 
         removeBtn.addEventListener('click', () => {
             div.remove();
+            this.updatePaymentMethodIndexes();
             this.calculatePaymentTotals();
             this.calculateTotalPayable();
+            this.saveDraftSoon();
         });
+
+        proofInput?.addEventListener('change', () => this.previewPaymentProof(proofInput));
+
+        div.addEventListener('input', () => this.saveDraftSoon());
+        div.addEventListener('change', () => this.saveDraftSoon());
+    }
+
+    previewPaymentProof(input) {
+        const preview = input.closest('div')?.querySelector('.payment-proof-preview');
+        if (!preview) return;
+
+        preview.textContent = '';
+
+        const file = input.files?.[0];
+        if (!file) return;
+
+        if (file.type.startsWith('image/')) {
+            const image = document.createElement('img');
+            image.src = URL.createObjectURL(file);
+            image.alt = 'Payment proof preview';
+            image.className = 'mt-1 h-20 w-20 object-cover rounded border border-gray-200 dark:border-gray-600';
+            preview.appendChild(image);
+        }
+
+        const caption = document.createElement('span');
+        caption.className = 'block mt-1';
+        caption.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+        preview.appendChild(caption);
+    }
+
+    updatePaymentMethodIndexes() {
+        const rows = this.getElements(this.selectors.classes.paymentEntry);
+
+        rows.forEach((row, index) => {
+            row.querySelectorAll('[name^="payment_methods["]').forEach((field) => {
+                field.name = field.name.replace(/^payment_methods\[\d+\]/, `payment_methods[${index}]`);
+            });
+        });
+
+        this.paymentIndex = rows.length;
     }
 
     calculatePaymentTotals() {
@@ -952,8 +1293,20 @@ class TicketSalesSystem {
             return select?.options[select.selectedIndex]?.text || "Not specified";
         }
 
-        if (["ticket_fee", "total_payable", "received_amount", "due_amount"].includes(field)) {
-            return "৳ " + (parseFloat(value) || 0).toFixed(2);
+        if (field === "sold_by") {
+            const sellerName = this.getElement('[name="sold_by"]')?.dataset.sellerName;
+
+            return this.escapeHtml(sellerName || value);
+        }
+
+        if (["ticket_fee", "other_fee", "discount_amount", "total_payable", "received_amount", "due_amount"].includes(field)) {
+            const formattedAmount = "৳ " + (parseFloat(value) || 0).toFixed(2);
+
+            if (field === "discount_amount" || field === "due_amount") {
+                return `<span class="text-red-600 dark:text-red-400 font-semibold">${formattedAmount}</span>`;
+            }
+
+            return formattedAmount;
         }
 
         if (["journey_date", "issued_date", "return_date", "date_of_birth"].includes(field)) {
@@ -1161,7 +1514,11 @@ class TicketSalesSystem {
         };
 
         toggleBftnIssueDate();
-        bftnSelect.addEventListener('change', toggleBftnIssueDate);
+
+        if (bftnSelect.dataset.bftnToggleInitialized === undefined) {
+            bftnSelect.dataset.bftnToggleInitialized = '1';
+            bftnSelect.addEventListener('change', toggleBftnIssueDate);
+        }
     }
 
     //  ERROR HANDLING 

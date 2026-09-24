@@ -167,15 +167,15 @@
 .dataTables_length label::after {
   content: none !important;
 }
-/* Add border to all table cells */
-#salesTable th,
-#salesTable td {
+/* Add border to all DataTables cells */
+table.dataTable th,
+table.dataTable td {
     border: 1px solid #d1d5db; /* Tailwind's gray-300 color */
     padding: 10px;
 }
 
 /* Outer table border */
-#salesTable {
+table.dataTable {
     border: 1px solid #789dd4;
     border-collapse: collapse;
 }
@@ -196,10 +196,10 @@
     -webkit-overflow-scrolling: touch;
 }
 
-/* Every table fills its container (90-100% width) */
+/* Every table fills its container and grows wider when the content
+   requires it, so wide tables scroll inside their card */
 table {
     width: 100%;
-    max-width: 100%;
 }
 
 .overflow-x-auto table {
@@ -209,17 +209,14 @@ table {
 /* DataTables keeps natural column widths instead of squishing,
    so wide tables show a horizontal scrollbar when needed */
 .overflow-x-auto table.dataTable th,
-.overflow-x-auto table.dataTable td,
-.overflow-x-auto #salesTable th,
-.overflow-x-auto #salesTable td {
+.overflow-x-auto table.dataTable td {
     white-space: nowrap;
 }
 
 /* Keep the DataTables generated wrapper inside the scroll container */
 .overflow-x-auto .dataTables_wrapper {
     width: 100%;
-    max-width: 100%;
+   
     overflow-x: auto;
 }
-
 

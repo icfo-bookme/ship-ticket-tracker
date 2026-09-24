@@ -30,6 +30,12 @@ return [
         // Sales module
         'sales.view', 'sales.create', 'sales.edit', 'sales.delete', 'sales.verify',
 
+        // Sales — per status list access, checked by the `sales.status` middleware.
+        // Keep in sync with the `statuses` list in config/sales.php.
+        'sales.status.pending', 'sales.status.payment-verified', 'sales.status.ticket-issued',
+        'sales.status.ticket-printed', 'sales.status.shipment_id_entered', 'sales.status.shipped',
+        'sales.status.partial-refunded', 'sales.status.refunded',
+
         // Refunds module
         'refunds.view', 'refunds.manage',
 
@@ -60,6 +66,9 @@ return [
 
         'Manager' => [
             'sales.view', 'sales.create', 'sales.edit', 'sales.delete', 'sales.verify',
+            'sales.status.pending', 'sales.status.payment-verified', 'sales.status.ticket-issued',
+            'sales.status.ticket-printed', 'sales.status.shipment_id_entered', 'sales.status.shipped',
+            'sales.status.partial-refunded', 'sales.status.refunded',
             'refunds.view', 'refunds.manage',
             'ships.manage', 'companies.manage', 'packages.manage',
             'reports.view', 'payments.manage', 'cash.manage',
@@ -67,11 +76,11 @@ return [
         ],
 
         'Agent' => [
-            'sales.view', 'sales.create', 'sales.edit',
+            'sales.view', 'sales.create', 'sales.edit', 'sales.status.pending',
         ],
 
         'Viewer' => [
-            'sales.view',
+            'sales.view', 'sales.status.pending',
         ],
     ],
 

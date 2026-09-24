@@ -22,6 +22,15 @@ class RolePermissionSeeder extends Seeder
             Permission::findOrCreate($permission, 'web');
         }
 
+        // Status-wise sales list permissions, derived from config/sales.php so a
+        // newly configured status never ends up without its permission.
+        foreach (array_keys(config('sales.statuses')) as $status) {
+            Permission::firstOrCreate([
+                'name' => "sales.status.{$status}",
+                'guard_name' => 'web',
+            ]);
+        }
+
         // 2. Create the default roles and sync their permissions.
         foreach (config('roles.default_roles') as $roleName => $permissions) {
             $role = Role::findOrCreate($roleName, 'web');

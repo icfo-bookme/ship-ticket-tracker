@@ -18,6 +18,7 @@ class Payment extends Model
         'remark',
         'paid_date',
         'transaction_id',
+        'payment_proof',
         'payment_datetime',
     ];
 

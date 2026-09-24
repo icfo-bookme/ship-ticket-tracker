@@ -20,6 +20,7 @@ use Google\Service\Drive;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ShipTicketSaleController extends Controller
 {
@@ -32,8 +33,9 @@ class ShipTicketSaleController extends Controller
     {
         $sales = ShipTicketSale::with('ships')->latest()->get();
         $ships = Ship::all();
+        $companies = Company::all();
 
-        return view('ship_ticket_sales.index', compact('sales', 'ships'))
+        return view('ship_ticket_sales.index', compact('sales', 'ships', 'companies'))
             ->with('status', 'pending');
     }
 
@@ -87,6 +89,7 @@ class ShipTicketSaleController extends Controller
                     ->orWhere('nid', 'like', "%{$searchValue}%")
                     ->orWhere('sales_source', 'like', "%{$searchValue}%")
                     ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
+                    ->orWhere('discount_amount', 'like', "%{$searchValue}%")
                     ->orWhere('payment_method', 'like', "%{$searchValue}%")
                     ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
                     ->orWhere('received_amount', 'like', "%{$searchValue}%")
@@ -127,7 +130,10 @@ class ShipTicketSaleController extends Controller
 
     public function showPendingSales($status)
     {
-        return view('ship_ticket_sales.index', compact('status'));
+        $ships = Ship::all();
+        $companies = Company::all();
+
+        return view('ship_ticket_sales.index', compact('status', 'ships', 'companies'));
     }
 
     public function create()
@@ -204,6 +210,7 @@ class ShipTicketSaleController extends Controller
             'ships.packages',
             'categories',
             'companies',
+            'seller:id,name',
             'coPassengers',
             'payments',
             'shipment',
@@ -211,30 +218,11 @@ class ShipTicketSaleController extends Controller
             'verifyby.verifiedByUser:id,name',
         ])->findOrFail($id);
 
-        $maxNumber = PrintedTicket::where('filename', 'like', $sale->whatsapp.'-%')
-            ->selectRaw('MAX(CAST(SUBSTRING_INDEX(filename, "-", -1) AS UNSIGNED)) as number')
-            ->value('number');
+        $context = $this->printedTicketContext($sale);
 
-        $number = $maxNumber ?? 0;
-
-        $groupByStatus = 'no';
-        $groupById = null;
-        if ($number > 0) {
-
-            $latestTicket = PrintedTicket::where('filename', 'like', $sale->whatsapp.'-%')
-                ->orderByRaw('CAST(SUBSTRING_INDEX(filename, "-", -1) AS UNSIGNED) DESC')
-                ->first();
-
-            if ($latestTicket) {
-                $saleStatus = ShipTicketSale::where('id', $latestTicket->sales_id)
-                    ->value('status');
-
-                if (in_array($saleStatus, ['ticket-issued', 'ticket-printed'])) {
-                    $groupByStatus = 'yes';
-                    $groupById = $latestTicket->group_by_id ?? $latestTicket->sales_id;
-                }
-            }
-        }
+        $number = $context['number'];
+        $groupByStatus = $context['groupByStatus'] ? 'yes' : 'no';
+        $groupById = $context['groupById'];
 
         $totalDepartureTickets = $sale->categories
             ->where('type', 'departure')
@@ -255,10 +243,7 @@ class ShipTicketSaleController extends Controller
         }
 
         // Find next sale with SAME STATUS
-        $nextSale = ShipTicketSale::where('status', $sale->status)
-            ->where('id', '>', $sale->id)
-            ->orderBy('id', 'asc')
-            ->first();
+        $nextSale = $this->nextSaleFor($sale);
         $ships = Ship::all();
         $companies = Company::all();
 
@@ -270,9 +255,51 @@ class ShipTicketSaleController extends Controller
      */
     public function edit($id)
     {
-        $sale = ShipTicketSale::findOrFail($id);
+        $sale = ShipTicketSale::with('seller:id,name')->findOrFail($id);
+        $ships = Ship::all();
+        $companies = Company::all();
+        $nextSale = $this->nextSaleFor($sale);
 
-        return view('ship_ticket_sales.edit', compact('sale'));
+        return view('ship_ticket_sales.edit', compact('sale', 'ships', 'companies', 'nextSale'));
+    }
+
+    /**
+     * Find the next sale sharing the same status.
+     */
+    private function nextSaleFor(ShipTicketSale $sale): ?ShipTicketSale
+    {
+        return ShipTicketSale::where('status', $sale->status)
+            ->where('id', '>', $sale->id)
+            ->orderBy('id', 'asc')
+            ->first();
+    }
+
+    /**
+     * Printed ticket numbering and grouping context of a sale.
+     *
+     * @return array{number: int, groupByStatus: bool, groupById: int|null}
+     */
+    private function printedTicketContext(ShipTicketSale $sale): array
+    {
+        $latestTicket = PrintedTicket::where('filename', 'like', $sale->whatsapp.'-%')
+            ->get()
+            ->sortByDesc(fn (PrintedTicket $ticket): int => (int) Str::afterLast($ticket->filename, '-'))
+            ->first();
+
+        $number = $latestTicket ? (int) Str::afterLast($latestTicket->filename, '-') : 0;
+
+        if ($number === 0) {
+            return ['number' => 0, 'groupByStatus' => false, 'groupById' => null];
+        }
+
+        $latestStatus = ShipTicketSale::where('id', $latestTicket->sales_id)->value('status');
+        $groupByStatus = in_array($latestStatus, ['ticket-issued', 'ticket-printed'], true);
+
+        return [
+            'number' => $number,
+            'groupByStatus' => $groupByStatus,
+            'groupById' => $groupByStatus ? ($latestTicket->group_by_id ?? $latestTicket->sales_id) : null,
+        ];
     }
 
     /**

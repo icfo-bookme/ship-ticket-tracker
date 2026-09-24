@@ -44,6 +44,7 @@ class ShipTicketSale extends Model
         'status',
         'date_of_birth',
         'other_fee',
+        'discount_amount',
         'total_payable',
         'address',
         'remark1',
@@ -60,6 +61,7 @@ class ShipTicketSale extends Model
         'ticket_fee' => 'decimal:2',
         'received_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -114,6 +116,16 @@ class ShipTicketSale extends Model
     public function companies()
     {
         return $this->hasOne(Company::class, 'id', 'company_id');
+    }
+
+    /**
+     * Get the user who sold the ticket.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function seller()
+    {
+        return $this->belongsTo(User::class, 'sold_by');
     }
 
     public function refund()

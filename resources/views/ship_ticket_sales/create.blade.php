@@ -37,7 +37,8 @@
 
         <!-- Form Card -->
         <div class=" dark:bg-gray-800  rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <form id="ticketForm" action="{{ route('ship-ticket-sales.store') }}" method="POST" class="space-y-8 px-8">
+            <form id="ticketForm" action="{{ route('ship-ticket-sales.store') }}" method="POST" enctype="multipart/form-data"
+                    class="space-y-8 px-8">
                 @csrf
 
                 <!-- Customer & Contact Info -->
@@ -316,7 +317,7 @@
 
                     <div
                         class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Total Number of Tickets <span class="text-red-500">*</span>
@@ -342,6 +343,17 @@
                                 </label>
                                 <input type="number" id="other_fee" name="other_fee"
                                     value="{{ old('other_fee', 0) }}" step="0.01" min="0"
+                                    placeholder="0.00"
+                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Discount Amount (৳) <span class="text-xs text-gray-500">(deducted from Total
+                                        Payable)</span>
+                                </label>
+                                <input type="number" id="discount_amount" name="discount_amount"
+                                    value="{{ old('discount_amount', 0) }}" step="0.01" min="0"
                                     placeholder="0.00"
                                     class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                             </div>
@@ -503,13 +515,17 @@
                             Sold By <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="sold_by" value="{{ old('sold_by', Auth::user()->id ?? '') }}"
-                            placeholder="Seller name" readonly
+                            data-seller-name="{{ Auth::user()->name ?? '' }}" placeholder="Seller name" readonly
                             class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3">
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex items-center justify-end gap-4 pt-8 border-t border-gray-200 dark:border-gray-700">
+                    <button type="button" id="resetDraftButton"
+                        class="px-6 py-3 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50 focus:ring-4 focus:ring-red-100 dark:bg-gray-800 dark:text-red-300 dark:border-red-600 dark:hover:bg-red-900/20 transition shadow-sm">
+                        Reset Form
+                    </button>
                     <a href="{{ route('ship-ticket-sales.create') }}"
                         class="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition shadow-sm">
                         Cancel
@@ -590,5 +606,8 @@
         </div>
     </div>
 
+    <script>
+        window.ticketSaleSaved = @json(session()->has('success'));
+    </script>
     @vite(['resources/js/pages/ship-ticket-sales.js'])
 </x-app-layout>

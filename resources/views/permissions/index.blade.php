@@ -10,77 +10,9 @@
             </button>
         </div>
 
-        <!-- Loader -->
-        <div id="loader" class="text-center my-4 min-h-[100vh]">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p class="mt-2 text-gray-600">Loading data...</p>
-        </div>
-
-        <!-- Permissions Table -->
-        <div class="overflow-x-auto">
-            <table id="permissionsTable" class="min-w-full border border-gray-300 hidden">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="border px-4 py-2">ID</th>
-                        <th class="border px-4 py-2">Permission Name</th>
-                        <th class="border px-4 py-2">Group</th>
-                        <th class="border px-4 py-2">Assigned Roles</th>
-                        <th class="border px-4 py-2">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="permissionsBody"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<script>
-    const loader = document.getElementById('loader');
-    const permissionsBody = document.getElementById('permissionsBody');
-
-    function escapeHtml(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    // Refresh the table after create/update/delete (called by the modal views).
-    function getList() {
-        if (window.jQuery && $.fn.DataTable.isDataTable('#permissionsTable')) {
-            $('#permissionsTable').DataTable().ajax.reload(null, false);
-        }
-    }
-
-    // Event delegation — keeps working across DataTables redraws.
-    permissionsBody.addEventListener('click', function (e) {
-        const editBtn = e.target.closest('.editBtn');
-        if (editBtn) { showEditModal(editBtn); return; }
-
-        const deleteBtn = e.target.closest('.deleteBtn');
-        if (deleteBtn) { handleDeleteClick(deleteBtn); }
-    });
-
-    document.addEventListener('DOMContentLoaded', function () {
-        // The table must be visible BEFORE DataTables initialises: the global
-        // scrollX default (layouts/app.blade.php) clones the thead, and
-        // cloning a hidden table yields a zero-height header row.
-        loader.style.display = 'none';
-        document.getElementById('permissionsTable').classList.remove('hidden');
-
-        $('#permissionsTable').DataTable({
-            processing: true,
-            serverSide: true,
-            ajax: '/permissions',
-            pageLength: 25,
-            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-            dom: 'lBfrtip',
-            buttons: ['copy', 'excel', 'csv', 'print'],
-            order: [[0, 'asc']],
-            language: { lengthMenu: '_MENU_', processing: 'Loading data...' },
-            columns: [
+        <script>
+            window.dataTableColumns = window.dataTableColumns || {};
+            window.dataTableColumns['permissionsTable'] = [
                 { data: 'id', name: 'id' },
                 {
                     data: 'name',
@@ -125,7 +57,9 @@
                             </button>`;
                     },
                 },
-            ],
-        });
-    });
-</script>
+            ];
+        </script>
+
+        <x-data-table id="permissionsTable" :headings="['ID', 'Permission Name', 'Group', 'Assigned Roles', 'Action']" url="/permissions" />
+    </div>
+</div>

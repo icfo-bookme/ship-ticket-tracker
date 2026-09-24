@@ -76,16 +76,24 @@ Route::middleware('auth')->group(function () {
 
     // SALES — VIEW (listings, details, printing)
     Route::middleware('can:sales.view')->group(function () {
-        Route::get('ship-ticket-sales', [ShipTicketSaleController::class, 'index'])->name('ship-ticket-sales.index');
+        // The index route shows the pending list, so it needs the pending status permission.
+        Route::get('ship-ticket-sales', [ShipTicketSaleController::class, 'index'])
+            ->middleware('sales.status')
+            ->name('ship-ticket-sales.index');
         Route::get('ship-ticket-sales/{ship_ticket_sale}', [ShipTicketSaleController::class, 'show'])->name('ship-ticket-sales.show');
 
-        // Sales listing / status
+        // Sales listing / status (each status needs its own sales.status.{status} permission)
         Route::get('/sales/{status}', [ShipTicketSaleController::class, 'pendingCS'])
             ->where('status', implode('|', array_keys(config('sales.statuses'))))
+            ->middleware('sales.status')
             ->name('sales.data');
         Route::get('/sales/status/{status}', [ShipTicketSaleController::class, 'showPendingSales'])
             ->where('status', implode('|', array_keys(config('sales.statuses'))))
+            ->middleware('sales.status')
             ->name('sales.index');
+
+        // Payment proof (payment screenshot) — served from the private disk
+        Route::get('/payments/{payment}/proof', [PaymentController::class, 'proof'])->name('payments.proof');
 
         // Printing / PDF
         Route::get('/print-all-ids', [ShipTicketSaleController::class, 'pdfPrintAll']);

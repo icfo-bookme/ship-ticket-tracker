@@ -6,7 +6,9 @@ use App\Http\Requests\Refunds\FullRefundRequest;
 use App\Http\Requests\Refunds\PartialRefundRequest;
 use App\Http\Requests\Refunds\StoreRefundRequest;
 use App\Http\Requests\Refunds\UpdateRefundRequest;
+use App\Models\Company;
 use App\Models\Refund;
+use App\Models\Ship;
 use App\Models\ShipTicketSale;
 use App\Services\Refunds\RefundService;
 use Illuminate\Http\Request;
@@ -112,7 +114,10 @@ class RefundController extends Controller
 
     public function create()
     {
-        return view('refund.componentItem');
+        $ships = Ship::all();
+        $companies = Company::all();
+
+        return view('refund.componentItem', compact('ships', 'companies'));
     }
 
     public function refunded(Request $request)
@@ -215,7 +220,10 @@ class RefundController extends Controller
 
     public function showRefundedCS()
     {
-        return view('refunded.index');
+        $ships = Ship::all();
+        $companies = Company::all();
+
+        return view('refunded.index', compact('ships', 'companies'));
     }
 
     public function fullRefunds(FullRefundRequest $request)

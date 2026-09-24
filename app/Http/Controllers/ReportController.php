@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
+use App\Models\Ship;
 use App\Services\Reports\SalesReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +15,10 @@ class ReportController extends Controller
 
     public function index()
     {
-        return view('reports.index');
+        $ships = Ship::all();
+        $companies = Company::all();
+
+        return view('reports.index', compact('ships', 'companies'));
     }
 
     public function reports(Request $request): JsonResponse

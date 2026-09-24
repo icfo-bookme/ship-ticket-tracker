@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         // with: php artisan user:make-admin {email}
         $this->call([
             RolePermissionSeeder::class,
+            AdminUserSeeder::class,
         ]);
     }
 }

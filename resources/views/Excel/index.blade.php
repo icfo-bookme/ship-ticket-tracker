@@ -5,102 +5,40 @@
                 Excel Setting
             </h2>
         </div>
-        <!-- Loader -->
-        <div id="loader" class="text-center my-4">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p class="mt-2 text-gray-600">Loading data...</p>
-        </div>
+        <script>
+            window.dataTableColumns = window.dataTableColumns || {};
+            window.dataTableColumns['excelTable'] = [
+                { data: 'id' },
+                {
+                    data: 'spreadsheet_id',
+                    render: (data, type, row) => {
+                        const value = row.spreadsheetId ?? row.spreadsheet_id;
+                        return type !== 'display' ? value : escapeHtml(value);
+                    },
+                },
+                {
+                    data: 'range',
+                    render: (data, type) => type !== 'display' ? data : escapeHtml(data),
+                },
+                {
+                    data: 'action',
+                    orderable: false,
+                    searchable: false,
+                    render: (data, type, row) => {
+                        if (type !== 'display') return '';
+                        const spreadsheetId = row.spreadsheetId ?? row.spreadsheet_id;
+                        return `
+                            <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn"
+                                data-id="${row.id}"
+                                data-spreadsheet_id="${escapeHtml(spreadsheetId)}"
+                                data-range="${escapeHtml(row.range)}">
+                                Edit
+                            </button>`;
+                    },
+                },
+            ];
+        </script>
 
-        <div class="overflow-x-auto">
-            <table id="excelTable" class="min-w-full border border-gray-300 hidden">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="border px-4 py-2">ID</th>
-                        <th class="border px-4 py-2">Spreadsheet ID</th>
-                        <th class="border px-4 py-2">Range</th>
-                        <th class="border px-4 py-2">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="excelBody"></tbody>
-            </table>
-        </div>
+        <x-data-table id="excelTable" :headings="['ID', 'Spreadsheet ID', 'Range', 'Action']" url="/excel-settings" />
     </div>
 </div>
-
-<script>
-    const loader = document.getElementById('loader');
-    const table = document.getElementById('excelTable');
-    const excelBody = document.getElementById('excelBody');
-    let dataTableInitialized = false;
-
-    function escapeHtml(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    async function getList() {
-        try {
-            loader.style.display = 'block';
-
-            const response = await fetch('/excel-settings');
-            const data = await response.json();
-
-            loader.style.display = 'none';
-            table.classList.remove('hidden');
-
-            excelBody.innerHTML = '';
-
-            data.forEach(setting => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="border border-gray-300 px-4 py-2">${setting.id}</td>
-                    <td class="border border-gray-300 px-4 py-2">${escapeHtml(setting.spreadsheetId)}</td>
-                    <td class="border border-gray-300 px-4 py-2">${escapeHtml(setting.range)}</td>
-                    <td class="border border-gray-300 px-4 py-2">
-                        <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn"
-                            data-id="${setting.id}"
-                            data-spreadsheet_id="${escapeHtml(setting.spreadsheetId)}"
-                            data-range="${escapeHtml(setting.range)}">
-                            Edit
-                        </button>
-                    </td>
-                `;
-                excelBody.appendChild(tr);
-            });
-
-            if (!dataTableInitialized) {
-                $('#excelTable').DataTable({
-                    dom: 'lBfrtip',
-                    lengthChange: true,
-                    lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-                    language: { lengthMenu: '_MENU_' },
-                    buttons: ['copy', 'excel', 'csv', 'pdf', 'print', { extend: 'colvis', text: 'Column Visibility' }]
-                });
-                dataTableInitialized = true;
-            }
-
-            document.querySelectorAll('.editBtn').forEach(btn => {
-                btn.addEventListener('click', () => showEditModal(btn));
-            });
-        } catch (error) {
-            console.error('Error fetching excel settings:', error);
-            loader.textContent = 'Failed to load data. Please try again later.';
-        }
-    }
-
-    getList = function() {
-        table.classList.remove('hidden');
-        $('#excelTable').DataTable({ processing: true, serverSide: true, destroy: true, ajax: '/excel-settings', dom: 'lBfrtip', buttons: ['copy', 'excel', 'csv', 'pdf', 'print', 'colvis'],
-            columns: [
-                { data: 'id' }, { data: null, render: row => escapeHtml(row.spreadsheetId ?? row.spreadsheet_id) }, { data: 'range' },
-                { data: null, orderable: false, searchable: false, render: row => '<button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn" data-id="' + row.id + '" data-spreadsheet_id="' + escapeHtml(row.spreadsheetId ?? row.spreadsheet_id) + '" data-range="' + escapeHtml(row.range) + '">Edit</button>' }
-            ],
-            drawCallback: function() { document.querySelectorAll('.editBtn').forEach(btn => btn.addEventListener('click', () => showEditModal(btn))); }
-        });
-    };
-    getList();
-</script>

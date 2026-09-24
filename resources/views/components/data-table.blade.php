@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div class="overflow-x-auto">
+    <div class="">
         <table id="{{ $id }}" class=" border border-gray-300 hidden" data-ajax-url="{{ $url }}">
             <thead class="bg-[#003366] text-white">
                 <tr>

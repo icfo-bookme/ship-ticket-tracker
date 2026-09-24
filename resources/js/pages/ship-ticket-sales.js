@@ -78,7 +78,7 @@ class TicketSalesSystem {
                 address: "Full Address",
                 sales_source: "Sales Source",
                 ship_id: "Ship Name",
-                journey_date: "Journey Date",
+                journey_date: "Departure Date",
                 return_date: "Return Date",
                 company_id: "Company Name",
                 ticket_fee: "Total Ticket Price",

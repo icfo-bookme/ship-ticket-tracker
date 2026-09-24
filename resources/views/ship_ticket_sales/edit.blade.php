@@ -234,10 +234,10 @@
                                 <div class="bg-red-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-1">
                                         <label for="journey_date"
-                                            class="block text-sm font-semibold text-gray-700">Journey Date *</label>
+                                        class="block text-sm font-semibold text-gray-700">Departure Date *</label>
                                         <button type="button"
                                             class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
-                                            data-field="journey_date" title="Copy Journey Date">
+                                            data-field="journey_date" title="Copy Departure Date">
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>

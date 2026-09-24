@@ -186,7 +186,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Journey Date <span class="text-red-500">*</span>
+                                Departure Date <span class="text-red-500">*</span>
                             </label>
                             <input type="date" name="journey_date" id="journey_date"
                                 value="{{ old('journey_date') }}"

@@ -43,7 +43,7 @@
         </div>
 
         <div class="flex-1">
-            <label for="journeyDateFilter" class="block text-sm font-medium text-gray-700">Filter by Journey
+            <label for="journeyDateFilter" class="block text-sm font-medium text-gray-700">Filter by Departure
                 Date</label>
             <input type="date" id="journeyDateFilter"
                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">

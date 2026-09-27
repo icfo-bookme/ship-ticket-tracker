@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
     // SALES — VERIFY
     Route::middleware('can:sales.verify')->group(function () {
         Route::put('/sale/verify/{id}/{status}', [ShipTicketSaleController::class, 'verify']);
+        Route::put('/sale/bftn-received/{id}', [ShipTicketSaleController::class, 'markBftnReceived']);
         Route::put('ship-ticket-issue/{ship_ticket_sale}', [ShipTicketSaleController::class, 'updateIssue'])->name('ship-ticket-issue.update');
     });
 
@@ -106,8 +107,11 @@ Route::middleware('auth')->group(function () {
         Route::post('refunds', [RefundController::class, 'store'])->name('refunds.store');
         Route::post('/full/refunds', [RefundController::class, 'fullRefunds']);
         Route::post('/partial/refund/{id}', [RefundController::class, 'partialRefund']);
+        Route::post('/refunds/{id}/partner-payment', [RefundController::class, 'receivePartnerPayment']);
+        Route::post('/refunds/{id}/customer-payment', [RefundController::class, 'refundCustomer']);
         Route::get('refunds/{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
         Route::put('refunds/{refund}', [RefundController::class, 'update'])->name('refunds.update');
+        Route::post('refunds/{id}/cancel', [RefundController::class, 'cancel'])->name('refunds.cancel');
         Route::put('/refunded/{id}', [RefundController::class, 'update']);
         Route::delete('refunds/{refund}', [RefundController::class, 'destroy'])->name('refunds.destroy');
     });
@@ -117,6 +121,8 @@ Route::middleware('auth')->group(function () {
         Route::get('refunds', [RefundController::class, 'index'])->name('refunds.index');
         Route::get('refunds/{refund}', [RefundController::class, 'show'])->name('refunds.show');
         Route::get('/all/refunded', [RefundController::class, 'refunded']);
+        Route::get('/all/refund-requests', [RefundController::class, 'requested']);
+        Route::get('/refund-requests', [RefundController::class, 'showRequested'])->name('refunds.requested');
         Route::get('/all/refundable', [RefundController::class, 'refundableCS']);
         Route::get('/refunded', [RefundController::class, 'showRefundedCS']);
     });

@@ -124,6 +124,7 @@ class SaleStatusWorkflowService
      */
     private function createShipmentAndMarkGroupedTickets(ShipTicketSale $sale, int $groupId): array
     {
+
         $tickets = $this->groupedTickets($groupId);
         $saleIds = $tickets->pluck('sales_id')->push($groupId)->unique();
         $groupSales = ShipTicketSale::query()
@@ -229,40 +230,8 @@ class SaleStatusWorkflowService
 
     private function createConsignment(ShipTicketSale $sale): ?string
     {
-        $invoice = 'TICKET-'.$sale->id;
 
-        try {
-            $lookup = $this->steadfast->statusByInvoice($invoice);
-        } catch (\Throwable $exception) {
-            Log::error('Could not check Steadfast invoice before creating parcel', [
-                'invoice' => $invoice,
-                'error' => $exception->getMessage(),
-            ]);
-
-            return null;
-        }
-
-        $lookupBody = $lookup['body'] ?? [];
-        $existingConsignmentId = $lookupBody['consignment']['consignment_id']
-            ?? $lookupBody['data']['consignment_id']
-            ?? $lookupBody['consignment_id']
-            ?? null;
-
-        if ($existingConsignmentId) {
-            return (string) $existingConsignmentId;
-        }
-
-        $invoiceExists = ($lookup['http_status'] ?? null) !== 404
-            && (int) ($lookupBody['status'] ?? 0) !== 404;
-
-        if ($invoiceExists) {
-            Log::critical('Steadfast invoice already exists or could not be verified; refusing duplicate parcel creation', [
-                'invoice' => $invoice,
-                'lookup' => $lookup,
-            ]);
-
-            return null;
-        }
+        $invoice = 'TICKET-1111'.$sale->id;
 
         try {
             $steadfastResult = $this->steadfast->createOrder([

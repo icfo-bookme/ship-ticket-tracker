@@ -42,6 +42,9 @@ class RefundController extends Controller
             'payments',
             'categories.package',
         ])
+            ->whereDoesntHave('refunds', function ($refunds): void {
+                $refunds->whereNotIn('status', ['cancelled']);
+            })
             ->whereNotIn('status', [
                 SaleStatus::Pending->value,
                 SaleStatus::Refunded->value,
@@ -140,11 +143,16 @@ class RefundController extends Controller
             $length = $request->input('length', 10);
             $searchValue = $request->input('search.value', '');
 
-            $query = ShipTicketSale::with(['ships', 'companies', 'refund', 'payments', 'categories.package'])
-                ->whereIn('status', [
-                    SaleStatus::Refunded->value,
-                    SaleStatus::PartialRefunded->value,
-                ]);
+            $query = ShipTicketSale::with(['ships', 'companies', 'refunds', 'payments', 'categories.package'])
+                ->where(function ($sales): void {
+                    $sales->whereIn('status', [
+                        SaleStatus::Refunded->value,
+                        SaleStatus::PartialRefunded->value,
+                    ])->orWhereHas('refunds', function ($refunds): void {
+                        $refunds->where('status', 'completed')
+                            ->orWhereNotNull('customer_refunded_at');
+                    });
+                });
 
             if (! empty($shipId)) {
                 $query->where('ship_id', $shipId);
@@ -191,28 +199,64 @@ class RefundController extends Controller
 
             $totalRecords = $query->count();
 
+            $refundTotals = (clone $query)
+                ->with('refunds')
+                ->get()
+                ->reduce(function (array $totals, ShipTicketSale $sale): array {
+                    $completedRefunds = $sale->refunds->filter(
+                        fn (Refund $refund): bool => $refund->status === 'completed' || $refund->customer_refunded_at !== null
+                    );
+                    $totals['tickets'] += (int) $completedRefunds->sum('refunded_number_of_tickets');
+                    $totals['amount'] += (float) $completedRefunds->sum('refunded_amount');
+                    $totals['gross_amount'] += (float) $completedRefunds->sum('gross_refund_amount');
+                    $totals['customer_refund'] += (float) $completedRefunds->sum('customer_refund_amount');
+                    $totals['partner_share'] += (float) $completedRefunds->sum('partner_share_amount');
+                    $totals['company_retained'] += (float) $completedRefunds->sum('company_retained_amount');
+
+                    return $totals;
+                }, [
+                    'tickets' => 0,
+                    'amount' => 0,
+                    'gross_amount' => 0,
+                    'customer_refund' => 0,
+                    'partner_share' => 0,
+                    'company_retained' => 0,
+                ]);
+
             $sales = $query->skip($start)
                 ->take($length)
                 ->get()
-                ->each(fn (ShipTicketSale $sale) => $this->appendPaymentAndCategoryLabels($sale));
+                ->each(function (ShipTicketSale $sale): void {
+                    $completedRefunds = $sale->refunds->filter(
+                        fn (Refund $refund): bool => $refund->status === 'completed' || $refund->customer_refunded_at !== null
+                    );
+                    $latestRefund = $completedRefunds->last();
 
-            // Calculate totals
-            $totalRefundedTickets = 0;
-            $totalRefundedAmount = 0;
-            foreach ($sales as $sale) {
-                if ($sale->refund) {
-                    $totalRefundedTickets += (int) $sale->refund->refunded_number_of_tickets;
-                    $totalRefundedAmount += (float) $sale->refund->refunded_amount;
-                }
-            }
+                    $sale->setRelation('refund', (new Refund)->forceFill([
+                        'id' => $latestRefund?->id,
+                        'refunded_number_of_tickets' => $completedRefunds->sum('refunded_number_of_tickets'),
+                        'refunded_amount' => $completedRefunds->sum('refunded_amount'),
+                        'gross_refund_amount' => $completedRefunds->sum('gross_refund_amount'),
+                        'customer_charge_percent' => $latestRefund?->customer_charge_percent,
+                        'partner_share_percent' => $latestRefund?->partner_share_percent,
+                        'customer_refund_amount' => $completedRefunds->sum('customer_refund_amount'),
+                        'partner_share_amount' => $completedRefunds->sum('partner_share_amount'),
+                        'company_retained_amount' => $completedRefunds->sum('company_retained_amount'),
+                    ]));
+                    $this->appendPaymentAndCategoryLabels($sale);
+                });
 
             return response()->json([
                 'draw' => $request->input('draw'),
                 'recordsTotal' => $totalRecords,
                 'recordsFiltered' => $totalRecords,
                 'data' => $sales,
-                'total_refunded_tickets' => $totalRefundedTickets,
-                'total_refunded_amount' => $totalRefundedAmount,
+                'total_refunded_tickets' => $refundTotals['tickets'],
+                'total_refunded_amount' => $refundTotals['amount'],
+                'total_gross_amount' => $refundTotals['gross_amount'],
+                'total_customer_refund' => $refundTotals['customer_refund'],
+                'total_partner_share' => $refundTotals['partner_share'],
+                'total_company_retained' => $refundTotals['company_retained'],
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -238,6 +282,56 @@ class RefundController extends Controller
         return view('refunded.index', compact('ships', 'companies'));
     }
 
+    public function requested(Request $request)
+    {
+        $query = Refund::with(['sale.ships', 'sale.companies', 'tickets'])
+            ->whereNotNull('requested_at')
+            ->whereNull('customer_refunded_at')
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->latest();
+
+        if ($request->filled('journey_date')) {
+            $query->whereHas('sale', fn ($sale) => $sale->whereDate('journey_date', $request->input('journey_date')));
+        }
+
+        if ($request->filled('ship_id')) {
+            $query->whereHas('sale', fn ($sale) => $sale->where('ship_id', $request->input('ship_id')));
+        }
+
+        if ($request->filled('company_id')) {
+            $query->whereHas('sale', fn ($sale) => $sale->where('company_id', $request->input('company_id')));
+        }
+
+        if ($request->filled('search.value')) {
+            $search = $request->input('search.value');
+            $query->whereHas('sale', function ($sale) use ($search): void {
+                $sale->where('customer_name', 'like', "%{$search}%")
+                    ->orWhere('customer_mobile', 'like', "%{$search}%")
+                    ->orWhere('id', $search);
+            });
+        }
+
+        $total = $query->count();
+        $requests = $query->skip((int) $request->input('start', 0))
+            ->take((int) $request->input('length', 10))
+            ->get();
+
+        return response()->json([
+            'draw' => $request->input('draw'),
+            'recordsTotal' => $total,
+            'recordsFiltered' => $total,
+            'data' => $requests,
+        ]);
+    }
+
+    public function showRequested()
+    {
+        return view('refund.requested', [
+            'ships' => Ship::all(),
+            'companies' => Company::all(),
+        ]);
+    }
+
     public function fullRefunds(FullRefundRequest $request)
     {
         $this->refunds->fullRefund($request->validated('ids'));
@@ -252,7 +346,25 @@ class RefundController extends Controller
 
         $this->refunds->partialRefund($sale, $request->validated());
 
-        return response()->json(['success' => true, 'message' => 'Refund processed successfully.']);
+        return response()->json(['success' => true, 'message' => 'Refund request sent to partner.']);
+    }
+
+    public function receivePartnerPayment(Request $request, int $id)
+    {
+        $refund = Refund::findOrFail($id);
+        $data = $request->validate(['received_amount' => 'required|numeric|min:0', 'payment_method' => 'nullable|string|max:50', 'transaction_id' => 'nullable|string|max:150', 'payment_proof' => 'nullable|string|max:255', 'remark' => 'nullable|string|max:255']);
+        $this->refunds->receivePartnerPayment($refund, $data);
+
+        return response()->json(['success' => true, 'message' => 'Partner payment received.']);
+    }
+
+    public function refundCustomer(Request $request, int $id)
+    {
+        $refund = Refund::findOrFail($id);
+        $data = $request->validate(['payment_method' => 'nullable|string|max:50', 'transaction_id' => 'nullable|string|max:150', 'payment_proof' => 'nullable|string|max:255', 'remark' => 'nullable|string|max:255']);
+        $this->refunds->refundCustomer($refund, $data);
+
+        return response()->json(['success' => true, 'message' => 'Customer refund completed.']);
     }
 
     public function show($id)
@@ -288,6 +400,14 @@ class RefundController extends Controller
         $this->refunds->update($refund, $sale, $request->validated());
 
         return response()->json(['success' => true, 'message' => 'Refund updated successfully.']);
+    }
+
+    public function cancel(int $id)
+    {
+        $refund = Refund::findOrFail($id);
+        $this->refunds->cancel($refund);
+
+        return response()->json(['success' => true, 'message' => 'Refund request cancelled successfully.']);
     }
 
     // Remove the specified refund from storage

@@ -18,7 +18,7 @@ class SalesReportService
         $orderColumn = (int) $request->input('order.0.column', 0);
         $orderDirection = $request->input('order.0.dir', 'asc');
 
-        $query = ShipTicketSale::with(['ships', 'companies', 'refund', 'payments'])
+        $query = ShipTicketSale::with(['ships', 'companies', 'refunds', 'payments'])
             ->where('status', '!=', SaleStatus::Pending->value);
 
         $this->applyFilters($query, $filters);
@@ -185,8 +185,8 @@ class SalesReportService
 
     private function formatSale(ShipTicketSale $sale): array
     {
-        $refundedTickets = (int) ($sale->refund?->refunded_number_of_tickets ?? 0);
-        $refundedAmount = (float) ($sale->refund?->refunded_amount ?? 0);
+        $refundedTickets = (int) $sale->refunds->sum('refunded_number_of_tickets');
+        $refundedAmount = (float) $sale->refunds->sum('refunded_amount');
         $refundStatus = $refundedTickets >= $sale->number_of_ticket && $refundedTickets > 0
             ? 'Full Refund'
             : ($refundedTickets > 0 ? 'Partial Refund' : 'No Refund');

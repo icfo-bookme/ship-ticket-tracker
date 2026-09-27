@@ -131,6 +131,16 @@
             },
         ];
 
+        window.dataTableCreatedRows = window.dataTableCreatedRows || {};
+        window.dataTableCreatedRows['salesTable'] = (row, sale) => {
+            if (!sale.received_status) {
+                row.classList.add('bg-amber-300');
+                row.querySelectorAll('td').forEach((cell) => {
+                    cell.classList.add('!bg-amber-300');
+                });
+            }
+        };
+
         window.dataTableFilters = window.dataTableFilters || {};
         window.dataTableFilters['salesTable'] = () => ({
             ship_id: shipFilter.value,
@@ -263,10 +273,19 @@
             @endcan
 
             @can('sales.delete')
-                const deleteButton = `<button class="fas fa-trash text-red-500 px-2 py-1 border border-gray-300 rounded deleteBtn"
+                const deleteButton = `<button class="fas fa-trash text-red-500 bg-white px-2 py-1 border border-gray-300 rounded deleteBtn"
                         data-id="${sale.id}" title="Delete"></button>`;
             @else
                 const deleteButton = "";
+            @endcan
+
+            @can('sales.verify')
+                const bftnReceivedButton = sale.received_status
+                    ? ""
+                    : `<button class="bg-green-600 text-white px-2 py-1 rounded bftnReceivedBtn"
+                        data-id="${sale.id}" title="Mark BFTN as received">BFTN Received</button>`;
+            @else
+                const bftnReceivedButton = "";
             @endcan
 
             return `
@@ -274,6 +293,7 @@
                     ${editButton}
                     ${deleteButton}
                     ${dueButton}
+                    ${bftnReceivedButton}
                     ${createStatusButton(sale)}
                 </div>`;
         }
@@ -392,6 +412,40 @@
                 : "";
         }
 
+        async function markBftnReceived(button, getList) {
+            const confirmation = await Swal.fire({
+                title: "Are you sure?",
+                text: "Have you received this BFTN?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Yes, received",
+                cancelButtonText: "Cancel",
+            });
+
+            if (!confirmation.isConfirmed) {
+                return;
+            }
+
+            const response = await fetch(`/sale/bftn-received/${button.dataset.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                },
+            });
+            const result = await response.json();
+
+            await Swal.fire({
+                title: result.success ? "Updated" : "Error",
+                text: result.message,
+                icon: result.success ? "success" : "error",
+            });
+
+            if (result.success) {
+                getList();
+            }
+        }
+
         function bindSalesTableEvents() {
             const table = document.getElementById("salesTable");
 
@@ -417,6 +471,8 @@
                     varifySale(button, window.getList);
                 } else if (button.classList.contains("deleteBtn")) {
                     deleteSale(button, window.getList);
+                } else if (button.classList.contains("bftnReceivedBtn")) {
+                    markBftnReceived(button, window.getList);
                 } else if (button.classList.contains("shipmentIdEntryBtn")) {
                     varifyShipment(button, window.getList);
                 } else if (button.classList.contains("dueBtn")) {

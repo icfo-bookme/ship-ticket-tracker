@@ -619,6 +619,24 @@
     </div>
 
     <script>
+        const departureDateInput = document.getElementById('journey_date');
+        const returnDateInput = document.getElementById('return_date');
+
+        function syncReturnDateMinimum() {
+            if (!departureDateInput || !returnDateInput) {
+                return;
+            }
+
+            returnDateInput.min = departureDateInput.value || '{{ now()->format('Y-m-d') }}';
+
+            if (returnDateInput.value && returnDateInput.value < returnDateInput.min) {
+                returnDateInput.value = '';
+            }
+        }
+
+        departureDateInput?.addEventListener('change', syncReturnDateMinimum);
+        syncReturnDateMinimum();
+
         window.ticketSaleSaved = @json(session()->has('success'));
     </script>
     @vite(['resources/js/pages/ship-ticket-sales.js'])

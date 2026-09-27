@@ -28,7 +28,7 @@ class UpdateShipTicketSaleRequest extends FormRequest
             'ship_id' => 'required|exists:ships,id',
             'company_id' => 'required|exists:company,id',
             'journey_date' => 'nullable|date',
-            'return_date' => 'nullable|date',
+            'return_date' => 'nullable|date|after_or_equal:journey_date',
             'number_of_ticket' => 'required|integer|min:1',
             'ticket_fee' => 'required|numeric|min:0',
             'other_fee' => 'nullable|numeric|min:0',

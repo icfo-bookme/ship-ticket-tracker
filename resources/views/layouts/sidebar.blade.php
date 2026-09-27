@@ -108,6 +108,11 @@
 
                             <!-- Refunded Sell Link -->
                             @can('refunds.view')
+                            <a href="/refund-requests"
+                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition {{ request()->is('refund-requests') ? 'bg-blue-100 text-blue-600' : '' }}">
+                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 mr-3"></span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Requested</span>
+                            </a>
                             <a href="/refunded"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>

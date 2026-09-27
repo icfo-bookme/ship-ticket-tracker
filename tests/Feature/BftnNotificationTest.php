@@ -84,3 +84,14 @@ it('marks a notification as read', function () {
 
     expect($notification->fresh()->notifications_status)->toBe(0);
 });
+
+it('marks a sale bftn as received', function () {
+    $sale = notificationSale($this->ship, $this->company);
+
+    $this->actingAs($this->user)
+        ->putJson("/sale/bftn-received/{$sale->id}")
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    expect($sale->fresh()->received_status)->toBeTrue();
+});

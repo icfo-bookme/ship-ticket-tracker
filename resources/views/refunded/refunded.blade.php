@@ -80,12 +80,28 @@
                     render: (data, type, row) => row.refund?.refunded_number_of_tickets || 0,
                 },
                 {
-                    data: "received_amount",
-                    render: (data) => data || 0,
+                    data: "refund.gross_refund_amount",
+                    render: (data, type, row) => row.refund?.gross_refund_amount || 0,
                 },
                 {
-                    data: "refund.refunded_amount",
-                    render: (data, type, row) => row.refund?.refunded_amount || 0,
+                    data: "refund.customer_charge_percent",
+                    render: (data, type, row) => row.refund?.customer_charge_percent || 0,
+                },
+                {
+                    data: "refund.partner_share_percent",
+                    render: (data, type, row) => row.refund?.partner_share_percent || 0,
+                },
+                {
+                    data: "refund.customer_refund_amount",
+                    render: (data, type, row) => row.refund?.customer_refund_amount || 0,
+                },
+                {
+                    data: "refund.partner_share_amount",
+                    render: (data, type, row) => row.refund?.partner_share_amount || 0,
+                },
+                {
+                    data: "refund.company_retained_amount",
+                    render: (data, type, row) => row.refund?.company_retained_amount || 0,
                 },
                 {
                     data: "status",
@@ -117,6 +133,10 @@
                 if (totalRefundedAmountElement && json.total_refunded_amount !== undefined) {
                     totalRefundedAmountElement.textContent = json.total_refunded_amount;
                 }
+                document.getElementById("totalGrossAmount").textContent = Number(json.total_gross_amount || 0).toFixed(2);
+                document.getElementById("totalCustomerRefund").textContent = Number(json.total_customer_refund || 0).toFixed(2);
+                document.getElementById("totalPartnerShare").textContent = Number(json.total_partner_share || 0).toFixed(2);
+                document.getElementById("totalCompanyRetained").textContent = Number(json.total_company_retained || 0).toFixed(2);
 
                 return json.data || [];
             };
@@ -134,17 +154,6 @@
             function createActionButtons(row) {
                 @can('refunds.manage')
                     return `
-                        <button class="text-white bg-yellow-700 px-2 py-1 rounded editRefundedBtn"
-                            data-id="${row.refund?.id ?? ""}"
-                            data-received_total_amount="${row.received_amount}"
-                            data-number_ticket="${row.number_of_ticket}"
-                            data-refunded_amount="${row.refund?.refunded_amount ?? ""}"
-                            data-refunded_number_of_tickets="${row.refund?.refunded_number_of_tickets ?? ""}">
-                            Edit Refunded
-                        </button>
-                        <a href="/ship-ticket-sales/${row.id}">
-                            <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
-                        </a>
                         <button class="fas fa-trash text-red-500 px-2 py-1 rounded deleteBtn" data-id="${row.id}"></button>`;
                 @else
                     return "";
@@ -208,9 +217,6 @@
                     if (button.classList.contains("deleteBtn")) {
                         event.preventDefault();
                         deleteSale(button);
-                    } else if (button.classList.contains("editRefundedBtn")) {
-                        event.preventDefault();
-                        refunded(button, window.getList);
                     }
                 });
             }
@@ -225,9 +231,13 @@
             'Ship Name',
             'Journey Date',
             'Purchase Num Of Tickets',
-            'Return Num Of Tickets',
-            'Received Amount',
-            'Refunded Amount',
+            'Refunded Num Of Tickets',
+            'Gross Amount',
+            'Customer Charge %',
+            'Partner Share %',
+            'Customer Refund',
+            'Partner Share',
+            'Company Retained',
             'Status',
             'Action',
         ]" url="/all/refunded" :ordering="false" :delegateActions="false" :order="[]"
@@ -254,6 +264,25 @@
                 <div class="text-blue-200 dark:text-blue-600 text-3xl">
                     BDT
                 </div>
+            </div>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gross Amount</p>
+                <p id="totalGrossAmount" class="mt-2 text-2xl font-bold text-blue-950 dark:text-blue-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Refund</p>
+                <p id="totalCustomerRefund" class="mt-2 text-2xl font-bold text-green-700 dark:text-green-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Partner Share</p>
+                <p id="totalPartnerShare" class="mt-2 text-2xl font-bold text-amber-700 dark:text-amber-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Company Retained</p>
+                <p id="totalCompanyRetained" class="mt-2 text-2xl font-bold text-purple-700 dark:text-purple-400">0.00</p>
             </div>
         </div>
     </div>

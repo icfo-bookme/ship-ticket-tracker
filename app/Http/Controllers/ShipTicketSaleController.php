@@ -126,13 +126,14 @@ class ShipTicketSaleController extends Controller
     {
         $sale = ShipTicketSale::with([
             'ships.packages',
-            'categories',
+            'categories.package',
             'companies',
             'seller:id,name',
             'coPassengers',
             'payments',
             'shipment',
             'printedTickets',
+            'refunds.tickets',
             'verifyby.verifiedByUser:id,name',
         ])->findOrFail($id);
 
@@ -172,13 +173,14 @@ class ShipTicketSaleController extends Controller
     {
         $sale = ShipTicketSale::with([
             'ships.packages',
-            'categories',
+            'categories.package',
             'companies',
             'seller:id,name',
             'coPassengers',
             'payments',
             'shipment',
             'printedTickets',
+            'refunds.tickets',
             'verifyby.verifiedByUser:id,name',
         ])->findOrFail($id);
 
@@ -210,6 +212,33 @@ class ShipTicketSaleController extends Controller
             ->where('type', 'return')
             ->sum('quantity');
 
+        $refundSummary = $sale->categories->map(function ($category) use ($sale): array {
+            $completedQuantity = $sale->refunds
+                ->where('status', 'completed')
+                ->flatMap->tickets
+                ->where('category_id', $category->id)
+                ->sum('refunded_quantity');
+            $pendingQuantity = $sale->refunds
+                ->whereNotIn('status', ['completed', 'cancelled'])
+                ->flatMap->tickets
+                ->where('category_id', $category->id)
+                ->sum('refunded_quantity');
+            $remainingQuantity = max((int) $category->quantity - (int) $completedQuantity, 0);
+
+            return [
+                'name' => $category->package?->name ?? 'Ticket category',
+                'type' => ucfirst((string) $category->type),
+                'purchased' => (int) $category->quantity,
+                'refunded' => (int) $completedQuantity,
+                'pending' => (int) $pendingQuantity,
+                'remaining' => $remainingQuantity,
+                'status' => $completedQuantity >= $category->quantity && $category->quantity > 0
+                    ? 'Fully Refunded'
+                    : ($completedQuantity > 0 ? 'Partially Refunded' : ($pendingQuantity > 0 ? 'Pending Refund' : 'No Refund')),
+            ];
+        });
+        $hasRefundActivity = $sale->refunds->isNotEmpty();
+
         // Add these totals to the sale object for easy access in view
 
         if ($sale->status == SaleStatus::PaymentVerified->value) {
@@ -225,7 +254,7 @@ class ShipTicketSaleController extends Controller
         $ships = Ship::all();
         $companies = Company::all();
 
-        return view('ship_ticket_sales.ticket_issue', compact('sale', 'number', 'groupByStatus', 'groupById', 'groupingMessage', 'ships', 'companies', 'nextSale', 'totalReturnTickets', 'totalDepartureTickets', 'ticketIssueViews'));
+        return view('ship_ticket_sales.ticket_issue', compact('sale', 'number', 'groupByStatus', 'groupById', 'groupingMessage', 'ships', 'companies', 'nextSale', 'totalReturnTickets', 'totalDepartureTickets', 'ticketIssueViews', 'refundSummary', 'hasRefundActivity'));
     }
 
     /**
@@ -377,6 +406,17 @@ class ShipTicketSaleController extends Controller
             ['success' => $result['success'], 'message' => $result['message']],
             $result['status'] ?? 200
         );
+    }
+
+    public function markBftnReceived(int $id)
+    {
+        $sale = ShipTicketSale::findOrFail($id);
+        $sale->update(['received_status' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'BFTN received status updated successfully.',
+        ]);
     }
 
     public function pdfDownload($id)

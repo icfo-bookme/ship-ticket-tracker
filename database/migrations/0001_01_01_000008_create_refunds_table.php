@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('refunded_number_of_tickets');
             $table->decimal('refunded_amount', 10, 2);
             $table->timestamps();
-            $table->string('status', 50)->default('refunded');
+            $table->string('status', 50)->default('requested');
             $table->string('remark')->nullable();
         });
     }

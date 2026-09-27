@@ -113,8 +113,8 @@
                             </a>
                             <button class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund"
                                 data-id="${sale.id}"
-                                data-received_total_amount="${sale.received_amount}"
-                                data-number_ticket="${sale.number_of_ticket}"
+                                data-received_total_amount="${sale.ticket_fee}"
+                                data-categories="${encodeURIComponent(JSON.stringify(sale.categories || []))}"
                                 data-status="shipped">
                                 Partial Refund
                             </button>

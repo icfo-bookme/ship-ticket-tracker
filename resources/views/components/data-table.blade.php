@@ -145,6 +145,11 @@
                     processing: @json($loadingText),
                 },
                 columns: customColumns,
+                createdRow: (row, data) => {
+                    const createdRowFn = (window.dataTableCreatedRows || {})[@json($id)];
+
+                    createdRowFn?.(row, data);
+                },
                 initComplete: function () {
                     hidePageLoader();
                 },

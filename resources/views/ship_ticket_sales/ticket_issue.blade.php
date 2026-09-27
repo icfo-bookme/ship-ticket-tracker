@@ -39,8 +39,14 @@
         </div>
     @endif
 
-    <div class="py-8">
+    <div class="py-8 {{ $hasRefundActivity ? 'bg-red-100 border-y-4 border-red-500' : '' }}">
         <div class="max-w-7xl mx-auto sm:px-6">
+            @if ($hasRefundActivity)
+                <div class="mb-4 rounded-lg border border-red-300 bg-red-500 p-3 font-semibold text-white">
+                    <i class="fas fa-triangle-exclamation mr-2"></i>
+                    Refund request or refunded ticket exists for this sale.
+                </div>
+            @endif
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="">
                     @if ($errors->any())
@@ -348,6 +354,43 @@
                                         @endforeach
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 shadow-sm">
+                            <div class="mb-3 flex items-center">
+                                <div class="mr-3 rounded-lg bg-amber-500 p-2">
+                                    <i class="fas fa-rotate-left text-white text-sm"></i>
+                                </div>
+                                <h3 class="text-base font-bold text-gray-800">Refund Summary</h3>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-left text-sm">
+                                    <thead class="border-b border-amber-200 text-gray-700">
+                                        <tr>
+                                            <th class="px-3 py-2">Category</th>
+                                            <th class="px-3 py-2">Type</th>
+                                            <th class="px-3 py-2">Purchased</th>
+                                            <th class="px-3 py-2">Refunded</th>
+                                            <th class="px-3 py-2">Remaining</th>
+                                            <th class="px-3 py-2">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse ($refundSummary as $refundRow)
+                                            <tr class="border-b border-amber-100 last:border-0">
+                                                <td class="px-3 py-2 font-medium">{{ $refundRow['name'] }}</td>
+                                                <td class="px-3 py-2">{{ $refundRow['type'] }}</td>
+                                                <td class="px-3 py-2">{{ $refundRow['purchased'] }}</td>
+                                                <td class="px-3 py-2">{{ $refundRow['refunded'] }}</td>
+                                                <td class="px-3 py-2">{{ $refundRow['remaining'] }}</td>
+                                                    <td class="px-3 py-2 font-semibold {{ $refundRow['status'] !== 'No Refund' ? 'text-red-700' : 'text-gray-700' }}">{{ $refundRow['status'] }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr><td colspan="6" class="px-3 py-3 text-gray-500">No ticket categories found.</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 

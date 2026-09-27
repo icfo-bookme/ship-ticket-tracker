@@ -111,6 +111,7 @@ class RefundController extends Controller
         $recordsFiltered = $query->count();
 
         $sales = $query->skip($start)
+            ->orderBy('id', 'asc')
             ->take($length)
             ->get()
             ->each(fn (ShipTicketSale $sale) => $this->appendPaymentAndCategoryLabels($sale));
@@ -287,8 +288,7 @@ class RefundController extends Controller
         $query = Refund::with(['sale.ships', 'sale.companies', 'tickets'])
             ->whereNotNull('requested_at')
             ->whereNull('customer_refunded_at')
-            ->whereNotIn('status', ['completed', 'cancelled'])
-            ->latest();
+            ->whereNotIn('status', ['completed', 'cancelled']);
 
         if ($request->filled('journey_date')) {
             $query->whereHas('sale', fn ($sale) => $sale->whereDate('journey_date', $request->input('journey_date')));
@@ -312,7 +312,8 @@ class RefundController extends Controller
         }
 
         $total = $query->count();
-        $requests = $query->skip((int) $request->input('start', 0))
+        $requests = $query->orderBy('id', 'asc')
+            ->skip((int) $request->input('start', 0))
             ->take((int) $request->input('length', 10))
             ->get();
 

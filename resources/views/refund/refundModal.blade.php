@@ -212,7 +212,8 @@
         const categories = JSON.parse(decodeURIComponent(btn.dataset.categories || '[]'));
         document.getElementById('refundCategoryRows').innerHTML = categories.map((category) => {
             const price = Number(category.package?.price || category.unit_amount || 0);
-            const roundTripPrice = Number(category.package?.round_trip_price || category.unit_amount || price);
+            const roundTripTotal = Number(category.package?.round_trip_price || 0);
+            const returnPrice = roundTripTotal > 0 ? roundTripTotal - price : price;
             const purchasedQuantity = Number(category.quantity || category.purchased_quantity || 0);
             const refundedQuantity = editing
                 ? Number(category.refunded_quantity ?? category.quantity_refunded ?? 0)
@@ -221,9 +222,9 @@
             return `<div class="grid grid-cols-5 items-center gap-2 rounded border p-2 text-sm">
                 <span class="col-span-2">${escapeHtml(category.package?.name || 'Ticket')}</span>
                 <span>${escapeHtml(category.type || '')}</span>
-                <span>Qty: ${purchasedQuantity}<br>৳${(category.type === 'return' ? roundTripPrice : price).toFixed(2)}</span>
+                <span>Qty: ${purchasedQuantity}<br>৳${(category.type === 'return' ? returnPrice : price).toFixed(2)}</span>
                 <input type="number" min="0" max="${purchasedQuantity}" value="${refundedQuantity}"
-                    data-category-id="${category.category_id ?? category.id}" data-price="${category.type === 'return' ? roundTripPrice : price}"
+                    data-category-id="${category.category_id ?? category.id}" data-price="${category.type === 'return' ? returnPrice : price}"
                     class="refundCategoryQuantity w-full rounded border px-2 py-1" aria-label="Return quantity">
             </div>`;
         }).join('');

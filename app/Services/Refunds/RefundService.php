@@ -62,9 +62,11 @@ class RefundService
                 }
 
                 $quantity = (int) $selection['refunded_quantity'];
-                $unitAmount = (float) ($category->type === 'return'
-                    ? ($category->package?->round_trip_price ?? $category->package?->price ?? 0)
-                    : ($category->package?->price ?? 0));
+                $singlePrice = (float) ($category->package?->price ?? 0);
+                $roundTripPrice = (float) ($category->package?->round_trip_price ?? 0);
+                $unitAmount = $category->type === 'return'
+                    ? ($roundTripPrice > 0 ? $roundTripPrice - $singlePrice : $singlePrice)
+                    : $singlePrice;
                 $categoryAmount = round($unitAmount * $quantity, 2);
                 $grossAmount += $categoryAmount;
                 $ticketCount += $quantity;
@@ -161,9 +163,11 @@ class RefundService
                     ]);
                 }
 
-                $unitAmount = (float) ($category->type === 'return'
-                    ? ($category->package?->round_trip_price ?? $category->package?->price ?? 0)
-                    : ($category->package?->price ?? 0));
+                $singlePrice = (float) ($category->package?->price ?? 0);
+                $roundTripPrice = (float) ($category->package?->round_trip_price ?? 0);
+                $unitAmount = $category->type === 'return'
+                    ? ($roundTripPrice > 0 ? $roundTripPrice - $singlePrice : $singlePrice)
+                    : $singlePrice;
                 $categoryAmount = round($unitAmount * $quantity, 2);
                 $grossAmount += $categoryAmount;
                 $ticketCount += $quantity;

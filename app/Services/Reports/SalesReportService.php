@@ -56,7 +56,11 @@ class SalesReportService
                 'total_bftn' => $totals->total_bftn,
                 'total_bftn_pending' => $totals->total_bftn_pending,
                 'total_bftn_received' => $totals->total_bftn_received,
-                'net_cash' => number_format($totals->total_received_amount - $totals->total_customer_refund_amount, 2),
+                'total_bftn_amount' => number_format($totals->total_bftn_amount, 2),
+                'total_bftn_pending_amount' => number_format($totals->total_bftn_pending_amount, 2),
+                'total_bftn_received_amount' => number_format($totals->total_bftn_received_amount, 2),
+                'net_cash' => number_format($totals->total_received_amount - $totals->total_bftn_pending_amount - $totals->total_customer_refund_amount, 2),
+                'net_sales_amount' => number_format($totals->total_received_amount - $totals->total_refunded_amount, 2),
             ],
         ];
     }
@@ -85,7 +89,11 @@ class SalesReportService
                 'total_bftn' => 0,
                 'total_bftn_pending' => 0,
                 'total_bftn_received' => 0,
+                'total_bftn_amount' => '0.00',
+                'total_bftn_pending_amount' => '0.00',
+                'total_bftn_received_amount' => '0.00',
                 'net_cash' => '0.00',
+                'net_sales_amount' => '0.00',
             ],
             'error' => 'An error occurred while generating the report.',
         ];
@@ -194,6 +202,9 @@ class SalesReportService
             COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" THEN 1 ELSE 0 END), 0) AS total_bftn,
             COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND ship_ticket_sales.received_status = 0 THEN 1 ELSE 0 END), 0) AS total_bftn_pending,
             COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND ship_ticket_sales.received_status = 1 THEN 1 ELSE 0 END), 0) AS total_bftn_received,
+            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" THEN ship_ticket_sales.received_amount ELSE 0 END), 0) AS total_bftn_amount,
+            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND ship_ticket_sales.received_status = 0 THEN ship_ticket_sales.received_amount ELSE 0 END), 0) AS total_bftn_pending_amount,
+            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND ship_ticket_sales.received_status = 1 THEN ship_ticket_sales.received_amount ELSE 0 END), 0) AS total_bftn_received_amount,
             COALESCE(SUM((SELECT COALESCE(SUM(refunded_number_of_tickets), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_refunded_tickets,
             COALESCE(SUM((SELECT COALESCE(SUM(refunded_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_refunded_amount,
             COALESCE(SUM((SELECT COALESCE(SUM(gross_refund_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_gross_refund_amount,
@@ -243,6 +254,7 @@ class SalesReportService
             'company_retained_amount' => (float) $completedRefunds->sum('company_retained_amount'),
             'bftn_status' => $sale->bftn_status,
             'bftn_received' => $sale->bftn_status === 'yes' && (bool) $sale->received_status,
+            'bftn_amount' => $sale->bftn_status === 'yes' ? (float) $sale->received_amount : 0,
             'net_cash' => (float) $sale->received_amount - (float) $completedRefunds->sum('customer_refund_amount'),
         ];
     }

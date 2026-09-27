@@ -111,6 +111,9 @@
                     total_bftn: document.getElementById("totalBftn"),
                     total_bftn_pending: document.getElementById("totalBftnPending"),
                     total_bftn_received: document.getElementById("totalBftnReceived"),
+                    total_bftn_amount: document.getElementById("totalBftnAmount"),
+                    total_bftn_pending_amount: document.getElementById("totalBftnPendingAmount"),
+                    total_bftn_received_amount: document.getElementById("totalBftnReceivedAmount"),
                     net_cash: document.getElementById("netCash"),
                 };
             }
@@ -190,6 +193,7 @@
                 { data: "company_retained_amount", title: "Company Retained", render: formatCurrency },
                 { data: "bftn_status", title: "BFTN", render: (data) => data === "yes" ? "Yes" : "No" },
                 { data: "bftn_received", title: "BFTN Received", render: (data) => data ? "Received" : "Pending" },
+                { data: "bftn_amount", title: "BFTN Amount", render: formatCurrency },
                 { data: "net_cash", title: "Net Cash", render: formatCurrency },
                 {
                     data: "due_amount",
@@ -318,6 +322,7 @@
             'Company Retained',
             'BFTN',
             'BFTN Received',
+            'BFTN Amount',
             'Net Cash',
             'Action',
         ]" url="/reports" :ordering="false" :delegateActions="false" :order="[]"
@@ -435,6 +440,18 @@
             <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Net Cash</p>
                 <p id="netCash" class="text-2xl font-bold text-teal-700 dark:text-teal-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total BFTN Amount</p>
+                <p id="totalBftnAmount" class="text-2xl font-bold text-blue-950 dark:text-blue-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">BFTN Pending Amount</p>
+                <p id="totalBftnPendingAmount" class="text-2xl font-bold text-yellow-700 dark:text-yellow-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">BFTN Received Amount</p>
+                <p id="totalBftnReceivedAmount" class="text-2xl font-bold text-green-700 dark:text-green-400">0.00</p>
             </div>
         </div>
     </div>

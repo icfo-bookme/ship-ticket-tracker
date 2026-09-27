@@ -357,7 +357,8 @@
                             </div>
                         </div>
 
-                        <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 shadow-sm">
+                        @if ($hasRefundActivity)
+                            <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 shadow-sm">
                             <div class="mb-3 flex items-center">
                                 <div class="mr-3 rounded-lg bg-amber-500 p-2">
                                     <i class="fas fa-rotate-left text-white text-sm"></i>
@@ -392,7 +393,8 @@
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
+                            </div>
+                        @endif
 
                         <!-- Financial Information -->
                         <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
@@ -1002,9 +1004,9 @@
                         @endif
 
 
-                        @if ($sale->status == 'payment-verified' || $groupByStatus || $groupingMessage)
+                        @if (($sale->status == 'payment-verified' && $number > 0) || $groupByStatus || $groupingMessage)
                             <div class="bg-yellow-50 rounded-lg p-3 shadow-sm border border-yellow-200 mt-3">
-                                @if ($sale->status == 'payment-verified')
+                                @if ($sale->status == 'payment-verified' && $number > 0)
                                     <div class="flex items-center mb-2">
                                         <div class="bg-yellow-600 p-2 rounded-lg mr-3">
                                             <i class="fas fa-exclamation-triangle text-white text-sm"></i>
@@ -1018,6 +1020,22 @@
                                     <p class="text-gray-700 text-sm leading-relaxed">
                                         Tickets PDF document has already been generated using this WhatsApp number.
                                         Please review the existing document before requesting a new one.
+                                    </p>
+
+                                    <div class="mt-3 flex items-center gap-5 text-sm text-gray-700">
+                                        <span class="font-semibold">Request a new PDF?</span>
+                                        <label class="inline-flex items-center gap-2">
+                                            <input type="radio" name="existing_pdf_action" value="yes">
+                                            <span>Yes</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-2">
+                                            <input type="radio" name="existing_pdf_action" value="no" checked>
+                                            <span>No</span>
+                                        </label>
+                                    </div>
+
+                                    <p id="existing-pdf-help" class="mt-2 text-sm text-red-700">
+                                        Select Yes only after reviewing the existing PDF.
                                     </p>
                                 @endif
 
@@ -1379,7 +1397,31 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('ticketForm');
-            const allowedNames = new Set(['group_tickets', 'group_by_id']);
+            const allowedNames = new Set(['group_tickets', 'group_by_id', 'existing_pdf_action']);
+
+            const existingPdfAction = form.querySelector('input[name="existing_pdf_action"]:checked');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const existingPdfHelp = document.getElementById('existing-pdf-help');
+
+            const updateExistingPdfAction = () => {
+                const shouldContinue = form.querySelector('input[name="existing_pdf_action"]:checked')?.value === 'yes';
+
+                if (submitButton && existingPdfAction) {
+                    submitButton.disabled = !shouldContinue;
+                    submitButton.classList.toggle('opacity-50', !shouldContinue);
+                    submitButton.classList.toggle('cursor-not-allowed', !shouldContinue);
+                }
+
+                if (existingPdfHelp) {
+                    existingPdfHelp.classList.toggle('hidden', shouldContinue);
+                }
+            };
+
+            form.querySelectorAll('input[name="existing_pdf_action"]').forEach((input) => {
+                input.addEventListener('change', updateExistingPdfAction);
+            });
+
+            updateExistingPdfAction();
 
             form.querySelectorAll('input, select, textarea').forEach((field) => {
                 const isPdfField = field.name.startsWith('pdf[') || field.name.startsWith('additional_pdf[');

@@ -53,7 +53,7 @@
                                 data-id="${row.sale?.id ?? ''}"
                                 data-request-id="${row.id}"
                                 data-received_total_amount="${row.sale?.ticket_fee ?? row.gross_refund_amount}"
-                                data-categories="${encodeURIComponent(JSON.stringify(row.tickets || []))}"
+                                data-categories="${encodeURIComponent(JSON.stringify(row.edit_categories || []))}"
                                 data-gross-amount="${row.gross_refund_amount ?? 0}"
                                 data-ticket-count="${row.refunded_number_of_tickets ?? 0}"
                                 data-customer-charge="${row.customer_charge_percent ?? 0}"
@@ -71,6 +71,9 @@
                     ship_id: document.getElementById('requestedShip').value,
                     company_id: document.getElementById('requestedCompany').value,
                     journey_date: document.getElementById('requestedJourneyDate').value,
+                    search: new URLSearchParams(window.location.search).get('search')
+                        ? { value: new URLSearchParams(window.location.search).get('search') }
+                        : undefined,
                 });
 
                 function formatRequestedDate(value) {

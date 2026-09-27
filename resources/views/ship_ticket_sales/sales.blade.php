@@ -288,8 +288,16 @@
                 const bftnReceivedButton = "";
             @endcan
 
+            const activeRefund = (sale.refunds || []).find((refund) => !['cancelled', 'completed'].includes(refund.status));
+            const editRefundButton = activeRefund
+                ? `<a href="/refund-requests?search=${encodeURIComponent(sale.id)}"
+                    class="fas fa-rotate-left text-amber-700 px-2 py-1"
+                    title="Edit refund request" aria-label="Edit refund request"></a>`
+                : "";
+
             return `
                 <div class="flex gap-2 items-center justify-center">
+                    ${editRefundButton}
                     ${editButton}
                     ${deleteButton}
                     ${dueButton}

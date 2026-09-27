@@ -13,6 +13,7 @@ class Refund extends Model
 
     protected $fillable = [
         'sales_id',
+        'status',
         'batch_uuid',
         'refund_type',
         'reason',

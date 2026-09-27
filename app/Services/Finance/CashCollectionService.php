@@ -4,6 +4,7 @@ namespace App\Services\Finance;
 
 use App\Enums\SaleStatus;
 use App\Models\CashCollection;
+use App\Models\Refund;
 use App\Models\ShipTicketSale;
 use Illuminate\Http\Request;
 
@@ -17,10 +18,10 @@ class CashCollectionService
         $totalReceivedAmount = (float) ShipTicketSale::where('status', '!=', SaleStatus::Pending->value)
             ->sum('received_amount');
 
-        $totalRefundedAmount = (float) ShipTicketSale::query()
-            ->leftJoin('refunds', 'refunds.sales_id', '=', 'ship_ticket_sales.id')
-            ->where('ship_ticket_sales.status', '!=', SaleStatus::Pending->value)
-            ->sum('refunds.refunded_amount');
+        $totalRefundedAmount = (float) Refund::query()
+            ->where('status', 'completed')
+            ->whereHas('sale', fn ($sales) => $sales->where('status', '!=', SaleStatus::Pending->value))
+            ->sum('customer_refund_amount');
 
         $totalCashedOutAmount = (float) CashCollection::sum('cashout_amount');
         $availableCashAmount = $totalReceivedAmount - $totalRefundedAmount - $totalCashedOutAmount;

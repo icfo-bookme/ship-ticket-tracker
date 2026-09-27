@@ -20,6 +20,7 @@ class SalesDataTableService
             'coPassengers',
             'shipment',
             'payments',
+            'refunds',
             'PrintStatus',
             'printedTickets',
             'groupedTickets.sale:id,status',
@@ -27,6 +28,7 @@ class SalesDataTableService
         ])->withCount('printedTickets');
 
         $this->applyStatusVisibility($query, $status);
+        $this->excludeSalesWithActiveRefunds($query);
 
         $this->applyFilters($query, $request);
         $this->applySearch($query, (string) $request->input('search.value', ''));
@@ -40,6 +42,7 @@ class SalesDataTableService
 
         $recordsTotalQuery = ShipTicketSale::query();
         $this->applyStatusVisibility($recordsTotalQuery, $status);
+        $this->excludeSalesWithActiveRefunds($recordsTotalQuery);
 
         return response()->json([
             'draw' => $request->input('draw'),
@@ -96,6 +99,16 @@ class SalesDataTableService
         if ($request->filled('journey_date')) {
             $query->whereDate('journey_date', $request->input('journey_date'));
         }
+    }
+
+    private function excludeSalesWithActiveRefunds(Builder $query): void
+    {
+        $query->whereRaw('(
+            SELECT COALESCE(SUM(refunded_number_of_tickets), 0)
+            FROM refunds
+            WHERE refunds.sales_id = ship_ticket_sales.id
+                AND refunds.status != ?
+        ) < ship_ticket_sales.number_of_ticket', ['cancelled']);
     }
 
     private function applySearch($query, string $searchValue): void

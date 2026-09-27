@@ -237,7 +237,9 @@ class ShipTicketSaleController extends Controller
                     : ($completedQuantity > 0 ? 'Partially Refunded' : ($pendingQuantity > 0 ? 'Pending Refund' : 'No Refund')),
             ];
         });
-        $hasRefundActivity = $sale->refunds->isNotEmpty();
+        $hasRefundActivity = $sale->refunds->contains(
+            fn ($refund): bool => $refund->status !== 'cancelled'
+        );
 
         // Add these totals to the sale object for easy access in view
 
@@ -286,8 +288,18 @@ class ShipTicketSaleController extends Controller
             ->get()
             ->sortByDesc(fn (PrintedTicket $ticket): int => (int) Str::afterLast($ticket->filename, '-'));
 
+        $noticeStatuses = [
+            SaleStatus::TicketIssued->value,
+            SaleStatus::TicketPrinted->value,
+            SaleStatus::ShipmentIdEntered->value,
+        ];
         $latestTicket = $matchingTickets->first();
-        $number = $latestTicket ? (int) Str::afterLast($latestTicket->filename, '-') : 0;
+        $latestNoticeTicket = $matchingTickets->first(
+            fn (PrintedTicket $ticket): bool => in_array($ticket->sale?->status, $noticeStatuses, true)
+        );
+        $number = $latestNoticeTicket
+            ? (int) Str::afterLast($latestNoticeTicket->filename, '-')
+            : 0;
 
         if (! $latestTicket) {
             return ['number' => 0, 'groupByStatus' => false, 'groupById' => null, 'groupingMessage' => null];

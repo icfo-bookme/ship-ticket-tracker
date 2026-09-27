@@ -45,7 +45,7 @@
                     } else {
                         Swal.fire({
                             title: 'Error!',
-                            text: 'Failed to verify shipment. Please try again later.',
+                            text: resultData.message || 'Failed to verify shipment. Please try again later.',
                             icon: 'error',
                             confirmButtonText: 'OK',
                             customClass: {

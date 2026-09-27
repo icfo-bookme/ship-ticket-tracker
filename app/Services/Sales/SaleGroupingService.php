@@ -118,13 +118,19 @@ class SaleGroupingService
             return true;
         }
 
-        return true;
+        return ! empty(trim((string) $sale->address))
+            && ! empty(trim((string) $groupSale->address));
     }
 
     private function pairFailureMessage(ShipTicketSale $sale, ShipTicketSale $otherSale): ?string
     {
         if ($this->isOfficeCollection($sale) !== $this->isOfficeCollection($otherSale)) {
             return 'Ei WhatsApp number diye already sales create kora ase, kintu ekta Collect from Office and arekta courier delivery howate group by kora possible na.';
+        }
+
+        if (! $this->isOfficeCollection($sale)
+            && (empty(trim((string) $sale->address)) || empty(trim((string) $otherSale->address)))) {
+            return 'Both courier sales must have a delivery address before grouping.';
         }
 
         return null;

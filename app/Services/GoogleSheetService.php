@@ -5,12 +5,15 @@ namespace App\Services;
 use App\Models\ExcelSetting;
 use Google\Client;
 use Google\Service\Sheets;
+use Google\Service\Sheets\AddSheetRequest;
+use Google\Service\Sheets\BatchUpdateSpreadsheetRequest;
+use Google\Service\Sheets\Request;
 
 class GoogleSheetService
 {
     public static function appendRow(array $row)
     {
-        $client = new Client();
+        $client = new Client;
         $client->setApplicationName('Laravel Google Sheet');
         $client->setScopes([Sheets::SPREADSHEETS]);
         $client->setAuthConfig(storage_path('app/google/service-account.json'));
@@ -21,14 +24,21 @@ class GoogleSheetService
         $spreadsheetId = $excel->spreadsheetId;
         // $spreadsheetId = '1SUk8PHE8tWLbBi5Z5K4GmRN5p2NGoarj0ZHha6LDCYc';
 
-        $range = $excel->range;
+        $configuredRange = $excel->range;
+        $columns = str_contains($configuredRange, '!')
+            ? substr($configuredRange, strpos($configuredRange, '!') + 1)
+            : 'A:F';
+        $sheetTitle = now()->toDateString();
+        $range = $sheetTitle.'!'.$columns;
+
+        self::ensureSheetExists($service, $spreadsheetId, $sheetTitle);
 
         $body = new \Google\Service\Sheets\ValueRange([
-            'values' => [$row]
+            'values' => [$row],
         ]);
 
         $params = [
-            'valueInputOption' => 'RAW'
+            'valueInputOption' => 'RAW',
         ];
 
         $service->spreadsheets_values->append(
@@ -36,6 +46,30 @@ class GoogleSheetService
             $range,
             $body,
             $params
+        );
+    }
+
+    private static function ensureSheetExists(Sheets $service, string $spreadsheetId, string $sheetTitle): void
+    {
+        $spreadsheet = $service->spreadsheets->get($spreadsheetId, ['fields' => 'sheets.properties.title']);
+        $sheetExists = collect($spreadsheet->getSheets())
+            ->contains(fn ($sheet): bool => $sheet->getProperties()->getTitle() === $sheetTitle);
+
+        if ($sheetExists) {
+            return;
+        }
+
+        $service->spreadsheets->batchUpdate(
+            $spreadsheetId,
+            new BatchUpdateSpreadsheetRequest([
+                'requests' => [
+                    new Request([
+                        'addSheet' => new AddSheetRequest([
+                            'properties' => ['title' => $sheetTitle],
+                        ]),
+                    ]),
+                ],
+            ])
         );
     }
 }

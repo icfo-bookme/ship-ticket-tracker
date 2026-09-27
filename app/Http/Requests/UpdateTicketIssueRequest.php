@@ -31,6 +31,7 @@ class UpdateTicketIssueRequest extends FormRequest
             'pdf.*' => 'nullable|string|max:255',
             'additional_pdf' => 'nullable|array',
             'additional_pdf.*' => 'nullable|string|max:255',
+            'existing_pdf_action' => 'nullable|in:yes,no',
             'group_tickets' => 'nullable|in:yes,no',
             'group_by_id' => [
                 'required_if:group_tickets,yes',

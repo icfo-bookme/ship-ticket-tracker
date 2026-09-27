@@ -285,7 +285,7 @@ class RefundController extends Controller
 
     public function requested(Request $request)
     {
-        $query = Refund::with(['sale.ships', 'sale.companies', 'tickets'])
+        $query = Refund::with(['sale.ships', 'sale.companies', 'sale.categories.package', 'tickets'])
             ->whereNotNull('requested_at')
             ->whereNull('customer_refunded_at')
             ->whereNotIn('status', ['completed', 'cancelled']);
@@ -316,6 +316,22 @@ class RefundController extends Controller
             ->skip((int) $request->input('start', 0))
             ->take((int) $request->input('length', 10))
             ->get();
+
+        $requests->each(function (Refund $refund): void {
+            $requestedQuantities = $refund->tickets->keyBy('category_id');
+            $refund->setAttribute('edit_categories', $refund->sale?->categories->map(function ($category) use ($requestedQuantities): array {
+                return [
+                    'id' => $category->id,
+                    'category_id' => $category->id,
+                    'type' => $category->type,
+                    'quantity' => $category->quantity,
+                    'purchased_quantity' => $category->quantity,
+                    'refunded_quantity' => $requestedQuantities->get($category->id)?->refunded_quantity ?? 0,
+                    'unit_amount' => $requestedQuantities->get($category->id)?->unit_amount,
+                    'package' => $category->package,
+                ];
+            })->values() ?? collect());
+        });
 
         return response()->json([
             'draw' => $request->input('draw'),
@@ -348,15 +364,6 @@ class RefundController extends Controller
         $this->refunds->partialRefund($sale, $request->validated());
 
         return response()->json(['success' => true, 'message' => 'Refund request sent to partner.']);
-    }
-
-    public function receivePartnerPayment(Request $request, int $id)
-    {
-        $refund = Refund::findOrFail($id);
-        $data = $request->validate(['received_amount' => 'required|numeric|min:0', 'payment_method' => 'nullable|string|max:50', 'transaction_id' => 'nullable|string|max:150', 'payment_proof' => 'nullable|string|max:255', 'remark' => 'nullable|string|max:255']);
-        $this->refunds->receivePartnerPayment($refund, $data);
-
-        return response()->json(['success' => true, 'message' => 'Partner payment received.']);
     }
 
     public function refundCustomer(Request $request, int $id)

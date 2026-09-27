@@ -107,7 +107,6 @@ Route::middleware('auth')->group(function () {
         Route::post('refunds', [RefundController::class, 'store'])->name('refunds.store');
         Route::post('/full/refunds', [RefundController::class, 'fullRefunds']);
         Route::post('/partial/refund/{id}', [RefundController::class, 'partialRefund']);
-        Route::post('/refunds/{id}/partner-payment', [RefundController::class, 'receivePartnerPayment']);
         Route::post('/refunds/{id}/customer-payment', [RefundController::class, 'refundCustomer']);
         Route::get('refunds/{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
         Route::put('refunds/{refund}', [RefundController::class, 'update'])->name('refunds.update');

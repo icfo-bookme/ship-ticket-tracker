@@ -60,6 +60,20 @@ class SaleStatusWorkflowService
         }
 
         if ($status === SaleStatus::Shipped->value) {
+            $groupReadinessError = $this->groupReadinessError(
+                $id,
+                [SaleStatus::ShipmentIdEntered->value, SaleStatus::Shipped->value],
+                'shipped'
+            );
+
+            if ($groupReadinessError !== null) {
+                return [
+                    'success' => false,
+                    'message' => $groupReadinessError,
+                    'status' => 422,
+                ];
+            }
+
             $this->markGroupedTickets($id, SaleStatus::Shipped->value);
 
             return [
@@ -130,6 +144,20 @@ class SaleStatusWorkflowService
         $groupSales = ShipTicketSale::query()
             ->whereIn('id', $saleIds)
             ->get(['id', 'status', 'collect_from_office', 'whatsapp', 'address']);
+        $groupReadinessError = $this->groupReadinessError(
+            $groupId,
+            [SaleStatus::TicketPrinted->value, SaleStatus::ShipmentIdEntered->value],
+            'parcel'
+        );
+
+        if ($groupReadinessError !== null) {
+            return [
+                'success' => false,
+                'message' => $groupReadinessError,
+                'status' => 422,
+            ];
+        }
+
         $parcelGroupError = $this->saleGrouping->courierParcelGroupFailureMessage($groupSales);
 
         if ($parcelGroupError !== null) {
@@ -282,6 +310,30 @@ class SaleStatusWorkflowService
             ->get()
             ->unique('sales_id')
             ->values();
+    }
+
+    private function groupReadinessError(int $groupId, array $allowedStatuses, string $nextAction): ?string
+    {
+        $saleIds = $this->groupedTickets($groupId)
+            ->pluck('sales_id')
+            ->push($groupId)
+            ->unique();
+        $sales = ShipTicketSale::query()
+            ->whereIn('id', $saleIds)
+            ->get(['id', 'status']);
+
+        foreach ($sales as $sale) {
+            if (in_array($sale->status, $allowedStatuses, true)) {
+                continue;
+            }
+
+            $statusLabel = SaleStatus::tryFrom((string) $sale->status)?->label() ?? (string) $sale->status;
+            $actionLabel = $nextAction === 'parcel' ? 'creating the parcel' : 'shipping the parcel';
+
+            return "Sale ID {$sale->id} is currently {$statusLabel}. Please complete this sale before {$actionLabel}.";
+        }
+
+        return null;
     }
 
     private function attachGroupToExistingShipment(array $saleIds): void

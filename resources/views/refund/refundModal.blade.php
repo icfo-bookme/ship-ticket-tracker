@@ -47,7 +47,7 @@
         </div>
 
         <div class="flex justify-end mt-6">
-            <button id="submitRefundBtn" type="button" class="bg-blue-500 text-white px-4 py-2 rounded">Send Partner Request</button>
+            <button id="submitRefundBtn" type="button" class="bg-blue-500 text-white px-4 py-2 rounded">Submit Refund Request</button>
             <button id="closeModalBtn" type="button" class="bg-gray-400 text-white px-4 py-2 ml-2 rounded">Cancel</button>
         </div>
     </div>
@@ -94,18 +94,7 @@
             const customerChargePercent = customerChargeInput.value;
             const partnerSharePercent = partnerShareInput.value;
 
-            if (currentRefundEditing && !refundTickets && !ticketSelections.length) {
-                const cancellation = await Swal.fire({
-                    title: 'Cancel refund request?',
-                    text: 'All ticket quantities are zero. This refund request will be cancelled.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, cancel request',
-                    cancelButtonText: 'Keep request',
-                });
-
-                if (!cancellation.isConfirmed) return;
-            } else if (! refundAmount || ! refundTickets || ! ticketSelections.length) {
+            if (! refundAmount || ! refundTickets || ! ticketSelections.length) {
                 Swal.fire({
                     title: 'Error!',
                     text: 'Please enter refund amount and number of tickets.',
@@ -115,9 +104,7 @@
                 return;
             }
 
-            const isConfirmed = currentRefundEditing && !refundTickets
-                ? { isConfirmed: true }
-                : await Swal.fire({
+            const isConfirmed = await Swal.fire({
                 title: 'Are you sure?',
                     text: 'Send this refund request to the partner?',
                 icon: 'warning',
@@ -160,9 +147,7 @@
                 if (result.success) {
                     Swal.fire({
                         title: 'Success!',
-                        text: currentRefundEditing && !refundTickets
-                            ? 'Refund request cancelled.'
-                            : currentRefundEditing ? 'Refund request updated.' : 'Refund request sent to partner.',
+                        text: currentRefundEditing ? 'Refund request updated.' : 'Refund request sent to partner.',
                         icon: 'success',
                         confirmButtonText: 'OK'
                     });
@@ -195,8 +180,8 @@
         currentRefundRequestId = editing ? btn.dataset.requestId : null;
         currentRefundEditing = editing;
         document.getElementById('submitRefundBtn').textContent = editing
-            ? 'Update Partner Request'
-            : 'Send Partner Request';
+            ? 'Update Refund Request'
+            : 'Submit Refund Request';
         refreshRefundList = getList;
         document.getElementById('receivedAmountInput').value = btn.dataset.received_total_amount;
         document.getElementById('customerChargePercentInput').value = editing ? (btn.dataset.customerCharge || 0) : 0;

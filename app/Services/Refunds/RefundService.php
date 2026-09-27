@@ -29,7 +29,7 @@ class RefundService
                     Refund::create([
                         'sales_id' => $sale->id,
                         'refund_type' => 'bulk',
-                        'status' => 'customer_refund_pending',
+                        'status' => 'requested',
                         'refunded_number_of_tickets' => $sale->number_of_ticket,
                         'refunded_amount' => $sale->ticket_fee,
                         'gross_refund_amount' => $sale->ticket_fee,
@@ -37,8 +37,6 @@ class RefundService
                         'requested_at' => now(),
                     ]);
 
-                    $sale->status = SaleStatus::Refunded->value;
-                    $sale->save();
                 }
             }
         });
@@ -77,13 +75,19 @@ class RefundService
 
             $customerChargePercent = (float) $data['customer_charge_percent'];
             $partnerSharePercent = (float) $data['partner_share_percent'];
+
+            if ($partnerSharePercent > $customerChargePercent) {
+                throw ValidationException::withMessages([
+                    'partner_share_percent' => 'Partner share cannot exceed customer charge.',
+                ]);
+            }
             $customerChargeAmount = round($grossAmount * $customerChargePercent / 100, 2);
             $partnerShareAmount = round($grossAmount * $partnerSharePercent / 100, 2);
 
             Refund::create([
                 'sales_id' => $sale->id,
                 'refund_type' => 'partial',
-                'status' => 'sent_to_partner',
+                'status' => 'requested',
                 'refunded_number_of_tickets' => $ticketCount,
                 'refunded_amount' => $grossAmount,
                 'gross_refund_amount' => $grossAmount,
@@ -107,26 +111,19 @@ class RefundService
         });
     }
 
-    public function receivePartnerPayment(Refund $refund, array $data): void
-    {
-        DB::transaction(function () use ($refund, $data): void {
-            $refund->partnerPayments()->create([
-                'requested_amount' => $refund->partner_share_amount,
-                'received_amount' => $data['received_amount'],
-                'payment_method' => $data['payment_method'] ?? null,
-                'transaction_id' => $data['transaction_id'] ?? null,
-                'payment_proof' => $data['payment_proof'] ?? null,
-                'received_at' => now(),
-                'status' => 'received',
-                'remark' => $data['remark'] ?? null,
-            ]);
-            $refund->update(['status' => 'customer_refund_pending', 'partner_received_at' => now()]);
-        });
-    }
-
     public function refundCustomer(Refund $refund, array $data): void
     {
+        if (in_array($refund->status, ['completed', 'cancelled'], true)) {
+            throw ValidationException::withMessages(['status' => 'This refund has already been completed or cancelled.']);
+        }
+
         DB::transaction(function () use ($refund, $data): void {
+            $refund = Refund::query()->lockForUpdate()->findOrFail($refund->id);
+
+            if (in_array($refund->status, ['completed', 'cancelled'], true)) {
+                throw ValidationException::withMessages(['status' => 'This refund has already been completed or cancelled.']);
+            }
+
             $refund->customerPayments()->create([
                 'amount' => $refund->customer_refund_amount,
                 'payment_method' => $data['payment_method'] ?? null,
@@ -137,7 +134,6 @@ class RefundService
                 'remark' => $data['remark'] ?? null,
             ]);
             $refund->update(['status' => 'completed', 'customer_refunded_at' => now()]);
-            $this->refreshSaleStatus($refund->sale);
         });
     }
 
@@ -177,6 +173,12 @@ class RefundService
             $this->ensureRefundableCategories($sale, $selectedTickets, $grossAmount, $refund->id);
             $customerChargePercent = (float) $data['customer_charge_percent'];
             $partnerSharePercent = (float) $data['partner_share_percent'];
+
+            if ($partnerSharePercent > $customerChargePercent) {
+                throw ValidationException::withMessages([
+                    'partner_share_percent' => 'Partner share cannot exceed customer charge.',
+                ]);
+            }
             $customerChargeAmount = round($grossAmount * $customerChargePercent / 100, 2);
             $partnerShareAmount = round($grossAmount * $partnerSharePercent / 100, 2);
 
@@ -221,6 +223,7 @@ class RefundService
         ?int $ignoredRefundId = null,
     ): void {
         $refunds = $sale->refunds()
+            ->whereNotIn('status', ['cancelled'])
             ->when($ignoredRefundId, fn ($query) => $query->where('id', '!=', $ignoredRefundId))
             ->get();
         $refundedTickets = (int) $refunds->sum('refunded_number_of_tickets');
@@ -243,6 +246,7 @@ class RefundService
     private function ensureRefundableCategories(ShipTicketSale $sale, array $selectedTickets, float $amount, ?int $ignoredRefundId = null): void
     {
         $refunds = $sale->refunds()
+            ->whereNotIn('status', ['cancelled'])
             ->when($ignoredRefundId, fn ($query) => $query->where('id', '!=', $ignoredRefundId))
             ->with('tickets')
             ->get();
@@ -266,14 +270,5 @@ class RefundService
                 'refunded_amount' => 'Refunded amount cannot exceed the total ticket price.',
             ]);
         }
-    }
-
-    private function refreshSaleStatus(ShipTicketSale $sale): void
-    {
-        $refundedTickets = (int) $sale->refunds()->sum('refunded_number_of_tickets');
-        $sale->status = $refundedTickets >= (int) $sale->number_of_ticket
-            ? SaleStatus::Refunded->value
-            : SaleStatus::PartialRefunded->value;
-        $sale->save();
     }
 }

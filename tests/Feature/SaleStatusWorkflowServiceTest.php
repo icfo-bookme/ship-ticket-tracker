@@ -160,7 +160,7 @@ it('returns a failure when steadfast does not provide a consignment id', functio
         ->once()
         ->with('TICKET-'.$sale->id)
         ->andReturn(['http_status' => 404, 'body' => ['status' => 404]]);
-    $steadfast->shouldReceive('bulkCreate')
+    $steadfast->shouldReceive('createOrder')
         ->once()
         ->andReturn(['data' => []]);
 
@@ -190,7 +190,7 @@ it('does not create a duplicate parcel when the invoice already exists remotely'
         ->once()
         ->with('TICKET-'.$sale->id)
         ->andReturn(['http_status' => 200, 'body' => ['status' => 200, 'delivery_status' => 'pending']]);
-    $steadfast->shouldNotReceive('bulkCreate');
+    $steadfast->shouldNotReceive('createOrder');
 
     $service = new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class));
     $result = $service->verify($sale->id, 'shipment_id_entered');
@@ -200,7 +200,7 @@ it('does not create a duplicate parcel when the invoice already exists remotely'
         ->and(Shipment::count())->toBe(0);
 });
 
-it('stores the consignment id from a top-level bulk response list', function () {
+it('stores the consignment id from a single order response', function () {
     $sale = workflowSale($this->ship, $this->company, ['status' => 'ticket-printed']);
     PrintedTicket::create([
         'sales_id' => $sale->id,
@@ -212,12 +212,9 @@ it('stores the consignment id from a top-level bulk response list', function () 
     $steadfast->shouldReceive('statusByInvoice')
         ->once()
         ->andReturn(['http_status' => 404, 'body' => ['status' => 404]]);
-    $steadfast->shouldReceive('bulkCreate')
+    $steadfast->shouldReceive('createOrder')
         ->once()
-        ->andReturn([[
-            'status' => 'success',
-            'consignment_id' => 987654,
-        ]]);
+        ->andReturn(['status' => 200, 'consignment' => ['consignment_id' => 987654]]);
 
     $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class)))
         ->verify($sale->id, 'shipment_id_entered');
@@ -227,7 +224,7 @@ it('stores the consignment id from a top-level bulk response list', function () 
         ->and($sale->fresh()->status)->toBe('shipment_id_entered');
 });
 
-it('does not save a consignment when the bulk response marks the item as failed', function () {
+it('does not save a consignment when the single response marks the order as failed', function () {
     $sale = workflowSale($this->ship, $this->company, ['status' => 'ticket-printed']);
     PrintedTicket::create([
         'sales_id' => $sale->id,
@@ -239,12 +236,9 @@ it('does not save a consignment when the bulk response marks the item as failed'
     $steadfast->shouldReceive('statusByInvoice')
         ->once()
         ->andReturn(['http_status' => 404, 'body' => ['status' => 404]]);
-    $steadfast->shouldReceive('bulkCreate')
+    $steadfast->shouldReceive('createOrder')
         ->once()
-        ->andReturn(['data' => [[
-            'status' => 'error',
-            'consignment_id' => null,
-        ]]]);
+        ->andReturn(['status' => 400, 'message' => 'Invalid recipient phone']);
 
     $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class)))
         ->verify($sale->id, 'shipment_id_entered');
@@ -273,7 +267,7 @@ it('blocks parcel creation when an existing group contains an office collection 
 
     $steadfast = Mockery::mock(SteadfastService::class);
     $steadfast->shouldNotReceive('statusByInvoice');
-    $steadfast->shouldNotReceive('bulkCreate');
+    $steadfast->shouldNotReceive('createOrder');
 
     $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class)))
         ->verify($courierSale->id, 'shipment_id_entered');
@@ -341,9 +335,9 @@ it('creates a courier parcel for same-whatsapp grouped sales with different addr
         ->once()
         ->with('TICKET-'.$mainSale->id)
         ->andReturn(['http_status' => 404, 'body' => ['status' => 404]]);
-    $steadfast->shouldReceive('bulkCreate')
+    $steadfast->shouldReceive('createOrder')
         ->once()
-        ->andReturn([['status' => 'success', 'consignment_id' => 987654]]);
+        ->andReturn(['status' => 200, 'consignment' => ['consignment_id' => 987654]]);
 
     $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class)))
         ->verify($mainSale->id, 'shipment_id_entered');
@@ -371,38 +365,38 @@ it('uses the provided consignment id in the status check URL', function () {
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/status_by_cid/456'));
 });
 
-it('sends the bulk payload as JSON data with Steadfast authentication headers', function () {
+it('sends a single order payload with Steadfast authentication headers', function () {
     config([
         'steadfast.api_key' => 'test-api-key',
         'steadfast.secret_key' => 'test-secret-key',
         'steadfast.base_url' => 'https://portal.packzy.com/api/v1',
     ]);
     Http::fake([
-        'portal.packzy.com/api/v1/create_order/bulk-order' => Http::response(['data' => []]),
+        'portal.packzy.com/api/v1/create_order' => Http::response(['status' => 200]),
     ]);
 
-    $orders = [['invoice' => 'TICKET-456', 'recipient_name' => 'Test Customer']];
-    app(SteadfastService::class)->bulkCreate($orders);
+    $order = ['invoice' => 'TICKET-456', 'recipient_name' => 'Test Customer'];
+    app(SteadfastService::class)->createOrder($order);
 
-    Http::assertSent(function (Request $request) use ($orders): bool {
+    Http::assertSent(function (Request $request) use ($order): bool {
         return $request->method() === 'POST'
-            && str_ends_with($request->url(), '/create_order/bulk-order')
+            && str_ends_with($request->url(), '/create_order')
             && $request->hasHeader('Api-Key', 'test-api-key')
             && $request->hasHeader('Secret-Key', 'test-secret-key')
-            && json_decode($request->data()['data'], true) === $orders;
+            && $request->data() === $order;
     });
 });
 
-it('throws when Steadfast rejects the bulk request at HTTP level', function () {
+it('throws when Steadfast rejects the single order at HTTP level', function () {
     config([
         'steadfast.api_key' => 'test-api-key',
         'steadfast.secret_key' => 'test-secret-key',
         'steadfast.base_url' => 'https://portal.packzy.com/api/v1',
     ]);
     Http::fake([
-        'portal.packzy.com/api/v1/create_order/bulk-order' => Http::response(['message' => 'Unauthorized'], 401),
+        'portal.packzy.com/api/v1/create_order' => Http::response(['message' => 'Unauthorized'], 401),
     ]);
 
-    expect(fn () => app(SteadfastService::class)->bulkCreate([['invoice' => 'TICKET-456']]))
-        ->toThrow(RuntimeException::class, 'Steadfast bulk create failed with HTTP 401.');
+    expect(fn () => app(SteadfastService::class)->createOrder(['invoice' => 'TICKET-456']))
+        ->toThrow(RuntimeException::class, 'Steadfast parcel create failed with HTTP 401.');
 });

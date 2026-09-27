@@ -29,8 +29,19 @@ class SteadfastService
         ];
     }
 
-    // Bulk Order
-    public function bulkCreate(array $data)
+    public function createOrder(array $data): array
+    {
+        $response = Http::withHeaders($this->headers())
+            ->post($this->baseUrl.'/create_order', $data);
+
+        if (! $response->successful()) {
+            throw new RuntimeException('Steadfast parcel create failed with HTTP '.$response->status().'.');
+        }
+
+        return $response->json() ?? [];
+    }
+
+    public function bulkCreate(array $data): array
     {
         $response = Http::withHeaders($this->headers())
             ->post($this->baseUrl.'/create_order/bulk-order', [

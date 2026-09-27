@@ -265,19 +265,17 @@ class SaleStatusWorkflowService
         }
 
         try {
-            $steadfastResult = $this->steadfast->bulkCreate([
-                [
-                    'invoice' => $invoice,
-                    'recipient_name' => $sale->customer_name,
-                    'recipient_phone' => $sale->customer_mobile,
-                    'recipient_address' => $sale->address ?? 'N/A',
-                    'cod_amount' => ($sale->due_amount ?? 0) + 100,
-                    'note' => 'Journey ticket booking ID: '.$sale->id,
-                    'delivery_type' => 0,
-                ],
+            $steadfastResult = $this->steadfast->createOrder([
+                'invoice' => $invoice,
+                'recipient_name' => $sale->customer_name,
+                'recipient_phone' => $sale->customer_mobile,
+                'recipient_address' => $sale->address ?? 'N/A',
+                'cod_amount' => ($sale->due_amount ?? 0) + 100,
+                'note' => 'Journey ticket booking ID: '.$sale->id,
+                'delivery_type' => 0,
             ]);
         } catch (\Throwable $exception) {
-            Log::error('Steadfast bulk parcel creation failed', [
+            Log::error('Steadfast parcel creation failed', [
                 'invoice' => $invoice,
                 'error' => $exception->getMessage(),
             ]);
@@ -285,11 +283,8 @@ class SaleStatusWorkflowService
             return null;
         }
 
-        $resultItem = $steadfastResult['data'][0]
-            ?? $steadfastResult[0]
-            ?? $steadfastResult['consignment']
-            ?? null;
-        $itemStatus = is_array($resultItem) ? strtolower((string) ($resultItem['status'] ?? '')) : '';
+        $resultItem = $steadfastResult['consignment'] ?? $steadfastResult['data'] ?? $steadfastResult;
+        $itemStatus = strtolower((string) ($steadfastResult['status'] ?? ''));
         $consignmentId = is_array($resultItem) ? ($resultItem['consignment_id'] ?? null) : null;
 
         if ($itemStatus !== '' && ! in_array($itemStatus, ['success', '200'], true)) {

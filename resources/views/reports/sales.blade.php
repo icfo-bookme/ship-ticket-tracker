@@ -104,7 +104,14 @@
                     total_refunded_amount: document.getElementById("totalRefundedAmount"),
                     total_received_amount: document.getElementById("totalReceivedAmount"),
                     total_due_amount: document.getElementById("totalDueAmount"),
-                    net_sales_amount: document.getElementById("netSalesAmount"),
+                    total_gross_refund_amount: document.getElementById("totalGrossRefundAmount"),
+                    total_customer_refund_amount: document.getElementById("totalCustomerRefundAmount"),
+                    total_partner_share_amount: document.getElementById("totalPartnerShareAmount"),
+                    total_company_retained_amount: document.getElementById("totalCompanyRetainedAmount"),
+                    total_bftn: document.getElementById("totalBftn"),
+                    total_bftn_pending: document.getElementById("totalBftnPending"),
+                    total_bftn_received: document.getElementById("totalBftnReceived"),
+                    net_cash: document.getElementById("netCash"),
                 };
             }
 
@@ -175,6 +182,15 @@
                     title: "Refunded Amount",
                     render: formatCurrency,
                 },
+                { data: "gross_refund_amount", title: "Gross Amount", render: formatCurrency },
+                { data: "customer_charge_percent", title: "Customer Charge %", render: (data) => formatCurrency(data) },
+                { data: "partner_share_percent", title: "Partner Share %", render: (data) => formatCurrency(data) },
+                { data: "customer_refund_amount", title: "Customer Refund", render: formatCurrency },
+                { data: "partner_share_amount", title: "Partner Share", render: formatCurrency },
+                { data: "company_retained_amount", title: "Company Retained", render: formatCurrency },
+                { data: "bftn_status", title: "BFTN", render: (data) => data === "yes" ? "Yes" : "No" },
+                { data: "bftn_received", title: "BFTN Received", render: (data) => data ? "Received" : "Pending" },
+                { data: "net_cash", title: "Net Cash", render: formatCurrency },
                 {
                     data: "due_amount",
                     title: "Due Amount",
@@ -294,6 +310,15 @@
             'Refunded Tickets',
             'Refunded Amount',
             'Due Amount',
+            'Gross Amount',
+            'Customer Charge %',
+            'Partner Share %',
+            'Customer Refund',
+            'Partner Share',
+            'Company Retained',
+            'BFTN',
+            'BFTN Received',
+            'Net Cash',
             'Action',
         ]" url="/reports" :ordering="false" :delegateActions="false" :order="[]"
             :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />
@@ -377,6 +402,39 @@
                     <p class="text-sm font-medium text-white dark:text-gray-400">Net Sales Amount</p>
                     <p id="netSalesAmount" class="text-2xl font-bold text-white dark:text-blue-400">0</p>
                 </div>
+            </div>
+
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gross Amount</p>
+                <p id="totalGrossRefundAmount" class="text-2xl font-bold text-blue-950 dark:text-blue-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Refund</p>
+                <p id="totalCustomerRefundAmount" class="text-2xl font-bold text-green-700 dark:text-green-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Partner Share</p>
+                <p id="totalPartnerShareAmount" class="text-2xl font-bold text-amber-700 dark:text-amber-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Company Retained</p>
+                <p id="totalCompanyRetainedAmount" class="text-2xl font-bold text-purple-700 dark:text-purple-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total BFTN</p>
+                <p id="totalBftn" class="text-2xl font-bold text-blue-950 dark:text-blue-400">0</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">BFTN Pending</p>
+                <p id="totalBftnPending" class="text-2xl font-bold text-yellow-700 dark:text-yellow-400">0</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">BFTN Received</p>
+                <p id="totalBftnReceived" class="text-2xl font-bold text-green-700 dark:text-green-400">0</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Net Cash</p>
+                <p id="netCash" class="text-2xl font-bold text-teal-700 dark:text-teal-400">0.00</p>
             </div>
         </div>
     </div>

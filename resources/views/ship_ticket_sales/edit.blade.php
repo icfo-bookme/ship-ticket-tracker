@@ -156,7 +156,7 @@
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
-                                    <input type="date" name="date_of_birth" id="date_of_birth"
+                                    <input type="date" name="date_of_birth" id="date_of_birth" max="{{ now()->subYears(18)->format('Y-m-d') }}"
                                         value="{{ old('date_of_birth', $sale->date_of_birth) }}"
                                         class="copyable-field bg-red-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
                                 </div>

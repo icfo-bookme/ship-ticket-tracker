@@ -26,7 +26,7 @@ class StorePublicShipTicketSaleRequest extends FormRequest
             'ship_id' => 'required|string|max:100',
             'address' => 'nullable|string',
             'journey_date' => 'nullable|date|after_or_equal:today',
-            'date_of_birth' => 'nullable|date',
+            'date_of_birth' => 'nullable|date|before_or_equal:'.now()->subYears(18)->toDateString(),
             'return_date' => 'nullable|date|after_or_equal:journey_date',
             'ticket_fee' => 'required|numeric',
             'received_amount' => 'required|numeric',

@@ -27,7 +27,7 @@ class StoreShipTicketSaleRequest extends FormRequest
             'collect_from_office' => 'required|boolean',
             'address' => 'required_unless:collect_from_office,1|nullable|string',
             'journey_date' => 'nullable|date|after_or_equal:today',
-            'date_of_birth' => 'nullable|date',
+            'date_of_birth' => 'nullable|date|before_or_equal:'.now()->subYears(18)->toDateString(),
             'return_date' => 'nullable|date|after_or_equal:journey_date',
             'ticket_fee' => 'required|numeric',
             'received_amount' => 'required|numeric',

@@ -103,7 +103,7 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Date Of Birth
                             </label>
-                            <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}"
+                            <input type="date" name="date_of_birth" max="{{ now()->subYears(18)->format('Y-m-d') }}" value="{{ old('date_of_birth') }}"
                                 class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 

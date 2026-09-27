@@ -49,7 +49,14 @@ class SalesReportService
                 'total_refunded_tickets' => $totals->total_refunded_tickets,
                 'total_refunded_amount' => number_format($totals->total_refunded_amount, 2),
                 'total_due_amount' => number_format($totals->total_due_amount, 2),
-                'net_sales_amount' => number_format($totals->total_received_amount - $totals->total_refunded_amount, 2),
+                'total_gross_refund_amount' => number_format($totals->total_gross_refund_amount, 2),
+                'total_customer_refund_amount' => number_format($totals->total_customer_refund_amount, 2),
+                'total_partner_share_amount' => number_format($totals->total_partner_share_amount, 2),
+                'total_company_retained_amount' => number_format($totals->total_company_retained_amount, 2),
+                'total_bftn' => $totals->total_bftn,
+                'total_bftn_pending' => $totals->total_bftn_pending,
+                'total_bftn_received' => $totals->total_bftn_received,
+                'net_cash' => number_format($totals->total_received_amount - $totals->total_customer_refund_amount, 2),
             ],
         ];
     }
@@ -71,7 +78,14 @@ class SalesReportService
                 'total_refunded_tickets' => 0,
                 'total_refunded_amount' => '0.00',
                 'total_due_amount' => '0.00',
-                'net_sales_amount' => '0.00',
+                'total_gross_refund_amount' => '0.00',
+                'total_customer_refund_amount' => '0.00',
+                'total_partner_share_amount' => '0.00',
+                'total_company_retained_amount' => '0.00',
+                'total_bftn' => 0,
+                'total_bftn_pending' => 0,
+                'total_bftn_received' => 0,
+                'net_cash' => '0.00',
             ],
             'error' => 'An error occurred while generating the report.',
         ];
@@ -165,8 +179,7 @@ class SalesReportService
     private function totals(array $filters): object
     {
         $query = ShipTicketSale::query()
-            ->where('ship_ticket_sales.status', '!=', SaleStatus::Pending->value)
-            ->leftJoin('refunds', 'refunds.sales_id', '=', 'ship_ticket_sales.id');
+            ->where('ship_ticket_sales.status', '!=', SaleStatus::Pending->value);
 
         $this->applyFilters($query, $filters, 'ship_ticket_sales.');
 
@@ -178,15 +191,25 @@ class SalesReportService
             COALESCE(SUM(ship_ticket_sales.total_payable), 0) AS total_payable,
             COALESCE(SUM(ship_ticket_sales.received_amount), 0) AS total_received_amount,
             COALESCE(SUM(ship_ticket_sales.due_amount), 0) AS total_due_amount,
-            COALESCE(SUM(refunds.refunded_number_of_tickets), 0) AS total_refunded_tickets,
-            COALESCE(SUM(refunds.refunded_amount), 0) AS total_refunded_amount
+            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" THEN 1 ELSE 0 END), 0) AS total_bftn,
+            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND ship_ticket_sales.received_status = 0 THEN 1 ELSE 0 END), 0) AS total_bftn_pending,
+            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND ship_ticket_sales.received_status = 1 THEN 1 ELSE 0 END), 0) AS total_bftn_received,
+            COALESCE(SUM((SELECT COALESCE(SUM(refunded_number_of_tickets), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_refunded_tickets,
+            COALESCE(SUM((SELECT COALESCE(SUM(refunded_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_refunded_amount,
+            COALESCE(SUM((SELECT COALESCE(SUM(gross_refund_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_gross_refund_amount,
+            COALESCE(SUM((SELECT COALESCE(SUM(customer_refund_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_customer_refund_amount,
+            COALESCE(SUM((SELECT COALESCE(SUM(partner_share_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_partner_share_amount,
+            COALESCE(SUM((SELECT COALESCE(SUM(company_retained_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_company_retained_amount
         ')->first();
     }
 
     private function formatSale(ShipTicketSale $sale): array
     {
-        $refundedTickets = (int) $sale->refunds->sum('refunded_number_of_tickets');
-        $refundedAmount = (float) $sale->refunds->sum('refunded_amount');
+        $completedRefunds = $sale->refunds->filter(
+            fn ($refund): bool => $refund->status === 'completed' || $refund->customer_refunded_at !== null
+        );
+        $refundedTickets = (int) $completedRefunds->sum('refunded_number_of_tickets');
+        $refundedAmount = (float) $completedRefunds->sum('refunded_amount');
         $refundStatus = $refundedTickets >= $sale->number_of_ticket && $refundedTickets > 0
             ? 'Full Refund'
             : ($refundedTickets > 0 ? 'Partial Refund' : 'No Refund');
@@ -212,7 +235,15 @@ class SalesReportService
             'refund_status' => $refundStatus,
             'refunded_tickets' => $refundedTickets,
             'refunded_amount' => $refundedAmount,
-            'net_amount' => $sale->received_amount - $refundedAmount,
+            'gross_refund_amount' => (float) $completedRefunds->sum('gross_refund_amount'),
+            'customer_charge_percent' => $completedRefunds->last()?->customer_charge_percent,
+            'partner_share_percent' => $completedRefunds->last()?->partner_share_percent,
+            'customer_refund_amount' => (float) $completedRefunds->sum('customer_refund_amount'),
+            'partner_share_amount' => (float) $completedRefunds->sum('partner_share_amount'),
+            'company_retained_amount' => (float) $completedRefunds->sum('company_retained_amount'),
+            'bftn_status' => $sale->bftn_status,
+            'bftn_received' => $sale->bftn_status === 'yes' && (bool) $sale->received_status,
+            'net_cash' => (float) $sale->received_amount - (float) $completedRefunds->sum('customer_refund_amount'),
         ];
     }
 }

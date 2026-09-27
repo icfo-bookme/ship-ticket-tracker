@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             AdminUserSeeder::class,
+            ExcelSettingSeeder::class,
         ]);
     }
 }

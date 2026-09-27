@@ -22,7 +22,7 @@ class UpdateShipTicketSaleRequest extends FormRequest
             'whatsapp' => 'nullable|string|min:11|max:20',
             'email' => 'nullable|email|max:255',
             'nid' => 'nullable|string|max:255',
-            'date_of_birth' => 'nullable|date',
+            'date_of_birth' => 'nullable|date|before_or_equal:'.now()->subYears(18)->toDateString(),
             'collect_from_office' => 'required|boolean',
             'address' => 'required_unless:collect_from_office,1|nullable|string',
             'ship_id' => 'required|exists:ships,id',

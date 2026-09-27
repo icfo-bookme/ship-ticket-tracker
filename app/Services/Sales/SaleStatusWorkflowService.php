@@ -13,7 +13,19 @@ use Illuminate\Support\Facades\Log;
 
 class SaleStatusWorkflowService
 {
-    public function __construct(private readonly SteadfastService $steadfast) {}
+    private const FULFILLMENT_STATUS_RANKS = [
+        'pending' => 0,
+        'payment-verified' => 10,
+        'ticket-issued' => 20,
+        'ticket-printed' => 30,
+        'shipment_id_entered' => 40,
+        'shipped' => 50,
+    ];
+
+    public function __construct(
+        private readonly SteadfastService $steadfast,
+        private readonly SaleGroupingService $saleGrouping,
+    ) {}
 
     /**
      * @return array{success: bool, message: string, status?: int}
@@ -31,8 +43,29 @@ class SaleStatusWorkflowService
 
         $sale = ShipTicketSale::findOrFail($id);
 
+        if ($status === SaleStatus::CollectFromOffice->value) {
+            if (! $sale->collect_from_office || $sale->status !== SaleStatus::TicketPrinted->value) {
+                return [
+                    'success' => false,
+                    'message' => 'This sale is not ready for office collection.',
+                    'status' => 422,
+                ];
+            }
+
+            return $this->markOfficeCollectionGroup($sale);
+        }
+
         if ($status === SaleStatus::ShipmentIdEntered->value) {
             return $this->createShipmentAndMarkGroupedTickets($sale, $id);
+        }
+
+        if ($status === SaleStatus::Shipped->value) {
+            $this->markGroupedTickets($id, SaleStatus::Shipped->value);
+
+            return [
+                'success' => true,
+                'message' => 'Sales updated to shipped successfully',
+            ];
         }
 
         DB::transaction(function () use ($sale, $status, $id): void {
@@ -51,16 +84,38 @@ class SaleStatusWorkflowService
         $tickets = $this->groupedTickets($groupId);
 
         DB::transaction(function () use ($tickets, $status): void {
-            $tickets->each(function (PrintedTicket $ticket) use ($status): void {
-                $sale = ShipTicketSale::find($ticket->sales_id);
+            $sales = ShipTicketSale::query()
+                ->whereIn('id', $tickets->pluck('sales_id')->unique())
+                ->lockForUpdate()
+                ->get();
+            $highestStatus = $status;
+            $highestRank = self::FULFILLMENT_STATUS_RANKS[$status] ?? 0;
 
-                if (! $sale) {
+            foreach ($sales as $sale) {
+                $saleRank = self::FULFILLMENT_STATUS_RANKS[$sale->status] ?? null;
+
+                if ($saleRank === null) {
+                    continue;
+                }
+
+                if ($saleRank > $highestRank) {
+                    $highestRank = $saleRank;
+                    $highestStatus = $sale->status;
+                }
+            }
+
+            $sales->each(function (ShipTicketSale $sale) use ($highestStatus): void {
+                if (! array_key_exists($sale->status, self::FULFILLMENT_STATUS_RANKS) || $sale->status === $highestStatus) {
                     return;
                 }
 
-                $sale->update(['status' => $status]);
-                $this->track($status, $sale->id);
+                $sale->update(['status' => $highestStatus]);
+                $this->track($highestStatus, $sale->id);
             });
+
+            if ($highestStatus === SaleStatus::ShipmentIdEntered->value) {
+                $this->attachGroupToExistingShipment($sales->pluck('id')->all());
+            }
         });
     }
 
@@ -69,7 +124,28 @@ class SaleStatusWorkflowService
      */
     private function createShipmentAndMarkGroupedTickets(ShipTicketSale $sale, int $groupId): array
     {
-        $consignmentId = $this->createConsignment($sale);
+        $tickets = $this->groupedTickets($groupId);
+        $saleIds = $tickets->pluck('sales_id')->push($groupId)->unique();
+        $groupSales = ShipTicketSale::query()
+            ->whereIn('id', $saleIds)
+            ->get(['id', 'status', 'collect_from_office', 'whatsapp', 'address']);
+        $parcelGroupError = $this->saleGrouping->courierParcelGroupFailureMessage($groupSales);
+
+        if ($parcelGroupError !== null) {
+            return [
+                'success' => false,
+                'message' => $parcelGroupError,
+                'status' => 422,
+            ];
+        }
+
+        $saleIds = $saleIds->all();
+        $consignmentId = Shipment::query()
+            ->whereIn('ticket_id', $saleIds)
+            ->whereNotNull('shipment_id')
+            ->value('shipment_id');
+
+        $consignmentId ??= $this->createConsignment($sale);
 
         if (! $consignmentId) {
             return [
@@ -79,8 +155,6 @@ class SaleStatusWorkflowService
             ];
         }
 
-        $tickets = $this->groupedTickets($groupId);
-
         DB::transaction(function () use ($tickets, $consignmentId): void {
             $tickets->each(function (PrintedTicket $ticket) use ($consignmentId): void {
                 $sale = ShipTicketSale::find($ticket->sales_id);
@@ -89,10 +163,10 @@ class SaleStatusWorkflowService
                     return;
                 }
 
-                Shipment::create([
-                    'ticket_id' => $sale->id,
-                    'shipment_id' => $consignmentId,
-                ]);
+                Shipment::updateOrCreate(
+                    ['ticket_id' => $sale->id],
+                    ['shipment_id' => $consignmentId],
+                );
 
                 $sale->update(['status' => SaleStatus::ShipmentIdEntered->value]);
                 $this->track(SaleStatus::ShipmentIdEntered->value, $sale->id);
@@ -105,24 +179,133 @@ class SaleStatusWorkflowService
         ];
     }
 
+    /**
+     * @return array{success: bool, message: string, status?: int}
+     */
+    private function markOfficeCollectionGroup(ShipTicketSale $sale): array
+    {
+        $tickets = $this->groupedTickets($sale->id);
+        $saleIds = $tickets->pluck('sales_id')->push($sale->id)->unique();
+        $updated = DB::transaction(function () use ($saleIds): bool {
+            $sales = ShipTicketSale::query()
+                ->whereIn('id', $saleIds)
+                ->lockForUpdate()
+                ->get();
+
+            if ($sales->contains(fn (ShipTicketSale $groupSale): bool => ! $groupSale->collect_from_office
+                || ! in_array($groupSale->status, [
+                    SaleStatus::TicketPrinted->value,
+                    SaleStatus::CollectFromOffice->value,
+                ], true)
+            )) {
+                return false;
+            }
+
+            $sales->each(function (ShipTicketSale $groupSale): void {
+                if ($groupSale->status === SaleStatus::CollectFromOffice->value) {
+                    return;
+                }
+
+                $groupSale->update(['status' => SaleStatus::CollectFromOffice->value]);
+                $this->track(SaleStatus::CollectFromOffice->value, $groupSale->id);
+            });
+
+            return true;
+        });
+
+        if (! $updated) {
+            return [
+                'success' => false,
+                'message' => 'Every sale in this group must be marked for office collection before confirming collection.',
+                'status' => 422,
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Grouped sales marked as collected from office.',
+        ];
+    }
+
     private function createConsignment(ShipTicketSale $sale): ?string
     {
-        $steadfastResult = $this->steadfast->bulkCreate([
-            [
-                'invoice' => 'TICKET-'.$sale->id,
-                'recipient_name' => $sale->customer_name,
-                'recipient_phone' => $sale->customer_mobile,
-                'recipient_address' => $sale->address ?? 'N/A',
-                'cod_amount' => ($sale->due_amount ?? 0) + 100,
-                'note' => 'Journey ticket booking ID: '.$sale->id,
-                'delivery_type' => 0,
-            ],
-        ]);
+        $invoice = 'TICKET-'.$sale->id;
 
-        $consignmentId = $steadfastResult['data'][0]['consignment_id'] ?? null;
+        try {
+            $lookup = $this->steadfast->statusByInvoice($invoice);
+        } catch (\Throwable $exception) {
+            Log::error('Could not check Steadfast invoice before creating parcel', [
+                'invoice' => $invoice,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $lookupBody = $lookup['body'] ?? [];
+        $existingConsignmentId = $lookupBody['consignment']['consignment_id']
+            ?? $lookupBody['data']['consignment_id']
+            ?? $lookupBody['consignment_id']
+            ?? null;
+
+        if ($existingConsignmentId) {
+            return (string) $existingConsignmentId;
+        }
+
+        $invoiceExists = ($lookup['http_status'] ?? null) !== 404
+            && (int) ($lookupBody['status'] ?? 0) !== 404;
+
+        if ($invoiceExists) {
+            Log::critical('Steadfast invoice already exists or could not be verified; refusing duplicate parcel creation', [
+                'invoice' => $invoice,
+                'lookup' => $lookup,
+            ]);
+
+            return null;
+        }
+
+        try {
+            $steadfastResult = $this->steadfast->bulkCreate([
+                [
+                    'invoice' => $invoice,
+                    'recipient_name' => $sale->customer_name,
+                    'recipient_phone' => $sale->customer_mobile,
+                    'recipient_address' => $sale->address ?? 'N/A',
+                    'cod_amount' => ($sale->due_amount ?? 0) + 100,
+                    'note' => 'Journey ticket booking ID: '.$sale->id,
+                    'delivery_type' => 0,
+                ],
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Steadfast bulk parcel creation failed', [
+                'invoice' => $invoice,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $resultItem = $steadfastResult['data'][0]
+            ?? $steadfastResult[0]
+            ?? $steadfastResult['consignment']
+            ?? null;
+        $itemStatus = is_array($resultItem) ? strtolower((string) ($resultItem['status'] ?? '')) : '';
+        $consignmentId = is_array($resultItem) ? ($resultItem['consignment_id'] ?? null) : null;
+
+        if ($itemStatus !== '' && ! in_array($itemStatus, ['success', '200'], true)) {
+            Log::error('Steadfast rejected the parcel item', [
+                'invoice' => $invoice,
+                'item_status' => $itemStatus,
+            ]);
+
+            return null;
+        }
 
         if (! $consignmentId) {
-            Log::error('Failed to get consignment_id from Steadfast response', $steadfastResult);
+            Log::error('Failed to get consignment_id from Steadfast response', [
+                'invoice' => $invoice,
+                'response' => $steadfastResult,
+            ]);
         }
 
         return $consignmentId;
@@ -135,6 +318,24 @@ class SaleStatusWorkflowService
             ->get()
             ->unique('sales_id')
             ->values();
+    }
+
+    private function attachGroupToExistingShipment(array $saleIds): void
+    {
+        $shipmentId = Shipment::query()
+            ->whereIn('ticket_id', $saleIds)
+            ->value('shipment_id');
+
+        if (! $shipmentId) {
+            return;
+        }
+
+        foreach ($saleIds as $saleId) {
+            Shipment::firstOrCreate([
+                'ticket_id' => $saleId,
+                'shipment_id' => $shipmentId,
+            ]);
+        }
     }
 
     private function track(string $status, int $saleId): void

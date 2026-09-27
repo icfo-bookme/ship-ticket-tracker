@@ -74,7 +74,8 @@ class ShipTicketSaleService
                 'email' => $data['email'],
                 'nid' => $data['nid'],
                 'date_of_birth' => $data['date_of_birth'],
-                'address' => $data['address'],
+                'address' => $data['address'] ?? null,
+                'collect_from_office' => $data['collect_from_office'],
                 'ship_id' => $data['ship_id'],
                 'company_id' => $data['company_id'],
                 'journey_date' => $data['journey_date'],
@@ -115,6 +116,23 @@ class ShipTicketSaleService
         }
 
         return $sale;
+    }
+
+    public function updateIssue(ShipTicketSale $sale, array $data): ShipTicketSale
+    {
+        $hasGroupingChoice = array_key_exists('group_tickets', $data);
+        $groupById = $hasGroupingChoice
+            ? (($data['group_tickets'] ?? null) === 'yes' ? (int) $data['group_by_id'] : $sale->id)
+            : ($sale->printedTickets()->latest('id')->value('group_by_id') ?? $sale->id);
+
+        $data['pdf'] = array_merge(
+            array_values($data['pdf'] ?? []),
+            array_values($data['additional_pdf'] ?? [])
+        );
+
+        $this->markPaymentVerified($sale, $data, [], $groupById);
+
+        return $sale->refresh();
     }
 
     public function duplicateMessage(?string $customerMobile, ?string $journeyDate): array
@@ -283,27 +301,41 @@ class ShipTicketSaleService
         }
     }
 
-    private function markPaymentVerified(ShipTicketSale $sale, array $data, array $input): void
+    private function markPaymentVerified(ShipTicketSale $sale, array $data, array $input, ?int $groupByIdOverride = null): void
     {
-        DB::transaction(function () use ($sale, $data, $input): void {
+        DB::transaction(function () use ($sale, $data, $input, $groupByIdOverride): void {
+            $groupById = ($data['group_tickets'] ?? null) === 'yes' && ! empty($data['group_by_id'])
+                ? (int) $data['group_by_id']
+                : ($groupByIdOverride ?? $sale->id);
+
             if (! empty($input['pdf']) && is_array($input['pdf'])) {
-                foreach ($input['pdf'] as $pdfValue) {
-                    $sale->printedTickets()->create([
-                        'sales_id' => $sale->id,
-                        'filename' => $pdfValue.'.pdf',
-                        'group_by_id' => ($data['group_tickets'] ?? null) == 'yes'
-                    ? $data['group_by_id']
-                    : $sale->id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
+                $pdfValues = $input['pdf'];
+            } else {
+                $pdfValues = $data['pdf'] ?? [];
             }
 
-            if (($data['group_tickets'] ?? null) == 'yes' && ! empty($data['group_by_id'])) {
-                $groupSale = ShipTicketSale::find($data['group_by_id']);
-                $sale->update(['status' => $groupSale?->status ?? SaleStatus::TicketIssued->value]);
+            foreach ($pdfValues as $pdfValue) {
+                $filename = trim((string) $pdfValue);
 
+                if ($filename === '') {
+                    continue;
+                }
+
+                if (! str_ends_with(strtolower($filename), '.pdf')) {
+                    $filename .= '.pdf';
+                }
+
+                if ($sale->printedTickets()->where('filename', $filename)->exists()) {
+                    continue;
+                }
+
+                $sale->printedTickets()->create([
+                    'filename' => $filename,
+                    'group_by_id' => $groupById,
+                ]);
+            }
+
+            if ($sale->status !== SaleStatus::PaymentVerified->value) {
                 return;
             }
 

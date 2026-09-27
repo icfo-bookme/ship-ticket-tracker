@@ -448,14 +448,24 @@
                         </p>
                     </div>
 
-                    <div>
+                    <div class="flex items-center gap-2">
+                        <input type="hidden" name="collect_from_office" value="0">
+                        <input type="checkbox" id="collect_from_office" name="collect_from_office" value="1"
+                            @checked(old('collect_from_office', false))
+                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
+                        <label for="collect_from_office" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Collect from office
+                        </label>
+                    </div>
+
+                    <div id="addressFieldWrapper">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Full Address
                             <span class="text-xs text-gray-500">(Format: Fla# A1, House# 17/1, Road# 3/A, Dhanmondi,
                                 Dhaka-1209)</span> <span class="text-red-500 font-bold"> N.B: Please follow Steadfast
                                 Courier address format</span>
                         </label>
-                        <textarea id="address" name="address" placeholder="Enter your address here" rows="3" required
+                        <textarea id="address" name="address" placeholder="Enter your address here" rows="3"
                             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('address') }}</textarea>
                     </div>
 

@@ -1,10 +1,12 @@
 @php
     $pendingStatus = \App\Enums\SaleStatus::Pending->value;
     $paymentVerifiedStatus = \App\Enums\SaleStatus::PaymentVerified->value;
+    $ticketIssueRouteTemplate = route('ship-ticket-issue.show', ['ship_ticket_sale' => '__SALE_ID__']);
     $ticketIssuedStatus = \App\Enums\SaleStatus::TicketIssued->value;
     $ticketPrintedStatus = \App\Enums\SaleStatus::TicketPrinted->value;
     $shipmentIdEnteredStatus = \App\Enums\SaleStatus::ShipmentIdEntered->value;
     $shippedStatus = \App\Enums\SaleStatus::Shipped->value;
+    $collectFromOfficeStatus = \App\Enums\SaleStatus::CollectFromOffice->value;
 @endphp
 
 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -277,12 +279,32 @@
         }
 
         function createStatusButton(sale) {
+            if (sale.status === @js($collectFromOfficeStatus)) {
+                return sale.grouped_tickets?.length
+                    ? '<span class="text-green-700 font-semibold">Collected</span>'
+                    : referenceBy(sale);
+            }
+
             @cannot('sales.verify')
                 return "";
             @endcannot
 
             const verifiedBy = escapeHtml(sale.verifyby?.[0]?.verified_by_user?.name || "Unknown");
             const printedFiles = sale.grouped_tickets || [];
+
+            if (sale.status === @js($paymentVerifiedStatus)) {
+                const issueTicketUrl = @js($ticketIssueRouteTemplate).replace('__SALE_ID__', encodeURIComponent(sale.id));
+
+                return `<a href="${issueTicketUrl}" class="fa-solid fa-ticket text-blue-700 px-2 py-1"
+                    title="Issue Tickets" aria-label="Issue Tickets"></a>`;
+            }
+
+            if (@js($status) === @js($ticketIssuedStatus)) {
+                return printedFiles.length
+                    ? statusButton(sale.id, @js($ticketPrintedStatus), "Ticket Printed", "Sync group to its furthest status")
+                        + printedFileRows(sale, printedFiles)
+                    : referenceBy(sale);
+            }
 
             if (sale.status === @js($pendingStatus)) {
                 return `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn"
@@ -298,6 +320,17 @@
             }
 
             if (sale.status === @js($ticketPrintedStatus)) {
+                if (sale.collect_from_office) {
+                    return printedFiles.length
+                        ? statusButton(
+                            sale.id,
+                            @js($collectFromOfficeStatus),
+                            "Collected",
+                            `ticket-printed by: ${verifiedBy}`,
+                        )
+                        : referenceBy(sale);
+                }
+
                 return printedFiles.length
                     ? statusButton(
                         sale.id,
@@ -305,12 +338,14 @@
                         "Add To Parcel",
                         `ticket-printed by: ${verifiedBy}`,
                         "shipmentIdEntryBtn",
-                    ) + printedFileRows(sale, printedFiles)
+                    )
                     : referenceBy(sale);
             }
 
             if (sale.status === @js($shipmentIdEnteredStatus)) {
-                return statusButton(sale.id, @js($shippedStatus), "Shipped", `shipment_id_entered by: ${verifiedBy}`);
+                return printedFiles.length
+                    ? statusButton(sale.id, @js($shippedStatus), "Shipped", `shipment_id_entered by: ${verifiedBy}`)
+                    : referenceBy(sale);
             }
 
             return "";
@@ -322,18 +357,29 @@
         }
 
         function printedFileRows(sale, files) {
-            const rows = files.map((file) => `
-                <div class="flex items-center gap-2">
-                    <a href="/ship-ticket-sales/${file.sales_id}" target="_blank"
-                       class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-semibold">
-                        ${escapeHtml(file.sales_id)}
-                    </a>
-                    <a href="/tickets/open/${sale.id}/${encodeURIComponent(file.filename)}" target="_blank"
-                       class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold"
-                       title="${escapeHtml(file.filename)}">
-                        <i class="fas fa-file-pdf"></i> ${escapeHtml(file.filename)}
-                    </a>
-                </div>`);
+            const statusLabels = @js(config('sales.statuses'));
+            const rows = files.map((file) => {
+                const ownerStatus = file.sale?.status;
+                const statusLabel = ownerStatus && ownerStatus !== @js($ticketIssuedStatus)
+                    ? `<span class="text-xs text-gray-600">(${escapeHtml(statusLabels[ownerStatus] || ownerStatus)})</span>`
+                    : "";
+
+                return `
+                    <div class="flex items-center gap-2">
+                        <a href="/ship-ticket-sales/${file.sales_id}" target="_blank"
+                           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-semibold">
+                            Sale #${escapeHtml(file.sales_id)}
+                        </a>
+                        ${@js($status) === @js($ticketIssuedStatus) ? `
+                            <a href="/tickets/open/${file.sales_id}/${encodeURIComponent(file.filename)}" target="_blank"
+                               class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold"
+                               title="${escapeHtml(file.filename)}">
+                                <i class="fas fa-file-pdf"></i> ${escapeHtml(file.filename)}
+                            </a>
+                            ${statusLabel}
+                        ` : ""}
+                    </div>`;
+            });
 
             return `<div class="flex flex-col gap-2 mt-2">${rows.join("")}</div>`;
         }

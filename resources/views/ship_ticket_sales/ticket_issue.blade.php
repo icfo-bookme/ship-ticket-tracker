@@ -5,12 +5,26 @@
             <i class="fas fa-edit mr-2 text-blue-600"></i>
             Ship Ticket Sale #{{ $sale->id }}
         </h2>
-        <a href="/sales/status/{{ $sale->status }}"
+        <a href="/sales/status/payment-verified"
             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2.5 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5">
             <i class="fas fa-arrow-left mr-2"></i> Back to List
         </a>
 
     </div>
+
+    @if ($ticketIssueViews->isNotEmpty())
+        <div class="mx-5 mt-3 rounded border border-gray-200 bg-gray-50 p-3">
+            <h3 class="text-sm font-semibold text-gray-800">Seen by</h3>
+            <div class="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-600">
+                @foreach ($ticketIssueViews as $ticketIssueView)
+                    <span>
+                        {{ $ticketIssueView->user?->name ?? 'Unknown user' }}
+                        <span class="text-gray-400">({{ $ticketIssueView->last_viewed_at->timezone('Asia/Dhaka')->format('d M Y, h:i A') }})</span>
+                    </span>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     <!-- Flash Messages -->
     @if (session('success'))
@@ -26,7 +40,7 @@
     @endif
 
     <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 ">
+        <div class="max-w-7xl mx-auto sm:px-6">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="">
                     @if ($errors->any())
@@ -47,7 +61,7 @@
                             </div>
                         </div>
                     @endif
-                    <form action="{{ route('ship-ticket-sales.update', $sale->id) }}" method="POST" class=""
+                    <form action="{{ route('ship-ticket-issue.update', $sale->id) }}" method="POST" class=""
                         id="ticketForm" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
@@ -128,9 +142,6 @@
                                 </div>
 
 
-                                <input type="number" value={{ $nextSale->id ?? '' }} name="next_sale_id" hidden>
-
-
                                 <div class="bg-red-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-1">
                                         <label for="nid"
@@ -161,29 +172,6 @@
                                         class="copyable-field bg-red-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
                                 </div>
 
-                                <div class="md:col-span-3 flex items-center gap-2">
-                                    <input type="hidden" name="collect_from_office" value="0">
-                                    <input type="checkbox" id="collect_from_office" name="collect_from_office" value="1"
-                                        @checked(old('collect_from_office', $sale->collect_from_office))
-                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
-                                    <label for="collect_from_office" class="text-sm font-semibold text-gray-700">
-                                        Collect from office
-                                    </label>
-                                </div>
-
-                                <div class="md:col-span-3" id="addressFieldWrapper">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <label for="address"
-                                            class="block text-sm font-semibold text-gray-700">Address</label>
-                                        <button type="button"
-                                            class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
-                                            data-field="address" title="Copy Address">
-                                            <i class="fas fa-copy text-xs"></i>
-                                        </button>
-                                    </div>
-                                    <textarea name="address" id="address" rows="3"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">{{ old('address', $sale->address) }}</textarea>
-                                </div>
                             </div>
                         </div>
 
@@ -301,11 +289,9 @@
                             </div>
 
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <!-- Departure Packages -->
                                 <div class="bg-white rounded-lg p-3 shadow-sm border border-blue-200">
                                     <h4 class="font-bold text-sm text-blue-800 mb-2 flex items-center">
-                                        <i class="fas fa-ship mr-2 text-blue-600"></i>
-                                        Departure Packages
+                                        <i class="fas fa-ship mr-2 text-blue-600"></i>Departure Packages
                                     </h4>
                                     <div class="space-y-3">
                                         @foreach ($sale->ships->packages as $package)
@@ -314,46 +300,28 @@
                                                     ->where('type', 'departure')
                                                     ->where('package_id', $package->id)
                                                     ->first();
-                                                $departureQuantity = $departureCategory
-                                                    ? $departureCategory->quantity
-                                                    : 0;
+                                                $departureQuantity = $departureCategory ? $departureCategory->quantity : 0;
                                             @endphp
-                                            <div
-                                                class="grid grid-cols-2 items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
+                                            <div class="grid grid-cols-2 items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
                                                 <div class="flex items-center">
-                                                    <input type="radio" name="departure_package"
-                                                        value="{{ $package->id }}"
-                                                        id="departure_package_{{ $package->id }}"
-                                                        {{ $departureCategory ? 'checked' : '' }}
-                                                        class="copyable-field focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300">
-                                                    <label for="departure_package_{{ $package->id }}"
-                                                        class="ml-3 block text-sm font-medium text-gray-700">
+                                                    <input type="radio" name="departure_package" value="{{ $package->id }}" id="departure_package_{{ $package->id }}" {{ $departureCategory ? 'checked' : '' }} class="copyable-field focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300">
+                                                    <label for="departure_package_{{ $package->id }}" class="ml-3 block text-sm font-medium text-gray-700">
                                                         <span class="font-semibold">{{ $package->name }}</span>
-                                                        <span
-                                                            class="text-blue-600 font-bold ml-2">৳{{ number_format($package->price, 2) }}</span>
+                                                        <span class="text-blue-600 font-bold ml-2">৳{{ number_format($package->price, 2) }}</span>
                                                     </label>
                                                 </div>
                                                 <div class="flex items-center justify-end space-x-2">
-                                                    <label for="departure_quantity_{{ $package->id }}"
-                                                        class="text-sm font-semibold text-gray-700">
-                                                        Quantity:
-                                                    </label>
-                                                    <input type="number"
-                                                        name="departure_quantity[{{ $package->id }}]"
-                                                        id="departure_quantity_{{ $package->id }}"
-                                                        value="{{ $departureQuantity }}" min="0"
-                                                        class="w-20 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5 text-center">
+                                                    <label for="departure_quantity_{{ $package->id }}" class="text-sm font-semibold text-gray-700">Quantity:</label>
+                                                    <input type="number" name="departure_quantity[{{ $package->id }}]" id="departure_quantity_{{ $package->id }}" value="{{ $departureQuantity }}" min="0" class="w-20 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5 text-center">
                                                 </div>
                                             </div>
                                         @endforeach
                                     </div>
                                 </div>
 
-                                <!-- Return Packages -->
                                 <div class="bg-white rounded-lg p-3 shadow-sm border border-blue-200">
                                     <h4 class="font-bold text-sm text-blue-800 mb-2 flex items-center">
-                                        <i class="fas fa-undo-alt mr-2 text-blue-600"></i>
-                                        Return Packages
+                                        <i class="fas fa-undo-alt mr-2 text-blue-600"></i>Return Packages
                                     </h4>
                                     <div class="space-y-3">
                                         @foreach ($sale->ships->packages as $package)
@@ -364,32 +332,17 @@
                                                     ->first();
                                                 $returnQuantity = $returnCategory ? $returnCategory->quantity : 0;
                                             @endphp
-                                            <div
-                                                class="grid grid-cols-2 items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
+                                            <div class="grid grid-cols-2 items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
                                                 <div class="flex items-center">
-                                                    <input type="radio" name="return_package"
-                                                        value="{{ $package->id }}"
-                                                        id="return_package_{{ $package->id }}"
-                                                        {{ $returnCategory ? 'checked' : '' }}
-                                                        class="copyable-field focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300">
-                                                    <label for="return_package_{{ $package->id }}"
-                                                        class="ml-3 block text-sm font-medium text-gray-700">
+                                                    <input type="radio" name="return_package" value="{{ $package->id }}" id="return_package_{{ $package->id }}" {{ $returnCategory ? 'checked' : '' }} class="copyable-field focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300">
+                                                    <label for="return_package_{{ $package->id }}" class="ml-3 block text-sm font-medium text-gray-700">
                                                         <span class="font-semibold">{{ $package->name }}</span>
-                                                        <span class="text-blue-600 font-bold ml-2">
-                                                            ৳{{ number_format($package->round_trip_price - $package->price, 2) }}
-                                                        </span>
-
+                                                        <span class="text-blue-600 font-bold ml-2">৳{{ number_format($package->round_trip_price - $package->price, 2) }}</span>
                                                     </label>
                                                 </div>
                                                 <div class="flex items-center justify-end space-x-2">
-                                                    <label for="return_quantity_{{ $package->id }}"
-                                                        class="text-sm font-semibold text-gray-700">
-                                                        Quantity:
-                                                    </label>
-                                                    <input type="number" name="return_quantity[{{ $package->id }}]"
-                                                        id="return_quantity_{{ $package->id }}"
-                                                        value="{{ $returnQuantity }}" min="0"
-                                                        class="w-20 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5 text-center">
+                                                    <label for="return_quantity_{{ $package->id }}" class="text-sm font-semibold text-gray-700">Quantity:</label>
+                                                    <input type="number" name="return_quantity[{{ $package->id }}]" id="return_quantity_{{ $package->id }}" value="{{ $returnQuantity }}" min="0" class="w-20 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5 text-center">
                                                 </div>
                                             </div>
                                         @endforeach
@@ -670,29 +623,10 @@
                                                         </a>
                                                     @endif
                                                 </div>
-                                                <input type="hidden" name="payments[{{ $index }}][payment_proof]"
-                                                    value="{{ $payment->payment_proof }}">
-                                                <input type="file" name="payments[{{ $index }}][proof_file]"
-                                                    accept="image/*,application/pdf"
-                                                    class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 py-1.5 px-2.5 text-xs">
-                                            </div>
-
-                                            <!-- Remove Button -->
-                                            <div class="flex justify-end mt-2">
-                                                <button type="button"
-                                                    class="bg-red-500 hover:bg-red-600 text-white py-1.5 px-2.5 rounded-lg text-sm font-semibold transition duration-200 ease-in-out transform hover:scale-105 remove-payment">
-                                                    <i class="fas fa-trash mr-1"></i>Remove Payment
-                                                </button>
                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
-
-                                <!-- Add Payment Button -->
-                                <button type="button" id="add-payment"
-                                    class="mt-3 w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-1.5 px-6 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md hover:shadow-lg">
-                                    <i class="fas fa-plus-circle mr-2"></i>Add Another Payment Record
-                                </button>
                             </div>
                         </div>
 
@@ -900,18 +834,9 @@
                                                     class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
                                             </div>
                                         </div>
-                                        <button type="button"
-                                            class="mt-3 bg-red-500 hover:bg-red-600 text-white py-1.5 px-2.5 rounded-lg text-sm font-semibold transition duration-200 ease-in-out transform hover:scale-105 remove-passenger">
-                                            <i class="fas fa-user-times mr-1"></i>Remove Passenger
-                                        </button>
                                     </div>
                                 @endforeach
                             </div>
-
-                            <button type="button" id="add-passenger"
-                                class="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold py-1.5 px-6 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md">
-                                <i class="fas fa-user-plus mr-2"></i>Add Co-Passenger
-                            </button>
                         </div>
                         @if ($sale->status == 'payment-verified')
                             @php $count = $number + 1; @endphp
@@ -1019,10 +944,7 @@
                                     <p class="text-gray-600 mb-2">Add more PDF filename fields. Format:
                                         {{ $sale->whatsapp ?? 'whatsapp' }}-{number}</p>
 
-                                    @php
-                                        $existingPdfCount = $sale->printedTickets->count();
-                                        $nextPdfNumber = $existingPdfCount + 1;
-                                    @endphp
+                                    @php $nextPdfNumber = $number + 1; @endphp
 
                                     <div id="additional-pdf-fields" class="space-y-2">
                                         <!-- Additional PDF fields will be added here -->
@@ -1037,23 +959,31 @@
                         @endif
 
 
-                        @if ($sale->status == 'payment-verified')
+                        @if ($sale->status == 'payment-verified' || $groupByStatus || $groupingMessage)
                             <div class="bg-yellow-50 rounded-lg p-3 shadow-sm border border-yellow-200 mt-3">
+                                @if ($sale->status == 'payment-verified')
+                                    <div class="flex items-center mb-2">
+                                        <div class="bg-yellow-600 p-2 rounded-lg mr-3">
+                                            <i class="fas fa-exclamation-triangle text-white text-sm"></i>
+                                        </div>
 
-                                <div class="flex items-center mb-2">
-                                    <div class="bg-yellow-600 p-2 rounded-lg mr-3">
-                                        <i class="fas fa-exclamation-triangle text-white text-sm"></i>
+                                        <h3 class="text-base font-bold text-gray-800">
+                                            Important Notice
+                                        </h3>
                                     </div>
 
-                                    <h3 class="text-base font-bold text-gray-800">
-                                        Important Notice
-                                    </h3>
-                                </div>
+                                    <p class="text-gray-700 text-sm leading-relaxed">
+                                        Tickets PDF document has already been generated using this WhatsApp number.
+                                        Please review the existing document before requesting a new one.
+                                    </p>
+                                @endif
 
-                                <p class="text-gray-700 text-sm leading-relaxed">
-                                    Tickets PDF document has already been generated using this WhatsApp number.
-                                    Please review the existing document before requesting a new one.
-                                </p>
+                                @if ($groupingMessage)
+                                    <p class="rounded border border-amber-300 bg-amber-100 px-3 py-2 text-sm text-amber-900">
+                                        {{ $groupingMessage }}
+                                    </p>
+                                @endif
+
                                 @if ($groupByStatus)
                                     <p class="font-bold text-base">Do You Want to group tickets:</p>
                                     <div class="flex justify-around">
@@ -1094,38 +1024,17 @@
                             </div>
                         @endif
 
-                        <!-- Submit Button -->
-                        <div class="mt-3 flex justify-end space-x-4">
+                        <!-- PDF and grouping are the only editable values on this page. -->
+                        <div class="mt-3 flex justify-end gap-3">
                             <a href="/sales/status/pending"
                                 class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-1.5 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md">
                                 <i class="fas fa-times mr-2"></i>Cancel
                             </a>
 
-                            <!-- Regular Update Button -->
-                            <button type="submit" name="action" value="update"
+                            <button type="submit"
                                 class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
-                                <i class="fas fa-save mr-2"></i>Update Ticket Sale
+                                <i class="fas fa-save mr-2"></i>{{ $nextSale ? 'Save & Next' : 'Save PDF & Grouping' }}
                             </button>
-
-                            <!-- Update and Next Button -->
-                            @if ($nextSale && $sale->status == 'payment-verified')
-                                <button type="submit" name="action" value="update_and_next"
-                                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
-                                    <i class="fas fa-save mr-2"></i>
-                                    <i class="fas fa-arrow-right mr-2"></i>
-                                    Verify & Next
-                                </button>
-                            @endif
-
-                            @if ($sale->status != 'payment-verified' && $sale->status != 'pending')
-                                <button type="submit" name="action" value="update_and_reverify"
-                                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
-                                    <i class="fas fa-save mr-2"></i>
-                                    <i class="fas fa-arrow-right mr-2"></i>
-                                    Update & Re-verify
-                                </button>
-                            @endif
-
                         </div>
 
 
@@ -1190,172 +1099,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Add co-passenger functionality
-            let passengerIndex = {{ count($sale->coPassengers) }};
-            let paymentIndex = {{ count($sale->payments) }};
-
             // For additional PDF fields
             let additionalPdfIndex = 0;
             const whatsappNumber = "{{ $sale->whatsapp ?? 'whatsapp' }}";
-            const existingPdfCount = {{ $sale->printedTickets->count() }};
-            let currentPdfNumber = existingPdfCount + 1;
-
-            document.getElementById('add-passenger').addEventListener('click', function() {
-                const container = document.getElementById('co-passengers-container');
-                const newPassenger = document.createElement('div');
-                newPassenger.className =
-                    'co-passenger-item bg-white rounded-lg p-3 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out';
-                newPassenger.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">Name</label>
-                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="co_passengers[${passengerIndex}][name]" title="Copy Passenger Name">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                            </div>
-                            <input type="text" name="co_passengers[${passengerIndex}][name]" 
-                                   class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">NID</label>
-                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="co_passengers[${passengerIndex}][nid]" title="Copy Passenger NID">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                            </div>
-                            <input type="text" name="co_passengers[${passengerIndex}][nid]" 
-                                   class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">Mobile Number</label>
-                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="co_passengers[${passengerIndex}][co_passernger_number]" title="Copy Passenger Mobile">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                            </div>
-                            <input type="text" name="co_passengers[${passengerIndex}][co_passernger_number]" 
-                                   class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
-                        </div>
-
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">Date of Birth</label>
-                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="co_passengers[${passengerIndex}][date_of_birth]" title="Copy Passenger Date of Birth">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                            </div>
-                            <input type="date" name="co_passengers[${passengerIndex}][date_of_birth]" 
-                                   class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
-                        </div>
-                    </div>
-                    <button type="button" class="mt-3 bg-red-500 hover:bg-red-600 text-white py-1.5 px-2.5 rounded-lg text-sm font-semibold transition duration-200 ease-in-out transform hover:scale-105 remove-passenger">
-                        <i class="fas fa-user-times mr-1"></i>Remove Passenger
-                    </button>
-                `;
-                container.appendChild(newPassenger);
-                passengerIndex++;
-            });
-
-            // Add payment functionality
-            document.getElementById('add-payment').addEventListener('click', function() {
-                const container = document.getElementById('payments-container');
-                const newPayment = document.createElement('div');
-                newPayment.className =
-                    'payment-item bg-white rounded-lg p-3 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out';
-                newPayment.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">Payment Method *</label>
-                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="payments[${paymentIndex}][payment_method]" title="Copy Payment Method">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                            </div>
-                            <select name="payments[${paymentIndex}][payment_method]" required
-                                    class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
-                                <option value="">Select Method</option>
-                                <option value="Cash">Cash</option>
-                                <option value="Bkash">Bkash</option>
-                                <option value="Nagad">Nagad</option>
-                                <option value="Bank Transfer">Bank Transfer</option>
-                                <option value="Card">Card</option>
-                            </select>
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">Amount *</label>
-                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="payments[${paymentIndex}][received_amount]" title="Copy Amount">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="text-gray-500 mr-2">৳</span>
-                                <input type="number" step="0.01" name="payments[${paymentIndex}][received_amount]" required
-                                       class="copyable-field payment-amount w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">Transaction ID</label>
-                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="payments[${paymentIndex}][transaction_id]" title="Copy Transaction ID">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                            </div>
-                            <input type="text" name="payments[${paymentIndex}][transaction_id]"
-                                   placeholder="TRX-123456"
-                                   class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">Payment Date & Time *</label>
-                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="payments[${paymentIndex}][payment_datetime]" title="Copy Payment Date & Time">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                            </div>
-                            <input type="datetime-local" name="payments[${paymentIndex}][payment_datetime]" required
-                                   class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">Remark</label>
-                                <button type="button" class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200" data-field="payments[${paymentIndex}][remark]" title="Copy Remark">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                            </div>
-                            <input type="text" name="payments[${paymentIndex}][remark]"
-                                   placeholder="Optional note"
-                                   class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">Payment Proof</label>
-                            </div>
-                            <input type="file" name="payments[${paymentIndex}][proof_file]"
-                                   accept="image/*,application/pdf"
-                                   class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 py-1.5 px-2.5 text-xs">
-                        </div>
-                    </div>
-                    <div class="flex justify-end mt-2">
-                        <button type="button" class="bg-red-500 hover:bg-red-600 text-white py-1.5 px-2.5 rounded-lg text-sm font-semibold transition duration-200 ease-in-out transform hover:scale-105 remove-payment">
-                            <i class="fas fa-trash mr-1"></i>Remove Payment
-                        </button>
-                    </div>
-                `;
-                container.appendChild(newPayment);
-                paymentIndex++;
-                updatePaymentCount();
-
-                // Set current datetime for the new payment only
-                const datetimeInput = newPayment.querySelector('input[type="datetime-local"]');
-                const now = new Date();
-                const timezoneOffset = now.getTimezoneOffset() * 60000;
-                const localISOTime = new Date(now - timezoneOffset).toISOString().slice(0, 16);
-                datetimeInput.value = localISOTime;
-
-                // Trigger calculation for new payment
-                calculateFinancials();
-            });
+            let currentPdfNumber = {{ $number + 1 }};
 
             // Add additional PDF field functionality
             const addAdditionalPdfBtn = document.getElementById('add-additional-pdf');
@@ -1405,63 +1152,6 @@
                 if (e.target.classList.contains('remove-additional-pdf')) {
                     e.target.closest('.additional-pdf-item').remove();
                     // Don't decrement currentPdfNumber to maintain sequence
-                }
-            });
-
-            // Calculate all financial values
-            function calculateFinancials() {
-                // Calculate total received amount from all payments
-                let totalReceived = 0;
-                document.querySelectorAll('.payment-amount').forEach(input => {
-                    const value = parseFloat(input.value) || 0;
-                    totalReceived += value;
-                });
-
-                // Update received amount field
-                const receivedAmountInput = document.getElementById('received_amount');
-                receivedAmountInput.value = totalReceived.toFixed(2);
-
-                // Get ticket fee, other fee and discount
-                const ticketFee = parseFloat(document.getElementById('ticket_fee').value) || 0;
-                const otherFee = parseFloat(document.getElementById('other_fee').value) || 0;
-                const discountAmount = parseFloat(document.getElementById('discount_amount').value) || 0;
-
-                // Calculate total payable (ticket fee + other fee - discount)
-                const totalPayable = Math.max(0, ticketFee + otherFee - discountAmount);
-                document.getElementById('total_payable').value = totalPayable.toFixed(2);
-
-                // Calculate due amount (total payable - total received)
-                const dueAmount = totalPayable - totalReceived;
-                document.getElementById('due_amount').value = dueAmount.toFixed(2);
-
-                // Update payment count
-                updatePaymentCount();
-            }
-
-            // Update payment count
-            function updatePaymentCount() {
-                const paymentCount = document.querySelectorAll('.payment-item').length;
-                document.getElementById('total-payment-count').textContent = paymentCount;
-            }
-
-            // Event listeners for financial calculations
-            document.addEventListener('input', function(e) {
-                if (e.target.classList.contains('payment-amount') ||
-                    e.target.id === 'ticket_fee' ||
-                    e.target.id === 'other_fee' ||
-                    e.target.id === 'discount_amount') {
-                    calculateFinancials();
-                }
-            });
-
-            // Remove functionality
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('remove-passenger')) {
-                    e.target.closest('.co-passenger-item').remove();
-                }
-                if (e.target.classList.contains('remove-payment')) {
-                    e.target.closest('.payment-item').remove();
-                    calculateFinancials();
                 }
             });
 
@@ -1589,9 +1279,6 @@
                 }
             });
 
-            // Initial calculation
-            calculateFinancials();
-
             // Initialize PDF fields from payment-verified section (only if it exists)
             @if ($sale->status == 'payment-verified')
                 let pdfIndex = {{ $count - 1 }};
@@ -1648,17 +1335,32 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const collectFromOffice = document.getElementById('collect_from_office');
-            const addressWrapper = document.getElementById('addressFieldWrapper');
-            const address = document.getElementById('address');
+            const form = document.getElementById('ticketForm');
+            const allowedNames = new Set(['group_tickets', 'group_by_id']);
 
-            const updateAddressVisibility = () => {
-                addressWrapper.classList.toggle('hidden', collectFromOffice.checked);
-                address.required = !collectFromOffice.checked;
-            };
+            form.querySelectorAll('input, select, textarea').forEach((field) => {
+                const isPdfField = field.name.startsWith('pdf[') || field.name.startsWith('additional_pdf[');
 
-            collectFromOffice.addEventListener('change', updateAddressVisibility);
-            updateAddressVisibility();
+                if (isPdfField || allowedNames.has(field.name) || field.type === 'hidden') {
+                    return;
+                }
+
+                if (field.matches('textarea') || (field.matches('input') && ['text', 'email', 'date', 'number', 'tel', 'url', 'search'].includes(field.type))) {
+                    field.readOnly = true;
+                } else {
+                    field.disabled = true;
+                }
+            });
+
+            form.querySelectorAll('button[type="button"]').forEach((button) => {
+                const isAllowedAction = button.id === 'addPdfField' || button.id === 'add-additional-pdf' ||
+                    button.classList.contains('copy-field-btn');
+
+                if (!isAllowedAction) {
+                    button.disabled = true;
+                    button.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
         });
     </script>
 

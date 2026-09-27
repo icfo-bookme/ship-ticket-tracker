@@ -18,11 +18,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\WhatsappDetailsController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| PUBLIC ROUTES (no authentication required)
-|--------------------------------------------------------------------------
-*/
+// Public routes (no authentication required)
 
 // Root shows login first
 Route::get('/', fn () => view('auth.login'));
@@ -37,15 +33,7 @@ Route::get('/sales-create/success', [ShipTicketSaleController::class, 'success']
 Route::get('/ship/packages/{id}', [ShipPackageController::class, 'showPackages'])->name('ship.packages');
 Route::get('/ship-packages/{id}', [ShipPackageController::class, 'index']);
 
-/*
-|--------------------------------------------------------------------------
-| AUTHENTICATED ROUTES
-|--------------------------------------------------------------------------
-| Every sub-group below is protected by a permission via the `can:`
-| middleware (Spatie laravel-permission + Laravel Gate).
-| Users holding the Super Admin role (config/roles.php) bypass all checks.
-|--------------------------------------------------------------------------
-*/
+// Authenticated routes use permission middleware; Super Admin bypasses these checks.
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -53,19 +41,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 
 Route::middleware('auth')->group(function () {
 
-    // ================================================================
-    // PROFILE — available to every authenticated user
-    // ================================================================
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // ================================================================
-    // SALES MODULE
-    // NOTE: the `create` route must be registered before the
-    // `{ship_ticket_sale}` wildcard show route, otherwise `create`
-    // would be captured as a sale id.
-    // ================================================================
 
     // SALES — CREATE / STORE
     Route::middleware('can:sales.create')->group(function () {
@@ -81,6 +59,8 @@ Route::middleware('auth')->group(function () {
             ->middleware('sales.status')
             ->name('ship-ticket-sales.index');
         Route::get('ship-ticket-sales/{ship_ticket_sale}', [ShipTicketSaleController::class, 'show'])->name('ship-ticket-sales.show');
+
+        Route::get('ship-ticket-issue/{ship_ticket_sale}', [ShipTicketSaleController::class, 'ticketsIssueShow'])->name('ship-ticket-issue.show');
 
         // Sales listing / status (each status needs its own sales.status.{status} permission)
         Route::get('/sales/{status}', [ShipTicketSaleController::class, 'pendingCS'])
@@ -103,14 +83,13 @@ Route::middleware('auth')->group(function () {
 
     // SALES — EDIT / UPDATE
     Route::middleware('can:sales.edit')->group(function () {
-        Route::get('ship-ticket-sales/{ship_ticket_sale}/edit', [ShipTicketSaleController::class, 'edit'])->name('ship-ticket-sales.edit');
         Route::put('ship-ticket-sales/{ship_ticket_sale}', [ShipTicketSaleController::class, 'update'])->name('ship-ticket-sales.update');
-        Route::put('/sales/status/{id}', [ShipTicketSaleController::class, 'update']);
     });
 
     // SALES — VERIFY
     Route::middleware('can:sales.verify')->group(function () {
         Route::put('/sale/verify/{id}/{status}', [ShipTicketSaleController::class, 'verify']);
+        Route::put('ship-ticket-issue/{ship_ticket_sale}', [ShipTicketSaleController::class, 'updateIssue'])->name('ship-ticket-issue.update');
     });
 
     // SALES — DELETE
@@ -119,11 +98,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/sale/delete/{id}', [ShipTicketSaleController::class, 'destroy']);
     });
 
-    // ================================================================
-    // REFUNDS MODULE
-    // NOTE: the `create` route must be registered before the
-    // `{refund}` wildcard show route.
-    // ================================================================
+    // Refunds module. Register `create` before the `{refund}` wildcard route.
 
     // REFUNDS — MANAGE (create, edit, process)
     Route::middleware('can:refunds.manage')->group(function () {
@@ -146,9 +121,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/refunded', [RefundController::class, 'showRefundedCS']);
     });
 
-    // ================================================================
-    // MASTER DATA MODULES
-    // ================================================================
+    // Master data modules
 
     // SHIPS
     Route::middleware('can:ships.manage')->group(function () {
@@ -169,9 +142,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/ship-packages/{id}', [ShipPackageController::class, 'destroy']);
     });
 
-    // ================================================================
-    // ACCOUNTING MODULES
-    // ================================================================
+    // Accounting modules
 
     // REPORTS
     Route::middleware('can:reports.view')->group(function () {
@@ -190,9 +161,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('cash-collections', CashCollectionController::class);
     });
 
-    // ================================================================
-    // ADMIN MODULES
-    // ================================================================
+    // Admin modules
 
     // USERS MANAGEMENT
     Route::middleware('can:users.manage')->group(function () {

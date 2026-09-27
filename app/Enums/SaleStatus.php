@@ -10,6 +10,7 @@ enum SaleStatus: string
     case TicketPrinted = 'ticket-printed';
     case ShipmentIdEntered = 'shipment_id_entered';
     case Shipped = 'shipped';
+    case CollectFromOffice = 'collect_from_office';
     case PartialRefunded = 'partial-refunded';
     case Refunded = 'refunded';
 
@@ -22,6 +23,7 @@ enum SaleStatus: string
             self::TicketPrinted => 'Ticket Printed',
             self::ShipmentIdEntered => 'Parcel Created',
             self::Shipped => 'Shipped',
+            self::CollectFromOffice => 'Collected',
             self::PartialRefunded => 'Partially Refunded',
             self::Refunded => 'Refunded',
         };

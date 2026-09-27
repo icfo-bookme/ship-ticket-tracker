@@ -1,0 +1,173 @@
+<?php
+
+use App\Models\Company;
+use App\Models\PrintedTicket;
+use App\Models\Ship;
+use App\Models\ShipTicketSale;
+use App\Models\User;
+use App\Services\Sales\SalesDataTableService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Spatie\Permission\Models\Permission;
+
+uses(RefreshDatabase::class);
+
+it('shows every member of a group containing an issued sale in the issued list', function () {
+    $ship = Ship::create(['name' => 'Group Ship', 'status' => 1]);
+    $company = Company::create(['name' => 'Group Company', 'status' => 1]);
+    $referenceSale = salesDataTableSale($ship, $company, 'ticket-printed');
+    $issuedSale = salesDataTableSale($ship, $company, 'ticket-issued');
+    $unrelatedSale = salesDataTableSale($ship, $company, 'ticket-printed');
+
+    PrintedTicket::create([
+        'sales_id' => $referenceSale->id,
+        'filename' => 'printed.pdf',
+        'group_by_id' => $referenceSale->id,
+    ]);
+    PrintedTicket::create([
+        'sales_id' => $issuedSale->id,
+        'filename' => 'issued.pdf',
+        'group_by_id' => $referenceSale->id,
+    ]);
+    PrintedTicket::create([
+        'sales_id' => $unrelatedSale->id,
+        'filename' => 'unrelated.pdf',
+        'group_by_id' => $unrelatedSale->id,
+    ]);
+
+    $response = app(SalesDataTableService::class)->response(
+        new Request(['start' => 0, 'length' => 20]),
+        'ticket-issued'
+    )->getData(true);
+    $rows = collect($response['data']);
+    $referenceRow = $rows->firstWhere('id', $referenceSale->id);
+    $issuedRow = $rows->firstWhere('id', $issuedSale->id);
+    $referenceFiles = collect($referenceRow['grouped_tickets']);
+
+    expect($rows->pluck('id')->all())
+        ->toContain($referenceSale->id, $issuedSale->id)
+        ->not->toContain($unrelatedSale->id)
+        ->and($response['recordsTotal'])->toBe(2)
+        ->and($referenceFiles->pluck('filename')->all())->toBe(['printed.pdf', 'issued.pdf'])
+        ->and($referenceFiles->pluck('sale.status')->all())->toBe(['ticket-printed', 'ticket-issued'])
+        ->and($issuedRow['grouped_tickets'])->toBeEmpty()
+        ->and($issuedRow['printed_tickets'][0]['group_by_id'])->toBe($referenceSale->id);
+
+    $user = User::factory()->create();
+    $user->givePermissionTo([
+        Permission::findOrCreate('sales.view', 'web'),
+        Permission::findOrCreate('sales.verify', 'web'),
+        Permission::findOrCreate('sales.status.ticket-issued', 'web'),
+        Permission::findOrCreate('sales.status.ticket-printed', 'web'),
+    ]);
+
+    $page = $this->actingAs($user)
+        ->get(route('sales.index', 'ticket-issued'))
+        ->assertOk();
+
+    expect(str_contains($page->getContent(), 'Issue Tickets'))->toBeTrue();
+
+    $this->get(route('sales.index', 'ticket-printed'))
+        ->assertOk();
+});
+
+it('shows all group sales in the ticket printed list', function () {
+    $ship = Ship::create(['name' => 'Group Ship', 'status' => 1]);
+    $company = Company::create(['name' => 'Group Company', 'status' => 1]);
+    $mainSale = salesDataTableSale($ship, $company, 'ticket-printed');
+    $referenceSale = salesDataTableSale($ship, $company, 'ticket-issued');
+
+    PrintedTicket::create([
+        'sales_id' => $mainSale->id,
+        'filename' => 'main.pdf',
+        'group_by_id' => $mainSale->id,
+    ]);
+    PrintedTicket::create([
+        'sales_id' => $referenceSale->id,
+        'filename' => 'reference.pdf',
+        'group_by_id' => $mainSale->id,
+    ]);
+
+    $response = app(SalesDataTableService::class)->response(
+        new Request(['start' => 0, 'length' => 20]),
+        'ticket-printed'
+    )->getData(true);
+
+    expect(collect($response['data'])->pluck('id')->all())
+        ->toContain($mainSale->id, $referenceSale->id)
+        ->and($response['recordsTotal'])->toBe(2);
+});
+
+it('shows all group sales in the parcel list', function () {
+    $ship = Ship::create(['name' => 'Group Ship', 'status' => 1]);
+    $company = Company::create(['name' => 'Group Company', 'status' => 1]);
+    $mainSale = salesDataTableSale($ship, $company, 'shipment_id_entered');
+    $referenceSale = salesDataTableSale($ship, $company, 'ticket-issued');
+
+    PrintedTicket::create([
+        'sales_id' => $mainSale->id,
+        'filename' => 'main.pdf',
+        'group_by_id' => $mainSale->id,
+    ]);
+    PrintedTicket::create([
+        'sales_id' => $referenceSale->id,
+        'filename' => 'reference.pdf',
+        'group_by_id' => $mainSale->id,
+    ]);
+
+    $response = app(SalesDataTableService::class)->response(
+        new Request(['start' => 0, 'length' => 20]),
+        'shipment_id_entered'
+    )->getData(true);
+
+    expect(collect($response['data'])->pluck('id')->all())
+        ->toContain($mainSale->id, $referenceSale->id)
+        ->and($response['recordsTotal'])->toBe(2);
+});
+
+it('shows every member of an office collection group in the collected list', function () {
+    $ship = Ship::create(['name' => 'Group Ship', 'status' => 1]);
+    $company = Company::create(['name' => 'Group Company', 'status' => 1]);
+    $mainSale = salesDataTableSale($ship, $company, 'collect_from_office');
+    $referenceSale = salesDataTableSale($ship, $company, 'ticket-printed');
+    $mainSale->update(['collect_from_office' => true]);
+    $referenceSale->update(['collect_from_office' => true]);
+
+    PrintedTicket::create([
+        'sales_id' => $mainSale->id,
+        'filename' => 'office-main.pdf',
+        'group_by_id' => $mainSale->id,
+    ]);
+    PrintedTicket::create([
+        'sales_id' => $referenceSale->id,
+        'filename' => 'office-reference.pdf',
+        'group_by_id' => $mainSale->id,
+    ]);
+
+    $response = app(SalesDataTableService::class)->response(
+        new Request(['start' => 0, 'length' => 20]),
+        'collect_from_office'
+    )->getData(true);
+
+    expect(collect($response['data'])->pluck('id')->all())
+        ->toContain($mainSale->id, $referenceSale->id)
+        ->and($response['recordsTotal'])->toBe(2);
+});
+
+function salesDataTableSale(Ship $ship, Company $company, string $status): ShipTicketSale
+{
+    return ShipTicketSale::create([
+        'customer_name' => 'Grouped Customer',
+        'customer_mobile' => '01712345678',
+        'sales_source' => 'Direct',
+        'ship_id' => $ship->id,
+        'company_id' => $company->id,
+        'journey_date' => '2026-10-01',
+        'ticket_fee' => 500,
+        'received_amount' => 500,
+        'due_amount' => 0,
+        'issued_date' => '2026-09-26',
+        'number_of_ticket' => 1,
+        'status' => $status,
+    ]);
+}

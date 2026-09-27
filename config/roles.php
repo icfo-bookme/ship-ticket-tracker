@@ -34,6 +34,7 @@ return [
         // Keep in sync with the `statuses` list in config/sales.php.
         'sales.status.pending', 'sales.status.payment-verified', 'sales.status.ticket-issued',
         'sales.status.ticket-printed', 'sales.status.shipment_id_entered', 'sales.status.shipped',
+        'sales.status.collect_from_office',
         'sales.status.partial-refunded', 'sales.status.refunded',
 
         // Refunds module
@@ -68,6 +69,7 @@ return [
             'sales.view', 'sales.create', 'sales.edit', 'sales.delete', 'sales.verify',
             'sales.status.pending', 'sales.status.payment-verified', 'sales.status.ticket-issued',
             'sales.status.ticket-printed', 'sales.status.shipment_id_entered', 'sales.status.shipped',
+            'sales.status.collect_from_office',
             'sales.status.partial-refunded', 'sales.status.refunded',
             'refunds.view', 'refunds.manage',
             'ships.manage', 'companies.manage', 'packages.manage',

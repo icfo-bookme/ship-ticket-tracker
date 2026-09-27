@@ -124,9 +124,8 @@ class SalesReportService
 
         if (! empty($filters['payment_method'])) {
             $paymentMethod = $filters['payment_method'];
-            $query->where(function ($q) use ($paymentMethod, $prefix): void {
-                $q->where($prefix.'payment_method', $paymentMethod)
-                    ->orWhereHas('payments', fn ($sub) => $sub->where('payment_method', $paymentMethod));
+            $query->where(function ($q) use ($paymentMethod): void {
+                $q->whereHas('payments', fn ($sub) => $sub->where('payment_method', $paymentMethod));
             });
         }
     }
@@ -140,12 +139,12 @@ class SalesReportService
                 ->orWhere('nid', 'like', "%{$searchValue}%")
                 ->orWhere('sales_source', 'like', "%{$searchValue}%")
                 ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
-                ->orWhere('payment_method', 'like', "%{$searchValue}%")
+                ->orWhereHas('payments', fn ($payments) => $payments->where('payment_method', 'like', "%{$searchValue}%"))
                 ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
                 ->orWhere('received_amount', 'like', "%{$searchValue}%")
                 ->orWhere('due_amount', 'like', "%{$searchValue}%")
                 ->orWhere('sold_by', 'like', "%{$searchValue}%")
-                ->orWhere('ticket_category', 'like', "%{$searchValue}%")
+                ->orWhereHas('categories.package', fn ($packages) => $packages->where('name', 'like', "%{$searchValue}%"))
                 ->orWhere('status', 'like', "%{$searchValue}%")
                 ->orWhereDate('journey_date', $searchValue)
                 ->orWhereDate('return_date', $searchValue)
@@ -208,7 +207,7 @@ class SalesReportService
             'due_amount' => $sale->due_amount,
             'refunded_number_of_tickets' => $refundedTickets,
             'status' => $sale->status,
-            'payment_method' => $sale->payment_method ?: ($sale->payments->first()->payment_method ?? null),
+            'payment_method' => $sale->payments->first()->payment_method ?? null,
             'created_at' => $sale->created_at,
             'refund_status' => $refundStatus,
             'refunded_tickets' => $refundedTickets,

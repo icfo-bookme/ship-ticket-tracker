@@ -44,7 +44,6 @@ function saleWithProofPayment(Ship $ship, Company $company): ShipTicketSale
 
     Payment::create([
         'sales_id' => $sale->id,
-        'payment_method' => 'Bkash',
         'received_amount' => 200,
         'transaction_id' => 'TRX-KEEP-1',
         'payment_datetime' => '2026-09-23 10:00:00',
@@ -75,7 +74,6 @@ function proofSalePayload(Ship $ship, Company $company, User $user, array $overr
         'received_amount' => 500,
         'due_amount' => 0,
         'number_of_ticket' => 1,
-        'ticket_category' => null,
         'bftn_status' => null,
         'company_id' => $company->id,
         'issued_date' => '2026-09-23',

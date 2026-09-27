@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ShipTicketSale extends Model
 {
@@ -30,7 +31,6 @@ class ShipTicketSale extends Model
         'journey_date',
         'return_date',
         'ticket_fee',
-        'payment_method',
         'received_amount',
         'due_amount',
         'bftn_status',
@@ -40,13 +40,13 @@ class ShipTicketSale extends Model
         'nid',
         'email',
         'number_of_ticket',
-        'ticket_category',
         'status',
         'date_of_birth',
         'other_fee',
         'discount_amount',
         'total_payable',
         'address',
+        'collect_from_office',
         'remark1',
         'remark2',
     ];
@@ -62,6 +62,7 @@ class ShipTicketSale extends Model
         'received_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
+        'collect_from_office' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -141,6 +142,11 @@ class ShipTicketSale extends Model
     public function verifyby()
     {
         return $this->hasMany(VerifyTracker::class, 'ticket_id', 'id');
+    }
+
+    public function ticketIssueViews(): HasMany
+    {
+        return $this->hasMany(TicketIssueView::class, 'sales_id');
     }
 
     public function payments()

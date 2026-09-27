@@ -9,7 +9,6 @@ class Category extends Model
 {
     use HasFactory;
 
-
     protected $table = 'categories';
 
     protected $primaryKey = 'id';
@@ -21,7 +20,6 @@ class Category extends Model
         'type',
     ];
 
-
     public $timestamps = true;
 
     public function ticket()
@@ -31,6 +29,6 @@ class Category extends Model
 
     public function package()
     {
-        return $this->belongsTo(Package::class);
+        return $this->belongsTo(ShipPackage::class, 'package_id');
     }
 }

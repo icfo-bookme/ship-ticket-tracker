@@ -56,7 +56,6 @@ function discountSalePayload(Ship $ship, Company $company, User $user, array $ov
         'received_amount' => 400,
         'due_amount' => 120,
         'number_of_ticket' => 1,
-        'ticket_category' => null,
         'bftn_status' => null,
         'company_id' => $company->id,
         'issued_date' => '2026-09-23',

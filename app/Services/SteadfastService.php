@@ -3,11 +3,14 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 class SteadfastService
 {
     protected $apiKey;
+
     protected $secretKey;
+
     protected $baseUrl;
 
     public function __construct()
@@ -30,18 +33,33 @@ class SteadfastService
     public function bulkCreate(array $data)
     {
         $response = Http::withHeaders($this->headers())
-            ->post($this->baseUrl . '/create_order/bulk-order', [
-                'data' => json_encode($data)
+            ->post($this->baseUrl.'/create_order/bulk-order', [
+                'data' => json_encode($data, JSON_THROW_ON_ERROR),
             ]);
 
-        return $response->json();
+        if (! $response->successful()) {
+            throw new RuntimeException('Steadfast bulk create failed with HTTP '.$response->status().'.');
+        }
+
+        return $response->json() ?? [];
     }
 
-    public function statusCheck($id)
+    public function statusByInvoice(string $invoice): array
     {
         $response = Http::withHeaders($this->headers())
-            ->get($this->baseUrl . '/status_by_cid/{$id}');
+            ->get($this->baseUrl.'/status_by_invoice/'.urlencode($invoice));
 
-        return $response->json();
+        return [
+            'http_status' => $response->status(),
+            'body' => $response->json() ?? [],
+        ];
+    }
+
+    public function statusCheck(int|string $id): array
+    {
+        $response = Http::withHeaders($this->headers())
+            ->get($this->baseUrl.'/status_by_cid/'.$id);
+
+        return $response->json() ?? [];
     }
 }

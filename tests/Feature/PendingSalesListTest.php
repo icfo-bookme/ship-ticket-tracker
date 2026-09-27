@@ -36,7 +36,6 @@ beforeEach(function () {
 
     Payment::create([
         'sales_id' => $this->sale->id,
-        'payment_method' => 'Bkash',
         'received_amount' => 300,
         'paid_date' => now()->toDateString(),
         'transaction_id' => 'TRX-99887766',

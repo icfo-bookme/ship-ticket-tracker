@@ -2,7 +2,10 @@
 
 namespace App\Services\Sales;
 
+use App\Enums\SaleStatus;
+use App\Models\PrintedTicket;
 use App\Models\ShipTicketSale;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,11 +22,11 @@ class SalesDataTableService
             'payments',
             'PrintStatus',
             'printedTickets',
-            'groupedTickets',
+            'groupedTickets.sale:id,status',
             'verifyby.verifiedByUser',
-        ])
-            ->withCount('printedTickets')
-            ->where('status', $status);
+        ])->withCount('printedTickets');
+
+        $this->applyStatusVisibility($query, $status);
 
         $this->applyFilters($query, $request);
         $this->applySearch($query, (string) $request->input('search.value', ''));
@@ -35,12 +38,49 @@ class SalesDataTableService
             ->take((int) $request->input('length', 10))
             ->get();
 
+        $recordsTotalQuery = ShipTicketSale::query();
+        $this->applyStatusVisibility($recordsTotalQuery, $status);
+
         return response()->json([
             'draw' => $request->input('draw'),
-            'recordsTotal' => ShipTicketSale::where('status', $status)->count(),
+            'recordsTotal' => $recordsTotalQuery->count(),
             'recordsFiltered' => $filteredRecords,
             'data' => $sales,
         ]);
+    }
+
+    private function applyStatusVisibility(Builder $query, string $status): void
+    {
+        $groupStatuses = [
+            SaleStatus::TicketIssued->value,
+            SaleStatus::TicketPrinted->value,
+            SaleStatus::ShipmentIdEntered->value,
+            SaleStatus::Shipped->value,
+            SaleStatus::CollectFromOffice->value,
+        ];
+
+        if (! in_array($status, $groupStatuses, true)) {
+            $query->where('status', $status);
+
+            return;
+        }
+
+        $groupsWithStatusSales = PrintedTicket::query()
+            ->select('group_by_id')
+            ->whereNotNull('group_by_id')
+            ->whereIn('sales_id', ShipTicketSale::query()
+                ->select('id')
+                ->where('status', $status))
+            ->distinct();
+
+        $saleIdsInVisibleGroups = PrintedTicket::query()
+            ->select('sales_id')
+            ->whereIn('group_by_id', $groupsWithStatusSales);
+
+        $query->where(function (Builder $visibleSales) use ($status, $saleIdsInVisibleGroups): void {
+            $visibleSales->where('status', $status)
+                ->orWhereIn('id', $saleIdsInVisibleGroups);
+        });
     }
 
     private function applyFilters($query, Request $request): void
@@ -72,12 +112,12 @@ class SalesDataTableService
                 ->orWhere('sales_source', 'like', "%{$searchValue}%")
                 ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
                 ->orWhere('discount_amount', 'like', "%{$searchValue}%")
-                ->orWhere('payment_method', 'like', "%{$searchValue}%")
+                ->orWhereHas('payments', fn ($payments) => $payments->where('payment_method', 'like', "%{$searchValue}%"))
                 ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
                 ->orWhere('received_amount', 'like', "%{$searchValue}%")
                 ->orWhere('due_amount', 'like', "%{$searchValue}%")
                 ->orWhere('sold_by', 'like', "%{$searchValue}%")
-                ->orWhere('ticket_category', 'like', "%{$searchValue}%")
+                ->orWhereHas('categories.package', fn ($packages) => $packages->where('name', 'like', "%{$searchValue}%"))
                 ->orWhere('status', 'like', "%{$searchValue}%")
                 ->orWhereDate('journey_date', $searchValue)
                 ->orWhereDate('return_date', $searchValue)

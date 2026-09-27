@@ -31,7 +31,6 @@ class StorePublicShipTicketSaleRequest extends FormRequest
             'ticket_fee' => 'required|numeric',
             'received_amount' => 'required|numeric',
             'number_of_ticket' => 'required|numeric',
-            'ticket_category' => 'nullable|string|max:255',
             'due_amount' => 'nullable|numeric',
             'bftn_status' => 'nullable',
             'company_id' => 'nullable|string|max:100',

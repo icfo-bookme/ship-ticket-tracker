@@ -39,6 +39,8 @@ class RefundController extends Controller
         $query = ShipTicketSale::with([
             'ships',
             'companies',
+            'payments',
+            'categories.package',
         ])
             ->whereNotIn('status', [
                 SaleStatus::Pending->value,
@@ -72,12 +74,12 @@ class RefundController extends Controller
                     ->orWhere('nid', 'like', "%{$searchValue}%")
                     ->orWhere('sales_source', 'like', "%{$searchValue}%")
                     ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
-                    ->orWhere('payment_method', 'like', "%{$searchValue}%")
+                    ->orWhereHas('payments', fn ($payments) => $payments->where('payment_method', 'like', "%{$searchValue}%"))
                     ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
                     ->orWhere('received_amount', 'like', "%{$searchValue}%")
                     ->orWhere('due_amount', 'like', "%{$searchValue}%")
                     ->orWhere('sold_by', 'like', "%{$searchValue}%")
-                    ->orWhere('ticket_category', 'like', "%{$searchValue}%")
+                    ->orWhereHas('categories.package', fn ($packages) => $packages->where('name', 'like', "%{$searchValue}%"))
                     ->orWhere('status', 'like', "%{$searchValue}%")
 
                     // Date fields (search by formatted date or raw value)
@@ -107,7 +109,8 @@ class RefundController extends Controller
 
         $sales = $query->skip($start)
             ->take($length)
-            ->get();
+            ->get()
+            ->each(fn (ShipTicketSale $sale) => $this->appendPaymentAndCategoryLabels($sale));
 
         return response()->json([
             'draw' => $request->input('draw'),
@@ -137,7 +140,7 @@ class RefundController extends Controller
             $length = $request->input('length', 10);
             $searchValue = $request->input('search.value', '');
 
-            $query = ShipTicketSale::with(['ships', 'companies', 'refund'])
+            $query = ShipTicketSale::with(['ships', 'companies', 'refund', 'payments', 'categories.package'])
                 ->whereIn('status', [
                     SaleStatus::Refunded->value,
                     SaleStatus::PartialRefunded->value,
@@ -163,12 +166,12 @@ class RefundController extends Controller
                         ->orWhere('nid', 'like', "%{$searchValue}%")
                         ->orWhere('sales_source', 'like', "%{$searchValue}%")
                         ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
-                        ->orWhere('payment_method', 'like', "%{$searchValue}%")
+                        ->orWhereHas('payments', fn ($payments) => $payments->where('payment_method', 'like', "%{$searchValue}%"))
                         ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
                         ->orWhere('received_amount', 'like', "%{$searchValue}%")
                         ->orWhere('due_amount', 'like', "%{$searchValue}%")
                         ->orWhere('sold_by', 'like', "%{$searchValue}%")
-                        ->orWhere('ticket_category', 'like', "%{$searchValue}%")
+                        ->orWhereHas('categories.package', fn ($packages) => $packages->where('name', 'like', "%{$searchValue}%"))
                         ->orWhere('status', 'like', "%{$searchValue}%")
                         ->orWhereDate('journey_date', $searchValue)
                         ->orWhere('journey_date', 'like', "%{$searchValue}%")
@@ -190,7 +193,8 @@ class RefundController extends Controller
 
             $sales = $query->skip($start)
                 ->take($length)
-                ->get();
+                ->get()
+                ->each(fn (ShipTicketSale $sale) => $this->appendPaymentAndCategoryLabels($sale));
 
             // Calculate totals
             $totalRefundedTickets = 0;
@@ -298,5 +302,15 @@ class RefundController extends Controller
         $refund->delete();
 
         return response()->json(['message' => 'Refund deleted successfully']);
+    }
+
+    private function appendPaymentAndCategoryLabels(ShipTicketSale $sale): void
+    {
+        $sale->setAttribute('payment_method', $sale->payments->first()->payment_method ?? null);
+        $sale->setAttribute('ticket_category', $sale->categories
+            ->map(fn ($category) => $category->package?->name)
+            ->filter()
+            ->unique()
+            ->implode(', '));
     }
 }

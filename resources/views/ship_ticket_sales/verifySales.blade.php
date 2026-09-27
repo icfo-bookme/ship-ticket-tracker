@@ -2,16 +2,16 @@
     async function varifySale(btn, getList) {
         const saleId = btn.dataset.id;
         const status = btn.dataset.status;
-        console.log(status);
+        const isOfficeCollection = status === 'collect_from_office';
 
         const isConfirmed = await Swal.fire({
-            title: 'Are you sure?',
-            text: "You want to verify this!",
+            title: isOfficeCollection ? 'Mark as collected?' : 'Are you sure?',
+            text: isOfficeCollection ? 'Confirm that the customer collected the ticket from the office.' : 'You want to verify this!',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, Verify it!',
+            confirmButtonText: isOfficeCollection ? 'Yes, Collected' : 'Yes, Verify it!',
             customClass: {
                 confirmButton: 'bg-blue-950 text-white',
                 cancelButton: 'bg-red-500 text-white'
@@ -33,8 +33,8 @@
                 const result = await response.json();
                 if (result.success) {
                     Swal.fire({
-                        title: 'Verified!',
-                        text: 'Sale has been successfully Verified.',
+                        title: isOfficeCollection ? 'Collected!' : 'Verified!',
+                        text: isOfficeCollection ? 'Ticket marked as collected from office.' : 'Sale has been successfully Verified.',
                         icon: 'success',
                         confirmButtonText: 'OK',
                         customClass: {
@@ -46,7 +46,7 @@
                 } else {
                     Swal.fire({
                         title: 'Error!',
-                        text: 'Failed to delete sale. Please try again later.',
+                        text: result.message || 'Could not update the sale status.',
                         icon: 'error',
                         confirmButtonText: 'OK',
                         customClass: {
@@ -55,10 +55,10 @@
                     });
                 }
             } catch (error) {
-                console.error('Error deleting sale:', error);
+                console.error('Error updating sale status:', error);
                 Swal.fire({
                     title: 'Error!',
-                    text: 'An error occurred while deleting the sale.',
+                    text: 'An error occurred while updating the sale status.',
                     icon: 'error',
                     confirmButtonText: 'OK',
                     customClass: {

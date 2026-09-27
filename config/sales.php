@@ -23,6 +23,7 @@ return [
         SaleStatus::TicketPrinted->value => SaleStatus::TicketPrinted->label(),
         SaleStatus::ShipmentIdEntered->value => SaleStatus::ShipmentIdEntered->label(),
         SaleStatus::Shipped->value => SaleStatus::Shipped->label(),
+        SaleStatus::CollectFromOffice->value => SaleStatus::CollectFromOffice->label(),
         SaleStatus::PartialRefunded->value => SaleStatus::PartialRefunded->label(),
         SaleStatus::Refunded->value => SaleStatus::Refunded->label(),
     ],
@@ -44,5 +45,6 @@ return [
         SaleStatus::TicketPrinted->value,
         SaleStatus::ShipmentIdEntered->value,
         SaleStatus::Shipped->value,
+        SaleStatus::CollectFromOffice->value,
     ],
 ];

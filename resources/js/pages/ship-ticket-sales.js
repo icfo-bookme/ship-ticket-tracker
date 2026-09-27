@@ -97,7 +97,6 @@ class TicketSalesSystem {
             REQUIRED_FIELDS: [
                 { name: "customer_name", label: "Customer Name" },
                 { name: "customer_mobile", label: "Mobile Number" },
-                { name: "address", label: "Address" },
                 { name: "sales_source", label: "Sales Source" },
                 { name: "ship_id", label: "Ship Name" },
                 { name: "ticket_fee", label: "Total Ticket Value" },
@@ -116,6 +115,7 @@ class TicketSalesSystem {
             this.setupMainActionListeners();
             this.setupShipAndJourneyListeners();
             this.setupMobileAndWhatsAppListeners();
+            this.setupOfficeCollectionToggle();
             this.initializeComponents();
             this.setupDraftPersistence();
         } catch (error) {
@@ -132,9 +132,32 @@ class TicketSalesSystem {
     }
 
     setupFormValidationListeners() {
-        document.querySelectorAll("input, select").forEach((field) => {
+        document.querySelectorAll("input, select, textarea").forEach((field) => {
             field.addEventListener("input", () => this.clearFieldError(field));
         });
+    }
+
+    setupOfficeCollectionToggle() {
+        const checkbox = document.getElementById('collect_from_office');
+        const addressWrapper = document.getElementById('addressFieldWrapper');
+        const address = document.getElementById('address');
+
+        if (!checkbox || !addressWrapper || !address) {
+            return;
+        }
+
+        const updateAddressVisibility = (clearAddress = false) => {
+            addressWrapper.classList.toggle('hidden', checkbox.checked);
+            address.required = !checkbox.checked;
+
+            if (checkbox.checked && clearAddress) {
+                address.value = '';
+                this.clearFieldError(address);
+            }
+        };
+
+        checkbox.addEventListener('change', () => updateAddressVisibility(true));
+        updateAddressVisibility();
     }
 
     setupMainActionListeners() {
@@ -778,6 +801,8 @@ class TicketSalesSystem {
         let isValid = true;
         let firstErrorField = null;
 
+        const collectFromOffice = this.getElement('#collect_from_office')?.checked ?? false;
+
         this.constants.REQUIRED_FIELDS.forEach(({ name, label }) => {
             const field = this.getElement(`[name="${name}"]`);
             const value = field?.value?.toString().trim() || '';
@@ -788,6 +813,15 @@ class TicketSalesSystem {
                 if (!firstErrorField) firstErrorField = field;
             }
         });
+
+        if (!collectFromOffice) {
+            const address = this.getElement('#address');
+            if (!address?.value?.trim()) {
+                this.showFieldError(address, 'Address is required');
+                isValid = false;
+                firstErrorField ??= address;
+            }
+        }
 
         return { isValid, firstErrorField };
     }

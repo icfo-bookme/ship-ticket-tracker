@@ -133,7 +133,7 @@
 
         window.dataTableCreatedRows = window.dataTableCreatedRows || {};
         window.dataTableCreatedRows['salesTable'] = (row, sale) => {
-            if (!sale.received_status) {
+            if (sale.bftn_status === 'yes' && !sale.bftn_received) {
                 row.classList.add('bg-amber-300');
                 row.querySelectorAll('td').forEach((cell) => {
                     cell.classList.add('!bg-amber-300');
@@ -280,7 +280,7 @@
             @endcan
 
             @can('sales.verify')
-                const bftnReceivedButton = sale.received_status
+                const bftnReceivedButton = sale.bftn_received
                     ? ""
                     : `<button class="bg-green-600 text-white px-2 py-1 rounded bftnReceivedBtn"
                         data-id="${sale.id}" title="Mark BFTN as received">BFTN Received</button>`;
@@ -329,7 +329,14 @@
 
             if (@js($status) === @js($ticketIssuedStatus)) {
                 return printedFiles.length
-                    ? statusButton(sale.id, @js($ticketPrintedStatus), "Ticket Printed", "Sync group to its furthest status")
+                    ? statusButton(
+                        sale.id,
+                        @js($ticketPrintedStatus),
+                        "Ticket Printed",
+                        isBftnPending(sale) ? "BFTN must be received before printing the ticket" : "Sync group to its furthest status",
+                        "verifyBtn",
+                        isBftnPending(sale),
+                    )
                         + printedFileRows(sale, printedFiles)
                     : referenceBy(sale);
             }
@@ -342,7 +349,14 @@
 
             if (sale.status === @js($ticketIssuedStatus)) {
                 return printedFiles.length
-                    ? statusButton(sale.id, @js($ticketPrintedStatus), "Ticket Printed", `Ticket Issued by: ${verifiedBy}`)
+                    ? statusButton(
+                        sale.id,
+                        @js($ticketPrintedStatus),
+                        "Ticket Printed",
+                        isBftnPending(sale) ? "BFTN must be received before printing the ticket" : `Ticket Issued by: ${verifiedBy}`,
+                        "verifyBtn",
+                        isBftnPending(sale),
+                    )
                         + printedFileRows(sale, printedFiles)
                     : referenceBy(sale);
             }
@@ -379,9 +393,17 @@
             return "";
         }
 
-        function statusButton(id, statusValue, label, title, className = "verifyBtn") {
-            return `<button class="bg-red-500 text-white px-2 py-1 rounded ${className}"
-                data-id="${id}" data-status="${statusValue}" title="${title}">${label}</button>`;
+        function isBftnPending(sale) {
+            return sale.bftn_status === "yes" && !sale.bftn_received;
+        }
+
+        function statusButton(id, statusValue, label, title, className = "verifyBtn", disabled = false) {
+            const buttonClass = disabled
+                ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                : "bg-red-500 text-white";
+
+            return `<button class="${buttonClass} px-2 py-1 rounded ${className}"
+                data-id="${id}" data-status="${statusValue}" title="${title}"${disabled ? " disabled" : ""}>${label}</button>`;
         }
 
         function printedFileRows(sale, files) {

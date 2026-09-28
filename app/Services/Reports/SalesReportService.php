@@ -18,7 +18,7 @@ class SalesReportService
         $orderColumn = (int) $request->input('order.0.column', 0);
         $orderDirection = $request->input('order.0.dir', 'asc');
 
-        $query = ShipTicketSale::with(['ships', 'companies', 'refunds', 'payments'])
+        $query = ShipTicketSale::with(['ships', 'companies', 'refunds', 'payments', 'bftn'])
             ->where('status', '!=', SaleStatus::Pending->value);
 
         $this->applyFilters($query, $filters);
@@ -200,11 +200,11 @@ class SalesReportService
             COALESCE(SUM(ship_ticket_sales.received_amount), 0) AS total_received_amount,
             COALESCE(SUM(ship_ticket_sales.due_amount), 0) AS total_due_amount,
             COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" THEN 1 ELSE 0 END), 0) AS total_bftn,
-            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND ship_ticket_sales.received_status = 0 THEN 1 ELSE 0 END), 0) AS total_bftn_pending,
-            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND ship_ticket_sales.received_status = 1 THEN 1 ELSE 0 END), 0) AS total_bftn_received,
+            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND COALESCE((SELECT received_status FROM bftn WHERE bftn.sales_id = ship_ticket_sales.id LIMIT 1), 0) = 0 THEN 1 ELSE 0 END), 0) AS total_bftn_pending,
+            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND COALESCE((SELECT received_status FROM bftn WHERE bftn.sales_id = ship_ticket_sales.id LIMIT 1), 0) = 1 THEN 1 ELSE 0 END), 0) AS total_bftn_received,
             COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" THEN ship_ticket_sales.received_amount ELSE 0 END), 0) AS total_bftn_amount,
-            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND ship_ticket_sales.received_status = 0 THEN ship_ticket_sales.received_amount ELSE 0 END), 0) AS total_bftn_pending_amount,
-            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND ship_ticket_sales.received_status = 1 THEN ship_ticket_sales.received_amount ELSE 0 END), 0) AS total_bftn_received_amount,
+            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND COALESCE((SELECT received_status FROM bftn WHERE bftn.sales_id = ship_ticket_sales.id LIMIT 1), 0) = 0 THEN ship_ticket_sales.received_amount ELSE 0 END), 0) AS total_bftn_pending_amount,
+            COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND COALESCE((SELECT received_status FROM bftn WHERE bftn.sales_id = ship_ticket_sales.id LIMIT 1), 0) = 1 THEN ship_ticket_sales.received_amount ELSE 0 END), 0) AS total_bftn_received_amount,
             COALESCE(SUM((SELECT COALESCE(SUM(refunded_number_of_tickets), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_refunded_tickets,
             COALESCE(SUM((SELECT COALESCE(SUM(refunded_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_refunded_amount,
             COALESCE(SUM((SELECT COALESCE(SUM(gross_refund_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_gross_refund_amount,
@@ -253,7 +253,7 @@ class SalesReportService
             'partner_share_amount' => (float) $completedRefunds->sum('partner_share_amount'),
             'company_retained_amount' => (float) $completedRefunds->sum('company_retained_amount'),
             'bftn_status' => $sale->bftn_status,
-            'bftn_received' => $sale->bftn_status === 'yes' && (bool) $sale->received_status,
+            'bftn_received' => $sale->bftn_status === 'yes' && (bool) $sale->bftn?->received_status,
             'bftn_amount' => $sale->bftn_status === 'yes' ? (float) $sale->received_amount : 0,
             'net_cash' => (float) $sale->received_amount - (float) $completedRefunds->sum('customer_refund_amount'),
         ];

@@ -16,6 +16,11 @@ class Bftn extends Model
     protected $fillable = [
         'sales_id',
         'bftn_date_time',
+        'received_status',
+    ];
+
+    protected $casts = [
+        'received_status' => 'boolean',
     ];
 
     public $timestamps = true;

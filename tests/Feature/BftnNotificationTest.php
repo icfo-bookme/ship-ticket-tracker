@@ -93,5 +93,5 @@ it('marks a sale bftn as received', function () {
         ->assertOk()
         ->assertJsonPath('success', true);
 
-    expect($sale->fresh()->received_status)->toBeTrue();
+    expect($sale->bftn()->first()->received_status)->toBeTrue();
 });

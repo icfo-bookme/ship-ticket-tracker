@@ -21,6 +21,7 @@ class SalesDataTableService
             'shipment',
             'payments',
             'refunds',
+            'bftn',
             'PrintStatus',
             'printedTickets',
             'groupedTickets.sale:id,status',
@@ -39,6 +40,13 @@ class SalesDataTableService
             ->skip((int) $request->input('start', 0))
             ->take((int) $request->input('length', 10))
             ->get();
+
+        $sales->each(function (ShipTicketSale $sale): void {
+            $sale->setAttribute(
+                'bftn_received',
+                $sale->bftn_status === 'yes' && (bool) $sale->bftn?->received_status
+            );
+        });
 
         $recordsTotalQuery = ShipTicketSale::query();
         $this->applyStatusVisibility($recordsTotalQuery, $status);

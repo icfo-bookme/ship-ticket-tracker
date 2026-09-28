@@ -34,7 +34,6 @@ class ShipTicketSale extends Model
         'received_amount',
         'due_amount',
         'bftn_status',
-        'received_status',
         'company_id',
         'issued_date',
         'sold_by',
@@ -64,7 +63,6 @@ class ShipTicketSale extends Model
         'due_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'collect_from_office' => 'boolean',
-        'received_status' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -169,6 +167,11 @@ class ShipTicketSale extends Model
     public function shipment()
     {
         return $this->hasOne(Shipment::class, 'ticket_id', 'id');
+    }
+
+    public function bftn()
+    {
+        return $this->hasOne(Bftn::class, 'sales_id', 'id');
     }
 
     public function printStatus()

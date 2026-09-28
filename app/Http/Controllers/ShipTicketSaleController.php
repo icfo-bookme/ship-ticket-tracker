@@ -423,7 +423,10 @@ class ShipTicketSaleController extends Controller
     public function markBftnReceived(int $id)
     {
         $sale = ShipTicketSale::findOrFail($id);
-        $sale->update(['received_status' => true]);
+        $sale->bftn()->updateOrCreate(
+            ['sales_id' => $sale->id],
+            ['received_status' => true]
+        );
 
         return response()->json([
             'success' => true,

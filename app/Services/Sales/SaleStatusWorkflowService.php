@@ -215,19 +215,26 @@ class SaleStatusWorkflowService
     {
         $tickets = $this->groupedTickets($sale->id);
         $saleIds = $tickets->pluck('sales_id')->push($sale->id)->unique();
-        $updated = DB::transaction(function () use ($saleIds): bool {
+        $blockedSales = DB::transaction(function () use ($saleIds): ?array {
             $sales = ShipTicketSale::query()
                 ->whereIn('id', $saleIds)
                 ->lockForUpdate()
                 ->get();
 
-            if ($sales->contains(fn (ShipTicketSale $groupSale): bool => ! $groupSale->collect_from_office
+            $blockedSales = $sales->filter(fn (ShipTicketSale $groupSale): bool => ! $groupSale->collect_from_office
                 || ! in_array($groupSale->status, [
                     SaleStatus::TicketPrinted->value,
                     SaleStatus::CollectFromOffice->value,
-                ], true)
-            )) {
-                return false;
+                ], true))->map(function (ShipTicketSale $groupSale): array {
+                    return [
+                        'id' => $groupSale->id,
+                        'status' => SaleStatus::tryFrom((string) $groupSale->status)?->label() ?? (string) $groupSale->status,
+                        'office_collection' => $groupSale->collect_from_office ? 'Yes' : 'No',
+                    ];
+                })->values()->all();
+
+            if ($blockedSales !== []) {
+                return $blockedSales;
             }
 
             $sales->each(function (ShipTicketSale $groupSale): void {
@@ -239,13 +246,17 @@ class SaleStatusWorkflowService
                 $this->track(SaleStatus::CollectFromOffice->value, $groupSale->id);
             });
 
-            return true;
+            return null;
         });
 
-        if (! $updated) {
+        if ($blockedSales !== null) {
+            $details = collect($blockedSales)
+                ->map(fn (array $blockedSale): string => "Sale ID {$blockedSale['id']} (Status: {$blockedSale['status']}, Collect from Office: {$blockedSale['office_collection']})")
+                ->implode('; ');
+
             return [
                 'success' => false,
-                'message' => 'Every sale in this group must be marked for office collection before confirming collection.',
+                'message' => "The following sale(s) are not ready for office collection: {$details}.",
                 'status' => 422,
             ];
         }
@@ -320,9 +331,13 @@ class SaleStatusWorkflowService
             ->unique();
         $sales = ShipTicketSale::query()
             ->whereIn('id', $saleIds)
-            ->get(['id', 'status']);
+            ->get(['id', 'status', 'collect_from_office']);
 
         foreach ($sales as $sale) {
+            if ($sale->collect_from_office) {
+                return "Sale ID {$sale->id} is marked as Collect from Office. Please separate it before creating the parcel.";
+            }
+
             if (in_array($sale->status, $allowedStatuses, true)) {
                 continue;
             }

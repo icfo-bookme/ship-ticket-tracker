@@ -13,12 +13,116 @@ class TicketSalesSystem {
     //  INITIALIZATION 
     init() {
         document.addEventListener("DOMContentLoaded", async () => {
+            window.ticketSaleSaved = document.getElementById('ticketForm')?.dataset.ticketSaleSaved === '1';
             this.clearDraftAfterSuccessfulSubmit();
             this.setupEventListeners();
             await this.restoreDraft();
+            this.setupPageValidations();
             this.calculateAll();
             this.toggleReturnJourneySection();
         });
+    }
+
+    setupPageValidations() {
+        this.setupReturnDateValidation();
+        this.setupDiscountValidation();
+        this.setupBirthDateValidation();
+    }
+
+    setupReturnDateValidation() {
+        const departureDate = document.getElementById('journey_date');
+        const returnDate = document.getElementById('return_date');
+        const today = new Date().toISOString().slice(0, 10);
+
+        const syncMinimum = () => {
+            if (!departureDate || !returnDate) {
+                return;
+            }
+
+            returnDate.min = departureDate.value || today;
+
+            if (returnDate.value && returnDate.value < returnDate.min) {
+                returnDate.value = '';
+            }
+        };
+
+        departureDate?.addEventListener('change', syncMinimum);
+        syncMinimum();
+    }
+
+    setupDiscountValidation() {
+        const form = document.getElementById('ticketForm');
+        const ticketFee = document.getElementById('ticket_fee');
+        const discount = document.getElementById('discount_amount');
+        const error = document.getElementById('discount-error');
+
+        const validate = () => {
+            const ticketValue = Number(ticketFee?.value || 0);
+            const discountValue = Number(discount?.value || 0);
+            const invalid = discountValue > ticketValue;
+
+            discount.max = ticketValue.toFixed(2);
+            discount.setCustomValidity(invalid ? 'Discount Amount cannot exceed Total Ticket Value.' : '');
+            error.textContent = invalid ? 'Discount Amount cannot exceed Total Ticket Value.' : '';
+            error.classList.toggle('hidden', !invalid);
+            discount.classList.toggle('border-red-500', invalid);
+
+            return !invalid;
+        };
+
+        ticketFee?.addEventListener('input', validate);
+        discount?.addEventListener('input', validate);
+        form?.addEventListener('submit', (event) => {
+            if (!validate()) {
+                event.preventDefault();
+                discount.focus();
+            }
+        });
+        validate();
+    }
+
+    setupBirthDateValidation() {
+        const form = document.getElementById('ticketForm');
+        const maximumBirthDate = new Date();
+        maximumBirthDate.setFullYear(maximumBirthDate.getFullYear() - 18);
+        const maximumDate = maximumBirthDate.toISOString().slice(0, 10);
+        const selector = 'input[name="date_of_birth"], input[name^="co_passengers["][name$="][date_of_birth]"]';
+
+        const validate = (input) => {
+            const invalid = input.value !== '' && input.value > maximumDate;
+            input.max = maximumDate;
+            input.setCustomValidity(invalid ? 'Passenger must be at least 18 years old.' : '');
+            input.classList.toggle('border-red-500', invalid);
+
+            let error = input.parentElement.querySelector('.birth-date-error');
+            if (!error && invalid) {
+                error = document.createElement('p');
+                error.className = 'birth-date-error mt-1 text-sm text-red-600';
+                input.parentElement.appendChild(error);
+            }
+
+            if (error) {
+                error.textContent = invalid ? 'Passenger must be at least 18 years old.' : '';
+                error.classList.toggle('hidden', !invalid);
+            }
+
+            return !invalid;
+        };
+
+        form?.addEventListener('input', (event) => {
+            if (event.target.matches(selector)) {
+                validate(event.target);
+            }
+        });
+        form?.addEventListener('submit', (event) => {
+            const valid = [...form.querySelectorAll(selector)].map(validate).every(Boolean);
+
+            if (!valid) {
+                event.preventDefault();
+                form.querySelector('.border-red-500')?.focus();
+            }
+        });
+        form?.querySelectorAll(selector).forEach(validate);
     }
 
     initializeSelectors() {

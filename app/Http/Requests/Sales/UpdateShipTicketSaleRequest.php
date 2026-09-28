@@ -32,7 +32,7 @@ class UpdateShipTicketSaleRequest extends FormRequest
             'number_of_ticket' => 'required|integer|min:1',
             'ticket_fee' => 'required|numeric|min:0',
             'other_fee' => 'nullable|numeric|min:0',
-            'discount_amount' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0|lte:ticket_fee',
             'total_payable' => 'nullable|numeric|min:0',
             'received_amount' => 'nullable|numeric|min:0',
             'due_amount' => 'nullable|numeric',
@@ -62,7 +62,7 @@ class UpdateShipTicketSaleRequest extends FormRequest
             'co_passengers.*.name' => 'nullable|string|max:255',
             'co_passengers.*.nid' => 'nullable|string|max:255',
             'co_passengers.*.co_passernger_number' => 'nullable|string|max:20',
-            'co_passengers.*.date_of_birth' => 'nullable|date',
+            'co_passengers.*.date_of_birth' => 'nullable|date|before_or_equal:'.now()->subYears(18)->toDateString(),
         ];
     }
 }

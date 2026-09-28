@@ -36,7 +36,8 @@
                     { data: 'sale.customer_name', render: (data) => escapeHtml(data || 'N/A') },
                     { data: 'sale.journey_date', render: formatRequestedDate },
                     { data: 'refund_type' },
-                    { data: 'refunded_number_of_tickets' },
+                    { data: 'total_purchase_tickets' },
+                    { data: 'total_refund_tickets' },
                     { data: 'gross_refund_amount' },
                     { data: 'customer_charge_percent' },
                     { data: 'partner_share_percent' },
@@ -158,7 +159,7 @@
 
             <x-data-table id="requestedRefundsTable" :headings="[
                 'Request ID', 'Sale ID', 'Customer', 'Journey Date', 'Type',
-                'Tickets', 'Gross Amount', 'Customer Charge %', 'Partner Share %',
+                'Total Purchase Tickets', 'Total Refund Tickets', 'Gross Amount', 'Customer Charge %', 'Partner Share %',
                 'Customer Refund', 'Partner Share', 'Company Retained', 'Status', 'Action'
             ]" url="/all/refund-requests" :ordering="false" :delegateActions="false" :order="[]" />
         </div>

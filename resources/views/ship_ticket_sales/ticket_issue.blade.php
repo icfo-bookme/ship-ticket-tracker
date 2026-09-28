@@ -300,13 +300,10 @@
                                         <i class="fas fa-ship mr-2 text-blue-600"></i>Departure Packages
                                     </h4>
                                     <div class="space-y-3">
-                                        @foreach ($sale->ships->packages as $package)
+                                        @foreach ($sale->categories->where('type', 'departure')->where('quantity', '>', 0) as $departureCategory)
                                             @php
-                                                $departureCategory = $sale->categories
-                                                    ->where('type', 'departure')
-                                                    ->where('package_id', $package->id)
-                                                    ->first();
-                                                $departureQuantity = $departureCategory ? $departureCategory->quantity : 0;
+                                                $package = $departureCategory->package;
+                                                $departureQuantity = $departureCategory->quantity;
                                             @endphp
                                             <div class="grid grid-cols-2 items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
                                                 <div class="flex items-center">
@@ -330,13 +327,10 @@
                                         <i class="fas fa-undo-alt mr-2 text-blue-600"></i>Return Packages
                                     </h4>
                                     <div class="space-y-3">
-                                        @foreach ($sale->ships->packages as $package)
+                                        @foreach ($sale->categories->where('type', 'return')->where('quantity', '>', 0) as $returnCategory)
                                             @php
-                                                $returnCategory = $sale->categories
-                                                    ->where('type', 'return')
-                                                    ->where('package_id', $package->id)
-                                                    ->first();
-                                                $returnQuantity = $returnCategory ? $returnCategory->quantity : 0;
+                                                $package = $returnCategory->package;
+                                                $returnQuantity = $returnCategory->quantity;
                                             @endphp
                                             <div class="grid grid-cols-2 items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
                                                 <div class="flex items-center">
@@ -395,6 +389,11 @@
                             </div>
                             </div>
                         @endif
+
+                        @php
+                            $extraReceivedAmount = (float) $sale->received_amount
+                                - ((float) $sale->ticket_fee + (float) $sale->other_fee);
+                        @endphp
 
                         <!-- Financial Information -->
                         <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
@@ -522,10 +521,24 @@
                                             class="copyable-field w-full border-red-200 bg-red-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-red-600">
                                     </div>
                                 </div>
+
+                                @if ($extraReceivedAmount > 0)
+                                    <div class="bg-white rounded-lg p-3 shadow-sm border border-amber-200">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <label for="extra_received_amount" class="block text-sm font-semibold text-gray-700">Extra Received Amount</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="text-gray-500 mr-2">৳</span>
+                                            <input type="number" step="0.01" id="extra_received_amount" readonly
+                                                value="{{ number_format($extraReceivedAmount, 2, '.', '') }}"
+                                                class="w-full border-amber-200 bg-amber-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-amber-700">
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
 
                             <!-- Payment Records Section -->
-                            <div class="mt-3">
+                            <div class="mt-3 hidden">
                                 <div class="flex items-center justify-between mb-3">
                                     <h4 class="font-bold text-sm text-gray-800 flex items-center">
                                         <i class="fas fa-credit-card mr-2 text-blue-600"></i>
@@ -676,7 +689,7 @@
                         </div>
 
                         <!-- Sales Information -->
-                        <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
+                        <div class="hidden bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
                             <div class="flex items-center mb-2">
                                 <div class="bg-blue-600 p-2 rounded-lg mr-3">
                                     <i class="fas fa-chart-line text-white text-sm"></i>
@@ -764,6 +777,7 @@
                             </div>
                         </div>
 
+                        @if (filled($sale->remark1) || filled($sale->remark2))
                         <!-- Remarks -->
                         <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
                             <div class="flex items-center mb-2">
@@ -774,6 +788,7 @@
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                @if (filled($sale->remark1))
                                 <div>
                                     <div class="flex items-center justify-between mb-1">
                                         <label for="remark1" class="block text-sm font-semibold text-gray-700">Remark
@@ -787,7 +802,9 @@
                                     <textarea name="remark1" id="remark1" rows="3"
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">{{ old('remark1', $sale->remark1) }}</textarea>
                                 </div>
+                                @endif
 
+                                @if (filled($sale->remark2))
                                 <div>
                                     <div class="flex items-center justify-between mb-1">
                                         <label for="remark2" class="block text-sm font-semibold text-gray-700">Remark
@@ -801,8 +818,10 @@
                                     <textarea name="remark2" id="remark2" rows="3"
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">{{ old('remark2', $sale->remark2) }}</textarea>
                                 </div>
+                                @endif
                             </div>
                         </div>
+                        @endif
 
                         <!-- Co-Passengers -->
                         <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
@@ -1004,7 +1023,7 @@
                         @endif
 
 
-                        @if (($sale->status == 'payment-verified' && $number > 0) || $groupByStatus || $groupingMessage)
+                        @if (($sale->status == 'payment-verified' && $number > 0) || $groupingMessage)
                             <div class="bg-yellow-50 rounded-lg p-3 shadow-sm border border-yellow-200 mt-3">
                                 @if ($sale->status == 'payment-verified' && $number > 0)
                                     <div class="flex items-center mb-2">
@@ -1040,31 +1059,32 @@
                                 @endif
 
                                 @if ($groupingMessage)
-                                    <p class="rounded border border-amber-300 bg-amber-100 px-3 py-2 text-sm text-amber-900">
+                                    <p class="rounded border border-amber-300 bg-amber-100 px-3 py-2 text-sm text-amber-900 @if ($sale->status == 'payment-verified' && $number > 0) mt-3 @endif">
                                         {{ $groupingMessage }}
                                     </p>
                                 @endif
+                            </div>
+                        @endif
 
-                                @if ($groupByStatus)
-                                    <p class="font-bold text-base">Do You Want to group tickets:</p>
-                                    <div class="flex justify-around">
-                                        <div>
-                                            <input type="radio" id="group_tickets_yes" name="group_tickets"
-                                                value="yes">
-                                            <label for="group_tickets_yes">Yes</label><br>
-                                        </div>
-                                        <div>
-                                            <input type="radio" id="group_tickets_no" name="group_tickets"
-                                                value="no" checked>
-                                            <label for="group_tickets_no">No</label><br>
-                                        </div>
-                                    </div>
-
+                        @if ($groupByStatus)
+                            <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100 mt-3">
+                                <p class="font-bold text-base">Do You Want to group tickets:</p>
+                                <div class="mt-2 flex justify-around">
                                     <div>
-                                        <input type="hidden" name="group_by_id" value="{{ $groupById }}">
+                                        <input type="radio" id="group_tickets_yes" name="group_tickets"
+                                            value="yes">
+                                        <label for="group_tickets_yes">Yes</label><br>
                                     </div>
-                                @endif
+                                    <div>
+                                        <input type="radio" id="group_tickets_no" name="group_tickets"
+                                            value="no" checked>
+                                        <label for="group_tickets_no">No</label><br>
+                                    </div>
+                                </div>
 
+                                <div>
+                                    <input type="hidden" name="group_by_id" value="{{ $groupById }}">
+                                </div>
                             </div>
                         @endif
 

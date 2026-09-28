@@ -76,7 +76,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/payments/{payment}/proof', [PaymentController::class, 'proof'])->name('payments.proof');
 
         // Printing / PDF
-        Route::get('/print-all-ids', [ShipTicketSaleController::class, 'pdfPrintAll']);
         Route::get('/print-pdf/{id}', [ShipTicketSaleController::class, 'pdfDownload'])->name('print.pdf');
         Route::get('/tickets/open/{saleId}/{filename}', [ShipTicketSaleController::class, 'openTicket'])->name('tickets.open');
     });

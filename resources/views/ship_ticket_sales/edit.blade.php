@@ -464,6 +464,7 @@
                                         <input type="number" step="0.01" min="0" name="discount_amount"
                                             id="discount_amount" value="{{ old('discount_amount', $sale->discount_amount) }}"
                                             class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5 text-sm font-bold text-gray-800">
+                                        <p id="discount-error" class="hidden mt-1 text-sm text-red-600"></p>
                                     </div>
                                 </div>
 
@@ -1054,26 +1055,29 @@
                                     Tickets PDF document has already been generated using this WhatsApp number.
                                     Please review the existing document before requesting a new one.
                                 </p>
-                                @if ($groupByStatus)
-                                    <p class="font-bold text-base">Do You Want to group tickets:</p>
-                                    <div class="flex justify-around">
-                                        <div>
-                                            <input type="radio" id="group_tickets_yes" name="group_tickets"
-                                                value="yes">
-                                            <label for="group_tickets_yes">Yes</label><br>
-                                        </div>
-                                        <div>
-                                            <input type="radio" id="group_tickets_no" name="group_tickets"
-                                                value="no" checked>
-                                            <label for="group_tickets_no">No</label><br>
-                                        </div>
-                                    </div>
 
+                            </div>
+                        @endif
+
+                        @if ($groupByStatus)
+                            <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100 mt-3">
+                                <p class="font-bold text-base">Do You Want to group tickets:</p>
+                                <div class="mt-2 flex justify-around">
                                     <div>
-                                        <input type="hidden" name="group_by_id" value="{{ $groupById }}">
+                                        <input type="radio" id="group_tickets_yes" name="group_tickets"
+                                            value="yes">
+                                        <label for="group_tickets_yes">Yes</label><br>
                                     </div>
-                                @endif
+                                    <div>
+                                        <input type="radio" id="group_tickets_no" name="group_tickets"
+                                            value="no" checked>
+                                        <label for="group_tickets_no">No</label><br>
+                                    </div>
+                                </div>
 
+                                <div>
+                                    <input type="hidden" name="group_by_id" value="{{ $groupById }}">
+                                </div>
                             </div>
                         @endif
 
@@ -1426,6 +1430,8 @@
                 const otherFee = parseFloat(document.getElementById('other_fee').value) || 0;
                 const discountAmount = parseFloat(document.getElementById('discount_amount').value) || 0;
 
+                validateDiscountAmount();
+
                 // Calculate total payable (ticket fee + other fee - discount)
                 const totalPayable = Math.max(0, ticketFee + otherFee - discountAmount);
                 document.getElementById('total_payable').value = totalPayable.toFixed(2);
@@ -1436,6 +1442,23 @@
 
                 // Update payment count
                 updatePaymentCount();
+            }
+
+            function validateDiscountAmount() {
+                const ticketFeeInput = document.getElementById('ticket_fee');
+                const discountInput = document.getElementById('discount_amount');
+                const error = document.getElementById('discount-error');
+                const ticketFee = parseFloat(ticketFeeInput.value) || 0;
+                const discount = parseFloat(discountInput.value) || 0;
+                const invalid = discount > ticketFee;
+
+                discountInput.max = ticketFee.toFixed(2);
+                discountInput.setCustomValidity(invalid ? 'Discount Amount cannot exceed Total Ticket Fee.' : '');
+                error.textContent = invalid ? 'Discount Amount cannot exceed Total Ticket Fee.' : '';
+                error.classList.toggle('hidden', !invalid);
+                discountInput.classList.toggle('border-red-500', invalid);
+
+                return !invalid;
             }
 
             // Update payment count
@@ -1451,6 +1474,13 @@
                     e.target.id === 'other_fee' ||
                     e.target.id === 'discount_amount') {
                     calculateFinancials();
+                }
+            });
+
+            document.getElementById('ticketForm')?.addEventListener('submit', function(event) {
+                if (!validateDiscountAmount()) {
+                    event.preventDefault();
+                    document.getElementById('discount_amount').focus();
                 }
             });
 
@@ -1659,6 +1689,53 @@
 
             collectFromOffice.addEventListener('change', updateAddressVisibility);
             updateAddressVisibility();
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('ticketForm');
+            const maximumBirthDate = '{{ now()->subYears(18)->format('Y-m-d') }}';
+
+            function validateBirthDate(input) {
+                const invalid = input.value !== '' && input.value > maximumBirthDate;
+                input.max = maximumBirthDate;
+                input.setCustomValidity(invalid ? 'Passenger must be at least 18 years old.' : '');
+                input.classList.toggle('border-red-500', invalid);
+
+                let error = input.parentElement.querySelector('.birth-date-error');
+                if (!error && invalid) {
+                    error = document.createElement('p');
+                    error.className = 'birth-date-error mt-1 text-sm text-red-600';
+                    input.parentElement.appendChild(error);
+                }
+
+                if (error) {
+                    error.textContent = invalid ? 'Passenger must be at least 18 years old.' : '';
+                    error.classList.toggle('hidden', !invalid);
+                }
+
+                return !invalid;
+            }
+
+            form?.addEventListener('input', (event) => {
+                if (event.target.matches('input[name="date_of_birth"], input[name^="co_passengers["][name$="][date_of_birth]"]')) {
+                    validateBirthDate(event.target);
+                }
+            });
+
+            form?.addEventListener('submit', (event) => {
+                const valid = [...form.querySelectorAll('input[name="date_of_birth"], input[name^="co_passengers["][name$="][date_of_birth]"]')]
+                    .map(validateBirthDate)
+                    .every(Boolean);
+
+                if (!valid) {
+                    event.preventDefault();
+                    form.querySelector('.border-red-500')?.focus();
+                }
+            });
+
+            form?.querySelectorAll('input[name="date_of_birth"], input[name^="co_passengers["][name$="][date_of_birth]"]')
+                .forEach(validateBirthDate);
         });
     </script>
 

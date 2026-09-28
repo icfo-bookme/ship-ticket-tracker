@@ -110,6 +110,17 @@ it('rejects a negative discount amount', function () {
     expect(ShipTicketSale::count())->toBe(1);
 });
 
+it('rejects a discount amount greater than the ticket fee', function () {
+    $this->actingAs($this->admin)
+        ->postJson('/ship-ticket-sales', discountSalePayload($this->ship, $this->company, $this->admin, [
+            'discount_amount' => 501,
+        ]))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('discount_amount');
+
+    expect(ShipTicketSale::count())->toBe(1);
+});
+
 it('shows the discount field on the create page and the saved value on the edit page', function () {
     $this->actingAs($this->admin)
         ->get('/ship-ticket-sales/create')

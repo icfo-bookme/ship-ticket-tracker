@@ -37,7 +37,7 @@
 
         <!-- Form Card -->
         <div class=" dark:bg-gray-800  rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <form id="ticketForm" action="{{ route('ship-ticket-sales.store') }}" method="POST" enctype="multipart/form-data"
+            <form id="ticketForm" data-ticket-sale-saved="{{ session()->has('success') ? '1' : '0' }}" action="{{ route('ship-ticket-sales.store') }}" method="POST" enctype="multipart/form-data"
                     class="space-y-8 px-8">
                 @csrf
 
@@ -358,6 +358,7 @@
                                     value="{{ old('discount_amount', 0) }}" step="0.01" min="0"
                                     placeholder="0.00"
                                     class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                <p id="discount-error" class="hidden mt-1 text-sm text-red-600"></p>
                             </div>
                         </div>
                     </div>
@@ -618,26 +619,5 @@
         </div>
     </div>
 
-    <script>
-        const departureDateInput = document.getElementById('journey_date');
-        const returnDateInput = document.getElementById('return_date');
-
-        function syncReturnDateMinimum() {
-            if (!departureDateInput || !returnDateInput) {
-                return;
-            }
-
-            returnDateInput.min = departureDateInput.value || '{{ now()->format('Y-m-d') }}';
-
-            if (returnDateInput.value && returnDateInput.value < returnDateInput.min) {
-                returnDateInput.value = '';
-            }
-        }
-
-        departureDateInput?.addEventListener('change', syncReturnDateMinimum);
-        syncReturnDateMinimum();
-
-        window.ticketSaleSaved = @json(session()->has('success'));
-    </script>
     @vite(['resources/js/pages/ship-ticket-sales.js'])
 </x-app-layout>

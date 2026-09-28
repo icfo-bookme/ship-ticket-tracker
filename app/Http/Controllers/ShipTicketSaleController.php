@@ -436,14 +436,6 @@ class ShipTicketSaleController extends Controller
         return $this->googleDriveTickets->streamPdf($id.'.pdf');
     }
 
-    // ShipTicketSaleController.php
-    public function pdfPrintAll()
-    {
-        return ShipTicketSale::where('status', SaleStatus::TicketIssued->value)
-            ->orderBy('id')
-            ->pluck('id');
-    }
-
     public function openTicket($saleId, $filename)
     {
         $sales = PrintStatus::where('sales_id', $saleId)->first();

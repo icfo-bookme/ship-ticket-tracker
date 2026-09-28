@@ -319,6 +319,8 @@ class RefundController extends Controller
 
         $requests->each(function (Refund $refund): void {
             $requestedQuantities = $refund->tickets->keyBy('category_id');
+            $refund->setAttribute('total_purchase_tickets', (int) ($refund->sale?->categories->sum('quantity') ?? 0));
+            $refund->setAttribute('total_refund_tickets', (int) $refund->tickets->sum('refunded_quantity'));
             $refund->setAttribute('edit_categories', $refund->sale?->categories->map(function ($category) use ($requestedQuantities): array {
                 return [
                     'id' => $category->id,

@@ -273,15 +273,15 @@
                 <p id="totalGrossAmount" class="mt-2 text-2xl font-bold text-blue-950 dark:text-blue-400">0.00</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Refund</p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Refund Amount</p>
                 <p id="totalCustomerRefund" class="mt-2 text-2xl font-bold text-green-700 dark:text-green-400">0.00</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Partner Share</p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Partner Share Amount</p>
                 <p id="totalPartnerShare" class="mt-2 text-2xl font-bold text-amber-700 dark:text-amber-400">0.00</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Company Retained</p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Company Retained/Company Retained Amount</p>
                 <p id="totalCompanyRetained" class="mt-2 text-2xl font-bold text-purple-700 dark:text-purple-400">0.00</p>
             </div>
         </div>

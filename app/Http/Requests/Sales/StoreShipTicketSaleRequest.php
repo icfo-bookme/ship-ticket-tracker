@@ -40,7 +40,7 @@ class StoreShipTicketSaleRequest extends FormRequest
             'remark1' => 'nullable|string',
             'remark2' => 'nullable|string',
             'other_fee' => 'nullable|numeric',
-            'discount_amount' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0|lte:ticket_fee',
             'total_payable' => 'nullable|numeric|min:0',
             'payment_methods' => 'nullable|array',
             'payment_methods.*.transaction_id' => 'nullable|string|max:255',
@@ -49,7 +49,7 @@ class StoreShipTicketSaleRequest extends FormRequest
             'co_passengers.*.name' => 'required|string|max:255',
             'co_passengers.*.nid' => 'nullable|string',
             'co_passengers.*.co_passernger_number' => 'nullable|string',
-            'co_passengers.*.date_of_birth' => 'nullable|date',
+            'co_passengers.*.date_of_birth' => 'nullable|date|before_or_equal:'.now()->subYears(18)->toDateString(),
         ];
     }
 }

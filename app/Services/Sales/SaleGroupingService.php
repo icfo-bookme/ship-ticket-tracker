@@ -125,7 +125,7 @@ class SaleGroupingService
     private function pairFailureMessage(ShipTicketSale $sale, ShipTicketSale $otherSale): ?string
     {
         if ($this->isOfficeCollection($sale) !== $this->isOfficeCollection($otherSale)) {
-            return 'Ei WhatsApp number diye already sales create kora ase, kintu ekta Collect from Office and arekta courier delivery howate group by kora possible na.';
+            return 'এই WhatsApp নম্বর দিয়ে ইতোমধ্যে সেল রেকর্ড তৈরি করা আছে। তবে ডেলিভারি পদ্ধতি ভিন্ন হওয়ায়, অর্থাৎ একটি “Collect from Office” এবং অন্যটি “Courier Delivery”, এগুলো একসাথে গ্রুপ করা যাবে না।';
         }
 
         if (! $this->isOfficeCollection($sale)

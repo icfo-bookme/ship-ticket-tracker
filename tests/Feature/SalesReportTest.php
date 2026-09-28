@@ -88,3 +88,53 @@ it('resolves the total elements after the page markup is rendered', function () 
         ->assertSee('function totalElements()', false)
         ->assertDontSee('const totalElements = {', false);
 });
+
+it('adjusts extra received amount into other fee', function () {
+    $sale = reportSale($this->ship, $this->company, [
+        'other_fee' => 10,
+        'total_payable' => 310,
+        'received_amount' => 350,
+        'due_amount' => 0,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->postJson(route('extra-received.adjust', $sale), [])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'Extra amount of 40 has been adjusted to Other Fee.');
+
+    $sale->refresh();
+
+    expect((float) $sale->other_fee)->toBe(50.0)
+        ->and((float) $sale->total_payable)->toBe(350.0)
+        ->and((float) $sale->due_amount)->toBe(0.0);
+});
+
+it('rejects adjusting a sale without extra received amount', function () {
+    $sale = reportSale($this->ship, $this->company);
+
+    $this->actingAs($this->admin)
+        ->postJson(route('extra-received.adjust', $sale), [])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false);
+});
+
+it('creates a refund request for extra received amount', function () {
+    $sale = reportSale($this->ship, $this->company, [
+        'total_payable' => 300,
+        'received_amount' => 350,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->postJson(route('extra-received.refund', $sale), [])
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    $this->assertDatabaseHas('refunds', [
+        'sales_id' => $sale->id,
+        'refund_type' => 'extra_payment',
+        'refunded_number_of_tickets' => 0,
+        'customer_refund_amount' => 50,
+        'status' => 'requested',
+    ]);
+});

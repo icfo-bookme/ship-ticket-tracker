@@ -468,6 +468,16 @@
                                     </div>
                                 </div>
 
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-red-200">
+                                    <label class="block text-sm font-semibold text-gray-700">Extra Refunded Amount</label>
+                                    <div class="mt-2 text-lg font-bold text-red-700">৳ {{ number_format((float) ($sale->extra_refunded_amount ?? 0), 2) }}</div>
+                                </div>
+
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                                    <label class="block text-sm font-semibold text-gray-700">Remaining Extra Amount</label>
+                                    <div class="mt-2 text-lg font-bold text-gray-700">৳ {{ number_format((float) ($sale->extra_remaining_amount ?? 0), 2) }}</div>
+                                </div>
+
                                 <!-- Total Payable -->
                                 <div class="bg-white rounded-lg p-3 shadow-sm border border-green-200">
                                     <div class="flex items-center justify-between mb-1">
@@ -523,6 +533,18 @@
                                         <input type="number" step="0.01" name="due_amount" id="due_amount"
                                             readonly value="{{ old('due_amount', $sale->due_amount) }}"
                                             class="copyable-field w-full border-red-200 bg-red-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-red-600">
+                                    </div>
+                                </div>
+
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-amber-200">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label for="extra_received_amount" class="block text-sm font-semibold text-gray-700">Extra Received Amount</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="text-gray-500 mr-2">৳</span>
+                                        <input type="number" step="0.01" id="extra_received_amount" readonly
+                                            value="0.00"
+                                            class="w-full border-amber-200 bg-amber-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-amber-700">
                                     </div>
                                 </div>
                             </div>
@@ -1435,6 +1457,9 @@
                 // Calculate total payable (ticket fee + other fee - discount)
                 const totalPayable = Math.max(0, ticketFee + otherFee - discountAmount);
                 document.getElementById('total_payable').value = totalPayable.toFixed(2);
+
+                const extraReceivedAmount = Math.max(0, totalReceived - totalPayable);
+                document.getElementById('extra_received_amount').value = extraReceivedAmount.toFixed(2);
 
                 // Calculate due amount (total payable - total received)
                 const dueAmount = totalPayable - totalReceived;

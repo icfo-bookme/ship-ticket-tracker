@@ -235,6 +235,11 @@
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                 <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sales Reports</span>
                             </a>
+                            <a href="{{ route('extra-received.index') }}"
+                                class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-3"></span>
+                                <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Extra Received</span>
+                            </a>
                             @endcan
                             @can('cash.manage')
                             <a href="/show/cash-collections"

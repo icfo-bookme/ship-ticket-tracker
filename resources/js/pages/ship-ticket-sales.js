@@ -859,7 +859,10 @@ class TicketSalesSystem {
         const totalPayable = parseFloat(this.getValue("total_payable")) || 0;
         const receivedAmount = parseFloat(this.getValue("received_amount")) || 0;
         const dueAmount = Math.max(0, totalPayable - receivedAmount);
+        const extraReceivedAmount = Math.max(0, receivedAmount - totalPayable);
+
         this.setValue("due_amount", dueAmount.toFixed(2));
+        this.setValue("extra_received_amount", extraReceivedAmount.toFixed(2));
     }
 
     //  FORM VALIDATION 

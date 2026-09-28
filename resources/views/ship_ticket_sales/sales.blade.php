@@ -87,6 +87,13 @@
                 data: null,
                 render: (row) => escapeHtml(row.ship?.name || row.ships?.name || "Not available"),
             },
+            @if ($status == $paymentVerifiedStatus)
+                {
+                    data: null,
+                    title: "Company",
+                    render: (row) => escapeHtml(row.company?.name || row.companies?.name || "Not available"),
+                },
+            @endif
             @if ($status == $shipmentIdEnteredStatus)
                 {
                     data: "shipment.shipment_id",
@@ -531,6 +538,7 @@
         'Mobile',
         'WhatsApp',
         'Ship Name',
+        $status == $paymentVerifiedStatus ? 'Company' : null,
         $status == $shipmentIdEnteredStatus ? 'Shipment Id' : null,
         $status == $pendingStatus ? 'Transaction ID' : null,
         $status == $pendingStatus ? 'Total Received Amount' : null,

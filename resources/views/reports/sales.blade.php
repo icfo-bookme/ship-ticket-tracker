@@ -175,6 +175,8 @@
                     title: "Received Amount",
                     render: formatCurrency,
                 },
+                { data: "extra_received_amount", title: "Extra Received", render: formatCurrency },
+                { data: "extra_refunded_amount", title: "Extra Refunded", render: formatCurrency },
                 {
                     data: "refunded_number_of_tickets",
                     title: "Refunded Tickets",
@@ -311,6 +313,8 @@
             'Discount Amount',
             'Total Payable',
             'Received Amount',
+            'Extra Received',
+            'Extra Refunded',
             'Refunded Tickets',
             'Refunded Amount',
             'Due Amount',

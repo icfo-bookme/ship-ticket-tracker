@@ -410,6 +410,15 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Extra Received Amount (৳) <span class="text-xs text-gray-500">(autofill)</span>
+                            </label>
+                            <input type="number" id="extra_received_amount" readonly value="0.00"
+                                step="0.01" min="0"
+                                class="w-full border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-200 rounded-lg px-4 py-3 font-semibold shadow-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 BFTN Status
                             </label>
 

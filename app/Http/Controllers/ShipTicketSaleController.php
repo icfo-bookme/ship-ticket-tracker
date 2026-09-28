@@ -137,6 +137,8 @@ class ShipTicketSaleController extends Controller
             'verifyby.verifiedByUser:id,name',
         ])->findOrFail($id);
 
+        $this->appendExtraPaymentSummary($sale);
+
         $context = $this->printedTicketContext($sale);
 
         $number = $context['number'];
@@ -183,6 +185,8 @@ class ShipTicketSaleController extends Controller
             'refunds.tickets',
             'verifyby.verifiedByUser:id,name',
         ])->findOrFail($id);
+
+        $this->appendExtraPaymentSummary($sale);
 
         $viewedAt = now();
         $ticketIssueView = $sale->ticketIssueViews()->firstOrNew([
@@ -268,6 +272,19 @@ class ShipTicketSaleController extends Controller
             ->where('id', '>', $sale->id)
             ->orderBy('id', 'asc')
             ->first();
+    }
+
+    private function appendExtraPaymentSummary(ShipTicketSale $sale): void
+    {
+        $extraReceived = max((float) $sale->received_amount - (float) $sale->total_payable, 0);
+        $extraRefunded = (float) $sale->refunds
+            ->where('refund_type', 'extra_payment')
+            ->filter(fn ($refund): bool => $refund->status === 'completed' || $refund->customer_refunded_at !== null)
+            ->sum('customer_refund_amount');
+
+        $sale->setAttribute('extra_received_amount', $extraReceived);
+        $sale->setAttribute('extra_refunded_amount', $extraRefunded);
+        $sale->setAttribute('extra_remaining_amount', max($extraReceived - $extraRefunded, 0));
     }
 
     /**

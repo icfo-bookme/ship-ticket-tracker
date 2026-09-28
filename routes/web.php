@@ -152,6 +152,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:reports.view')->group(function () {
         Route::get('/admin/sales-reports', [ReportController::class, 'index'])->name('sales.reports');
         Route::get('/reports', [ReportController::class, 'reports'])->name('reports.data');
+        Route::get('/admin/extra-received', [ReportController::class, 'extraReceived'])->name('extra-received.index');
+        Route::get('/extra-received/data', [ReportController::class, 'extraReceivedData'])->name('extra-received.data');
+        Route::post('/extra-received/{id}/adjust-to-other-fee', [ReportController::class, 'adjustExtraToOtherFee'])->name('extra-received.adjust');
+        Route::post('/extra-received/{id}/refund', [ReportController::class, 'refundExtra'])->name('extra-received.refund');
     });
 
     // PAYMENTS

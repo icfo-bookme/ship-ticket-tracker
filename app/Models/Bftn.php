@@ -17,10 +17,12 @@ class Bftn extends Model
         'sales_id',
         'bftn_date_time',
         'received_status',
+        'received_at',
     ];
 
     protected $casts = [
         'received_status' => 'boolean',
+        'received_at' => 'datetime',
     ];
 
     public $timestamps = true;

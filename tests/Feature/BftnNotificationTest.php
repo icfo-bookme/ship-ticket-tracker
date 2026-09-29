@@ -89,9 +89,12 @@ it('marks a sale bftn as received', function () {
     $sale = notificationSale($this->ship, $this->company);
 
     $this->actingAs($this->user)
-        ->putJson("/sale/bftn-received/{$sale->id}")
+        ->putJson("/sale/bftn-received/{$sale->id}", [
+            'received_at' => now()->toDateTimeString(),
+        ])
         ->assertOk()
         ->assertJsonPath('success', true);
 
-    expect($sale->bftn()->first()->received_status)->toBeTrue();
+    expect($sale->bftn()->first()->received_status)->toBeTrue()
+        ->and($sale->bftn()->first()->received_at)->not->toBeNull();
 });

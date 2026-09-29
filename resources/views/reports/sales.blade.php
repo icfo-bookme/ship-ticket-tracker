@@ -214,7 +214,14 @@
                             return "N/A";
                         }
 
-                        return data ? "Received" : "Pending";
+                        if (!data) {
+                            return "Pending";
+                        }
+
+                        return `<div class="flex flex-col items-center">
+                            <span>Received</span>
+                            <small class="text-xs text-gray-500">${escapeHtml(row.bftn_received_at || "N/A")}</small>
+                        </div>`;
                     },
                 },
                 { data: "bftn_amount", title: "BFTN Amount", render: formatCurrency },

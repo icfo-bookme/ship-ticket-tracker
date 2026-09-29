@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\SaleStatus;
 use App\Http\Requests\Sales\CheckDuplicateTicketRequest;
+use App\Http\Requests\Sales\MarkBftnReceivedRequest;
 use App\Http\Requests\Sales\StorePublicShipTicketSaleRequest;
 use App\Http\Requests\Sales\StoreShipTicketSaleRequest;
 use App\Http\Requests\Sales\UpdateShipTicketSaleRequest;
@@ -437,12 +438,15 @@ class ShipTicketSaleController extends Controller
         );
     }
 
-    public function markBftnReceived(int $id)
+    public function markBftnReceived(MarkBftnReceivedRequest $request, int $id)
     {
         $sale = ShipTicketSale::findOrFail($id);
         $sale->bftn()->updateOrCreate(
             ['sales_id' => $sale->id],
-            ['received_status' => true]
+            [
+                'received_status' => true,
+                'received_at' => $request->validated('received_at'),
+            ]
         );
 
         return response()->json([

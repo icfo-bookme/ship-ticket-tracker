@@ -289,7 +289,7 @@
             @can('sales.verify')
                 const bftnReceivedButton = sale.bftn_status === 'yes' && !sale.bftn_received
                     ? `<button class="bg-green-600 text-white px-2 py-1 rounded bftnReceivedBtn"
-                        data-id="${sale.id}" title="Mark BFTN as received">BFTN Received</button>`
+                        data-id="${sale.id}" data-tentative-date="${escapeHtml(sale.bftn?.bftn_date_time || 'Not specified')}" title="Mark BFTN as received">BFTN Received</button>`
                     : "";
             @else
                 const bftnReceivedButton = "";
@@ -449,38 +449,43 @@
                 : "";
         }
 
+        let selectedBftnButton = null;
+
+        function openBftnReceivedModal(button) {
+            selectedBftnButton = button;
+            const tentativeDate = button.dataset.tentativeDate || "Not specified";
+            document.getElementById("bftnTentativeDate").textContent = tentativeDate;
+            const receivedAt = document.getElementById("bftnReceivedAt");
+            receivedAt.value = new Date().toISOString().slice(0, 16);
+            document.getElementById("bftnReceivedModal").classList.remove("hidden");
+            document.getElementById("bftnReceivedModal").classList.add("flex");
+        }
+
+        function closeBftnReceivedModal() {
+            document.getElementById("bftnReceivedModal").classList.add("hidden");
+            document.getElementById("bftnReceivedModal").classList.remove("flex");
+            selectedBftnButton = null;
+        }
+
         async function markBftnReceived(button, getList) {
-            const confirmation = await Swal.fire({
-                title: "Are you sure?",
-                text: "Have you received this BFTN?",
-                icon: "question",
-                showCancelButton: true,
-                confirmButtonText: "Yes, received",
-                cancelButtonText: "Cancel",
-            });
+            openBftnReceivedModal(button);
+            const form = document.getElementById("bftnReceivedForm");
+            form.onsubmit = async (event) => {
+                event.preventDefault();
 
-            if (!confirmation.isConfirmed) {
-                return;
-            }
-
-            const response = await fetch(`/sale/bftn-received/${button.dataset.id}`, {
+                const response = await fetch(`/sale/bftn-received/${selectedBftnButton.dataset.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
                 },
+                body: JSON.stringify({ received_at: document.getElementById("bftnReceivedAt").value }),
             });
             const result = await response.json();
-
-            await Swal.fire({
-                title: result.success ? "Updated" : "Error",
-                text: result.message,
-                icon: result.success ? "success" : "error",
-            });
-
-            if (result.success) {
-                getList();
-            }
+                closeBftnReceivedModal();
+                await Swal.fire({ title: result.success ? "Updated" : "Error", text: result.message, icon: result.success ? "success" : "error" });
+                if (result.success) getList();
+            };
         }
 
         function bindSalesTableEvents() {
@@ -555,4 +560,22 @@
                 class="max-h-[75vh] w-auto max-w-full rounded shadow" />
         </div>
     </x-entity-modal>
+
+    <div id="bftnReceivedModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+        <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 class="text-lg font-bold text-gray-800">Confirm BFTN Received</h3>
+            <p class="mt-2 text-sm text-gray-600">Tentative Date: <span id="bftnTentativeDate" class="font-semibold"></span></p>
+            <form id="bftnReceivedForm" class="mt-4 space-y-4">
+                <div>
+                    <label for="bftnReceivedAt" class="block text-sm font-semibold text-gray-700">Received At</label>
+                    <input id="bftnReceivedAt" type="datetime-local" required
+                        class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" class="rounded bg-gray-200 px-4 py-2 text-gray-800" onclick="closeBftnReceivedModal()">Cancel</button>
+                    <button type="submit" class="rounded bg-green-600 px-4 py-2 text-white">Save Received Date</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>

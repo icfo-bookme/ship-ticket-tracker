@@ -288,6 +288,7 @@ class SalesReportService
             'company_retained_amount' => (float) $completedRefunds->sum('company_retained_amount'),
             'bftn_status' => $sale->bftn_status,
             'bftn_received' => $sale->bftn_status === 'yes' && (bool) $sale->bftn?->received_status,
+            'bftn_received_at' => $sale->bftn?->received_at?->format('Y-m-d'),
             'bftn_amount' => $sale->bftn_status === 'yes' ? (float) $sale->received_amount : 0,
             'net_cash' => (float) $sale->received_amount - (float) $completedRefunds->sum('customer_refund_amount'),
         ];

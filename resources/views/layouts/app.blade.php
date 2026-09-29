@@ -103,7 +103,7 @@
         >
             <div
                 class="
-                    w-full min-w-0
+                     min-w-0
                     p-2
                     sm:p-3
                     md:p-4

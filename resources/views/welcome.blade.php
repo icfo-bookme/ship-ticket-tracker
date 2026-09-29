@@ -1,6 +1,6 @@
 <x-frontend-layout>
 
-    <div class="max-w-7xl mx-auto pt-12 lg:p-6">
+    <div class=" mx-auto pt-12 lg:p-6">
         <div class="bg-white rounded-lg mb-3 overflow-hidden border-t-8 border-[#673ab7] ">
             <div class="px-8 py-3">
                 <h1 class="text-3xl font-normal text-gray-800 mb-2">Ship Ticket Form</h1>

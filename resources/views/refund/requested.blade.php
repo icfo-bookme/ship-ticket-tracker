@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class=" mx-auto sm:px-6 lg:px-8">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Requested Refunds</h2>
 
             <div class="mt-6 mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">

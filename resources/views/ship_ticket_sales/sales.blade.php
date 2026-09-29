@@ -9,7 +9,7 @@
     $collectFromOfficeStatus = \App\Enums\SaleStatus::CollectFromOffice->value;
 @endphp
 
-<div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+<div class="w-full px-2 sm:px-4 lg:px-6">
     <div class="flex items-center justify-between py-6">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             Ship Ticket Sales ({{ $status }} )
@@ -87,6 +87,15 @@
                 data: null,
                 render: (row) => escapeHtml(row.ship?.name || row.ships?.name || "Not available"),
             },
+            @if ($status == $ticketPrintedStatus)
+                {
+                    data: null,
+                    title: "Address",
+                    render: (row) => row.collect_from_office
+                        ? "Collect from Office"
+                        : escapeHtml(row.address || "Not available"),
+                },
+            @endif
             @if ($status == $paymentVerifiedStatus)
                 {
                     data: null,
@@ -102,6 +111,26 @@
             @endif
             @if ($status == $pendingStatus)
                 {
+                    data: "ticket_fee",
+                    title: "Total Ticket Value",
+                    render: (data) => escapeHtml(Number(data || 0).toFixed(2)),
+                },
+                {
+                    data: "other_fee",
+                    title: "Other Fee",
+                    render: (data) => escapeHtml(Number(data || 0).toFixed(2)),
+                },
+                {
+                    data: "discount_amount",
+                    title: "Discount Amount",
+                    render: (data) => escapeHtml(Number(data || 0).toFixed(2)),
+                },
+                {
+                    data: "received_amount",
+                    title: "Received Amount",
+                    render: (data) => escapeHtml(Number(data || 0).toFixed(2)),
+                },
+                {
                     data: "payments",
                     title: "Transaction ID",
                     orderable: false,
@@ -109,19 +138,11 @@
                     render: renderTransactionIds,
                 },
                 {
-                    data: "received_amount",
-                    render: (data) => escapeHtml(data ?? "Not available"),
-                },
-                {
                     data: "payments",
                     title: "Payment Info",
                     orderable: false,
                     searchable: false,
                     render: renderPayments,
-                },
-                {
-                    data: "discount_amount",
-                    render: (data) => escapeHtml(Number(data) > 0 ? Number(data).toFixed(2) : "0.00"),
                 },
                 {
                     data: "payments",
@@ -340,9 +361,9 @@
                         sale.id,
                         @js($ticketPrintedStatus),
                         "Ticket Printed",
-                        isBftnPending(sale) ? "BFTN must be received before printing the ticket" : "Sync group to its furthest status",
+                        isTicketPrintBlocked(sale) ? "BFTN must be received and due amount must be cleared before printing" : "Sync group to its furthest status",
                         "verifyBtn",
-                        isBftnPending(sale),
+                        isTicketPrintBlocked(sale),
                     )
                         + printedFileRows(sale, printedFiles)
                     : referenceBy(sale);
@@ -360,9 +381,9 @@
                         sale.id,
                         @js($ticketPrintedStatus),
                         "Ticket Printed",
-                        isBftnPending(sale) ? "BFTN must be received before printing the ticket" : `Ticket Issued by: ${verifiedBy}`,
+                        isTicketPrintBlocked(sale) ? "BFTN must be received and due amount must be cleared before printing" : `Ticket Issued by: ${verifiedBy}`,
                         "verifyBtn",
-                        isBftnPending(sale),
+                        isTicketPrintBlocked(sale),
                     )
                         + printedFileRows(sale, printedFiles)
                     : referenceBy(sale);
@@ -402,6 +423,10 @@
 
         function isBftnPending(sale) {
             return sale.bftn_status === "yes" && !sale.bftn_received;
+        }
+
+        function isTicketPrintBlocked(sale) {
+            return isBftnPending(sale) || Number(sale.due_amount || 0) > 0;
         }
 
         function statusButton(id, statusValue, label, title, className = "verifyBtn", disabled = false) {
@@ -543,12 +568,15 @@
         'Mobile',
         'WhatsApp',
         'Ship Name',
+        $status == $ticketPrintedStatus ? 'Address' : null,
         $status == $paymentVerifiedStatus ? 'Company' : null,
         $status == $shipmentIdEnteredStatus ? 'Shipment Id' : null,
-        $status == $pendingStatus ? 'Transaction ID' : null,
-        $status == $pendingStatus ? 'Total Received Amount' : null,
-        $status == $pendingStatus ? 'Payment Methods' : null,
+        $status == $pendingStatus ? 'Total Ticket Value' : null,
+        $status == $pendingStatus ? 'Other Fee' : null,
         $status == $pendingStatus ? 'Discount Amount' : null,
+        $status == $pendingStatus ? 'Received Amount' : null,
+        $status == $pendingStatus ? 'Transaction ID' : null,
+        $status == $pendingStatus ? 'Payment Methods' : null,
         $status == $pendingStatus ? 'Payment Proof' : null,
         'Action',
     ]))" :url="'/sales/' . $status" :ordering="false" :delegateActions="false" :order="[]"

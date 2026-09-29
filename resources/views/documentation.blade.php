@@ -8,7 +8,7 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class=" mx-auto sm:px-6 lg:px-8 space-y-6">
 
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-bold mb-3">1. Purpose of This Manual</h3>

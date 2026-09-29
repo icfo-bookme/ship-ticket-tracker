@@ -26,7 +26,7 @@
     @endif
 
     <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 ">
+        <div class=" mx-auto sm:px-6 ">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="">
                     @if ($errors->any())

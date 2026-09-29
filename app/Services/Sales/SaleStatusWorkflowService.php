@@ -33,6 +33,17 @@ class SaleStatusWorkflowService
     public function verify(int $id, string $status): array
     {
         if ($status === SaleStatus::TicketPrinted->value) {
+            $dueSale = $this->groupedSales($id)
+                ->first(fn (ShipTicketSale $sale): bool => (float) $sale->due_amount > 0);
+
+            if ($dueSale !== null) {
+                return [
+                    'success' => false,
+                    'message' => "Sale ID {$dueSale->id} has a due amount. Please clear it before printing the ticket.",
+                    'status' => 422,
+                ];
+            }
+
             $this->markGroupedTickets($id, SaleStatus::TicketPrinted->value);
 
             return [
@@ -321,6 +332,18 @@ class SaleStatusWorkflowService
             ->get()
             ->unique('sales_id')
             ->values();
+    }
+
+    private function groupedSales(int $groupId)
+    {
+        $saleIds = $this->groupedTickets($groupId)
+            ->pluck('sales_id')
+            ->push($groupId)
+            ->unique();
+
+        return ShipTicketSale::query()
+            ->whereIn('id', $saleIds)
+            ->get(['id', 'due_amount']);
     }
 
     private function groupReadinessError(int $groupId, array $allowedStatuses, string $nextAction): ?string

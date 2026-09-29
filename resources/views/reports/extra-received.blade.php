@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class=" mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 flex items-center justify-between">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Extra Received Sales</h2>
             </div>

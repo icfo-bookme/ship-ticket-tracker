@@ -1,4 +1,11 @@
 <x-app-layout>
+    @php
+        $paymentMethods = $sale->payments
+            ->pluck('payment_method')
+            ->filter()
+            ->unique()
+            ->implode(', ');
+    @endphp
 
     <div class="flex justify-between items-center mt-1 ml-5">
         <h2 class="font-semibold text-base text-gray-800 leading-tight">
@@ -40,7 +47,7 @@
     @endif
 
     <div class="py-8 {{ $hasRefundActivity ? 'bg-red-100 border-y-4 border-red-500' : '' }}">
-        <div class="max-w-7xl mx-auto sm:px-6">
+        <div class=" mx-auto sm:px-6">
             @if ($hasRefundActivity)
                 <div class="mb-4 rounded-lg border border-red-300 bg-red-500 p-3 font-semibold text-white">
                     <i class="fas fa-triangle-exclamation mr-2"></i>
@@ -519,6 +526,15 @@
                                         <input type="number" step="0.01" name="due_amount" id="due_amount"
                                             readonly value="{{ old('due_amount', $sale->due_amount) }}"
                                             class="copyable-field w-full border-red-200 bg-red-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-red-600">
+                                    </div>
+                                </div>
+
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-indigo-200">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-sm font-semibold text-gray-700">Payment Methods</label>
+                                    </div>
+                                    <div class="text-sm font-bold text-indigo-700 break-words">
+                                        {{ $paymentMethods ?: 'N/A' }}
                                     </div>
                                 </div>
 

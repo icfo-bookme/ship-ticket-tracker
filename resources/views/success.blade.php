@@ -1,6 +1,6 @@
 <x-frontend-layout>
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
-        <div class="max-w-7xl mx-auto">
+        <div class=" mx-auto">
             <!-- Success Message Container -->
             <div class="text-center mb-5 animate-fade-in">
                 <div class="relative lg:flex items-center justify-center">

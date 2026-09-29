@@ -287,10 +287,10 @@
             @endcan
 
             @can('sales.verify')
-                const bftnReceivedButton = sale.bftn_received
-                    ? ""
-                    : `<button class="bg-green-600 text-white px-2 py-1 rounded bftnReceivedBtn"
-                        data-id="${sale.id}" title="Mark BFTN as received">BFTN Received</button>`;
+                const bftnReceivedButton = sale.bftn_status === 'yes' && !sale.bftn_received
+                    ? `<button class="bg-green-600 text-white px-2 py-1 rounded bftnReceivedBtn"
+                        data-id="${sale.id}" title="Mark BFTN as received">BFTN Received</button>`
+                    : "";
             @else
                 const bftnReceivedButton = "";
             @endcan

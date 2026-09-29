@@ -96,7 +96,8 @@ $maxWidthClass = [
         // "Updating..." and the button is disabled from the moment the form is
         // submitted until the page script calls the reset helper.
         const submitBtn = modal.querySelector('[data-submit-btn]');
-        const form = $formId ? document.getElementById(@json($formId)) : null;
+        const formId = @json($formId);
+        const form = formId ? document.getElementById(formId) : null;
 
         function showSubmitLoading() {
             if (!submitBtn) return;

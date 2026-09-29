@@ -72,7 +72,7 @@
                         
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-blue-50 rounded-xl p-4 text-center">
                             <div class="text-2xl font-bold text-blue-700">
                                 {{ $shipTicketCounts->sum('ship_ticket_sales_count') }}</div>
@@ -86,13 +86,6 @@
                             <div class="text-sm text-purple-600 font-medium">Total Company Tickets</div>
                             <div class="text-xs text-purple-500 mt-1">{{ $companyTicketCounts->count() }} companies
                             </div>
-                        </div>
-                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 text-center">
-                            <div class="text-2xl font-bold text-gray-800">
-                                {{ $shipTicketCounts->sum('ship_ticket_sales_count') + $companyTicketCounts->sum('ship_ticket_sales_count') }}
-                            </div>
-                            <div class="text-sm text-gray-700 font-medium">Combined Total</div>
-                            <div class="text-xs text-gray-600 mt-1">All distribution tickets</div>
                         </div>
                     </div>
                 </div>

@@ -48,6 +48,17 @@
                 </select>
             </div>
 
+            <div class="flex flex-col">
+                <label for="bftnFilter" class="text-sm font-semibold text-gray-700 mb-1">BFTN Status</label>
+                <select id="bftnFilter"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    <option value="">All</option>
+                    <option value="all">All BFTN</option>
+                    <option value="pending">BFTN Pending</option>
+                    <option value="received">BFTN Received</option>
+                </select>
+            </div>
+
             <div class="flex flex-col md:flex-row gap-2">
                 <div class="flex-1 flex flex-col">
                     <label for="startDate" class="text-sm font-semibold text-gray-700 mb-1">Journey Date
@@ -89,6 +100,7 @@
             const returnDateFilter = document.getElementById("returnDateFilter");
             const clearFiltersBtn = document.getElementById("clearFilters");
             const paymentMethodFilter = document.getElementById("payment_method");
+            const bftnFilter = document.getElementById("bftnFilter");
             const startDateFilter = document.getElementById("startDate");
             const endDateFilter = document.getElementById("endDate");
             const startCreateDateFilter = document.getElementById("startCreateDate");
@@ -194,7 +206,17 @@
                 { data: "partner_share_amount", title: "Partner Share", render: formatCurrency },
                 { data: "company_retained_amount", title: "Company Retained", render: formatCurrency },
                 { data: "bftn_status", title: "BFTN", render: (data) => data === "yes" ? "Yes" : "No" },
-                { data: "bftn_received", title: "BFTN Received", render: (data) => data ? "Received" : "Pending" },
+                {
+                    data: "bftn_received",
+                    title: "BFTN Received",
+                    render: (data, type, row) => {
+                        if (row.bftn_status !== "yes") {
+                            return "N/A";
+                        }
+
+                        return data ? "Received" : "Pending";
+                    },
+                },
                 { data: "bftn_amount", title: "BFTN Amount", render: formatCurrency },
                 { data: "net_cash", title: "Net Cash", render: formatCurrency },
                 {
@@ -218,6 +240,7 @@
                     company_id: companyFilter?.value || "",
                     return_date: returnDateFilter?.value || "",
                     payment_method: paymentMethodFilter?.value || "",
+                    bftn_status: bftnFilter?.value || "",
                     start_date: startDateFilter?.value || "",
                     end_date: endDateFilter?.value || "",
                     start_create_date: startCreateDateFilter?.value || "",
@@ -280,6 +303,7 @@
                     companyFilter,
                     returnDateFilter,
                     paymentMethodFilter,
+                    bftnFilter,
                     startDateFilter,
                     endDateFilter,
                     startCreateDateFilter,

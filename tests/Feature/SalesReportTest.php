@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Bftn;
 use App\Models\Company;
 use App\Models\Ship;
 use App\Models\ShipTicketSale;
@@ -137,4 +138,23 @@ it('creates a refund request for extra received amount', function () {
         'customer_refund_amount' => 50,
         'status' => 'requested',
     ]);
+});
+
+it('separates bftn pending and received report filters', function () {
+    $pending = reportSale($this->ship, $this->company, ['bftn_status' => 'yes']);
+    $received = reportSale($this->ship, $this->company, ['bftn_status' => 'yes']);
+    Bftn::create(['sales_id' => $pending->id, 'received_status' => 0]);
+    Bftn::create(['sales_id' => $received->id, 'received_status' => 1]);
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?draw=1&start=0&length=10&bftn_status=pending')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $pending->id);
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?draw=2&start=0&length=10&bftn_status=received')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $received->id);
 });

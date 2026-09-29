@@ -111,6 +111,7 @@ class SalesReportService
             'journey_date' => $request->input('journey_date'),
             'return_date' => $request->input('return_date'),
             'payment_method' => $request->input('payment_method'),
+            'bftn_status' => $request->input('bftn_status'),
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date'),
             'created_date' => $request->input('created_date'),
@@ -122,6 +123,7 @@ class SalesReportService
     private function applyFilters($query, array $filters, string $prefix = ''): void
     {
         $column = fn (string $name): string => $prefix.$name;
+        $saleIdColumn = $prefix === '' ? 'ship_ticket_sales.id' : $column('id');
 
         foreach ([
             'ship_id' => 'ship_id',
@@ -153,6 +155,30 @@ class SalesReportService
             $query->where(function ($q) use ($paymentMethod): void {
                 $q->whereHas('payments', fn ($sub) => $sub->where('payment_method', $paymentMethod));
             });
+        }
+
+        if ($filters['bftn_status'] === 'all') {
+            $query->where($column('bftn_status'), 'yes');
+        }
+
+        if ($filters['bftn_status'] === 'received') {
+            $query->where($column('bftn_status'), 'yes')
+                ->whereExists(function ($sub) use ($saleIdColumn): void {
+                    $sub->selectRaw('1')
+                        ->from('bftn')
+                        ->whereColumn('bftn.sales_id', $saleIdColumn)
+                        ->where('bftn.received_status', 1);
+                });
+        }
+
+        if ($filters['bftn_status'] === 'pending') {
+            $query->where($column('bftn_status'), 'yes')
+                ->whereNotExists(function ($sub) use ($saleIdColumn): void {
+                    $sub->selectRaw('1')
+                        ->from('bftn')
+                        ->whereColumn('bftn.sales_id', $saleIdColumn)
+                        ->where('bftn.received_status', 1);
+                });
         }
     }
 

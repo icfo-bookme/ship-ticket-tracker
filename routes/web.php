@@ -127,6 +127,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/payment-details-added-refunds', [RefundController::class, 'showPaymentDetailsAdded'])->name('refunds.payment-details-added');
         Route::get('/all/refundable', [RefundController::class, 'refundableCS']);
         Route::get('/refunded', [RefundController::class, 'showRefundedCS']);
+        Route::get('/refunded/{sale}/details', [RefundController::class, 'refundedDetails'])->name('refunds.details');
     });
 
     // Master data modules

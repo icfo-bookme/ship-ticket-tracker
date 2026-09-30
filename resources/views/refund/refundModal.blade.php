@@ -29,7 +29,6 @@
         </div>
 
         <div class="grid grid-cols-1 gap-3 rounded bg-gray-50 p-3 text-sm sm:grid-cols-3">
-            <span>Customer receives: <strong id="customerRefundPreview">0.00</strong></span>
             <span>Partner share: <strong id="partnerSharePreview">0.00</strong></span>
             <span>Company retains: <strong id="companyRetainedPreview">0.00</strong></span>
         </div>
@@ -38,6 +37,11 @@
             <span>Current Due: <strong id="refundDueAmountPreview">0.00</strong></span>
             <span>Due Adjusted: <strong id="dueAdjustmentPreview">0.00</strong></span>
             <span>Customer Refund After Adjustment: <strong id="payableRefundPreview">0.00</strong></span>
+        </div>
+
+        <div class="mt-4 rounded bg-red-100 px-4 py-3 text-center text-red-800">
+            <span class="font-semibold">Final Customer Refund:</span>
+            <strong id="finalCustomerRefundPreview" class="ml-2 text-lg">0.00</strong>
         </div>
 
         <div class="mt-5">
@@ -65,6 +69,8 @@
     let currentRefundEditing = false;
     let refreshRefundList = null;
     let currentRefundDueAmount = 0;
+    let currentRefundTicketFee = 0;
+    let currentRefundSaleDiscount = 0;
 
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('refundModal');
@@ -74,16 +80,20 @@
 
         function updateRefundPreview() {
             const amount = Number(grossAmountInput.value || 0);
+            const refundDiscount = currentRefundTicketFee > 0
+                ? Math.min(currentRefundSaleDiscount, currentRefundTicketFee) * amount / currentRefundTicketFee
+                : 0;
             const customerCharge = amount * Number(customerChargeInput.value || 0) / 100;
             const partnerShare = amount * Number(partnerShareInput.value || 0) / 100;
-            document.getElementById('customerRefundPreview').textContent = (amount - customerCharge).toFixed(2);
+            const refundBeforeDiscount = Math.max(amount - customerCharge, 0);
+            const refundAfterDiscount = Math.max(refundBeforeDiscount - refundDiscount, 0);
+            const dueAdjustment = Math.min(currentRefundDueAmount, refundAfterDiscount);
             document.getElementById('partnerSharePreview').textContent = partnerShare.toFixed(2);
             document.getElementById('companyRetainedPreview').textContent = (customerCharge - partnerShare).toFixed(2);
-            const customerRefund = Math.max(amount - customerCharge, 0);
-            const dueAdjustment = Math.min(currentRefundDueAmount, customerRefund);
             document.getElementById('refundDueAmountPreview').textContent = currentRefundDueAmount.toFixed(2);
             document.getElementById('dueAdjustmentPreview').textContent = dueAdjustment.toFixed(2);
-            document.getElementById('payableRefundPreview').textContent = (customerRefund - dueAdjustment).toFixed(2);
+            document.getElementById('payableRefundPreview').textContent = (refundAfterDiscount - dueAdjustment).toFixed(2);
+            document.getElementById('finalCustomerRefundPreview').textContent = (refundAfterDiscount - dueAdjustment).toFixed(2);
         }
 
         [grossAmountInput, customerChargeInput, partnerShareInput].forEach((input) => input.addEventListener('input', updateRefundPreview));
@@ -197,6 +207,8 @@
         refreshRefundList = getList;
         document.getElementById('receivedAmountInput').value = btn.dataset.received_total_amount;
         currentRefundDueAmount = Number(btn.dataset.dueAmount || 0);
+        currentRefundTicketFee = Number(btn.dataset.ticketFee || btn.dataset.received_total_amount || 0);
+        currentRefundSaleDiscount = Number(btn.dataset.discountAmount || 0);
         document.getElementById('customerChargePercentInput').value = editing ? (btn.dataset.customerCharge || 0) : 0;
         document.getElementById('partnerSharePercentInput').value = editing ? (btn.dataset.partnerShare || 0) : 0;
         document.getElementById('refundAmountInput').value = editing ? (btn.dataset.grossAmount || 0) : 0;
@@ -204,7 +216,6 @@
         const grossAmount = Number(editing ? (btn.dataset.grossAmount || 0) : 0);
         const customerCharge = grossAmount * Number(editing ? (btn.dataset.customerCharge || 0) : 0) / 100;
         const partnerShare = grossAmount * Number(editing ? (btn.dataset.partnerShare || 0) : 0) / 100;
-        document.getElementById('customerRefundPreview').textContent = (grossAmount - customerCharge).toFixed(2);
         document.getElementById('partnerSharePreview').textContent = partnerShare.toFixed(2);
         document.getElementById('companyRetainedPreview').textContent = (customerCharge - partnerShare).toFixed(2);
         const categories = JSON.parse(decodeURIComponent(btn.dataset.categories || '[]'));

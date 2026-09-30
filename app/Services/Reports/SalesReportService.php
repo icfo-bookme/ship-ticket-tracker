@@ -286,9 +286,13 @@ class SalesReportService
             'refunded_tickets' => $refundedTickets,
             'refunded_amount' => $refundedAmount,
             'gross_refund_amount' => (float) $completedRefunds->sum('gross_refund_amount'),
+            'refund_discount_amount' => (float) $completedRefunds->sum('refund_discount_amount'),
             'customer_charge_percent' => $completedRefunds->last()?->customer_charge_percent,
             'partner_share_percent' => $completedRefunds->last()?->partner_share_percent,
             'customer_refund_amount' => (float) $completedRefunds->sum('customer_refund_amount'),
+            'customer_refund_before_discount' => (float) $completedRefunds->sum('customer_refund_amount')
+                + (float) $completedRefunds->sum('due_adjusted_amount')
+                + (float) $completedRefunds->sum('refund_discount_amount'),
             'due_adjusted_amount' => (float) $completedRefunds->sum('due_adjusted_amount'),
             'customer_refund_after_due_adjustment' => (float) $completedRefunds->sum('customer_refund_amount'),
             'partner_share_amount' => (float) $completedRefunds->sum('partner_share_amount'),

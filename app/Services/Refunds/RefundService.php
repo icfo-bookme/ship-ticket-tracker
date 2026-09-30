@@ -33,7 +33,8 @@ class RefundService
                         'refunded_number_of_tickets' => $sale->number_of_ticket,
                         'refunded_amount' => $sale->ticket_fee,
                         'gross_refund_amount' => $sale->ticket_fee,
-                        'customer_refund_amount' => $sale->ticket_fee,
+                        'refund_discount_amount' => min((float) $sale->discount_amount, (float) $sale->ticket_fee),
+                        'customer_refund_amount' => round((float) $sale->ticket_fee - min((float) $sale->discount_amount, (float) $sale->ticket_fee), 2),
                         'requested_at' => now(),
                     ]);
 
@@ -71,6 +72,7 @@ class RefundService
                 $selectedTickets[] = compact('category', 'quantity', 'unitAmount', 'categoryAmount');
             }
 
+            $refundDiscountAmount = $this->proportionalDiscount($sale, $grossAmount);
             $this->ensureRefundableCategories($sale, $selectedTickets, $grossAmount);
 
             $customerChargePercent = (float) $data['customer_charge_percent'];
@@ -95,7 +97,8 @@ class RefundService
                 'customer_charge_amount' => $customerChargeAmount,
                 'partner_share_percent' => $partnerSharePercent,
                 'partner_share_amount' => $partnerShareAmount,
-                'customer_refund_amount' => round($grossAmount - $customerChargeAmount, 2),
+                'refund_discount_amount' => $refundDiscountAmount,
+                'customer_refund_amount' => round($grossAmount - $customerChargeAmount - $refundDiscountAmount, 2),
                 'company_retained_amount' => round($customerChargeAmount - $partnerShareAmount, 2),
                 'requested_at' => now(),
                 'remark' => $data['remark'] ?? null,
@@ -155,6 +158,14 @@ class RefundService
             }
             $refund->update(['status' => 'completed', 'customer_refunded_at' => now()]);
         });
+    }
+
+    private function proportionalDiscount(ShipTicketSale $sale, float $grossAmount): float
+    {
+        $ticketFee = (float) $sale->ticket_fee;
+        $discount = min(max((float) $sale->discount_amount, 0), $ticketFee);
+
+        return $ticketFee > 0 ? round($discount * ($grossAmount / $ticketFee), 2) : 0;
     }
 
     public function approve(Refund $refund): void
@@ -218,6 +229,7 @@ class RefundService
                 $selectedTickets[] = compact('category', 'quantity', 'unitAmount', 'categoryAmount');
             }
 
+            $refundDiscountAmount = $this->proportionalDiscount($sale, $grossAmount);
             $this->ensureRefundableCategories($sale, $selectedTickets, $grossAmount, $refund->id);
             $customerChargePercent = (float) $data['customer_charge_percent'];
             $partnerSharePercent = (float) $data['partner_share_percent'];
@@ -238,7 +250,8 @@ class RefundService
                 'customer_charge_amount' => $customerChargeAmount,
                 'partner_share_percent' => $partnerSharePercent,
                 'partner_share_amount' => $partnerShareAmount,
-                'customer_refund_amount' => round($grossAmount - $customerChargeAmount, 2),
+                'refund_discount_amount' => $refundDiscountAmount,
+                'customer_refund_amount' => round($grossAmount - $customerChargeAmount - $refundDiscountAmount, 2),
                 'company_retained_amount' => round($customerChargeAmount - $partnerShareAmount, 2),
                 'remark' => $data['remark'] ?? null,
             ]);

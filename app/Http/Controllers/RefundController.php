@@ -238,9 +238,13 @@ class RefundController extends Controller
                         'refunded_number_of_tickets' => $completedRefunds->sum('refunded_number_of_tickets'),
                         'refunded_amount' => $completedRefunds->sum('refunded_amount'),
                         'gross_refund_amount' => $completedRefunds->sum('gross_refund_amount'),
+                        'refund_discount_amount' => $completedRefunds->sum('refund_discount_amount'),
                         'customer_charge_percent' => $latestRefund?->customer_charge_percent,
                         'partner_share_percent' => $latestRefund?->partner_share_percent,
                         'customer_refund_amount' => $completedRefunds->sum('customer_refund_amount'),
+                        'customer_refund_before_discount' => $completedRefunds->sum('customer_refund_amount')
+                            + $completedRefunds->sum('due_adjusted_amount')
+                            + $completedRefunds->sum('refund_discount_amount'),
                         'customer_refund_after_due_adjustment' => $completedRefunds->sum('customer_refund_amount'),
                         'due_adjusted_amount' => $completedRefunds->sum('due_adjusted_amount'),
                         'partner_share_amount' => $completedRefunds->sum('partner_share_amount'),
@@ -283,6 +287,17 @@ class RefundController extends Controller
         $companies = Company::all();
 
         return view('refunded.index', compact('ships', 'companies'));
+    }
+
+    public function refundedDetails(int $saleId)
+    {
+        $sale = ShipTicketSale::with([
+            'ships', 'companies', 'payments', 'refunds.tickets', 'refunds.customerPayments',
+        ])->findOrFail($saleId);
+
+        abort_unless($sale->refunds->contains(fn (Refund $refund): bool => $refund->status === 'completed'), 404);
+
+        return view('refunded.details', compact('sale'));
     }
 
     public function requested(Request $request)
@@ -333,6 +348,10 @@ class RefundController extends Controller
             $refund->setAttribute(
                 'customer_refund_after_due_adjustment',
                 round(max($customerRefundAmount - $dueAdjustment, 0), 2)
+            );
+            $refund->setAttribute(
+                'customer_refund_before_discount',
+                round($customerRefundAmount + (float) $refund->refund_discount_amount, 2)
             );
             $refund->setAttribute('edit_categories', $refund->sale?->categories->map(function ($category) use ($requestedQuantities): array {
                 return [

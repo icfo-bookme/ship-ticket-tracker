@@ -39,16 +39,14 @@
                     { data: 'total_purchase_tickets' },
                     { data: 'total_refund_tickets' },
                     { data: 'gross_refund_amount' },
-                    { data: 'customer_charge_percent' },
-                    { data: 'partner_share_percent' },
                     { data: 'customer_refund_amount' },
+                    { data: 'partner_share_amount' },
+                    { data: 'company_retained_amount' },
+                    { data: 'due_adjusted_amount', render: (data) => Number(data || 0).toFixed(2) },
                     {
                         data: 'customer_refund_after_due_adjustment',
                         render: (data) => `<div class="bg-red-100 px-2 py-1 font-semibold text-red-700">${Number(data || 0).toFixed(2)}</div>`,
                     },
-                    { data: 'partner_share_amount' },
-                    { data: 'company_retained_amount' },
-                    { data: 'due_adjusted_amount', render: (data) => Number(data || 0).toFixed(2) },
                     @if ($refundStatus === 'payment_details_added')
                     { data: 'refund_payment_details', render: (data) => escapeHtml(data || 'N/A') },
                     @endif
@@ -250,8 +248,8 @@
             @php
                 $tableHeadings = [
                     'Request ID', 'Sale ID', 'Customer', 'Journey Date', 'Type',
-                    'Total Purchase Tickets', 'Total Refund Tickets', 'Gross Amount', 'Customer Charge %', 'Partner Share %',
-                    'Customer Refund', 'Customer Refund After Due Adjustment', 'Partner Share', 'Company Retained', 'Due Adjusted',
+                    'Total Purchase Tickets', 'Total Refund Tickets', 'Gross Amount',
+                    'Customer Refund', 'Partner Share', 'Company Retained', 'Due Adjusted', 'Final Customer Refund',
                 ];
 
                 if ($refundStatus === 'payment_details_added') {

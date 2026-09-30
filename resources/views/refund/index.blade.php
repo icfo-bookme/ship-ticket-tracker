@@ -116,6 +116,8 @@
                                 data-id="${sale.id}"
                                 data-received_total_amount="${sale.ticket_fee}"
                                 data-due-amount="${sale.due_amount || 0}"
+                                data-ticket-fee="${sale.ticket_fee || 0}"
+                                data-discount-amount="${sale.discount_amount || 0}"
                                 data-categories="${encodeURIComponent(JSON.stringify(sale.categories || []))}"
                                 data-status="shipped">
                                 Partial Refund

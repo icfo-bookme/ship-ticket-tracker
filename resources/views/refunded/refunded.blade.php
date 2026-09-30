@@ -84,20 +84,8 @@
                     render: (data, type, row) => row.refund?.gross_refund_amount || 0,
                 },
                 {
-                    data: "refund.customer_charge_percent",
-                    render: (data, type, row) => row.refund?.customer_charge_percent || 0,
-                },
-                {
-                    data: "refund.partner_share_percent",
-                    render: (data, type, row) => row.refund?.partner_share_percent || 0,
-                },
-                {
                     data: "refund.customer_refund_amount",
                     render: (data, type, row) => row.refund?.customer_refund_amount || 0,
-                },
-                {
-                    data: "refund.customer_refund_after_due_adjustment",
-                    render: (data, type, row) => `<div class="bg-red-100 px-2 py-1 font-semibold text-red-700">${Number(row.refund?.customer_refund_after_due_adjustment || 0).toFixed(2)}</div>`,
                 },
                 {
                     data: "refund.partner_share_amount",
@@ -110,6 +98,10 @@
                 {
                     data: "refund.due_adjusted_amount",
                     render: (data, type, row) => Number(row.refund?.due_adjusted_amount || 0).toFixed(2),
+                },
+                {
+                    data: "refund.customer_refund_amount",
+                    render: (data, type, row) => `<div class="bg-red-100 px-2 py-1 font-semibold text-red-700">${Number(row.refund?.customer_refund_amount || 0).toFixed(2)}</div>`,
                 },
                 {
                     data: "status",
@@ -162,6 +154,7 @@
             function createActionButtons(row) {
                 @can('refunds.manage')
                     return `
+                        <a href="/refunded/${row.id}/details" class="bg-blue-700 text-white px-2 py-1 rounded" title="View refund details">Details</a>
                         <button class="fas fa-trash text-red-500 px-2 py-1 rounded deleteBtn" data-id="${row.id}"></button>`;
                 @else
                     return "";
@@ -241,13 +234,11 @@
             'Purchase Num Of Tickets',
             'Refunded Num Of Tickets',
             'Gross Amount',
-            'Customer Charge %',
-            'Partner Share %',
             'Customer Refund',
-            'Customer Refund After Due Adjustment',
             'Partner Share',
             'Company Retained',
             'Due Adjusted',
+            'Final Customer Refund',
             'Status',
             'Action',
         ]" url="/all/refunded" :ordering="false" :delegateActions="false" :order="[]"

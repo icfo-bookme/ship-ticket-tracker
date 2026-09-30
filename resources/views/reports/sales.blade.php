@@ -118,6 +118,8 @@
                     total_due_amount: document.getElementById("totalDueAmount"),
                     total_gross_refund_amount: document.getElementById("totalGrossRefundAmount"),
                     total_customer_refund_amount: document.getElementById("totalCustomerRefundAmount"),
+                    total_due_adjusted_amount: document.getElementById("totalDueAdjustedAmount"),
+                    total_customer_refund_after_due_adjustment: document.getElementById("totalCustomerRefundAfterDueAdjustment"),
                     total_partner_share_amount: document.getElementById("totalPartnerShareAmount"),
                     total_company_retained_amount: document.getElementById("totalCompanyRetainedAmount"),
                     total_bftn: document.getElementById("totalBftn"),
@@ -203,6 +205,8 @@
                 { data: "customer_charge_percent", title: "Customer Charge %", render: (data) => formatCurrency(data) },
                 { data: "partner_share_percent", title: "Partner Share %", render: (data) => formatCurrency(data) },
                 { data: "customer_refund_amount", title: "Customer Refund", render: formatCurrency },
+                { data: "due_adjusted_amount", title: "Due Adjusted", render: formatCurrency },
+                { data: "customer_refund_after_due_adjustment", title: "Customer Refund After Due Adjustment", render: formatCurrency },
                 { data: "partner_share_amount", title: "Partner Share", render: formatCurrency },
                 { data: "company_retained_amount", title: "Company Retained", render: formatCurrency },
                 { data: "bftn_status", title: "BFTN", render: (data) => data === "yes" ? "Yes" : "No" },
@@ -451,6 +455,14 @@
             <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Refund</p>
                 <p id="totalCustomerRefundAmount" class="text-2xl font-bold text-green-700 dark:text-green-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Due Adjusted</p>
+                <p id="totalDueAdjustedAmount" class="text-2xl font-bold text-red-700 dark:text-red-400">0.00</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Refund After Due Adjustment</p>
+                <p id="totalCustomerRefundAfterDueAdjustment" class="text-2xl font-bold text-red-700 dark:text-red-400">0.00</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Partner Share</p>

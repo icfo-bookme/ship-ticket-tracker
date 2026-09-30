@@ -110,6 +110,8 @@ Route::middleware('auth')->group(function () {
         Route::get('refunds/{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
         Route::put('refunds/{refund}', [RefundController::class, 'update'])->name('refunds.update');
         Route::post('refunds/{id}/cancel', [RefundController::class, 'cancel'])->name('refunds.cancel');
+        Route::post('refunds/{id}/approve', [RefundController::class, 'approve'])->name('refunds.approve');
+        Route::post('refunds/{id}/payment-details', [RefundController::class, 'addPaymentDetails'])->name('refunds.payment-details');
         Route::put('/refunded/{id}', [RefundController::class, 'update']);
         Route::delete('refunds/{refund}', [RefundController::class, 'destroy'])->name('refunds.destroy');
     });
@@ -121,6 +123,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/all/refunded', [RefundController::class, 'refunded']);
         Route::get('/all/refund-requests', [RefundController::class, 'requested']);
         Route::get('/refund-requests', [RefundController::class, 'showRequested'])->name('refunds.requested');
+        Route::get('/partner-approved-refunds', [RefundController::class, 'showApproved'])->name('refunds.approved');
+        Route::get('/payment-details-added-refunds', [RefundController::class, 'showPaymentDetailsAdded'])->name('refunds.payment-details-added');
         Route::get('/all/refundable', [RefundController::class, 'refundableCS']);
         Route::get('/refunded', [RefundController::class, 'showRefundedCS']);
     });

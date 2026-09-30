@@ -124,17 +124,65 @@ class RefundService
                 throw ValidationException::withMessages(['status' => 'This refund has already been completed or cancelled.']);
             }
 
-            $refund->customerPayments()->create([
-                'amount' => $refund->customer_refund_amount,
-                'payment_method' => $data['payment_method'] ?? null,
-                'transaction_id' => $data['transaction_id'] ?? null,
-                'payment_proof' => $data['payment_proof'] ?? null,
-                'paid_at' => now(),
-                'status' => 'paid',
-                'remark' => $data['remark'] ?? null,
-            ]);
+            $sale = ShipTicketSale::query()->lockForUpdate()->findOrFail($refund->sales_id);
+            $customerRefundAmount = (float) $refund->customer_refund_amount;
+            $dueAmount = max((float) $sale->due_amount, 0);
+            $dueAdjustment = min($dueAmount, $customerRefundAmount);
+            $payableRefundAmount = round($customerRefundAmount - $dueAdjustment, 2);
+
+            if ($dueAdjustment > 0) {
+                $sale->update([
+                    'due_amount' => round($dueAmount - $dueAdjustment, 2),
+                ]);
+                $refund->update([
+                    'customer_refund_amount' => $payableRefundAmount,
+                    'due_adjusted_amount' => $dueAdjustment,
+                ]);
+            } else {
+                $refund->update(['due_adjusted_amount' => 0]);
+            }
+
+            if ($payableRefundAmount > 0) {
+                $refund->customerPayments()->create([
+                    'amount' => $payableRefundAmount,
+                    'payment_method' => $data['payment_method'] ?? null,
+                    'transaction_id' => $data['transaction_id'] ?? null,
+                    'payment_proof' => $data['payment_proof'] ?? null,
+                    'paid_at' => now(),
+                    'status' => 'paid',
+                    'remark' => $data['remark'] ?? null,
+                ]);
+            }
             $refund->update(['status' => 'completed', 'customer_refunded_at' => now()]);
         });
+    }
+
+    public function approve(Refund $refund): void
+    {
+        if ($refund->status !== 'requested') {
+            throw ValidationException::withMessages([
+                'status' => 'Only requested refunds can be approved.',
+            ]);
+        }
+
+        $refund->update([
+            'status' => 'partner_approved',
+            'partner_received_at' => now(),
+        ]);
+    }
+
+    public function addPaymentDetails(Refund $refund, string $details): void
+    {
+        if ($refund->status !== 'partner_approved') {
+            throw ValidationException::withMessages([
+                'status' => 'Payment details can only be added to partner-approved refunds.',
+            ]);
+        }
+
+        $refund->update([
+            'refund_payment_details' => $details,
+            'status' => 'payment_details_added',
+        ]);
     }
 
     public function update(Refund $refund, ShipTicketSale $sale, array $data): void

@@ -241,6 +241,8 @@ class RefundController extends Controller
                         'customer_charge_percent' => $latestRefund?->customer_charge_percent,
                         'partner_share_percent' => $latestRefund?->partner_share_percent,
                         'customer_refund_amount' => $completedRefunds->sum('customer_refund_amount'),
+                        'customer_refund_after_due_adjustment' => $completedRefunds->sum('customer_refund_amount'),
+                        'due_adjusted_amount' => $completedRefunds->sum('due_adjusted_amount'),
                         'partner_share_amount' => $completedRefunds->sum('partner_share_amount'),
                         'company_retained_amount' => $completedRefunds->sum('company_retained_amount'),
                     ]));
@@ -285,10 +287,13 @@ class RefundController extends Controller
 
     public function requested(Request $request)
     {
+        $status = $request->input('status', 'requested');
+        abort_unless(in_array($status, ['requested', 'partner_approved', 'payment_details_added'], true), 404);
+
         $query = Refund::with(['sale.ships', 'sale.companies', 'sale.categories.package', 'tickets'])
             ->whereNotNull('requested_at')
             ->whereNull('customer_refunded_at')
-            ->whereNotIn('status', ['completed', 'cancelled']);
+            ->where('status', $status);
 
         if ($request->filled('journey_date')) {
             $query->whereHas('sale', fn ($sale) => $sale->whereDate('journey_date', $request->input('journey_date')));
@@ -321,6 +326,14 @@ class RefundController extends Controller
             $requestedQuantities = $refund->tickets->keyBy('category_id');
             $refund->setAttribute('total_purchase_tickets', (int) ($refund->sale?->categories->sum('quantity') ?? 0));
             $refund->setAttribute('total_refund_tickets', (int) $refund->tickets->sum('refunded_quantity'));
+            $customerRefundAmount = (float) $refund->customer_refund_amount;
+            $dueAmount = max((float) ($refund->sale?->due_amount ?? 0), 0);
+            $dueAdjustment = round(min($dueAmount, $customerRefundAmount), 2);
+            $refund->setAttribute('due_adjusted_amount', $dueAdjustment);
+            $refund->setAttribute(
+                'customer_refund_after_due_adjustment',
+                round(max($customerRefundAmount - $dueAdjustment, 0), 2)
+            );
             $refund->setAttribute('edit_categories', $refund->sale?->categories->map(function ($category) use ($requestedQuantities): array {
                 return [
                     'id' => $category->id,
@@ -348,6 +361,28 @@ class RefundController extends Controller
         return view('refund.requested', [
             'ships' => Ship::all(),
             'companies' => Company::all(),
+            'refundStatus' => 'requested',
+            'pageTitle' => 'Requested Refunds',
+        ]);
+    }
+
+    public function showApproved()
+    {
+        return view('refund.requested', [
+            'ships' => Ship::all(),
+            'companies' => Company::all(),
+            'refundStatus' => 'partner_approved',
+            'pageTitle' => 'Partner Approved Refunds',
+        ]);
+    }
+
+    public function showPaymentDetailsAdded()
+    {
+        return view('refund.requested', [
+            'ships' => Ship::all(),
+            'companies' => Company::all(),
+            'refundStatus' => 'payment_details_added',
+            'pageTitle' => 'Refunds Ready for Payment',
         ]);
     }
 
@@ -371,10 +406,36 @@ class RefundController extends Controller
     public function refundCustomer(Request $request, int $id)
     {
         $refund = Refund::findOrFail($id);
+        abort_unless($refund->status === 'payment_details_added', 422, 'Payment details must be added before refunding.');
         $data = $request->validate(['payment_method' => 'nullable|string|max:50', 'transaction_id' => 'nullable|string|max:150', 'payment_proof' => 'nullable|string|max:255', 'remark' => 'nullable|string|max:255']);
         $this->refunds->refundCustomer($refund, $data);
 
         return response()->json(['success' => true, 'message' => 'Customer refund completed.']);
+    }
+
+    public function approve(int $id)
+    {
+        $refund = Refund::findOrFail($id);
+        $this->refunds->approve($refund);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Refund request approved successfully.',
+        ]);
+    }
+
+    public function addPaymentDetails(Request $request, int $id)
+    {
+        $details = $request->validate([
+            'refund_payment_details' => 'required|string|max:5000',
+        ])['refund_payment_details'];
+
+        $this->refunds->addPaymentDetails(Refund::findOrFail($id), $details);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Refund payment details added successfully.',
+        ]);
     }
 
     public function show($id)

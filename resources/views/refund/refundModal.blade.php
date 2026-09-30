@@ -34,6 +34,12 @@
             <span>Company retains: <strong id="companyRetainedPreview">0.00</strong></span>
         </div>
 
+        <div class="mt-4 grid grid-cols-1 gap-5 rounded bg-amber-50 p-3 text-sm sm:grid-cols-3">
+            <span>Current Due: <strong id="refundDueAmountPreview">0.00</strong></span>
+            <span>Due Adjusted: <strong id="dueAdjustmentPreview">0.00</strong></span>
+            <span>Customer Refund After Adjustment: <strong id="payableRefundPreview">0.00</strong></span>
+        </div>
+
         <div class="mt-5">
             <h3 class="mb-2 font-semibold text-gray-800">Tickets to return</h3>
             <div id="refundCategoryRows" class="space-y-2"></div>
@@ -58,6 +64,7 @@
     let currentRefundRequestId = null;
     let currentRefundEditing = false;
     let refreshRefundList = null;
+    let currentRefundDueAmount = 0;
 
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('refundModal');
@@ -72,6 +79,11 @@
             document.getElementById('customerRefundPreview').textContent = (amount - customerCharge).toFixed(2);
             document.getElementById('partnerSharePreview').textContent = partnerShare.toFixed(2);
             document.getElementById('companyRetainedPreview').textContent = (customerCharge - partnerShare).toFixed(2);
+            const customerRefund = Math.max(amount - customerCharge, 0);
+            const dueAdjustment = Math.min(currentRefundDueAmount, customerRefund);
+            document.getElementById('refundDueAmountPreview').textContent = currentRefundDueAmount.toFixed(2);
+            document.getElementById('dueAdjustmentPreview').textContent = dueAdjustment.toFixed(2);
+            document.getElementById('payableRefundPreview').textContent = (customerRefund - dueAdjustment).toFixed(2);
         }
 
         [grossAmountInput, customerChargeInput, partnerShareInput].forEach((input) => input.addEventListener('input', updateRefundPreview));
@@ -184,6 +196,7 @@
             : 'Submit Refund Request';
         refreshRefundList = getList;
         document.getElementById('receivedAmountInput').value = btn.dataset.received_total_amount;
+        currentRefundDueAmount = Number(btn.dataset.dueAmount || 0);
         document.getElementById('customerChargePercentInput').value = editing ? (btn.dataset.customerCharge || 0) : 0;
         document.getElementById('partnerSharePercentInput').value = editing ? (btn.dataset.partnerShare || 0) : 0;
         document.getElementById('refundAmountInput').value = editing ? (btn.dataset.grossAmount || 0) : 0;

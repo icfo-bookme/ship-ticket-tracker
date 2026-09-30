@@ -1,7 +1,7 @@
 <x-app-layout>
     <div class="py-6">
         <div class=" mx-auto sm:px-6 lg:px-8">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Requested Refunds</h2>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $pageTitle }}</h2>
 
             <div class="mt-6 mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div>
@@ -42,15 +42,24 @@
                     { data: 'customer_charge_percent' },
                     { data: 'partner_share_percent' },
                     { data: 'customer_refund_amount' },
+                    {
+                        data: 'customer_refund_after_due_adjustment',
+                        render: (data) => `<div class="bg-red-100 px-2 py-1 font-semibold text-red-700">${Number(data || 0).toFixed(2)}</div>`,
+                    },
                     { data: 'partner_share_amount' },
                     { data: 'company_retained_amount' },
+                    { data: 'due_adjusted_amount', render: (data) => Number(data || 0).toFixed(2) },
+                    @if ($refundStatus === 'payment_details_added')
+                    { data: 'refund_payment_details', render: (data) => escapeHtml(data || 'N/A') },
+                    @endif
                     { data: 'status' },
                     {
                         data: null,
                         orderable: false,
                         searchable: false,
                         render: (data, type, row) => type !== 'display' ? '' :
-                            `<button class="fas fa-edit text-blue-950 px-2 py-1 rounded requestedEditBtn"
+                            `<div class="flex items-center gap-2 pb-2">
+                            <button class="fas fa-edit text-blue-950 px-2 py-1 rounded requestedEditBtn"
                                 data-id="${row.sale?.id ?? ''}"
                                 data-request-id="${row.id}"
                                 data-received_total_amount="${row.sale?.ticket_fee ?? row.gross_refund_amount}"
@@ -62,8 +71,19 @@
                                 title="Edit request"></button>
                             <button class="bg-yellow-600 text-white px-2 py-1 rounded cancelRefundBtn"
                                 data-id="${row.id}" title="Cancel refund request">Cancel</button>
-                            <button class="bg-green-700 text-white px-2 py-1 rounded customerRefundBtn"
-                                data-id="${row.id}" title="Refund customer">Refunded</button>`,
+                            @if ($refundStatus === 'requested')
+                            <button class="bg-green-700 text-white px-2 py-1 rounded approveRefundBtn"
+                                data-id="${row.id}" title="Approve refund request">Approve</button>
+                            @endif
+                            @if ($refundStatus === 'partner_approved')
+                            <button class="bg-blue-700 text-white px-2 py-1 rounded addPaymentDetailsBtn"
+                                data-id="${row.id}" title="Add refund payment details">Add Payment Details</button>
+                            @endif
+                            @if ($refundStatus === 'payment_details_added')
+                            <button class="bg-green-700 text-white px-2 py-1 rounded refundCustomerBtn"
+                                data-id="${row.id}" title="Refund customer">Refund</button>
+                            @endif
+                            </div>`,
                     },
                 ];
 
@@ -81,19 +101,19 @@
                     return value ? new Date(value).toLocaleDateString() : 'N/A';
                 }
 
-                async function refundCustomer(button, getList) {
+                async function approveRefund(button, getList) {
                     const confirmation = await Swal.fire({
-                        title: 'Are you sure?',
-                        text: 'Refund this amount to the customer now?',
-                        icon: 'warning',
+                        title: 'Approve refund request?',
+                        text: 'This request will move to the partner-approved stage.',
+                        icon: 'question',
                         showCancelButton: true,
-                        confirmButtonText: 'Yes, refund customer',
+                        confirmButtonText: 'Yes, approve',
                         cancelButtonText: 'Cancel',
                     });
 
                     if (!confirmation.isConfirmed) return;
 
-                    const response = await fetch(`/refunds/${button.dataset.id}/customer-payment`, {
+                    const response = await fetch(`/refunds/${button.dataset.id}/approve`, {
                         method: 'POST',
                         headers: {
                             'Accept': 'application/json',
@@ -102,8 +122,8 @@
                     });
                     const result = await response.json();
                     await Swal.fire({
-                        title: result.success ? 'Refunded' : 'Error',
-                        text: result.message || 'Customer refund failed.',
+                        title: result.success ? 'Approved' : 'Error',
+                        text: result.message || 'Refund approval failed.',
                         icon: result.success ? 'success' : 'error',
                     });
                     if (result.success) getList();
@@ -137,6 +157,70 @@
                     if (result.success) getList();
                 }
 
+                async function addPaymentDetails(button, getList) {
+                    const result = await Swal.fire({
+                        title: 'Add Refund Payment Details',
+                        input: 'textarea',
+                        inputLabel: 'Refund Payment Details',
+                        inputPlaceholder: 'Write payment method, reference, date, or other details...',
+                        showCancelButton: true,
+                        confirmButtonText: 'Save Details',
+                        cancelButtonText: 'Cancel',
+                        inputValidator: (value) => !value?.trim() ? 'Payment details are required.' : undefined,
+                    });
+
+                    if (!result.isConfirmed) return;
+
+                    const response = await fetch(`/refunds/${button.dataset.id}/payment-details`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        },
+                        body: JSON.stringify({ refund_payment_details: result.value.trim() }),
+                    });
+                    const responseData = await response.json();
+
+                    await Swal.fire({
+                        title: responseData.success ? 'Saved' : 'Error',
+                        text: responseData.message || responseData.errors?.refund_payment_details?.[0] || 'Could not save payment details.',
+                        icon: responseData.success ? 'success' : 'error',
+                    });
+
+                    if (responseData.success) getList();
+                }
+
+                async function refundCustomer(button, getList) {
+                    const confirmation = await Swal.fire({
+                        title: 'Complete customer refund?',
+                        text: 'This refund will be marked as completed.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, refund',
+                        cancelButtonText: 'Cancel',
+                    });
+
+                    if (!confirmation.isConfirmed) return;
+
+                    const response = await fetch(`/refunds/${button.dataset.id}/customer-payment`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        },
+                    });
+                    const responseData = await response.json();
+
+                    await Swal.fire({
+                        title: responseData.success ? 'Refunded' : 'Error',
+                        text: responseData.message || 'Could not complete the refund.',
+                        icon: responseData.success ? 'success' : 'error',
+                    });
+
+                    if (responseData.success) getList();
+                }
+
                 document.addEventListener('DOMContentLoaded', () => {
                     ['requestedShip', 'requestedCompany', 'requestedJourneyDate'].forEach((id) => {
                         document.getElementById(id)?.addEventListener('change', () => window.getList());
@@ -148,20 +232,36 @@
                             return;
                         }
 
-                        const customerRefundButton = event.target.closest('.customerRefundBtn');
-                        if (customerRefundButton) refundCustomer(customerRefundButton, window.getList);
+                        const approveRefundButton = event.target.closest('.approveRefundBtn');
+                        if (approveRefundButton) approveRefund(approveRefundButton, window.getList);
 
                         const cancelRefundButton = event.target.closest('.cancelRefundBtn');
                         if (cancelRefundButton) cancelRefund(cancelRefundButton, window.getList);
+
+                        const paymentDetailsButton = event.target.closest('.addPaymentDetailsBtn');
+                        if (paymentDetailsButton) addPaymentDetails(paymentDetailsButton, window.getList);
+
+                        const refundCustomerButton = event.target.closest('.refundCustomerBtn');
+                        if (refundCustomerButton) refundCustomer(refundCustomerButton, window.getList);
                     });
                 });
             </script>
 
-            <x-data-table id="requestedRefundsTable" :headings="[
-                'Request ID', 'Sale ID', 'Customer', 'Journey Date', 'Type',
-                'Total Purchase Tickets', 'Total Refund Tickets', 'Gross Amount', 'Customer Charge %', 'Partner Share %',
-                'Customer Refund', 'Partner Share', 'Company Retained', 'Status', 'Action'
-            ]" url="/all/refund-requests" :ordering="false" :delegateActions="false" :order="[]" />
+            @php
+                $tableHeadings = [
+                    'Request ID', 'Sale ID', 'Customer', 'Journey Date', 'Type',
+                    'Total Purchase Tickets', 'Total Refund Tickets', 'Gross Amount', 'Customer Charge %', 'Partner Share %',
+                    'Customer Refund', 'Customer Refund After Due Adjustment', 'Partner Share', 'Company Retained', 'Due Adjusted',
+                ];
+
+                if ($refundStatus === 'payment_details_added') {
+                    $tableHeadings[] = 'Payment Details';
+                }
+
+                $tableHeadings[] = 'Status';
+                $tableHeadings[] = 'Action';
+            @endphp
+            <x-data-table id="requestedRefundsTable" :headings="$tableHeadings" url="{{ url('/all/refund-requests') }}?status={{ $refundStatus }}" :ordering="false" :delegateActions="false" :order="[]" />
         </div>
     </div>
     @include('refund.refundModal')

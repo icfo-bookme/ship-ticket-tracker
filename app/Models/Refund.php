@@ -25,11 +25,13 @@ class Refund extends Model
         'partner_share_percent',
         'partner_share_amount',
         'customer_refund_amount',
+        'due_adjusted_amount',
         'company_retained_amount',
         'requested_at',
         'partner_received_at',
         'customer_refunded_at',
         'remark',
+        'refund_payment_details',
     ];
 
     protected $casts = [
@@ -39,6 +41,7 @@ class Refund extends Model
         'partner_share_percent' => 'decimal:2',
         'partner_share_amount' => 'decimal:2',
         'customer_refund_amount' => 'decimal:2',
+        'due_adjusted_amount' => 'decimal:2',
         'company_retained_amount' => 'decimal:2',
         'requested_at' => 'datetime',
         'partner_received_at' => 'datetime',

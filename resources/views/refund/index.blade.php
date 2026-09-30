@@ -76,6 +76,7 @@
                 { data: "number_of_ticket" },
                 { data: "ticket_fee" },
                 { data: "other_fee" },
+                { data: "discount_amount" },
                 { data: "total_payable" },
                 { data: "received_amount" },
                 { data: "due_amount" },
@@ -114,6 +115,7 @@
                             <button class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund"
                                 data-id="${sale.id}"
                                 data-received_total_amount="${sale.ticket_fee}"
+                                data-due-amount="${sale.due_amount || 0}"
                                 data-categories="${encodeURIComponent(JSON.stringify(sale.categories || []))}"
                                 data-status="shipped">
                                 Partial Refund
@@ -212,6 +214,7 @@
             'Number Of Ticket',
             'Total Ticket Price',
             'Other Fee',
+            'Discount Amount',
             'Total Payable',
             'Total Received Amount',
             'Due Amount',

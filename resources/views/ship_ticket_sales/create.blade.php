@@ -351,8 +351,8 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Discount Amount (৳) <span class="text-xs text-gray-500">(deducted from Total
-                                        Payable)</span>
+                                    Discount Amount (৳)
+                                    <span class="text-xs text-red-600">(deducted from Total Ticket Price only, not Other Fee)</span>
                                 </label>
                                 <input type="number" id="discount_amount" name="discount_amount"
                                     value="{{ old('discount_amount', 0) }}" step="0.01" min="0"

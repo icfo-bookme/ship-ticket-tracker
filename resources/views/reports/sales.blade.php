@@ -202,7 +202,7 @@
                     render: formatCurrency,
                 },
                 { data: "gross_refund_amount", title: "Gross Amount", render: formatCurrency },
-                { data: "customer_refund_amount", title: "Customer Refund", render: formatCurrency },
+                { data: "customer_refund_amount", title: "Final Customer Refund", render: formatCurrency },
                 { data: "due_adjusted_amount", title: "Due Adjusted", render: formatCurrency },
                 { data: "customer_refund_amount", title: "Final Customer Refund", render: formatCurrency },
                 { data: "partner_share_amount", title: "Partner Share", render: formatCurrency },
@@ -451,7 +451,7 @@
                 <p id="totalGrossRefundAmount" class="text-2xl font-bold text-blue-950 dark:text-blue-400">0.00</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Refund</p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Final Customer Refund</p>
                 <p id="totalCustomerRefundAmount" class="text-2xl font-bold text-green-700 dark:text-green-400">0.00</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">

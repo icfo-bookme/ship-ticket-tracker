@@ -18,7 +18,7 @@ class SaveCashCollectionRequest extends FormRequest
     {
         return [
             'name' => 'nullable|string|max:255',
-            'cashout_amount' => 'required|numeric',
+            'cashout_amount' => 'required|numeric|min:0',
         ];
     }
 }

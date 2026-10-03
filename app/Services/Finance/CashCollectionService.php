@@ -7,6 +7,7 @@ use App\Models\CashCollection;
 use App\Models\Refund;
 use App\Models\ShipTicketSale;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class CashCollectionService
 {
@@ -36,10 +37,18 @@ class CashCollectionService
 
     public function create(array $data): CashCollection
     {
+        $cashoutAmount = (float) $data['cashout_amount'];
+
+        if ($cashoutAmount > $this->availableCashAmount()) {
+            throw ValidationException::withMessages([
+                'cashout_amount' => 'Cash withdrawal cannot exceed available cash.',
+            ]);
+        }
+
         return CashCollection::create([
             'name' => $data['name'] ?? null,
             'entry_by' => auth()->id(),
-            'cashout_amount' => $data['cashout_amount'],
+            'cashout_amount' => $cashoutAmount,
         ]);
     }
 
@@ -58,12 +67,34 @@ class CashCollectionService
 
     public function update(CashCollection $collection, array $data): CashCollection
     {
+        $cashoutAmount = (float) $data['cashout_amount'];
+        $availableCashForUpdate = $this->availableCashAmount() + (float) $collection->cashout_amount;
+
+        if ($cashoutAmount > $availableCashForUpdate) {
+            throw ValidationException::withMessages([
+                'cashout_amount' => 'Cash withdrawal cannot exceed available cash.',
+            ]);
+        }
+
         $collection->update([
             'name' => $data['name'] ?? null,
             'entry_by' => $collection->entry_by ?? auth()->id(),
-            'cashout_amount' => $data['cashout_amount'],
+            'cashout_amount' => $cashoutAmount,
         ]);
 
         return $collection;
+    }
+
+    private function availableCashAmount(): float
+    {
+        $totalReceivedAmount = (float) ShipTicketSale::where('status', '!=', SaleStatus::Pending->value)
+            ->sum('received_amount');
+        $totalRefundedAmount = (float) Refund::query()
+            ->where('status', 'completed')
+            ->whereHas('sale', fn ($sales) => $sales->where('status', '!=', SaleStatus::Pending->value))
+            ->sum('customer_refund_amount');
+        $totalCashedOutAmount = (float) CashCollection::sum('cashout_amount');
+
+        return $totalReceivedAmount - $totalRefundedAmount - $totalCashedOutAmount;
     }
 }

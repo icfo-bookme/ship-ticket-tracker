@@ -19,6 +19,15 @@ const config = {
     bftnReceivedUrl: configElement?.dataset.bftnReceivedUrl || '',
 };
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 const shipFilter = document.getElementById("shipFilter");
         const companyFilter = document.getElementById("companyFilter");
         const journeyDateFilter = document.getElementById("journeyDateFilter");
@@ -210,7 +219,7 @@ const shipFilter = document.getElementById("shipFilter");
                 return '<span class="text-gray-400 text-sm">Not paid yet</span>';
             }
 
-            const items = payments.map((payment) => {
+            const items = payments.filter(Boolean).map((payment) => {
                 const proofLink = payment.payment_proof
                     ? ` <a href="/payments/${payment.id}/proof" target="_blank" class="text-blue-600 hover:text-blue-800 text-xs" title="Payment proof"><i class="fas fa-paperclip"></i> proof</a>`
                     : "";
@@ -226,7 +235,7 @@ const shipFilter = document.getElementById("shipFilter");
         }
 
         function renderPaymentProofs(payments) {
-            const proofs = (payments || []).filter((payment) => payment.payment_proof);
+            const proofs = (payments || []).filter((payment) => payment?.payment_proof);
 
             if (!proofs.length) {
                 return '<span class="text-gray-400 text-sm">N/A</span>';
@@ -253,6 +262,7 @@ const shipFilter = document.getElementById("shipFilter");
 
         function renderTransactionIds(payments) {
             const transactionIds = (payments || [])
+                .filter(Boolean)
                 .map((payment) => payment.transaction_id)
                 .filter((transactionId) => transactionId);
 

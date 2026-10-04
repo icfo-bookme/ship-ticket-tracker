@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RefundStatus;
 use App\Enums\SaleStatus;
 use App\Http\Requests\Refunds\FullRefundRequest;
 use App\Http\Requests\Refunds\PartialRefundRequest;
@@ -129,7 +130,7 @@ class RefundController extends Controller
         $ships = Ship::all();
         $companies = Company::all();
 
-        return view('refund.componentItem', compact('ships', 'companies'));
+        return view('refund.index', compact('ships', 'companies'));
     }
 
     public function refunded(Request $request)
@@ -286,7 +287,12 @@ class RefundController extends Controller
         $ships = Ship::all();
         $companies = Company::all();
 
-        return view('refunded.index', compact('ships', 'companies'));
+        return view('refund.requested', [
+            'ships' => Ship::all(),
+            'companies' => Company::all(),
+            'refundStatus' => RefundStatus::Completed->value,
+            'pageTitle' => 'Completed Refunds',
+        ]);
     }
 
     public function refundedDetails(int $saleId)
@@ -303,11 +309,16 @@ class RefundController extends Controller
     public function requested(Request $request)
     {
         $status = $request->input('status', 'requested');
-        abort_unless(in_array($status, ['requested', 'partner_approved', 'payment_details_added'], true), 404);
+        abort_unless(in_array($status, [
+            RefundStatus::Requested->value,
+            RefundStatus::PartnerApproved->value,
+            RefundStatus::PaymentDetailsAdded->value,
+            RefundStatus::Completed->value,
+        ], true), 404);
 
         $query = Refund::with(['sale.ships', 'sale.companies', 'sale.categories.package', 'tickets'])
             ->whereNotNull('requested_at')
-            ->whereNull('customer_refunded_at')
+            ->when($status !== RefundStatus::Completed->value, fn ($query) => $query->whereNull('customer_refunded_at'))
             ->where('status', $status);
 
         if ($request->filled('journey_date')) {

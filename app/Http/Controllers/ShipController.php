@@ -14,7 +14,7 @@ class ShipController extends Controller
 
     public function showTableList()
     {
-        return view('ships.componentItem');
+        return view('ships.index');
     }
 
     public function index(Request $request)

@@ -1,77 +1,32 @@
-<div class="py-6">
-    <div class=" mx-auto sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between pb-5">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Cash Collection Details
-            </h2>
-            <button data-modal-target="add-modal" data-modal-toggle="add-modal"
-                class="bg-red-500 text-white px-2 py-1 rounded addBtn">
-                + Add New Cash Collection
-            </button>
+<x-app-layout>
+    <div id="cashCollectionsPage" data-base-url="{{ route('cash-collections.index') }}" data-available-cash="{{ number_format($availableCashAmount, 2, '.', '') }}" class="py-6">
+        <div class="mx-auto sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between pb-5">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800">Cash Collection Details</h2>
+                <button type="button" data-modal-target="cash-collection-modal" data-modal-toggle="cash-collection-modal" class="addBtn rounded bg-red-500 px-2 py-1 text-white">+ Add New Cash Collection</button>
+            </div>
+            <x-data-table id="cashCollectionsTable" :headings="['ID', 'Cashout Amount', 'Reason', 'Created Date', 'Updated Date', 'Action']" url="{{ route('cash-collections.index') }}" :delegateActions="false" />
         </div>
-
-        <script>
-            window.dataTableColumns = window.dataTableColumns || {};
-            window.dataTableColumns['cashCollectionsTable'] = [
-                { data: 'id' },
-                {
-                    data: 'cashout_amount',
-                    render: (data, type) => type !== 'display' ? data : escapeHtml(data),
-                },
-                {
-                    data: 'name',
-                    render: (data, type) => type !== 'display' ? data : escapeHtml(data),
-                },
-                {
-                    data: 'created_at',
-                    render: formatDate,
-                },
-                {
-                    data: 'updated_at',
-                    render: formatDate,
-                },
-                {
-                    data: null,
-                    orderable: false,
-                    searchable: false,
-                    render: (data, type, row) => {
-                        if (type !== 'display') return '';
-
-                        return `
-                            <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn"
-                                data-id="${escapeHtml(row.id)}"
-                                data-name="${escapeHtml(row.name)}"
-                                data-cashout="${escapeHtml(row.cashout_amount)}">
-                                Edit
-                            </button>
-                            <button class="bg-red-500 text-white px-2 py-1 rounded deleteBtn"
-                                data-id="${escapeHtml(row.id)}">
-                                Delete
-                            </button>`;
-                    },
-                },
-            ];
-
-            function formatDate(date) {
-                if (!date) return '-';
-                const parsedDate = new Date(date);
-                if (Number.isNaN(parsedDate.getTime())) return '-';
-
-                return parsedDate.toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                });
-            }
-        </script>
-
-        <x-data-table id="cashCollectionsTable" :headings="[
-            'ID',
-            'Cashout Amount',
-            'Reason',
-            'Created Date',
-            'Updated Date',
-            'Action',
-        ]" url="/cash-collections" />
     </div>
-</div>
+
+    <x-entity-modal id="cash-collection-modal" title="Cash Collection" formId="cashCollectionForm" submitText="Save" maxWidth="md">
+        <form id="cashCollectionForm">
+            <div class="px-6 py-4">
+                <div class="mb-4">
+                    <label for="available-cash-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Available Cash Amount</label>
+                    <input type="text" name="available_cash_amount" id="available-cash-amount" value="{{ number_format($availableCashAmount, 2) }}" readonly class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 px-4 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div class="mb-4">
+                    <label for="cashout-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Cashout Amount</label>
+                    <input type="number" name="cashout_amount" id="cashout-amount" required min="0" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div class="mb-4">
+                    <label for="cash-collection-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reason For</label>
+                    <input type="text" name="name" id="cash-collection-name" required class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+            </div>
+        </form>
+    </x-entity-modal>
+
+    @vite(['resources/js/pages/cash-collections.js'])
+</x-app-layout>

@@ -69,11 +69,11 @@ $maxWidthClass = [
             modal.classList.add('hidden');
             modal.classList.remove('flex');
 
-            // Also call the page's own closeModal() if it exists
-            // (keeps old page scripts' state in sync).
-            if (typeof window.closeModal === 'function') {
-                try { window.closeModal(); } catch (e) { /* ignore */ }
-            }
+            document.querySelectorAll('[modal-backdrop], .modal-backdrop').forEach(function (backdrop) {
+                backdrop.remove();
+            });
+            document.body.classList.remove('overflow-hidden');
+
         }
         modal._closeModal = closeModal;
 
@@ -120,16 +120,6 @@ $maxWidthClass = [
                 delete label.dataset.originalText;
             }
         }
-        // Auto-reset: page scripts don't need to call anything manually.
-        // Whenever getList() runs (called on every success) or the modal
-        // closes, the submit button returns to its normal state.
-        window.getList = window.getList || function () {};
-        const previousGetList = window.getList;
-        window.getList = function () {
-            previousGetList();
-            resetSubmitLoading();
-        };
-
         const observer = new MutationObserver(function () {
             if (modal.classList.contains('hidden')) {
                 resetSubmitLoading();
@@ -145,15 +135,6 @@ $maxWidthClass = [
             }
         });
         swalObserver.observe(document.body, { childList: true, subtree: true });
-
-        // Global helper so page scripts can reset the state after their
-        // fetch succeeds/fails: window.resetSubmitLoading('add-modal')
-        window.resetSubmitLoading = window.resetSubmitLoading || function () {};
-        const previousReset = window.resetSubmitLoading;
-        window.resetSubmitLoading = function (modalId) {
-            previousReset(modalId);
-            if (!modalId || modalId === @json($id)) { resetSubmitLoading(); }
-        };
 
         if (form && submitBtn) {
             form.addEventListener('submit', function () {

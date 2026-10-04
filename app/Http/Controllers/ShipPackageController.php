@@ -19,7 +19,12 @@ class ShipPackageController extends Controller
 
     public function showPackages($id)
     {
-        return view('packages.componentItem', compact('id'));
+        return view('packages.index', compact('id'));
+    }
+
+    public function showRecord($id)
+    {
+        return response()->json($this->shipPackages->find($id));
     }
 
     public function store(StoreShipPackageRequest $request)

@@ -1,54 +1,33 @@
-<div class="py-6">
-    <div class=" mx-auto sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between pb-5">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
-                Ship Packages
-            </h2>
-            <button data-modal-target="add-modal" data-modal-toggle="add-modal"
-                class="bg-red-500 text-white px-2 py-1 rounded addBtn">
-                + Add New Package
-            </button>
+<x-app-layout>
+    <div id="packagesPage" data-base-url="{{ route('ship-packages.store') }}" data-record-url="{{ route('ship-packages.record', ['id' => '__ID__']) }}" class="py-6">
+        <div class="mx-auto sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between pb-5">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-white">Ship Packages</h2>
+                <button type="button" data-modal-target="package-modal" data-modal-toggle="package-modal" class="addBtn rounded bg-red-500 px-2 py-1 text-white">+ Add New Package</button>
+            </div>
+            <x-data-table id="packagesTable" :headings="['ID', 'Name', 'Price', 'Round Trip Price', 'Action']" url="{{ route('ship-packages.data', ['id' => $id]) }}" :delegateActions="false" />
         </div>
-        <script>
-            window.dataTableColumns = window.dataTableColumns || {};
-            window.dataTableColumns['packagesTable'] = [
-                { data: 'id' },
-                {
-                    data: 'name',
-                    render: (data, type) => type !== 'display' ? data : escapeHtml(data),
-                },
-                {
-                    data: 'price',
-                    render: (data, type) => type !== 'display' ? data : escapeHtml(data),
-                },
-                {
-                    data: 'round_trip_price',
-                    render: (data, type) => type !== 'display' ? data : escapeHtml(data),
-                },
-                {
-                    data: 'action',
-                    orderable: false,
-                    searchable: false,
-                    render: (data, type, row) => {
-                        if (type !== 'display') return '';
-                        return `
-                            <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn"
-                                data-id="${row.id}"
-                                data-name="${escapeHtml(row.name)}"
-                                data-price="${escapeHtml(row.price)}"
-                                data-round_trip_price="${escapeHtml(row.round_trip_price)}">
-                                Edit
-                            </button>
-                            <button class="bg-red-500 text-white px-2 py-1 rounded deleteBtn"
-                                data-id="${row.id}">
-                                Delete
-                            </button>`;
-                    },
-                },
-            ];
-        </script>
-
-        <x-data-table id="packagesTable" :headings="['ID', 'Name', 'Price', 'Round Trip Price', 'Action']"
-            url="/ship-packages/{{ $id }}" />
     </div>
-</div>
+
+    <x-entity-modal id="package-modal" title="Ship Package" formId="packageForm" submitText="Save" maxWidth="md">
+        <form id="packageForm">
+            <input type="hidden" name="ship_id" value="{{ $id }}">
+            <div class="px-6 py-4">
+                <div class="mb-4">
+                    <label for="package-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Package Name</label>
+                    <input type="text" name="name" id="package-name" required class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div class="mb-4">
+                    <label for="package-price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Price</label>
+                    <input type="number" name="price" id="package-price" required min="0" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div class="mb-4">
+                    <label for="package-round-trip-price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Round Trip Price</label>
+                    <input type="number" name="round_trip_price" id="package-round-trip-price" required min="0" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+            </div>
+        </form>
+    </x-entity-modal>
+
+    @vite(['resources/js/pages/ship-packages.js'])
+</x-app-layout>

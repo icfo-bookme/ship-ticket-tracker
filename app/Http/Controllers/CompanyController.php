@@ -13,7 +13,7 @@ class CompanyController extends Controller
 
     public function showTableList()
     {
-        return view('companies.componentItem');
+        return view('companies.index');
     }
 
     public function index(Request $request)

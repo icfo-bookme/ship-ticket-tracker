@@ -21,7 +21,7 @@ class ExcelSettingController extends Controller
 
     public function showTableList()
     {
-        return view('Excel.componentItem');
+        return view('Excel.index');
     }
 
     /**

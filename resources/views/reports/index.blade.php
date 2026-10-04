@@ -1,4 +1,4 @@
 <x-app-layout>
     @include('reports.sales')
-    @include('refund.show')
+    @vite(['resources/js/pages/reports-sales.js'])
 </x-app-layout>

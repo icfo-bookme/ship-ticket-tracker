@@ -56,7 +56,7 @@
         }
 
         // Safety net: never trap the user behind the loader (e.g. network fail).
-        setTimeout(hidePageLoader, 15000);
+        setTimeout(hidePageLoader, 5000);
 
         // Shared escapeHtml — only defined once globally.
         if (!window.escapeHtml) {
@@ -70,33 +70,6 @@
             };
         }
 
-        // Refresh helper so modal views can reload after create/update/delete.
-        window.getList = window.getList || function () {};
-        const previousGetList = window.getList;
-        window.getList = function () {
-            previousGetList();
-            if (window.jQuery && $.fn.DataTable.isDataTable(tableEl)) {
-                $(tableEl).DataTable().ajax.reload(null, false);
-            }
-        };
-
-        // Optional per-page filter hook: window.dataTableFilters[id] = fn returning
-        // extra query params merged into every ajax request (e.g. dropdown filters).
-        // Resolved lazily inside DOMContentLoaded (see below).
-
-        // Event delegation for edit/delete buttons — survives DataTables redraws.
-        // Pages that wire their own actions can disable it with :delegateActions="false".
-        const delegateActions = @json($delegateActions);
-        if (delegateActions) {
-            bodyEl.addEventListener('click', function (e) {
-                const editBtn = e.target.closest('.editBtn');
-                if (editBtn && typeof window.showEditModal === 'function') { showEditModal(editBtn); return; }
-
-                const deleteBtn = e.target.closest('.deleteBtn');
-                if (deleteBtn && typeof window.handleDeleteClick === 'function') { handleDeleteClick(deleteBtn); }
-            });
-        }
-
         // Uniform DataTables button styling for every table.
         if (window.jQuery && $.fn.DataTable) {
             $.extend(true, $.fn.DataTable.Buttons.defaults, {
@@ -104,21 +77,16 @@
             });
         }
 
-        // Page-specific column definitions live in window.dataTableColumns[id].
-        // Every page must register its columns there before this script runs.
-
         document.addEventListener('DOMContentLoaded', function () {
-            const customColumns = (window.dataTableColumns || {})[@json($id)];
-            const filtersFn = (window.dataTableFilters || {})[@json($id)];
-            const dataSrcFn = (window.dataTableDataSrc || {})[@json($id)];
+            const customColumns = tableEl.__dataTableColumns || [];
+            const filtersFn = tableEl.__dataTableFilters;
+            const dataSrcFn = tableEl.__dataTableDataSrc;
 
             // Table must be visible BEFORE DataTables initialises: the global
             // scrollX default (layouts/app.blade.php) clones the thead, and
             // cloning a hidden table yields a zero-height header row.
             tableEl.classList.remove('hidden');
 
-            // Every page must register its columns in window.dataTableColumns[id]
-            // (see the usage comment at the top of this component).
             $(tableEl).on('error.dt', function () {
                 hidePageLoader();
             });
@@ -146,7 +114,7 @@
                 },
                 columns: customColumns,
                 createdRow: (row, data) => {
-                    const createdRowFn = (window.dataTableCreatedRows || {})[@json($id)];
+                    const createdRowFn = tableEl.__dataTableCreatedRows;
 
                     createdRowFn?.(row, data);
                 },
@@ -154,6 +122,13 @@
                     hidePageLoader();
                 },
             });
+        });
+
+        document.addEventListener('data-table:refresh', function (event) {
+            if (event.detail?.tableId !== @json($id)) return;
+            if (window.jQuery && $.fn.DataTable.isDataTable(tableEl)) {
+                $(tableEl).DataTable().ajax.reload(null, false);
+            }
         });
     })();
 </script>

@@ -12,7 +12,9 @@ class WhatsappDetailService
         $query = WhatsappDetail::query();
         $total = (clone $query)->count();
         if ($search = $request->input('search.value')) {
-            $query->where('phone', 'like', "%{$search}%");
+            $query->where('whatsapp_number', 'like', "%{$search}%")
+                ->orWhere('tag', 'like', "%{$search}%")
+                ->orWhere('form_no', 'like', "%{$search}%");
         }
         $filtered = (clone $query)->count();
         $length = min(max($request->integer('length', 10), 1), 100);
@@ -26,5 +28,17 @@ class WhatsappDetailService
         $whatsapp->save();
 
         return $whatsapp;
+    }
+
+    public function find(string $id): WhatsappDetail
+    {
+        return WhatsappDetail::findOrFail($id);
+    }
+
+    public function update(WhatsappDetail $whatsapp, array $data): WhatsappDetail
+    {
+        $whatsapp->update($data);
+
+        return $whatsapp->refresh();
     }
 }

@@ -20,7 +20,7 @@ class RoleController extends Controller
     {
         $permissionGroups = $this->roles->permissionGroups();
 
-        return view('roles.componentItem', compact('permissionGroups'));
+        return view('roles.index', compact('permissionGroups'));
     }
 
     /**

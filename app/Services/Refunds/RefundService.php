@@ -2,6 +2,7 @@
 
 namespace App\Services\Refunds;
 
+use App\Enums\RefundStatus;
 use App\Enums\SaleStatus;
 use App\Models\Refund;
 use App\Models\ShipTicketSale;
@@ -13,7 +14,7 @@ class RefundService
     public function create(array $data): Refund
     {
         return Refund::create(array_merge([
-            'status' => 'requested',
+            'status' => RefundStatus::Requested->value,
             'refund_type' => 'partial',
         ], $data));
     }
@@ -29,7 +30,7 @@ class RefundService
                     Refund::create([
                         'sales_id' => $sale->id,
                         'refund_type' => 'bulk',
-                        'status' => 'requested',
+                        'status' => RefundStatus::Requested->value,
                         'refunded_number_of_tickets' => $sale->number_of_ticket,
                         'refunded_amount' => $sale->ticket_fee,
                         'gross_refund_amount' => $sale->ticket_fee,
@@ -89,7 +90,7 @@ class RefundService
             Refund::create([
                 'sales_id' => $sale->id,
                 'refund_type' => 'partial',
-                'status' => 'requested',
+                'status' => RefundStatus::Requested->value,
                 'refunded_number_of_tickets' => $ticketCount,
                 'refunded_amount' => $grossAmount,
                 'gross_refund_amount' => $grossAmount,
@@ -116,14 +117,14 @@ class RefundService
 
     public function refundCustomer(Refund $refund, array $data): void
     {
-        if (in_array($refund->status, ['completed', 'cancelled'], true)) {
+        if (in_array($refund->status, [RefundStatus::Completed->value, RefundStatus::Cancelled->value], true)) {
             throw ValidationException::withMessages(['status' => 'This refund has already been completed or cancelled.']);
         }
 
         DB::transaction(function () use ($refund, $data): void {
             $refund = Refund::query()->lockForUpdate()->findOrFail($refund->id);
 
-            if (in_array($refund->status, ['completed', 'cancelled'], true)) {
+            if (in_array($refund->status, [RefundStatus::Completed->value, RefundStatus::Cancelled->value], true)) {
                 throw ValidationException::withMessages(['status' => 'This refund has already been completed or cancelled.']);
             }
 
@@ -156,7 +157,7 @@ class RefundService
                     'remark' => $data['remark'] ?? null,
                 ]);
             }
-            $refund->update(['status' => 'completed', 'customer_refunded_at' => now()]);
+            $refund->update(['status' => RefundStatus::Completed->value, 'customer_refunded_at' => now()]);
         });
     }
 
@@ -170,21 +171,21 @@ class RefundService
 
     public function approve(Refund $refund): void
     {
-        if ($refund->status !== 'requested') {
+        if ($refund->status !== RefundStatus::Requested->value) {
             throw ValidationException::withMessages([
                 'status' => 'Only requested refunds can be approved.',
             ]);
         }
 
         $refund->update([
-            'status' => 'partner_approved',
+            'status' => RefundStatus::PartnerApproved->value,
             'partner_received_at' => now(),
         ]);
     }
 
     public function addPaymentDetails(Refund $refund, string $details): void
     {
-        if ($refund->status !== 'partner_approved') {
+        if ($refund->status !== RefundStatus::PartnerApproved->value) {
             throw ValidationException::withMessages([
                 'status' => 'Payment details can only be added to partner-approved refunds.',
             ]);
@@ -192,13 +193,13 @@ class RefundService
 
         $refund->update([
             'refund_payment_details' => $details,
-            'status' => 'payment_details_added',
+            'status' => RefundStatus::PaymentDetailsAdded->value,
         ]);
     }
 
     public function update(Refund $refund, ShipTicketSale $sale, array $data): void
     {
-        if (in_array($refund->status, ['completed', 'cancelled'], true)) {
+        if (in_array($refund->status, [RefundStatus::Completed->value, RefundStatus::Cancelled->value], true)) {
             throw ValidationException::withMessages(['status' => 'This refund request can no longer be edited.']);
         }
 
@@ -270,11 +271,11 @@ class RefundService
 
     public function cancel(Refund $refund): void
     {
-        if (in_array($refund->status, ['completed', 'cancelled'], true)) {
+        if (in_array($refund->status, [RefundStatus::Completed->value, RefundStatus::Cancelled->value], true)) {
             throw ValidationException::withMessages(['status' => 'This refund request cannot be cancelled.']);
         }
 
-        $refund->update(['status' => 'cancelled']);
+        $refund->update(['status' => RefundStatus::Cancelled->value]);
     }
 
     private function ensureRefundableAmount(
@@ -284,7 +285,7 @@ class RefundService
         ?int $ignoredRefundId = null,
     ): void {
         $refunds = $sale->refunds()
-            ->whereNotIn('status', ['cancelled'])
+            ->whereNotIn('status', [RefundStatus::Cancelled->value])
             ->when($ignoredRefundId, fn ($query) => $query->where('id', '!=', $ignoredRefundId))
             ->get();
         $refundedTickets = (int) $refunds->sum('refunded_number_of_tickets');
@@ -307,7 +308,7 @@ class RefundService
     private function ensureRefundableCategories(ShipTicketSale $sale, array $selectedTickets, float $amount, ?int $ignoredRefundId = null): void
     {
         $refunds = $sale->refunds()
-            ->whereNotIn('status', ['cancelled'])
+            ->whereNotIn('status', [RefundStatus::Cancelled->value])
             ->when($ignoredRefundId, fn ($query) => $query->where('id', '!=', $ignoredRefundId))
             ->with('tickets')
             ->get();

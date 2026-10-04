@@ -11,6 +11,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SaleDraftController;
 use App\Http\Controllers\ShipController;
 use App\Http\Controllers\ShipPackageController;
 use App\Http\Controllers\ShipTicketSaleController;
@@ -31,7 +32,8 @@ Route::get('/sales-create/success', [ShipTicketSaleController::class, 'success']
 
 // Public ship packages (booking form)
 Route::get('/ship/packages/{id}', [ShipPackageController::class, 'showPackages'])->name('ship.packages');
-Route::get('/ship-packages/{id}', [ShipPackageController::class, 'index']);
+Route::get('/ship-packages/{id}', [ShipPackageController::class, 'index'])->name('ship-packages.data');
+Route::get('/ship-packages/{id}/record', [ShipPackageController::class, 'showRecord'])->name('ship-packages.record');
 
 // Authenticated routes use permission middleware; Super Admin bypasses these checks.
 
@@ -47,6 +49,12 @@ Route::middleware('auth')->group(function () {
 
     // SALES — CREATE / STORE
     Route::middleware('can:sales.create')->group(function () {
+        Route::get('sale-drafts', [SaleDraftController::class, 'index'])->name('sale-drafts.index');
+        Route::post('sale-drafts', [SaleDraftController::class, 'store'])->name('sale-drafts.store');
+        Route::get('sale-drafts/manage', [SaleDraftController::class, 'page'])->name('sale-drafts.manage');
+        Route::get('sale-drafts/{sale_draft}', [SaleDraftController::class, 'show'])->name('sale-drafts.show');
+        Route::put('sale-drafts/{sale_draft}', [SaleDraftController::class, 'update'])->name('sale-drafts.update');
+        Route::delete('sale-drafts/{sale_draft}', [SaleDraftController::class, 'destroy'])->name('sale-drafts.destroy');
         Route::get('ship-ticket-sales/create', [ShipTicketSaleController::class, 'create'])->name('ship-ticket-sales.create');
         Route::post('ship-ticket-sales', [ShipTicketSaleController::class, 'store'])->name('ship-ticket-sales.store');
         Route::post('ship-ticket-sales/check-duplicate', [ShipTicketSaleController::class, 'checkDuplicate']);
@@ -87,15 +95,15 @@ Route::middleware('auth')->group(function () {
 
     // SALES — VERIFY
     Route::middleware('can:sales.verify')->group(function () {
-        Route::put('/sale/verify/{id}/{status}', [ShipTicketSaleController::class, 'verify']);
-        Route::put('/sale/bftn-received/{id}', [ShipTicketSaleController::class, 'markBftnReceived']);
+        Route::put('/sale/verify/{id}/{status}', [ShipTicketSaleController::class, 'verify'])->name('sale.verify');
+        Route::put('/sale/bftn-received/{id}', [ShipTicketSaleController::class, 'markBftnReceived'])->name('sale.bftn-received');
         Route::put('ship-ticket-issue/{ship_ticket_sale}', [ShipTicketSaleController::class, 'updateIssue'])->name('ship-ticket-issue.update');
     });
 
     // SALES — DELETE
     Route::middleware('can:sales.delete')->group(function () {
         Route::delete('ship-ticket-sales/{ship_ticket_sale}', [ShipTicketSaleController::class, 'destroy'])->name('ship-ticket-sales.destroy');
-        Route::delete('/sale/delete/{id}', [ShipTicketSaleController::class, 'destroy']);
+        Route::delete('/sale/delete/{id}', [ShipTicketSaleController::class, 'destroy'])->name('sale.destroy');
     });
 
     // Refunds module. Register `create` before the `{refund}` wildcard route.
@@ -104,15 +112,14 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:refunds.manage')->group(function () {
         Route::get('refunds/create', [RefundController::class, 'create'])->name('refunds.create');
         Route::post('refunds', [RefundController::class, 'store'])->name('refunds.store');
-        Route::post('/full/refunds', [RefundController::class, 'fullRefunds']);
-        Route::post('/partial/refund/{id}', [RefundController::class, 'partialRefund']);
-        Route::post('/refunds/{id}/customer-payment', [RefundController::class, 'refundCustomer']);
+        Route::post('/full/refunds', [RefundController::class, 'fullRefunds'])->name('refunds.full');
+        Route::post('/partial/refund/{id}', [RefundController::class, 'partialRefund'])->name('refunds.partial');
+        Route::post('/refunds/{id}/customer-payment', [RefundController::class, 'refundCustomer'])->name('refunds.customer-payment');
         Route::get('refunds/{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
         Route::put('refunds/{refund}', [RefundController::class, 'update'])->name('refunds.update');
         Route::post('refunds/{id}/cancel', [RefundController::class, 'cancel'])->name('refunds.cancel');
         Route::post('refunds/{id}/approve', [RefundController::class, 'approve'])->name('refunds.approve');
         Route::post('refunds/{id}/payment-details', [RefundController::class, 'addPaymentDetails'])->name('refunds.payment-details');
-        Route::put('/refunded/{id}', [RefundController::class, 'update']);
         Route::delete('refunds/{refund}', [RefundController::class, 'destroy'])->name('refunds.destroy');
     });
 
@@ -121,11 +128,11 @@ Route::middleware('auth')->group(function () {
         Route::get('refunds', [RefundController::class, 'index'])->name('refunds.index');
         Route::get('refunds/{refund}', [RefundController::class, 'show'])->name('refunds.show');
         Route::get('/all/refunded', [RefundController::class, 'refunded']);
-        Route::get('/all/refund-requests', [RefundController::class, 'requested']);
+        Route::get('/all/refund-requests', [RefundController::class, 'requested'])->name('refunds.requests.data');
         Route::get('/refund-requests', [RefundController::class, 'showRequested'])->name('refunds.requested');
         Route::get('/partner-approved-refunds', [RefundController::class, 'showApproved'])->name('refunds.approved');
         Route::get('/payment-details-added-refunds', [RefundController::class, 'showPaymentDetailsAdded'])->name('refunds.payment-details-added');
-        Route::get('/all/refundable', [RefundController::class, 'refundableCS']);
+        Route::get('/all/refundable', [RefundController::class, 'refundableCS'])->name('refunds.refundable');
         Route::get('/refunded', [RefundController::class, 'showRefundedCS']);
         Route::get('/refunded/{sale}/details', [RefundController::class, 'refundedDetails'])->name('refunds.details');
     });
@@ -146,9 +153,9 @@ Route::middleware('auth')->group(function () {
 
     // SHIP PACKAGES (public show routes are defined at the top)
     Route::middleware('can:packages.manage')->group(function () {
-        Route::post('/ship-packages', [ShipPackageController::class, 'store']);
-        Route::put('/ship-packages/{id}', [ShipPackageController::class, 'update']);
-        Route::delete('/ship-packages/{id}', [ShipPackageController::class, 'destroy']);
+        Route::post('/ship-packages', [ShipPackageController::class, 'store'])->name('ship-packages.store');
+        Route::put('/ship-packages/{id}', [ShipPackageController::class, 'update'])->name('ship-packages.update');
+        Route::delete('/ship-packages/{id}', [ShipPackageController::class, 'destroy'])->name('ship-packages.destroy');
     });
 
     // Accounting modules
@@ -165,7 +172,7 @@ Route::middleware('auth')->group(function () {
 
     // PAYMENTS
     Route::middleware('can:payments.manage')->group(function () {
-        Route::post('/partial/paid/{id}', [PaymentController::class, 'partial_due_payment']);
+        Route::post('/partial/paid/{id}', [PaymentController::class, 'partial_due_payment'])->name('payments.partial');
     });
 
     // CASH COLLECTIONS
@@ -208,7 +215,7 @@ Route::middleware('auth')->group(function () {
 
     // NOTIFICATIONS (sales BFTN deposit alerts)
     Route::middleware('can:sales.view')->group(function () {
-        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     });
     Route::middleware('can:sales.verify')->group(function () {
         Route::get('/notification/verify/{notification}', [NotificationController::class, 'verify'])->name('notification.verify');

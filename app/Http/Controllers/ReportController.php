@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RefundStatus;
 use App\Models\Company;
 use App\Models\Refund;
 use App\Models\Ship;
@@ -43,8 +44,12 @@ class ReportController extends Controller
 
     public function extraReceivedData(Request $request): JsonResponse
     {
-        $query = ShipTicketSale::with(['ships', 'companies'])
-            ->whereColumn('received_amount', '>', 'total_payable');
+        $query = ShipTicketSale::with(['ships', 'companies', 'refunds'])
+            ->whereColumn('received_amount', '>', 'total_payable')
+            ->whereDoesntHave('refunds', function ($refunds): void {
+                $refunds->where('refund_type', 'extra_payment')
+                    ->whereNotIn('status', [RefundStatus::Cancelled->value]);
+            });
 
         $total = (clone $query)->count();
         $sales = $query->latest('id')
@@ -65,7 +70,7 @@ class ReportController extends Controller
                 'journey_date' => $sale->journey_date,
                 'total_payable' => (float) $sale->total_payable,
                 'received_amount' => (float) $sale->received_amount,
-                'extra_received_amount' => (float) $sale->received_amount - (float) $sale->total_payable,
+                'extra_remaining_amount' => $this->extraRemainingAmount($sale),
             ]),
         ]);
     }
@@ -75,9 +80,13 @@ class ReportController extends Controller
         /** @var array{sale: ShipTicketSale|null, extra: float} $result */
         $result = DB::transaction(function () use ($id): array {
             $sale = ShipTicketSale::query()->lockForUpdate()->findOrFail($id);
-            $extra = (float) $sale->received_amount - (float) $sale->total_payable;
+            $extra = $this->extraRemainingAmount($sale);
 
             if ($extra <= 0) {
+                return ['sale' => null, 'extra' => 0.0];
+            }
+
+            if ($sale->refunds()->where('refund_type', 'extra_payment')->whereNotIn('status', [RefundStatus::Cancelled->value])->exists()) {
                 return ['sale' => null, 'extra' => 0.0];
             }
 
@@ -107,13 +116,13 @@ class ReportController extends Controller
     {
         $refund = DB::transaction(function () use ($id): Refund {
             $sale = ShipTicketSale::query()->lockForUpdate()->findOrFail($id);
-            $extra = (float) $sale->received_amount - (float) $sale->total_payable;
+            $extra = $this->extraRemainingAmount($sale);
 
             if ($extra <= 0) {
                 abort(422, 'This sale has no extra received amount to refund.');
             }
 
-            if ($sale->refunds()->where('refund_type', 'extra_payment')->whereNotIn('status', ['cancelled'])->exists()) {
+            if ($sale->refunds()->where('refund_type', 'extra_payment')->whereNotIn('status', [RefundStatus::Cancelled->value])->exists()) {
                 abort(422, 'A refund request already exists for this extra amount.');
             }
 
@@ -125,7 +134,7 @@ class ReportController extends Controller
                 'refunded_amount' => $extra,
                 'gross_refund_amount' => $extra,
                 'customer_refund_amount' => $extra,
-                'status' => 'requested',
+                'status' => RefundStatus::Requested->value,
                 'requested_at' => now(),
             ]);
         });
@@ -134,5 +143,16 @@ class ReportController extends Controller
             'success' => true,
             'message' => "Refund request of {$refund->customer_refund_amount} has been created.",
         ]);
+    }
+
+    private function extraRemainingAmount(ShipTicketSale $sale): float
+    {
+        $extraReceived = max((float) $sale->received_amount - (float) $sale->total_payable, 0);
+        $reservedOrRefunded = (float) $sale->refunds
+            ->where('refund_type', 'extra_payment')
+            ->where('status', '!=', RefundStatus::Cancelled->value)
+            ->sum('refunded_amount');
+
+        return max(round($extraReceived - $reservedOrRefunded, 2), 0);
     }
 }

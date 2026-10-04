@@ -18,7 +18,7 @@ class PermissionController extends Controller
      */
     public function showTableList()
     {
-        return view('permissions.componentItem');
+        return view('permissions.index');
     }
 
     /**

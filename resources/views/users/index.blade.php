@@ -1,76 +1,46 @@
-<div class="py-6">
-    <div class=" mx-auto sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between pb-5">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Users Management
-            </h2>
-            <button data-modal-target="add-modal" data-modal-toggle="add-modal"
-                class="bg-blue-600 text-white px-3 py-1.5 rounded addBtn">
-                + Add New User
-            </button>
+<x-app-layout>
+    <div id="usersPage" data-base-url="{{ route('users.index') }}" class="py-6">
+        <div class="mx-auto sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between pb-5">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800">Users Management</h2>
+                <button type="button" data-modal-target="user-modal" data-modal-toggle="user-modal" class="addBtn rounded bg-blue-600 px-3 py-1.5 text-white">+ Add New User</button>
+            </div>
+            <x-data-table id="usersTable" :headings="['ID', 'Name', 'Email', 'Role', 'Action']" url="{{ route('users.index') }}" :delegateActions="false" />
         </div>
-
-        <script data-page-columns hidden>
-            window.dataTableColumns = window.dataTableColumns || {};
-            window.dataTableColumns['usersTable'] = [{
-                    data: 'id',
-                    name: 'id'
-                },
-                {
-                    data: 'name',
-                    name: 'name',
-                    render: (data, type, row) => type !== 'display' ? data :
-                        `<span class="font-medium">${escapeHtml(data)}</span>` +
-                        (row.is_self ?
-                            ' <span class="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded">You</span>' :
-                            ''),
-                },
-                {
-                    data: 'email',
-                    name: 'email'
-                },
-                {
-                    data: 'roles_label',
-                    orderable: false,
-                    searchable: false,
-                    render: (data, type, row) => {
-                        if (type !== 'display') return data;
-                        if (!data) return '<span class="text-gray-400">No role</span>';
-                        return `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">${escapeHtml(data)}</span>` +
-                            (row.is_super_admin ?
-                                ' <span class="inline-block bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded">Super Admin</span>' :
-                                '');
-                    },
-                },
-                {
-                    data: 'action',
-                    orderable: false,
-                    searchable: false,
-                    render: (data, type, row) => {
-                        if (type !== 'display') return '';
-                        const canDelete = !row.is_super_admin && !row.is_self;
-                        return `
-                            <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn"
-                                data-id="${row.id}"
-                                data-name="${escapeHtml(row.name)}"
-                                data-email="${escapeHtml(row.email)}"
-                                data-role="${escapeHtml(row.roles_label)}"
-                                data-is-super-admin="${row.is_super_admin ? 1 : 0}">
-                                Edit
-                            </button>
-                            <button class="bg-red-500 text-white px-2 py-1 rounded deleteBtn"
-                                data-id="${row.id}"
-                                data-name="${escapeHtml(row.name)}"
-                                data-is-super-admin="${row.is_super_admin ? 1 : 0}"
-                                data-is-self="${row.is_self ? 1 : 0}"
-                                ${canDelete ? '' : 'disabled title="This account cannot be deleted"'}>
-                                Delete
-                            </button>`;
-                    },
-                },
-            ];
-        </script>
-
-        <x-data-table id="usersTable" :headings="['ID', 'Name', 'Email', 'Role', 'Action']" url="/users" />
     </div>
-</div>
+
+    <x-entity-modal id="user-modal" title="User" formId="userForm" submitText="Save" maxWidth="lg">
+        <form id="userForm">
+            <div class="grid grid-cols-1 gap-2 px-6 py-4 md:grid-cols-2">
+                <div class="mb-4">
+                    <label for="user-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                    <input type="text" name="name" id="user-name" required class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div class="mb-4">
+                    <label for="user-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <input type="email" name="email" id="user-email" required class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div class="mb-4">
+                    <label for="user-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                    <input type="password" name="password" id="user-password" required class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    <p class="mt-1 text-xs text-gray-500">Leave blank during update to keep the current password.</p>
+                </div>
+                <div class="mb-4" data-password-confirmation>
+                    <label for="user-password-confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</label>
+                    <input type="password" name="password_confirmation" id="user-password-confirmation" required class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div class="mb-4">
+                    <label for="user-role" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                    <select name="role" id="user-role" required class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="">-- Select Role --</option>
+                        @foreach ($roles as $role)
+                            <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </form>
+    </x-entity-modal>
+
+    @vite(['resources/js/pages/users.js'])
+</x-app-layout>

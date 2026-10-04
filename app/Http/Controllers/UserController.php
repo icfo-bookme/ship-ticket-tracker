@@ -21,7 +21,7 @@ class UserController extends Controller
     {
         $roles = Role::orderBy('name')->get(['id', 'name']);
 
-        return view('users.componentItem', compact('roles'));
+        return view('users.index', compact('roles'));
     }
 
     /**

@@ -18,7 +18,7 @@ class CashCollectionController extends Controller
 
     public function showCashCollection()
     {
-        return view('cashCollection.componentItem', $this->cashCollections->summary());
+        return view('cashCollection.index', $this->cashCollections->summary());
     }
 
     public function store(SaveCashCollectionRequest $request)

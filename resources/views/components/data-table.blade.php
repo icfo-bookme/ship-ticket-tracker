@@ -59,24 +59,7 @@
         setTimeout(hidePageLoader, 5000);
 
         // Shared escapeHtml — only defined once globally.
-        if (!window.escapeHtml) {
-            window.escapeHtml = function (value) {
-                return String(value ?? '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-            };
-        }
-
         // Uniform DataTables button styling for every table.
-        if (window.jQuery && $.fn.DataTable) {
-            $.extend(true, $.fn.DataTable.Buttons.defaults, {
-                dom: { button: { className: 'btn border border-gray-300 bg-white text-gray-800 px-3 py-1.5 text-sm rounded hover:bg-gray-100' } },
-            });
-        }
-
         document.addEventListener('DOMContentLoaded', function () {
             const customColumns = tableEl.__dataTableColumns || [];
             const filtersFn = tableEl.__dataTableFilters;

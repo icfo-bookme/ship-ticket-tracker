@@ -60,3 +60,4 @@ if (table && page) {
 function formatCurrency(value) {
     return Number(value || 0).toFixed(2);
 }
+import { escapeHtml } from '../utils/escape-html';

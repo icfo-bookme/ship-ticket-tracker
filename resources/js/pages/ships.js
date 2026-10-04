@@ -30,3 +30,4 @@ document.addEventListener('DOMContentLoaded', () => {
         getList: () => refreshDataTable('shipsTable'),
     });
 });
+import { escapeHtml } from '../utils/escape-html';

@@ -242,3 +242,4 @@ document.getElementById('requestedRefundsTable').__dataTableColumns = isComplete
                     });
                 });
 
+import { escapeHtml } from '../utils/escape-html';

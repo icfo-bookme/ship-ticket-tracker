@@ -361,3 +361,4 @@ let currentRefundSaleId = null;
         openRefundModal(event.detail.button, event.detail.editing);
     });
 
+import { escapeHtml } from '../utils/escape-html';

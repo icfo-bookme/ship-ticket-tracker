@@ -236,3 +236,4 @@ const shipFilter = document.getElementById("shipFilter");
             }
 
             document.addEventListener("DOMContentLoaded", bindReportTableEvents);
+import { escapeHtml } from '../utils/escape-html';

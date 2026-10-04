@@ -14,19 +14,15 @@ class SalesDataTableService
     public function response(Request $request, string $status): JsonResponse
     {
         $query = ShipTicketSale::with([
-            'ships.packages',
-            'categories',
+            'ships',
             'companies',
-            'coPassengers',
             'shipment',
             'payments',
             'refunds',
             'bftn',
-            'PrintStatus',
-            'printedTickets',
             'groupedTickets.sale:id,status',
             'verifyby.verifiedByUser',
-        ])->withCount('printedTickets');
+        ]);
 
         $this->applyStatusVisibility($query, $status);
         $this->excludeSalesWithActiveRefunds($query);

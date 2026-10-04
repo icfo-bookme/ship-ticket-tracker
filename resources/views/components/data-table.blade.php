@@ -100,8 +100,10 @@
                     ? {
                         url: @json($url),
                         type: 'GET',
+                        timeout: 15000,
                         data: filtersFn ? (request) => Object.assign(request, filtersFn()) : undefined,
                         dataSrc: dataSrcFn,
+                        error: () => hidePageLoader(),
                     }
                     : @json($url),
                 pageLength: @json($pageLength),

@@ -286,39 +286,36 @@ const shipFilter = document.getElementById("shipFilter");
         }
 
         function createActionButtons(sale) {
+            let dueButton = "";
+            let editButton = "";
+            let deleteButton = "";
+            let bftnReceivedButton = "";
+
             if (config.canPaymentsManage) {
-                const dueButton = Number(sale.due_amount) > 0
+                dueButton = Number(sale.due_amount) > 0
                     ? `<button class="bg-yellow-500 text-black px-2 py-1 rounded dueBtn"
                         data-id="${sale.id}"
                         data-due_amount="${sale.due_amount}"
                         title="Due Amount: ${escapeHtml(sale.due_amount)}">Due</button>`
                     : "";
-            } else {
-                const dueButton = "";
             }
 
             if (config.canSalesEdit) {
-                const editButton = `<a href="/ship-ticket-sales/${sale.id}">
+                editButton = `<a href="/ship-ticket-sales/${sale.id}">
                         <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
                     </a>`;
-            } else {
-                const editButton = "";
             }
 
             if (config.canSalesDelete) {
-                const deleteButton = `<button class="fas fa-trash text-red-500 bg-white px-2 py-1 border border-gray-300 rounded deleteBtn"
+                deleteButton = `<button class="fas fa-trash text-red-500 bg-white px-2 py-1 border border-gray-300 rounded deleteBtn"
                         data-id="${sale.id}" title="Delete"></button>`;
-            } else {
-                const deleteButton = "";
             }
 
             if (config.canSalesVerify) {
-                const bftnReceivedButton = sale.bftn_status === 'yes' && !sale.bftn_received
+                bftnReceivedButton = sale.bftn_status === 'yes' && !sale.bftn_received
                     ? `<button class="bg-green-600 text-white px-2 py-1 rounded bftnReceivedBtn"
                         data-id="${sale.id}" data-tentative-date="${escapeHtml(sale.bftn?.bftn_date_time || 'Not specified')}" title="Mark BFTN as received">BFTN Received</button>`
                     : "";
-            } else {
-                const bftnReceivedButton = "";
             }
 
             const activeRefund = (sale.refunds || []).find((refund) => !['cancelled', 'completed'].includes(refund.status));

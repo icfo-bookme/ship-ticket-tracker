@@ -60,6 +60,15 @@
 
         // Shared escapeHtml — only defined once globally.
         // Uniform DataTables button styling for every table.
+        if (window.jQuery && $.fn.dataTable?.Buttons) {
+            $.extend(true, $.fn.dataTable.Buttons.defaults, {
+                dom: {
+                    button: {
+                        className: 'btn border border-gray-300 bg-white text-gray-800 px-3 py-1.5 text-sm rounded hover:bg-gray-100',
+                    },
+                },
+            });
+        }
         document.addEventListener('DOMContentLoaded', function () {
             const customColumns = tableEl.__dataTableColumns || [];
             const filtersFn = tableEl.__dataTableFilters;

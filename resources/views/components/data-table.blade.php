@@ -38,13 +38,6 @@
     </div>
 </div>
 
-<style>
-    /* DataTables renders a cloned header when horizontal scrolling is enabled. */
-    #{{ $id }}_wrapper .dataTables_scrollBody thead {
-        visibility: collapse;
-    }
-</style>
-
 <script>
     (function () {
         const bodyId = @json($id) + 'Body';
@@ -102,6 +95,7 @@
                 processing: true,
                 serverSide: true,
                 ordering: @json($ordering),
+                scrollX: false,
                 ajax: filtersFn || dataSrcFn
                     ? {
                         url: @json($url),

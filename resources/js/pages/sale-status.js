@@ -338,7 +338,7 @@ const shipFilter = document.getElementById("shipFilter");
 
             if (!config.canSalesVerify) {
                 return "";
-            }not
+            }
 
             const verifiedBy = escapeHtml(sale.verifyby?.[0]?.verified_by_user?.name || "Unknown");
             const printedFiles = sale.grouped_tickets || [];

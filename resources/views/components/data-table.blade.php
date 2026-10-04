@@ -25,7 +25,7 @@
     </div>
 
     <div class="">
-        <table id="{{ $id }}" class=" border border-gray-300 hidden" data-ajax-url="{{ $url }}">
+        <table id="{{ $id }}" class="border border-gray-300 hidden" data-ajax-url="{{ $url }}">
             <thead class="bg-[#003366] text-white">
                 <tr>
                     @foreach ($headings as $heading)
@@ -37,6 +37,13 @@
         </table>
     </div>
 </div>
+
+<style>
+    /* DataTables renders a cloned header when horizontal scrolling is enabled. */
+    #{{ $id }}_wrapper .dataTables_scrollBody thead {
+        visibility: collapse;
+    }
+</style>
 
 <script>
     (function () {

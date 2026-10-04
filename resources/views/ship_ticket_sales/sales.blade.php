@@ -90,7 +90,7 @@
     data-collect-from-office-status="{{ $collectFromOfficeStatus }}"
     data-ticket-issued-status="{{ $ticketIssuedStatus }}"
     data-shipped-status="{{ $shippedStatus }}"
-    data-status-labels="{{ e(json_encode(config('sales.statuses'))) }}"
+    data-status-labels='@json(config("sales.statuses"))'
     data-ticket-issue-url="{{ $ticketIssueRouteTemplate }}"
     data-destroy-url="{{ route('sale.destroy', ['id' => '__ID__']) }}"
     data-verify-url="{{ route('sale.verify', ['id' => '__ID__', 'status' => '__STATUS__']) }}"

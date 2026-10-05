@@ -44,6 +44,7 @@ function saleWithProofPayment(Ship $ship, Company $company): ShipTicketSale
 
     Payment::create([
         'sales_id' => $sale->id,
+        'payment_method' => 'Cash',
         'received_amount' => 200,
         'transaction_id' => 'TRX-KEEP-1',
         'payment_datetime' => '2026-09-23 10:00:00',
@@ -122,6 +123,29 @@ it('stores the payment proof uploaded from the create form', function () {
         ->and($payment->payment_proof)->not->toBeNull();
 
     Storage::disk('local')->assertExists($payment->payment_proof);
+});
+
+it('calculates the sale received amount from payments when the disabled total field is omitted', function () {
+    $payload = proofSalePayload($this->ship, $this->company, $this->admin, [
+        'collect_from_office' => 0,
+        'journey_date' => now()->addDay()->toDateString(),
+        'payment_methods' => [
+            ['method' => 'Cash', 'amount' => 125, 'paid_date' => now()->toDateString()],
+            ['method' => 'Bkash', 'amount' => 75, 'paid_date' => now()->toDateString()],
+        ],
+    ]);
+    unset($payload['received_amount']);
+
+    $this->actingAs($this->admin)
+        ->post('/ship-ticket-sales', $payload)
+        ->assertRedirect(route('ship-ticket-sales.create'))
+        ->assertSessionHasNoErrors();
+
+    $sale = ShipTicketSale::latest('id')->firstOrFail();
+
+    expect((float) $sale->received_amount)->toBe(200.0)
+        ->and((float) $sale->due_amount)->toBe(300.0)
+        ->and((float) Payment::where('sales_id', $sale->id)->sum('received_amount'))->toBe(200.0);
 });
 
 it('rejects a payment proof that is not an image or pdf', function () {

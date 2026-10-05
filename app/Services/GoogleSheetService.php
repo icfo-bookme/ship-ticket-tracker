@@ -11,7 +11,7 @@ use Google\Service\Sheets\Request;
 
 class GoogleSheetService
 {
-    public static function appendRow(array $row)
+    public static function appendRow(array $row): void
     {
         $client = new Client;
         $client->setApplicationName('Laravel Google Sheet');
@@ -32,6 +32,11 @@ class GoogleSheetService
         $range = $sheetTitle.'!'.$columns;
 
         self::ensureSheetExists($service, $spreadsheetId, $sheetTitle);
+
+        $row = array_values(array_map(
+            static fn (mixed $value): mixed => $value ?? '',
+            $row,
+        ));
 
         $body = new \Google\Service\Sheets\ValueRange([
             'values' => [$row],

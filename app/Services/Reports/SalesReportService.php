@@ -228,8 +228,10 @@ class SalesReportService
         $query->orderBy($orderableColumns[$orderColumn] ?? 'id', isset($orderableColumns[$orderColumn]) ? $orderDirection : 'desc');
     }
 
-    private function totals(array $filters, string $searchValue = ''): object
+    private function totals(array $filters, ?string $searchValue = null): object
     {
+        $searchValue ??= '';
+
         $query = ShipTicketSale::query()
             ->where('ship_ticket_sales.status', '!=', SaleStatus::Pending->value);
 

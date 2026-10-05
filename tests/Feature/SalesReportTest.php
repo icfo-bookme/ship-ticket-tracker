@@ -120,6 +120,8 @@ it('renders the sales report filters and summary targets', function () {
         ->assertOk()
         ->assertSee('id="salesTable"', false)
         ->assertSee('id="saleReportDetailModal"', false)
+        ->assertSee('data-close-modal="saleReportDetailModal"', false)
+        ->assertDontSee('data-modal-hide="saleReportDetailModal"', false)
         ->assertSee('Ticket Price / Other Fee')
         ->assertSee('Received / Gross Refunded')
         ->assertSee('id="totalSellTickets"', false)
@@ -305,6 +307,16 @@ it('accepts a null DataTables search value', function () {
 
     $this->actingAs($this->admin)
         ->getJson('/reports?draw=1&start=0&length=10&search[value]=')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('totals.total_ticket_fee', '300.00');
+});
+
+it('loads the report when DataTables omits the search value', function () {
+    reportSale($this->ship, $this->company);
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?draw=1&start=0&length=10')
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('totals.total_ticket_fee', '300.00');

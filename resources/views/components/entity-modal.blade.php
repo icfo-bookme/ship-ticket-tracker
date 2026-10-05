@@ -27,7 +27,7 @@ $maxWidthClass = [
             <div
                 class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200 shrink-0">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $title }}</h3>
-                <button data-modal-hide="{{ $id }}" type="button"
+                <button type="button" data-close-modal="{{ $id }}"
                     class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg p-2.5">
                     <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
                         xmlns="http://www.w3.org/2000/svg">
@@ -48,7 +48,7 @@ $maxWidthClass = [
                 <!-- Footer (fixed at bottom, never scrolls away) -->
                 <div
                     class="flex justify-end gap-2 px-4 md:px-5 py-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-b shrink-0">
-                    <button type="button" data-modal-hide="{{ $id }}" data-close-modal="{{ $id }}" class="{{ $cancelClasses }}">
+                    <button type="button" data-close-modal="{{ $id }}" class="{{ $cancelClasses }}">
                         Cancel
                     </button>
                     <button type="submit" {{ $formId ? 'form=' . $formId : '' }} class="{{ $submitClasses }}" data-submit-btn

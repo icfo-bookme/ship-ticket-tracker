@@ -30,6 +30,11 @@ test('super admin can access admin pages', function () {
         ->get('/roles-details')->assertOk();
     $this->actingAs($this->admin)
         ->get('/permissions-details')->assertOk();
+    $this->actingAs($this->admin)
+        ->get('/companies-details')
+        ->assertOk()
+        ->assertDontSee('data-modal-toggle="company-modal"', false)
+        ->assertSee('modal._openModal = openModal;', false);
 });
 
 test('user without permission cannot access admin pages', function () {

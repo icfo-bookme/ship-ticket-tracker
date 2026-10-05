@@ -4,6 +4,7 @@ use App\Models\Category;
 use App\Models\Company;
 use App\Models\PrintedTicket;
 use App\Models\Ship;
+use App\Models\Shipment;
 use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
@@ -49,7 +50,7 @@ beforeEach(function () {
     ]);
 });
 
-it('renders the sale detail page with the printed ticket context', function () {
+it('renders existing PDFs and allows adding a PDF filename without grouping controls on the edit page', function () {
     PrintedTicket::create([
         'sales_id' => $this->sale->id,
         'filename' => '01712345678-3.pdf',
@@ -60,5 +61,30 @@ it('renders the sale detail page with the printed ticket context', function () {
         ->get('/ship-ticket-sales/'.$this->sale->id)
         ->assertOk()
         ->assertSee('Ship Ticket Sale #'.$this->sale->id)
-        ->assertSee('value="01712345678-4"', false);
+        ->assertSee('01712345678-3.pdf')
+        ->assertSee('Add PDF Field')
+        ->assertSee('data-next-pdf-number="2"', false)
+        ->assertSee('Update Ticket Sale')
+        ->assertSee('name="issued_date"', false)
+        ->assertDontSee('Parcel Created')
+        ->assertDontSee('Update &amp; Re-verify')
+        ->assertDontSee('Verify &amp; Next')
+        ->assertDontSee('name="next_sale_id"', false)
+        ->assertDontSee('value="shipment_id_entered"', false)
+        ->assertDontSee('value="shipped"', false)
+        ->assertDontSee('name="group_tickets"', false);
+});
+
+it('shows saved shipment details on the edit page regardless of sale status', function () {
+    Shipment::create([
+        'ticket_id' => $this->sale->id,
+        'shipment_id' => 'TRACK-DETAIL-14',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get('/ship-ticket-sales/'.$this->sale->id)
+        ->assertOk()
+        ->assertSee('Shipment Details')
+        ->assertSee('name="shipment_id"', false)
+        ->assertSee('TRACK-DETAIL-14');
 });

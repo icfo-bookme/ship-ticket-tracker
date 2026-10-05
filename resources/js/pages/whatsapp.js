@@ -1,7 +1,8 @@
+import { initializeDataTable } from '../services/data-table.js';
 import { refreshDataTable } from '../services/api';
 import { createCrudPage } from '../components/crud-page';
 
-document.getElementById('whatsappTable').__dataTableColumns = [
+const columns = [
     { data: 'id' },
     { data: 'tag', render: (data, type) => type !== 'display' ? data : escapeHtml(data) },
     { data: 'whatsapp_number', render: (data, type) => type !== 'display' ? data : escapeHtml(data) },
@@ -19,6 +20,7 @@ document.getElementById('whatsappTable').__dataTableColumns = [
         render: (data, type, row) => type !== 'display' ? '' : `<div class="flex gap-2"><button type="button" class="editBtn rounded bg-yellow-500 px-2 py-1 text-white" data-id="${row.id}">Edit</button><button type="button" class="deleteBtn rounded bg-red-500 px-2 py-1 text-white" data-id="${row.id}">Delete</button></div>`,
     },
 ];
+initializeDataTable({ table: document.getElementById('whatsappTable'), columns });
 
 document.addEventListener('DOMContentLoaded', () => {
     const page = document.getElementById('whatsappPage');

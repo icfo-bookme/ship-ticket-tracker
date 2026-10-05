@@ -1,10 +1,11 @@
+import { initializeDataTable } from '../services/data-table.js';
 import { apiRequest, refreshDataTable } from '../services/api';
 
 const page = document.getElementById('extraReceivedPage');
 const table = document.getElementById('extraReceivedTable');
 
 if (table && page) {
-    table.__dataTableColumns = [
+    const columns = [
         { data: 'id' },
         { data: 'customer_name', render: (data) => escapeHtml(data || 'N/A') },
         { data: 'customer_mobile', render: (data) => escapeHtml(data || 'N/A') },
@@ -24,6 +25,7 @@ if (table && page) {
                 </div>`,
         },
     ];
+initializeDataTable({ table: table, columns });
 
     table.addEventListener('click', async (event) => {
         const button = event.target.closest('.adjustExtraBtn, .refundExtraBtn');

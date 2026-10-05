@@ -57,7 +57,7 @@ class ShipController extends Controller
 
     public function destroy(Ship $ship)
     {
-        $ship->delete();
+        $this->ships->delete($ship);
 
         return response()->json([
             'success' => true,

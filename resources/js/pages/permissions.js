@@ -1,7 +1,8 @@
+import { initializeDataTable } from '../services/data-table.js';
 import { refreshDataTable } from '../services/api';
 import { createCrudPage } from '../components/crud-page';
 
-document.getElementById('permissionsTable').__dataTableColumns = [
+const columns = [
     { data: 'id' },
     { data: 'name', render: (data, type) => type !== 'display' ? data : `<span class="font-medium">${escapeHtml(data)}</span>` },
     { data: 'group', render: (data) => escapeHtml(data) },
@@ -17,6 +18,7 @@ document.getElementById('permissionsTable').__dataTableColumns = [
             </div>`,
     },
 ];
+initializeDataTable({ table: document.getElementById('permissionsTable'), columns });
 
 document.addEventListener('DOMContentLoaded', () => {
     const page = document.getElementById('permissionsPage');

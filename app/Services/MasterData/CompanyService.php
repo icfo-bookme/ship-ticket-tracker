@@ -43,4 +43,9 @@ class CompanyService
 
         return $company;
     }
+
+    public function delete(Company $company): void
+    {
+        $company->delete();
+    }
 }

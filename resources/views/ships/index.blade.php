@@ -3,7 +3,7 @@
         <div class="mx-auto sm:px-6 lg:px-8">
             <div class="flex items-center justify-between pb-5">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">Ships Details</h2>
-                <button type="button" data-modal-target="ship-modal" data-modal-toggle="ship-modal" class="addBtn rounded bg-red-500 px-2 py-1 text-white">+ Add New Ship</button>
+                <button type="button" data-modal-target="ship-modal" class="addBtn rounded bg-red-500 px-2 py-1 text-white">+ Add New Ship</button>
             </div>
             <x-data-table id="shipsTable" :headings="['ID', 'Name', 'Route', 'Status', 'Action']" url="{{ route('ships.index') }}" :delegateActions="false" />
         </div>

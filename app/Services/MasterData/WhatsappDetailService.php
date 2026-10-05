@@ -41,4 +41,9 @@ class WhatsappDetailService
 
         return $whatsapp->refresh();
     }
+
+    public function delete(WhatsappDetail $whatsapp): void
+    {
+        $whatsapp->delete();
+    }
 }

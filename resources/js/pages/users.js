@@ -1,7 +1,8 @@
+import { initializeDataTable } from '../services/data-table.js';
 import { refreshDataTable } from '../services/api';
 import { createCrudPage } from '../components/crud-page';
 
-document.getElementById('usersTable').__dataTableColumns = [
+const columns = [
     { data: 'id' },
     { data: 'name', render: (data, type, row) => type !== 'display' ? data : `${escapeHtml(data)}${row.is_self ? ' <span class="text-xs text-gray-500">You</span>' : ''}` },
     { data: 'email', render: (data) => escapeHtml(data) },
@@ -17,6 +18,7 @@ document.getElementById('usersTable').__dataTableColumns = [
             </div>`,
     },
 ];
+initializeDataTable({ table: document.getElementById('usersTable'), columns });
 
 document.addEventListener('DOMContentLoaded', () => {
     const page = document.getElementById('usersPage');

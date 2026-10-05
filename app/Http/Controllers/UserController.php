@@ -139,7 +139,7 @@ class UserController extends Controller
             ], 403);
         }
 
-        $user->delete();
+        $this->users->delete($user);
 
         return response()->json(['success' => true, 'message' => 'User deleted successfully.'], 200);
     }

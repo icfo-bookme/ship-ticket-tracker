@@ -25,7 +25,8 @@
     </div>
 
     <div class="">
-        <table id="{{ $id }}" class="border border-gray-300 hidden" data-ajax-url="{{ $url }}">
+        <table id="{{ $id }}" class="border border-gray-300 hidden" data-ajax-url="{{ $url }}"
+            data-table-options="{{ json_encode(['ordering' => $ordering, 'pageLength' => $pageLength, 'lengthMenu' => $lengthMenu, 'buttons' => $buttons, 'order' => $order, 'language' => ['lengthMenu' => '_MENU_', 'processing' => $loadingText]]) }}">
             <thead class="bg-[#003366] text-white">
                 <tr>
                     @foreach ($headings as $heading)
@@ -38,92 +39,3 @@
     </div>
 </div>
 
-<script>
-    (function () {
-        const bodyId = @json($id) + 'Body';
-        const tableEl = document.getElementById(@json($id));
-        const bodyEl = document.getElementById(bodyId);
-        const pageLoaderEl = document.getElementById(@json($id) + '-page-loader');
-
-        // Full-page loader is visible while the page/first data loads, then
-        // fades out. DataTables' own default indicator handles later reloads.
-        let pageLoaderHidden = false;
-        function hidePageLoader() {
-            if (pageLoaderHidden || !pageLoaderEl) return;
-            pageLoaderHidden = true;
-            pageLoaderEl.classList.add('opacity-0', 'pointer-events-none');
-            setTimeout(function () { pageLoaderEl.remove(); }, 250);
-        }
-
-        // Safety net: never trap the user behind the loader (e.g. network fail).
-        setTimeout(hidePageLoader, 5000);
-
-        // Shared escapeHtml — only defined once globally.
-        // Uniform DataTables button styling for every table.
-        if (window.jQuery && $.fn.dataTable?.Buttons) {
-            $.extend(true, $.fn.dataTable.Buttons.defaults, {
-                dom: {
-                    button: {
-                        className: 'btn border border-gray-300 bg-white text-gray-800 px-3 py-1.5 text-sm rounded hover:bg-gray-100',
-                    },
-                },
-            });
-        }
-        document.addEventListener('DOMContentLoaded', function () {
-            const customColumns = tableEl.__dataTableColumns || [];
-            const filtersFn = tableEl.__dataTableFilters;
-            const dataSrcFn = tableEl.__dataTableDataSrc;
-
-            // Table must be visible BEFORE DataTables initialises: the global
-            // scrollX default (layouts/app.blade.php) clones the thead, and
-            // cloning a hidden table yields a zero-height header row.
-            tableEl.classList.remove('hidden');
-
-            $(tableEl).on('error.dt', function () {
-                hidePageLoader();
-            });
-
-            $(tableEl).DataTable({
-                processing: true,
-                serverSide: true,
-                ordering: @json($ordering),
-                scrollX: false,
-                ajax: filtersFn || dataSrcFn
-                    ? {
-                        url: @json($url),
-                        type: 'GET',
-                        timeout: 15000,
-                        data: filtersFn ? (request) => Object.assign(request, filtersFn()) : undefined,
-                        dataSrc: dataSrcFn,
-                        error: () => hidePageLoader(),
-                    }
-                    : @json($url),
-                pageLength: @json($pageLength),
-                lengthMenu: @json($lengthMenu),
-                dom: 'lBfrtip',
-                buttons: @json($buttons),
-                order: @json($order),
-                language: {
-                    lengthMenu: '_MENU_',
-                    processing: @json($loadingText),
-                },
-                columns: customColumns,
-                createdRow: (row, data) => {
-                    const createdRowFn = tableEl.__dataTableCreatedRows;
-
-                    createdRowFn?.(row, data);
-                },
-                initComplete: function () {
-                    hidePageLoader();
-                },
-            });
-        });
-
-        document.addEventListener('data-table:refresh', function (event) {
-            if (event.detail?.tableId !== @json($id)) return;
-            if (window.jQuery && $.fn.DataTable.isDataTable(tableEl)) {
-                $(tableEl).DataTable().ajax.reload(null, false);
-            }
-        });
-    })();
-</script>

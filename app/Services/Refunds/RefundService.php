@@ -6,11 +6,14 @@ use App\Enums\RefundStatus;
 use App\Enums\SaleStatus;
 use App\Models\Refund;
 use App\Models\ShipTicketSale;
+use App\Services\Sales\SaleFinancialService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class RefundService
 {
+    public function __construct(private readonly SaleFinancialService $saleFinancials) {}
+
     public function create(array $data): Refund
     {
         return Refund::create(array_merge([
@@ -57,7 +60,7 @@ class RefundService
 
                 if (! $category || (int) $selection['refunded_quantity'] > (int) $category->quantity) {
                     throw ValidationException::withMessages([
-                        'ticket_selections' => 'A return quantity cannot exceed the purchased category quantity.',
+                        'ticket_selections' => 'Refund quantity cannot exceed the purchased quantity for that category.',
                     ]);
                 }
 
@@ -74,6 +77,7 @@ class RefundService
             }
 
             $refundDiscountAmount = $this->proportionalDiscount($sale, $grossAmount);
+            $otherFeeDeduction = $this->otherFeeDeduction($sale);
             $this->ensureRefundableCategories($sale, $selectedTickets, $grossAmount);
 
             $customerChargePercent = (float) $data['customer_charge_percent'];
@@ -86,6 +90,12 @@ class RefundService
             }
             $customerChargeAmount = round($grossAmount * $customerChargePercent / 100, 2);
             $partnerShareAmount = round($grossAmount * $partnerSharePercent / 100, 2);
+            $customerRefundAmount = $this->customerRefundAmount(
+                $grossAmount,
+                $customerChargeAmount,
+                $refundDiscountAmount,
+                $otherFeeDeduction,
+            );
 
             Refund::create([
                 'sales_id' => $sale->id,
@@ -99,7 +109,8 @@ class RefundService
                 'partner_share_percent' => $partnerSharePercent,
                 'partner_share_amount' => $partnerShareAmount,
                 'refund_discount_amount' => $refundDiscountAmount,
-                'customer_refund_amount' => round($grossAmount - $customerChargeAmount - $refundDiscountAmount, 2),
+                'other_fee_deduction' => $otherFeeDeduction,
+                'customer_refund_amount' => $customerRefundAmount,
                 'company_retained_amount' => round($customerChargeAmount - $partnerShareAmount, 2),
                 'requested_at' => now(),
                 'remark' => $data['remark'] ?? null,
@@ -129,9 +140,16 @@ class RefundService
             }
 
             $sale = ShipTicketSale::query()->lockForUpdate()->findOrFail($refund->sales_id);
+            $currentSummary = $this->saleFinancials->currentSummary($sale);
             $customerRefundAmount = (float) $refund->customer_refund_amount;
-            $dueAmount = max((float) $sale->due_amount, 0);
-            $dueAdjustment = min($dueAmount, $customerRefundAmount);
+            if ($customerRefundAmount < 0) {
+                throw ValidationException::withMessages([
+                    'customer_refund_amount' => 'This refund has a negative calculated amount and must be corrected before completion.',
+                ]);
+            }
+
+            $dueAmount = $currentSummary['due_amount'];
+            $dueAdjustment = min($dueAmount, max($customerRefundAmount, 0));
             $payableRefundAmount = round($customerRefundAmount - $dueAdjustment, 2);
 
             if ($dueAdjustment > 0) {
@@ -167,6 +185,31 @@ class RefundService
         $discount = min(max((float) $sale->discount_amount, 0), $ticketFee);
 
         return $ticketFee > 0 ? round($discount * ($grossAmount / $ticketFee), 2) : 0;
+    }
+
+    private function otherFeeDeduction(ShipTicketSale $sale): float
+    {
+        return round(max((float) $sale->other_fee, 0), 2);
+    }
+
+    private function customerRefundAmount(
+        float $grossAmount,
+        float $customerChargeAmount,
+        float $refundDiscountAmount,
+        float $otherFeeDeduction = 0,
+    ): float {
+        $customerRefundAmount = round(
+            $grossAmount - $customerChargeAmount - $refundDiscountAmount - $otherFeeDeduction,
+            2,
+        );
+
+        if ($customerRefundAmount < 0) {
+            throw ValidationException::withMessages([
+                'customer_charge_percent' => 'Refund deductions cannot exceed the gross refund amount.',
+            ]);
+        }
+
+        return $customerRefundAmount;
     }
 
     public function approve(Refund $refund): void
@@ -215,7 +258,7 @@ class RefundService
 
                 if (! $category || $quantity > (int) $category->quantity) {
                     throw ValidationException::withMessages([
-                        'ticket_selections' => 'A return quantity cannot exceed the purchased category quantity.',
+                        'ticket_selections' => 'Refund quantity cannot exceed the purchased quantity for that category.',
                     ]);
                 }
 
@@ -231,6 +274,7 @@ class RefundService
             }
 
             $refundDiscountAmount = $this->proportionalDiscount($sale, $grossAmount);
+            $otherFeeDeduction = $this->otherFeeDeduction($sale);
             $this->ensureRefundableCategories($sale, $selectedTickets, $grossAmount, $refund->id);
             $customerChargePercent = (float) $data['customer_charge_percent'];
             $partnerSharePercent = (float) $data['partner_share_percent'];
@@ -242,6 +286,12 @@ class RefundService
             }
             $customerChargeAmount = round($grossAmount * $customerChargePercent / 100, 2);
             $partnerShareAmount = round($grossAmount * $partnerSharePercent / 100, 2);
+            $customerRefundAmount = $this->customerRefundAmount(
+                $grossAmount,
+                $customerChargeAmount,
+                $refundDiscountAmount,
+                $otherFeeDeduction,
+            );
 
             $refund->update([
                 'refunded_number_of_tickets' => $ticketCount,
@@ -252,7 +302,8 @@ class RefundService
                 'partner_share_percent' => $partnerSharePercent,
                 'partner_share_amount' => $partnerShareAmount,
                 'refund_discount_amount' => $refundDiscountAmount,
-                'customer_refund_amount' => round($grossAmount - $customerChargeAmount - $refundDiscountAmount, 2),
+                'other_fee_deduction' => $otherFeeDeduction,
+                'customer_refund_amount' => $customerRefundAmount,
                 'company_retained_amount' => round($customerChargeAmount - $partnerShareAmount, 2),
                 'remark' => $data['remark'] ?? null,
             ]);
@@ -276,6 +327,11 @@ class RefundService
         }
 
         $refund->update(['status' => RefundStatus::Cancelled->value]);
+    }
+
+    public function delete(Refund $refund): void
+    {
+        $refund->delete();
     }
 
     private function ensureRefundableAmount(

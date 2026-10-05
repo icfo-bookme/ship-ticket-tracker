@@ -12,6 +12,46 @@ use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
+it('returns the WhatsApp username for sales without a WhatsApp number', function () {
+    $ship = Ship::create(['name' => 'Username Ship', 'status' => 1]);
+    $company = Company::create(['name' => 'Username Company', 'status' => 1]);
+    $sale = salesDataTableSale($ship, $company, 'pending');
+    $sale->update(['whatsapp' => null, 'whatsapp_username' => '@ticket_customer']);
+
+    $response = app(SalesDataTableService::class)->response(
+        new Request(['start' => 0, 'length' => 10]),
+        'pending'
+    )->getData(true);
+
+    expect($response['data'][0]['whatsapp'])->toBeNull()
+        ->and($response['data'][0]['whatsapp_username'])->toBe('@ticket_customer')
+        ->and($response['data'][0]['whatsapp_display'])->toBe('@ticket_customer')
+        ->and(array_key_exists('total_payable', $response['data'][0]))->toBeTrue();
+});
+
+it('keeps sales table pagination bounded for invalid and oversized lengths', function () {
+    $ship = Ship::create(['name' => 'Pagination Ship', 'status' => 1]);
+    $company = Company::create(['name' => 'Pagination Company', 'status' => 1]);
+
+    foreach (range(1, 12) as $index) {
+        $sale = salesDataTableSale($ship, $company, 'pending');
+        $sale->update(['customer_name' => "Customer {$index}"]);
+    }
+
+    $service = app(SalesDataTableService::class);
+    $negativeLengthResponse = $service->response(
+        new Request(['start' => 0, 'length' => -1]),
+        'pending'
+    )->getData(true);
+    $oversizedLengthResponse = $service->response(
+        new Request(['start' => 0, 'length' => 1000]),
+        'pending'
+    )->getData(true);
+
+    expect($negativeLengthResponse['data'])->toHaveCount(10)
+        ->and($oversizedLengthResponse['data'])->toHaveCount(12);
+});
+
 it('shows every member of a group containing an issued sale in the issued list', function () {
     $ship = Ship::create(['name' => 'Group Ship', 'status' => 1]);
     $company = Company::create(['name' => 'Group Company', 'status' => 1]);

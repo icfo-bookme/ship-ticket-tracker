@@ -68,7 +68,7 @@ class ExcelSettingController extends Controller
      */
     public function destroy(ExcelSetting $excelSetting)
     {
-        $excelSetting->delete();
+        $this->excelSettings->delete($excelSetting);
 
         return response()->json([
             'success' => true,

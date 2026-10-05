@@ -56,7 +56,7 @@ class CompanyController extends Controller
     public function destroy(string $id)
     {
         $company = $this->companies->find($id);
-        $company->delete();
+        $this->companies->delete($company);
 
         return response()->json([
             'success' => true,

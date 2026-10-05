@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreSaleDraftRequest;
 use App\Http\Requests\UpdateSaleDraftRequest;
 use App\Models\SaleDraft;
+use App\Models\Ship;
 use App\Services\Sales\SaleDraftService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -15,7 +16,9 @@ class SaleDraftController extends Controller
 
     public function page(): View
     {
-        return view('sale_drafts.index');
+        $ships = Ship::query()->orderBy('name')->get(['id', 'name']);
+
+        return view('sale_drafts.index', compact('ships'));
     }
 
     public function index(Request $request)

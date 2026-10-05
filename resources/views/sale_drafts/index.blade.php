@@ -18,6 +18,30 @@
                     <input id="returnDate" name="return_date" type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                 </div>
                 <div class="md:col-span-2">
+                    <label for="draftShip" class="block text-sm font-medium text-gray-700">Ship</label>
+                    <select id="draftShip" name="ship_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Select a ship</option>
+                        @foreach ($ships as $ship)
+                            <option value="{{ $ship->id }}">{{ $ship->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="space-y-4 md:col-span-2">
+                    <h3 class="text-sm font-semibold text-gray-800">Ticket Categories</h3>
+                    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <section class="rounded-md border border-gray-200 p-4">
+                            <h4 class="mb-3 text-sm font-medium text-gray-700">Departure</h4>
+                            <div id="draftDepartureCategories" class="space-y-3"></div>
+                            <p id="draftDepartureHint" class="text-sm text-gray-500">Select a ship to load categories.</p>
+                        </section>
+                        <section id="draftReturnSection" class="hidden rounded-md border border-gray-200 p-4">
+                            <h4 class="mb-3 text-sm font-medium text-gray-700">Return</h4>
+                            <div id="draftReturnCategories" class="space-y-3"></div>
+                            <p id="draftReturnHint" class="text-sm text-gray-500">Select a ship to load categories.</p>
+                        </section>
+                    </div>
+                </div>
+                <div class="md:col-span-2">
                     <label for="draftDetails" class="block text-sm font-medium text-gray-700">Details</label>
                     <textarea id="draftDetails" name="details" rows="4" required placeholder="Paste the customer's ticket requirements here..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
                 </div>
@@ -32,7 +56,22 @@
             </form>
         </div>
 
-        <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div>
+                <label for="draftShipFilter" class="block text-sm font-medium text-gray-700">Filter by Ship</label>
+                <select id="draftShipFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">All Ships</option>
+                    @foreach ($ships as $ship)
+                        <option value="{{ $ship->id }}">{{ $ship->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="draftCategoryFilter" class="block text-sm font-medium text-gray-700">Filter by Category</label>
+                <select id="draftCategoryFilter" disabled class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">Select a ship first</option>
+                </select>
+            </div>
             <div>
                 <label for="departureDateFilter" class="block text-sm font-medium text-gray-700">Filter by Departure Date</label>
                 <input id="departureDateFilter" type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -46,7 +85,7 @@
             </div>
         </div>
 
-        <x-data-table id="saleDraftsTable" :headings="['ID', 'Departure Date', 'Return Date', 'Details', 'Note', 'Created At', 'Action']" url="{{ route('sale-drafts.index') }}" :ordering="false" :delegateActions="false" :order="[]" />
+        <x-data-table id="saleDraftsTable" :headings="['ID', 'Departure Date', 'Return Date', 'Ship', 'Categories', 'Details', 'Note', 'Created At', 'Action']" url="{{ route('sale-drafts.index') }}" :ordering="false" :delegateActions="false" :order="[]" />
     </div>
 
     @vite(['resources/js/pages/sale-drafts.js'])

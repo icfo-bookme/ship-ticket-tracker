@@ -2,6 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
+.swal2-actions {
+  gap: 0.75rem !important;
+  margin: 1.5rem 0 0 !important;
+}
+
+.swal2-actions button {
+  box-sizing: border-box !important;
+  min-width: 7rem !important;
+  min-height: 2.75rem !important;
+  margin: 0 !important;
+  padding: 0.75rem 1.25rem !important;
+  border: 0 !important;
+  border-radius: 0.5rem !important;
+  color: #fff !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25rem !important;
+  white-space: nowrap !important;
+  text-shadow: none !important;
+  user-select: none !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.swal2-actions button.swal2-confirm {
+  background-color: #2563eb !important;
+}
+
+.swal2-actions button.swal2-confirm:hover {
+  background-color: #1d4ed8 !important;
+}
+
+.swal2-actions button.swal2-cancel {
+  background-color: #64748b !important;
+}
+
+.swal2-actions button.swal2-cancel:hover {
+  background-color: #475569 !important;
+}
+
+.swal2-actions button.swal2-deny {
+  background-color: #dc2626 !important;
+}
+
+.swal2-actions button.swal2-deny:hover {
+  background-color: #b91c1c !important;
+}
+
+.swal2-actions button:focus-visible {
+  outline: 3px solid rgb(37 99 235 / 30%) !important;
+  outline-offset: 2px;
+}
+
 /* Completely hide scrollbar but keep functionality */
 .scrollbar-hide {
   -ms-overflow-style: none;

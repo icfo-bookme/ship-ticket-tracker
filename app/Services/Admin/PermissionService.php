@@ -22,4 +22,15 @@ class PermissionService
     {
         return $permission->roles()->count() === 0;
     }
+
+    public function delete(Permission $permission): bool
+    {
+        if (! $this->canDelete($permission)) {
+            return false;
+        }
+
+        $permission->delete();
+
+        return true;
+    }
 }

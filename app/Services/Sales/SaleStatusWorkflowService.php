@@ -4,6 +4,7 @@ namespace App\Services\Sales;
 
 use App\Enums\SaleStatus;
 use App\Models\PrintedTicket;
+use App\Models\PrintStatus;
 use App\Models\Shipment;
 use App\Models\ShipTicketSale;
 use App\Models\VerifyTracker;
@@ -13,6 +14,22 @@ use Illuminate\Support\Facades\Log;
 
 class SaleStatusWorkflowService
 {
+    public function markBftnReceived(int $saleId, string $receivedAt): void
+    {
+        $sale = ShipTicketSale::findOrFail($saleId);
+        $sale->bftn()->updateOrCreate(
+            ['sales_id' => $sale->id],
+            ['received_status' => true, 'received_at' => $receivedAt]
+        );
+    }
+
+    public function recordTicketPrint(int $saleId): void
+    {
+        $printStatus = PrintStatus::firstOrNew(['sales_id' => $saleId]);
+        $printStatus->total_printed_number = (int) $printStatus->total_printed_number + 1;
+        $printStatus->save();
+    }
+
     private const FULFILLMENT_STATUS_RANKS = [
         'pending' => 0,
         'payment-verified' => 10,
@@ -154,7 +171,7 @@ class SaleStatusWorkflowService
         $saleIds = $tickets->pluck('sales_id')->push($groupId)->unique();
         $groupSales = ShipTicketSale::query()
             ->whereIn('id', $saleIds)
-            ->get(['id', 'status', 'collect_from_office', 'whatsapp', 'address']);
+            ->get(['id', 'status', 'collect_from_office', 'whatsapp', 'whatsapp_username', 'address']);
         $groupReadinessError = $this->groupReadinessError(
             $groupId,
             [SaleStatus::TicketPrinted->value, SaleStatus::ShipmentIdEntered->value],

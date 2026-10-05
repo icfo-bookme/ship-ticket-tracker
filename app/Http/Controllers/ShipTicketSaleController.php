@@ -10,18 +10,15 @@ use App\Http\Requests\Sales\StoreShipTicketSaleRequest;
 use App\Http\Requests\Sales\UpdateShipTicketSaleRequest;
 use App\Http\Requests\UpdateTicketIssueRequest;
 use App\Models\Company;
-use App\Models\PrintedTicket;
-use App\Models\PrintStatus;
 use App\Models\Ship;
 use App\Models\ShipTicketSale;
 use App\Services\Sales\GoogleDriveTicketService;
-use App\Services\Sales\SaleGroupingService;
+use App\Services\Sales\SaleDetailService;
 use App\Services\Sales\SalesDataTableService;
 use App\Services\Sales\SaleStatusWorkflowService;
 use App\Services\Sales\ShipTicketSaleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class ShipTicketSaleController extends Controller
 {
@@ -29,7 +26,7 @@ class ShipTicketSaleController extends Controller
         private readonly ShipTicketSaleService $shipTicketSales,
         private readonly SalesDataTableService $salesDataTable,
         private readonly SaleStatusWorkflowService $statusWorkflow,
-        private readonly SaleGroupingService $saleGrouping,
+        private readonly SaleDetailService $saleDetails,
         private readonly GoogleDriveTicketService $googleDriveTickets,
     ) {}
 
@@ -137,39 +134,14 @@ class ShipTicketSaleController extends Controller
             'refunds.tickets',
             'verifyby.verifiedByUser:id,name',
         ])->findOrFail($id);
+        $context = $this->saleDetails->editContext($sale);
 
-        $this->appendExtraPaymentSummary($sale);
-
-        $context = $this->printedTicketContext($sale);
-
-        $number = $context['number'];
-        $groupByStatus = $context['groupByStatus'];
-        $groupById = $context['groupById'];
-
-        $totalDepartureTickets = $sale->categories
-            ->where('type', 'departure')
-            ->sum('quantity');
-
-        $totalReturnTickets = $sale->categories
-            ->where('type', 'return')
-            ->sum('quantity');
-
-        // Add these totals to the sale object for easy access in view
-
-        if ($sale->status == SaleStatus::PaymentVerified->value) {
-            $sale->total_departure_tickets = $totalDepartureTickets;
-            $sale->total_return_tickets = $totalReturnTickets;
-        } else {
-            $totalDepartureTickets = 0;
-            $totalReturnTickets = 0;
-        }
-
-        // Find next sale with SAME STATUS
-        $nextSale = $this->nextSaleFor($sale);
-        $ships = Ship::all();
-        $companies = Company::all();
-
-        return view('ship_ticket_sales.edit', compact('sale', 'number', 'groupByStatus', 'groupById', 'ships', 'companies', 'nextSale', 'totalReturnTickets', 'totalDepartureTickets'));
+        return view('ship_ticket_sales.edit', [
+            'sale' => $sale,
+            'ships' => Ship::all(),
+            'companies' => Company::all(),
+            ...$context,
+        ]);
     }
 
     public function ticketsIssueShow($id)
@@ -187,173 +159,14 @@ class ShipTicketSaleController extends Controller
             'verifyby.verifiedByUser:id,name',
         ])->findOrFail($id);
 
-        $this->appendExtraPaymentSummary($sale);
+        $context = $this->saleDetails->ticketIssueContext($sale, (int) auth()->id());
 
-        $viewedAt = now();
-        $ticketIssueView = $sale->ticketIssueViews()->firstOrNew([
-            'user_id' => auth()->id(),
+        return view('ship_ticket_sales.ticket_issue', [
+            'sale' => $sale,
+            'ships' => Ship::all(),
+            'companies' => Company::all(),
+            ...$context,
         ]);
-        $ticketIssueView->first_viewed_at ??= $viewedAt;
-        $ticketIssueView->last_viewed_at = $viewedAt;
-        $ticketIssueView->save();
-
-        $ticketIssueViews = $sale->ticketIssueViews()
-            ->with('user:id,name')
-            ->orderByDesc('last_viewed_at')
-            ->get();
-
-        $context = $this->printedTicketContext($sale);
-
-        $number = $context['number'];
-        $groupByStatus = $context['groupByStatus'];
-        $groupById = $context['groupById'];
-        $groupingMessage = $context['groupingMessage'];
-
-        $totalDepartureTickets = $sale->categories
-            ->where('type', 'departure')
-            ->sum('quantity');
-
-        $totalReturnTickets = $sale->categories
-            ->where('type', 'return')
-            ->sum('quantity');
-
-        $refundSummary = $sale->categories->map(function ($category) use ($sale): array {
-            $completedQuantity = $sale->refunds
-                ->where('status', 'completed')
-                ->flatMap->tickets
-                ->where('category_id', $category->id)
-                ->sum('refunded_quantity');
-            $pendingQuantity = $sale->refunds
-                ->whereNotIn('status', ['completed', 'cancelled'])
-                ->flatMap->tickets
-                ->where('category_id', $category->id)
-                ->sum('refunded_quantity');
-            $remainingQuantity = max((int) $category->quantity - (int) $completedQuantity, 0);
-
-            return [
-                'name' => $category->package?->name ?? 'Ticket category',
-                'type' => ucfirst((string) $category->type),
-                'purchased' => (int) $category->quantity,
-                'refunded' => (int) $completedQuantity,
-                'pending' => (int) $pendingQuantity,
-                'remaining' => $remainingQuantity,
-                'status' => $completedQuantity >= $category->quantity && $category->quantity > 0
-                    ? 'Fully Refunded'
-                    : ($completedQuantity > 0 ? 'Partially Refunded' : ($pendingQuantity > 0 ? 'Pending Refund' : 'No Refund')),
-            ];
-        });
-        $hasRefundActivity = $sale->refunds->contains(
-            fn ($refund): bool => $refund->status !== 'cancelled'
-        );
-
-        // Add these totals to the sale object for easy access in view
-
-        if ($sale->status == SaleStatus::PaymentVerified->value) {
-            $sale->total_departure_tickets = $totalDepartureTickets;
-            $sale->total_return_tickets = $totalReturnTickets;
-        } else {
-            $totalDepartureTickets = 0;
-            $totalReturnTickets = 0;
-        }
-
-        // Find next sale with SAME STATUS
-        $nextSale = $this->nextSaleFor($sale);
-        $ships = Ship::all();
-        $companies = Company::all();
-
-        return view('ship_ticket_sales.ticket_issue', compact('sale', 'number', 'groupByStatus', 'groupById', 'groupingMessage', 'ships', 'companies', 'nextSale', 'totalReturnTickets', 'totalDepartureTickets', 'ticketIssueViews', 'refundSummary', 'hasRefundActivity'));
-    }
-
-    /**
-     * Find the next sale sharing the same status.
-     */
-    private function nextSaleFor(ShipTicketSale $sale): ?ShipTicketSale
-    {
-        return ShipTicketSale::where('status', $sale->status)
-            ->where('id', '>', $sale->id)
-            ->orderBy('id', 'asc')
-            ->first();
-    }
-
-    private function appendExtraPaymentSummary(ShipTicketSale $sale): void
-    {
-        $extraReceived = max((float) $sale->received_amount - (float) $sale->total_payable, 0);
-        $extraRefunded = (float) $sale->refunds
-            ->where('refund_type', 'extra_payment')
-            ->filter(fn ($refund): bool => $refund->status === 'completed' || $refund->customer_refunded_at !== null)
-            ->sum('customer_refund_amount');
-
-        $sale->setAttribute('extra_received_amount', $extraReceived);
-        $sale->setAttribute('extra_refunded_amount', $extraRefunded);
-        $sale->setAttribute('extra_remaining_amount', max($extraReceived - $extraRefunded, 0));
-    }
-
-    /**
-     * Printed ticket numbering and grouping context of a sale.
-     *
-     * @return array{number: int, groupByStatus: bool, groupById: int|null, groupingMessage: string|null}
-     */
-    private function printedTicketContext(ShipTicketSale $sale): array
-    {
-        if (empty($sale->whatsapp)) {
-            return ['number' => 0, 'groupByStatus' => false, 'groupById' => null, 'groupingMessage' => null];
-        }
-
-        $matchingTickets = PrintedTicket::whereHas('sale', function ($query) use ($sale): void {
-            $query->where('whatsapp', $sale->whatsapp);
-        })
-            ->with('sale:id,status,collect_from_office,whatsapp')
-            ->get()
-            ->sortByDesc(fn (PrintedTicket $ticket): int => (int) Str::afterLast($ticket->filename, '-'));
-
-        $noticeStatuses = [
-            SaleStatus::TicketIssued->value,
-            SaleStatus::TicketPrinted->value,
-            SaleStatus::ShipmentIdEntered->value,
-        ];
-        $latestTicket = $matchingTickets->first();
-        $latestNoticeTicket = $matchingTickets->first(
-            fn (PrintedTicket $ticket): bool => in_array($ticket->sale?->status, $noticeStatuses, true)
-        );
-        $number = $latestNoticeTicket
-            ? (int) Str::afterLast($latestNoticeTicket->filename, '-')
-            : 0;
-
-        if (! $latestTicket) {
-            return ['number' => 0, 'groupByStatus' => false, 'groupById' => null, 'groupingMessage' => null];
-        }
-
-        $groupCandidates = $matchingTickets->reject(fn (PrintedTicket $ticket): bool => (int) $ticket->sales_id === (int) $sale->id);
-        $groupIds = $groupCandidates
-            ->map(fn (PrintedTicket $ticket): int => (int) ($ticket->group_by_id ?? $ticket->sales_id))
-            ->unique();
-        $groupMemberTickets = PrintedTicket::query()
-            ->whereIn('group_by_id', $groupIds)
-            ->get(['sales_id', 'group_by_id']);
-        $groupSaleIds = $groupIds
-            ->merge($groupCandidates->pluck('sales_id'))
-            ->merge($groupMemberTickets->pluck('sales_id'))
-            ->unique();
-        $relatedSales = ShipTicketSale::query()
-            ->whereIn('id', $groupSaleIds)
-            ->get(['id', 'status', 'collect_from_office', 'whatsapp', 'address']);
-        $eligibleTicket = $groupCandidates->first(function (PrintedTicket $ticket) use ($sale): bool {
-            $groupById = (int) ($ticket->group_by_id ?? $ticket->sales_id);
-
-            return $this->saleGrouping->canJoinGroup($sale, $groupById);
-        });
-        $groupingMessage = $eligibleTicket
-            ? null
-            : $this->saleGrouping->incompatibleSalesMessage($sale, $relatedSales);
-
-        return [
-            'number' => $number,
-            'groupByStatus' => $eligibleTicket !== null,
-            'groupById' => $eligibleTicket
-                ? (int) ($eligibleTicket->group_by_id ?? $eligibleTicket->sales_id)
-                : null,
-            'groupingMessage' => $groupingMessage,
-        ];
     }
 
     /**
@@ -368,12 +181,6 @@ class ShipTicketSaleController extends Controller
                 $request->all()
             );
 
-            if ($request->next_sale_id) {
-                return redirect()
-                    ->route('ship-ticket-sales.show', $request->next_sale_id)
-                    ->with('success', 'Ship ticket sale updated successfully and ready for verification!');
-            }
-
             return redirect()->back()
                 ->with('success', 'Ship ticket sale updated successfully!');
         } catch (\Exception $e) {
@@ -386,7 +193,7 @@ class ShipTicketSaleController extends Controller
     {
         try {
             $sale = ShipTicketSale::findOrFail($id);
-            $nextSale = $this->nextSaleFor($sale);
+            $nextSale = $this->saleDetails->nextSaleFor($sale);
             $this->shipTicketSales->updateIssue($sale, $request->validated());
 
             return redirect()
@@ -406,11 +213,7 @@ class ShipTicketSaleController extends Controller
     public function destroy(Request $request, $id)
     {
         try {
-            // Find the sale by ID or fail
-            $sale = ShipTicketSale::findOrFail($id);
-
-            // Delete the sale
-            $sale->delete();
+            $this->shipTicketSales->delete((int) $id);
 
             // Return success response
             return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
@@ -440,14 +243,7 @@ class ShipTicketSaleController extends Controller
 
     public function markBftnReceived(MarkBftnReceivedRequest $request, int $id)
     {
-        $sale = ShipTicketSale::findOrFail($id);
-        $sale->bftn()->updateOrCreate(
-            ['sales_id' => $sale->id],
-            [
-                'received_status' => true,
-                'received_at' => $request->validated('received_at'),
-            ]
-        );
+        $this->statusWorkflow->markBftnReceived($id, $request->validated('received_at'));
 
         return response()->json([
             'success' => true,
@@ -462,16 +258,7 @@ class ShipTicketSaleController extends Controller
 
     public function openTicket($saleId, $filename)
     {
-        $sales = PrintStatus::where('sales_id', $saleId)->first();
-
-        if ($sales) {
-            $sales->increment('total_printed_number');
-        } else {
-            PrintStatus::create([
-                'sales_id' => $saleId,
-                'total_printed_number' => 1,
-            ]);
-        }
+        $this->statusWorkflow->recordTicketPrint((int) $saleId);
 
         return $this->googleDriveTickets->redirectToPrintView($filename);
     }

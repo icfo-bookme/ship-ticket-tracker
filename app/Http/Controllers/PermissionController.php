@@ -118,14 +118,12 @@ class PermissionController extends Controller
 
     public function destroy(Permission $permission): JsonResponse
     {
-        if (! $this->permissions->canDelete($permission)) {
+        if (! $this->permissions->delete($permission)) {
             return response()->json([
                 'success' => false,
                 'message' => 'This permission is assigned to one or more roles. Remove it from those roles first.',
             ], 422);
         }
-
-        $permission->delete();
 
         return response()->json(['success' => true, 'message' => 'Permission deleted successfully.'], 200);
     }

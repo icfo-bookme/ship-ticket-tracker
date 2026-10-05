@@ -82,13 +82,18 @@
                         <div>
                             <label for="whatsapp"
                                 class="block text-sm font-medium text-gray-700  mb-2">
-                                WhatsApp Number <span class="text-red-500">*</span>
+                                WhatsApp Number <span class="text-gray-500">(number or username required)</span>
                             </label>
 
                             <div class="space-y-2">
                                 <!-- WhatsApp Input -->
-                                <input type="text" id="whatsapp" name="whatsapp" placeholder="Enter WhatsApp number"
+                                <input type="text" id="whatsapp" name="whatsapp" value="{{ old('whatsapp') }}" placeholder="Enter WhatsApp number"
                                     class="w-full border border-gray-300  rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+
+                                <input type="text" id="whatsapp_username" name="whatsapp_username" value="{{ old('whatsapp_username') }}" placeholder="Enter WhatsApp username"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                                @error('whatsapp') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                                @error('whatsapp_username') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
 
                                 <!-- Checkbox -->
                                 <label for="sameAsMobileCheckbox"

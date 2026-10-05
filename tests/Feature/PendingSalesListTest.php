@@ -36,6 +36,7 @@ beforeEach(function () {
 
     Payment::create([
         'sales_id' => $this->sale->id,
+        'payment_method' => 'Cash',
         'received_amount' => 300,
         'paid_date' => now()->toDateString(),
         'transaction_id' => 'TRX-99887766',
@@ -55,6 +56,18 @@ it('shows the payment transaction id in red before the total received amount on 
 
     expect(strpos($thead, 'Transaction ID'))->toBeLessThan(strpos($thead, 'Total Received Amount'))
         ->and(strpos($thead, 'Transaction ID'))->not->toBeFalse();
+});
+
+it('uses the reusable entity modal controls for BFTN received confirmation', function () {
+    $html = $this->actingAs($this->admin)
+        ->get('/sales/status/pending')
+        ->assertOk()
+        ->getContent();
+
+    expect($html)->toContain('id="bftnReceivedModal"')
+        ->and($html)->toContain('data-modal-hide="bftnReceivedModal"')
+        ->and($html)->toContain('data-close-modal="bftnReceivedModal"')
+        ->and($html)->not->toContain('onclick="closeBftnReceivedModal()"');
 });
 
 it('keeps the transaction id column out of the other status lists', function () {

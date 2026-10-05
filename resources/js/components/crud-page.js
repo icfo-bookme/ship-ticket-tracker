@@ -75,11 +75,10 @@ export function createCrudPage({
                     const input = targetForm.elements.namedItem(field);
                     if (input) input.value = record[field] ?? '';
                 });
-                onEdit?.(targetForm, record);
+                await onEdit?.(targetForm, record);
                 const submitLabel = document.querySelector(`#${updateModalId} [data-submit-label]`);
                 if (submitLabel) submitLabel.textContent = 'Update';
-                document.getElementById(updateModalId)?.classList.remove('hidden');
-                document.getElementById(updateModalId)?.classList.add('flex');
+                document.getElementById(updateModalId)?._openModal?.();
             } catch (error) {
                 Swal.fire({
                     icon: 'error',

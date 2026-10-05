@@ -21,6 +21,7 @@ class Refund extends Model
         'refunded_amount',
         'gross_refund_amount',
         'refund_discount_amount',
+        'other_fee_deduction',
         'customer_charge_percent',
         'customer_charge_amount',
         'partner_share_percent',
@@ -38,6 +39,7 @@ class Refund extends Model
     protected $casts = [
         'gross_refund_amount' => 'decimal:2',
         'refund_discount_amount' => 'decimal:2',
+        'other_fee_deduction' => 'decimal:2',
         'customer_charge_percent' => 'decimal:2',
         'customer_charge_amount' => 'decimal:2',
         'partner_share_percent' => 'decimal:2',

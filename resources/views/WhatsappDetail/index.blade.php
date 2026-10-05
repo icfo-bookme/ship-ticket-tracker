@@ -3,7 +3,7 @@
         <div class="mx-auto sm:px-6 lg:px-8">
             <div class="flex items-center justify-between pb-5">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">WhatsApp Details</h2>
-                <button type="button" data-modal-target="whatsapp-modal" data-modal-toggle="whatsapp-modal" class="addBtn rounded bg-blue-600 px-3 py-1.5 text-white">+ Add WhatsApp Details</button>
+                <button type="button" data-modal-target="whatsapp-modal" class="addBtn rounded bg-blue-600 px-3 py-1.5 text-white">+ Add WhatsApp Details</button>
             </div>
             <x-data-table id="whatsappTable" :headings="['ID', 'Tag', 'WhatsApp Number', 'Form No', 'Form URL', 'Action']" url="{{ route('whatsapp.index') }}" :order="[]" :delegateActions="false" :lengthMenu="[[10, 25, 50, 100, 200], [10, 25, 50, 100, 200]]" />
         </div>

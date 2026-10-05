@@ -133,6 +133,7 @@ class TicketSalesSystem {
                 returnDate: '#return_date',
                 mobileField: '[name="customer_mobile"]',
                 whatsappField: '[name="whatsapp"]',
+                whatsappUsernameField: '[name="whatsapp_username"]',
                 sameAsMobileCheckbox: '#sameAsMobileCheckbox',
                 ticketFee: '#ticket_fee',
                 receivedAmount: '#received_amount',
@@ -176,6 +177,7 @@ class TicketSalesSystem {
                 customer_name: "Customer Name",
                 customer_mobile: "Mobile Number",
                 whatsapp: "Whatsapp Number",
+                whatsapp_username: "WhatsApp Username",
                 date_of_birth: "Date Of Birth",
                 nid: "NID",
                 email: "Email",
@@ -205,8 +207,7 @@ class TicketSalesSystem {
                 { name: "ship_id", label: "Ship Name" },
                 { name: "ticket_fee", label: "Total Ticket Value" },
                 { name: "company_id", label: "Company Name" },
-                { name: "sold_by", label: "Sold By" },
-                { name: "whatsapp", label: "WhatsApp Number" }
+                { name: "sold_by", label: "Sold By" }
             ]
         };
     }
@@ -532,6 +533,16 @@ class TicketSalesSystem {
 
     setupMobileAndWhatsAppListeners() {
         const mobileField = this.getElement(this.selectors.elements.mobileField);
+        const whatsappField = this.getElement(this.selectors.elements.whatsappField);
+        const whatsappUsernameField = this.getElement(this.selectors.elements.whatsappUsernameField);
+
+        [whatsappField, whatsappUsernameField].forEach((field) => {
+            field?.addEventListener('input', () => {
+                this.clearFieldError(whatsappField);
+                this.clearFieldError(whatsappUsernameField);
+            });
+        });
+
         if (!mobileField) return;
 
         mobileField.addEventListener('input', () => {
@@ -928,6 +939,20 @@ class TicketSalesSystem {
                 isValid = false;
                 firstErrorField ??= address;
             }
+        }
+
+        const whatsappField = this.getElement(this.selectors.elements.whatsappField);
+        const whatsappUsernameField = this.getElement(this.selectors.elements.whatsappUsernameField);
+        const hasWhatsappNumber = Boolean(whatsappField?.value.trim());
+        const hasWhatsappUsername = Boolean(whatsappUsernameField?.value.trim());
+
+        if (!hasWhatsappNumber && !hasWhatsappUsername) {
+            this.showFieldError(whatsappField, 'Enter a WhatsApp number or username.');
+            isValid = false;
+            firstErrorField ??= whatsappField;
+        } else {
+            this.clearFieldError(whatsappField);
+            this.clearFieldError(whatsappUsernameField);
         }
 
         return { isValid, firstErrorField };
@@ -1616,6 +1641,7 @@ class TicketSalesSystem {
             showCancelButton: true,
             confirmButtonText: "Yes, continue",
             cancelButtonText: "Cancel",
+            buttonsStyling: false,
             customClass: {
                 confirmButton: "bg-blue-600 text-white",
                 cancelButton: "bg-red-500 text-white",

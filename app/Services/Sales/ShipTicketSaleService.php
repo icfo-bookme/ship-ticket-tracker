@@ -15,13 +15,24 @@ use App\Services\Finance\PaymentProofStorage;
 use App\Services\GoogleSheetService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class ShipTicketSaleService
 {
-    public function __construct(private readonly PaymentProofStorage $paymentProofs) {}
+    public function __construct(
+        private readonly PaymentProofStorage $paymentProofs,
+        private readonly SaleFinancialService $saleFinancials,
+    ) {}
+
+    public function delete(int $saleId): void
+    {
+        ShipTicketSale::findOrFail($saleId)->delete();
+    }
 
     public function create(array $data, array $input): ShipTicketSale
     {
+        $data = $this->normalizeFinancials($data, $input);
+
         $ticketSale = DB::transaction(function () use ($data, $input): ShipTicketSale {
             $ticketSale = ShipTicketSale::create($data);
 
@@ -40,6 +51,7 @@ class ShipTicketSaleService
 
     public function createPublic(array $data, array $input): ShipTicketSale
     {
+        $data = $this->normalizeFinancials($data, $input, true);
         $whatsapp = null;
 
         if (! empty($input['sales_source'])) {
@@ -64,13 +76,35 @@ class ShipTicketSaleService
 
     public function update(ShipTicketSale $sale, array $data, array $input): ShipTicketSale
     {
+        if (array_key_exists('departure_quantity', $input) || array_key_exists('return_quantity', $input)) {
+            $ticketCount = array_sum(array_map('intval', $input['departure_quantity'] ?? []))
+                + array_sum(array_map('intval', $input['return_quantity'] ?? []));
+
+            if ($ticketCount < 1) {
+                throw ValidationException::withMessages([
+                    'departure_quantity' => 'At least one ticket category must have a quantity of 1 or more.',
+                ]);
+            }
+
+            $data['number_of_ticket'] = $ticketCount;
+            $data['ticket_fee'] = $this->saleFinancials->ticketFeeFromPackageQuantities(
+                $data['ship_id'] ?? $sale->ship_id,
+                $data['return_date'] ?? $sale->return_date,
+                $input['departure_quantity'] ?? [],
+                $input['return_quantity'] ?? [],
+                (float) ($data['ticket_fee'] ?? $sale->ticket_fee),
+            );
+        }
+        $data = $this->normalizeFinancials($data, $input);
+
         DB::beginTransaction();
 
         try {
             $sale->update([
                 'customer_name' => $data['customer_name'],
                 'customer_mobile' => $data['customer_mobile'],
-                'whatsapp' => $data['whatsapp'],
+                'whatsapp' => $data['whatsapp'] ?? null,
+                'whatsapp_username' => $data['whatsapp_username'] ?? null,
                 'email' => $data['email'],
                 'nid' => $data['nid'],
                 'date_of_birth' => $data['date_of_birth'],
@@ -92,7 +126,7 @@ class ShipTicketSaleService
                 // sold_by is locked after creation: the edit form shows it disabled.
                 'sold_by' => $sale->sold_by,
                 'issued_date' => $data['issued_date'],
-                'status' => $data['status'],
+                'status' => $sale->status,
                 'remark1' => $data['remark1'],
                 'remark2' => $data['remark2'],
             ]);
@@ -103,6 +137,17 @@ class ShipTicketSaleService
 
             $this->updatePayments($sale, $data['payments'] ?? []);
             $this->updateCoPassengers($sale, $data['co_passengers'] ?? []);
+            $this->addPrintedTickets($sale, $input['additional_pdf'] ?? []);
+
+            if (array_key_exists('shipment_id', $data)) {
+                $shipmentId = trim((string) $data['shipment_id']);
+
+                if ($shipmentId === '') {
+                    $sale->shipment()->delete();
+                } else {
+                    $sale->shipment()->updateOrCreate([], ['shipment_id' => $shipmentId]);
+                }
+            }
 
             DB::commit();
         } catch (\Throwable $e) {
@@ -111,15 +156,18 @@ class ShipTicketSaleService
             throw $e;
         }
 
-        if (($input['status'] ?? null) === SaleStatus::PaymentVerified->value) {
-            $this->markPaymentVerified($sale, $data, $input);
-        }
-
         return $sale;
     }
 
     public function updateIssue(ShipTicketSale $sale, array $data): ShipTicketSale
     {
+        if (array_key_exists('whatsapp', $data) || array_key_exists('whatsapp_username', $data)) {
+            $sale->update([
+                'whatsapp' => $data['whatsapp'] ?? null,
+                'whatsapp_username' => $data['whatsapp_username'] ?? null,
+            ]);
+        }
+
         $hasGroupingChoice = array_key_exists('group_tickets', $data);
         $groupById = $hasGroupingChoice
             ? (($data['group_tickets'] ?? null) === 'yes' ? (int) $data['group_by_id'] : $sale->id)
@@ -343,6 +391,36 @@ class ShipTicketSaleService
         });
     }
 
+    private function addPrintedTickets(ShipTicketSale $sale, mixed $filenames): void
+    {
+        if (! is_array($filenames)) {
+            return;
+        }
+
+        $groupById = $sale->printedTickets()->latest('id')->value('group_by_id') ?? $sale->id;
+
+        foreach ($filenames as $filename) {
+            $filename = trim((string) $filename);
+
+            if ($filename === '') {
+                continue;
+            }
+
+            if (! str_ends_with(strtolower($filename), '.pdf')) {
+                $filename .= '.pdf';
+            }
+
+            if ($sale->printedTickets()->where('filename', $filename)->exists()) {
+                continue;
+            }
+
+            $sale->printedTickets()->create([
+                'filename' => $filename,
+                'group_by_id' => $groupById,
+            ]);
+        }
+    }
+
     private function appendAdminSaleToSheet(ShipTicketSale $ticketSale, array $data, array $input): void
     {
         $ship = Ship::find($input['ship_id'] ?? null);
@@ -352,7 +430,7 @@ class ShipTicketSaleService
             GoogleSheetService::appendRow([
                 $data['customer_name'],
                 $data['customer_mobile'],
-                $data['whatsapp'] ?? $data['customer_mobile'],
+                $data['whatsapp'] ?? $data['whatsapp_username'] ?? $data['customer_mobile'],
                 $data['email'] ?? '',
                 $ship?->name ?? '',
                 $input['sales_source'] ?? null,
@@ -378,7 +456,7 @@ class ShipTicketSaleService
         GoogleSheetService::appendRow([
             $data['customer_name'],
             $data['customer_mobile'],
-            $data['whatsapp'] ?? $data['customer_mobile'],
+            $data['whatsapp'] ?? $data['whatsapp_username'] ?? $data['customer_mobile'],
             $data['email'] ?? '',
             $ship->name,
             $whatsapp->whatsapp_number ?? 'not found',
@@ -404,5 +482,49 @@ class ShipTicketSaleService
         }
 
         return implode(', ', $payments);
+    }
+
+    private function normalizeFinancials(array $data, array $input, bool $publicPricing = false): array
+    {
+        if (array_key_exists('ticket_categories', $input) && is_array($input['ticket_categories'])) {
+            $data['ticket_fee'] = $this->saleFinancials->ticketFeeFromCategories(
+                $data['ship_id'],
+                $data['return_date'] ?? null,
+                $input['ticket_categories'],
+                (float) ($data['ticket_fee'] ?? 0),
+                $publicPricing,
+            );
+        }
+
+        $data['other_fee'] = (float) ($data['other_fee'] ?? $input['other_fee'] ?? 0);
+        $data['discount_amount'] = (float) ($data['discount_amount'] ?? $input['discount_amount'] ?? 0);
+        $receivedAmount = $this->receivedAmountFromPaymentInput($input)
+            ?? (float) ($data['received_amount'] ?? $input['received_amount'] ?? 0);
+        $summary = $this->saleFinancials->summary(
+            (float) ($data['ticket_fee'] ?? 0),
+            $data['other_fee'],
+            $data['discount_amount'],
+            $receivedAmount,
+        );
+
+        return [...$data, ...$summary, 'other_fee' => $data['other_fee'], 'discount_amount' => $data['discount_amount']];
+    }
+
+    private function receivedAmountFromPaymentInput(array $input): ?float
+    {
+        $paymentField = array_key_exists('payment_methods', $input) ? 'payment_methods' : 'payments';
+        $payments = $input[$paymentField] ?? null;
+
+        if (! is_array($payments)) {
+            return null;
+        }
+
+        $amountKey = $paymentField === 'payment_methods' ? 'amount' : 'received_amount';
+
+        return round(array_reduce(
+            $payments,
+            fn (float $total, mixed $payment): float => $total + (is_array($payment) ? max((float) ($payment[$amountKey] ?? 0), 0) : 0),
+            0.0,
+        ), 2);
     }
 }

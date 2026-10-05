@@ -94,8 +94,10 @@ function proofUpdatePayload(Ship $ship, Company $company, User $user, array $ove
 }
 
 it('stores the payment proof uploaded from the create form', function () {
-    $this->actingAs($this->admin)
+    $response = $this->actingAs($this->admin)
         ->post('/ship-ticket-sales', proofSalePayload($this->ship, $this->company, $this->admin, [
+            'collect_from_office' => 0,
+            'journey_date' => now()->addDay()->toDateString(),
             'payment_methods' => [
                 [
                     'method' => 'Bkash',
@@ -106,7 +108,13 @@ it('stores the payment proof uploaded from the create form', function () {
                 ],
             ],
         ]))
-        ->assertRedirect(route('ship-ticket-sales.create'));
+        ->assertRedirect(route('ship-ticket-sales.create'))
+        ->assertSessionHas('success', 'Journey ticket saved!.');
+
+    $this->get($response->headers->get('Location'))
+        ->assertOk()
+        ->assertSee('Journey ticket saved!.')
+        ->assertSee('data-ticket-sale-saved="1"', false);
 
     $payment = Payment::latest('id')->first();
 

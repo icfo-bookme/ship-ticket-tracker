@@ -27,6 +27,8 @@ class UpdateTicketIssueRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'whatsapp' => 'sometimes|nullable|string|min:11|max:20',
+            'whatsapp_username' => 'sometimes|nullable|string|max:100',
             'pdf' => 'nullable|array',
             'pdf.*' => 'nullable|string|max:255',
             'additional_pdf' => 'nullable|array',
@@ -48,6 +50,13 @@ class UpdateTicketIssueRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            if ($this->hasAny(['whatsapp', 'whatsapp_username'])
+                && blank($this->input('whatsapp'))
+                && blank($this->input('whatsapp_username'))) {
+                $validator->errors()->add('whatsapp', 'Enter a WhatsApp number or username.');
+                $validator->errors()->add('whatsapp_username', 'Enter a WhatsApp number or username.');
+            }
+
             if ($this->input('group_tickets') !== 'yes') {
                 return;
             }

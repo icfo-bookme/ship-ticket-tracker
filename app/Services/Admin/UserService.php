@@ -45,4 +45,15 @@ class UserService
         return $user->id !== auth()->id()
             && ! $user->hasRole(config('roles.super_admin_role'));
     }
+
+    public function delete(User $user): bool
+    {
+        if (! $this->canDelete($user)) {
+            return false;
+        }
+
+        $user->delete();
+
+        return true;
+    }
 }

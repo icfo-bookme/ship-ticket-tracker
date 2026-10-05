@@ -54,7 +54,7 @@ class ShipPackageController extends Controller
     public function destroy($id)
     {
         $shipPackage = $this->shipPackages->find($id);
-        $shipPackage->delete();
+        $this->shipPackages->delete($shipPackage);
 
         return response()->json(['success' => true, 'message' => 'Ship package deleted successfully.']);
     }

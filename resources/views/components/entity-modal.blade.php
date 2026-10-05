@@ -65,6 +65,12 @@ $maxWidthClass = [
     (function () {
         const modal = document.getElementById(@json($id));
 
+        function openModal() {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.classList.add('overflow-hidden');
+        }
+
         function closeModal() {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
@@ -75,7 +81,12 @@ $maxWidthClass = [
             document.body.classList.remove('overflow-hidden');
 
         }
+        modal._openModal = openModal;
         modal._closeModal = closeModal;
+
+        document.querySelectorAll(`[data-modal-target="${modal.id}"]`).forEach(function (trigger) {
+            trigger.addEventListener('click', openModal);
+        });
 
         // Cancel / close buttons (also covers the header X button).
         modal.querySelectorAll('[data-modal-hide], [data-close-modal]').forEach(function (btn) {

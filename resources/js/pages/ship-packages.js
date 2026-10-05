@@ -1,7 +1,8 @@
+import { initializeDataTable } from '../services/data-table.js';
 import { refreshDataTable } from '../services/api';
 import { createCrudPage } from '../components/crud-page';
 
-document.getElementById('packagesTable').__dataTableColumns = [
+const columns = [
     { data: 'id' },
     { data: 'name', render: (data, type) => type !== 'display' ? data : escapeHtml(data) },
     { data: 'price', render: (data, type) => type !== 'display' ? data : escapeHtml(data) },
@@ -17,6 +18,7 @@ document.getElementById('packagesTable').__dataTableColumns = [
             </div>`,
     },
 ];
+initializeDataTable({ table: document.getElementById('packagesTable'), columns });
 
 document.addEventListener('DOMContentLoaded', () => {
     const page = document.getElementById('packagesPage');

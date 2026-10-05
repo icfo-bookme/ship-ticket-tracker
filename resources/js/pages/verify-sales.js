@@ -7,6 +7,7 @@ const showError = (message) => {
         text: message,
         icon: 'error',
         confirmButtonText: 'OK',
+        buttonsStyling: false,
         customClass: {
             confirmButton: 'bg-red-600 text-white',
         },
@@ -25,13 +26,8 @@ const verifySale = async ({ button, onSuccess }) => {
             : 'You want to verify this!',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
         confirmButtonText: isOfficeCollection ? 'Yes, Collected' : 'Yes, Verify it!',
-        customClass: {
-            confirmButton: 'bg-blue-950 text-white',
-            cancelButton: 'bg-red-500 text-white',
-        },
+        buttonsStyling: false,
     });
 
     if (!confirmation.isConfirmed || !urlTemplate) {
@@ -64,6 +60,7 @@ const verifySale = async ({ button, onSuccess }) => {
                 : 'Sale has been successfully verified.',
             icon: 'success',
             confirmButtonText: 'OK',
+            buttonsStyling: false,
             customClass: {
                 confirmButton: 'bg-blue-950 text-white',
             },

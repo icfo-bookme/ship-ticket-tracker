@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Models\PrintedTicket;
 use App\Models\Ship;
 use App\Models\Shipment;
+use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use App\Services\Sales\SaleGroupingService;
@@ -46,6 +47,8 @@ it('only saves PDF and grouping data from the ticket issue page', function () {
     $this->actingAs($user)
         ->get(route('ship-ticket-issue.show', $sale))
         ->assertOk()
+        ->assertSee('id="copy-customer-details"', false)
+        ->assertSee('Copy Customer Details')
         ->assertDontSee('Collect from office')
         ->assertDontSee('Copy Address')
         ->assertDontSee('Add Another Payment Record')
@@ -62,6 +65,91 @@ it('only saves PDF and grouping data from the ticket issue page', function () {
     expect($sale->fresh()->customer_name)->toBe('Original Customer')
         ->and((float) $sale->fresh()->ticket_fee)->toBe(500.0)
         ->and($sale->fresh()->status)->toBe('ticket-issued')
+        ->and($sale->printedTickets()->pluck('filename')->all())->toBe(['01712345678-2.pdf']);
+});
+
+it('saves added PDF filenames from sale edit without automatically changing its status', function () {
+    $user = User::factory()->create();
+    $user->givePermissionTo([
+        Permission::findOrCreate('sales.view', 'web'),
+        Permission::findOrCreate('sales.edit', 'web'),
+    ]);
+    $ship = Ship::create(['name' => 'Test Ship', 'status' => 1]);
+    $company = Company::create(['name' => 'Test Company', 'status' => 1]);
+    $sale = ShipTicketSale::create([
+        'customer_name' => 'Editable Customer',
+        'customer_mobile' => '01712345678',
+        'whatsapp' => '01712345678',
+        'email' => null,
+        'nid' => null,
+        'date_of_birth' => null,
+        'address' => 'Dhaka',
+        'collect_from_office' => false,
+        'sales_source' => 'Direct',
+        'ship_id' => $ship->id,
+        'company_id' => $company->id,
+        'journey_date' => '2026-10-01',
+        'return_date' => null,
+        'ticket_fee' => 500,
+        'other_fee' => 0,
+        'discount_amount' => 0,
+        'total_payable' => 500,
+        'received_amount' => 500,
+        'due_amount' => 0,
+        'issued_date' => '2026-09-26',
+        'number_of_ticket' => 1,
+        'status' => 'payment-verified',
+        'remark1' => null,
+        'remark2' => null,
+    ]);
+    $package = ShipPackage::create([
+        'ship_id' => $ship->id,
+        'name' => 'Updated Deck',
+        'price' => 100,
+        'round_trip_price' => 180,
+    ]);
+
+    $this->actingAs($user)
+        ->put(route('ship-ticket-sales.update', $sale), [
+            'customer_name' => 'Updated Customer',
+            'customer_mobile' => '01712345678',
+            'whatsapp' => '01712345678',
+            'whatsapp_username' => null,
+            'email' => null,
+            'nid' => null,
+            'date_of_birth' => null,
+            'address' => 'Dhaka',
+            'collect_from_office' => 0,
+            'ship_id' => $ship->id,
+            'company_id' => $company->id,
+            'journey_date' => '2026-10-01',
+            'return_date' => '2026-10-02',
+            'number_of_ticket' => 1,
+            'ticket_fee' => 500,
+            'other_fee' => 10,
+            'discount_amount' => 5,
+            'total_payable' => 500,
+            'received_amount' => 500,
+            'due_amount' => 0,
+            'issued_date' => '2026-09-26',
+            'status' => 'shipped',
+            'next_sale_id' => $sale->id + 100,
+            'sales_source' => 'Direct',
+            'remark1' => null,
+            'remark2' => null,
+            'departure_quantity' => [$package->id => 2],
+            'return_quantity' => [$package->id => 1],
+            'additional_pdf' => ['01712345678-2'],
+            'shipment_id' => 'TRACK-UPDATE-1',
+        ])
+        ->assertRedirect();
+
+    expect($sale->fresh()->customer_name)->toBe('Updated Customer')
+        ->and($sale->fresh()->status)->toBe('payment-verified')
+        ->and((float) $sale->fresh()->ticket_fee)->toBe(280.0)
+        ->and((float) $sale->fresh()->total_payable)->toBe(285.0)
+        ->and($sale->fresh()->number_of_ticket)->toBe(3)
+        ->and($sale->fresh()->shipment?->shipment_id)->toBe('TRACK-UPDATE-1')
         ->and($sale->printedTickets()->pluck('filename')->all())->toBe(['01712345678-2.pdf']);
 });
 
@@ -213,8 +301,54 @@ it('finds group candidates by the sale WhatsApp number instead of the PDF filena
         ->get(route('ship-ticket-issue.show', $sale))
         ->assertOk()
         ->assertSee('name="group_tickets"', false)
-        ->assertSee('let currentPdfNumber = 5;', false)
+        ->assertSee('data-current-pdf-number="5"', false)
         ->assertSee('value="'.$referenceSale->id.'"', false);
+});
+
+it('finds username-based groups and uses the username as the PDF prefix when no WhatsApp number exists', function () {
+    $user = User::factory()->create();
+    $user->givePermissionTo([
+        Permission::findOrCreate('sales.view', 'web'),
+        Permission::findOrCreate('sales.verify', 'web'),
+    ]);
+    $ship = Ship::create(['name' => 'Test Ship', 'status' => 1]);
+    $company = Company::create(['name' => 'Test Company', 'status' => 1]);
+    $referenceSale = ShipTicketSale::create([
+        'customer_name' => 'Username Match',
+        'customer_mobile' => '01767576768',
+        'whatsapp_username' => '@Traveler Name',
+        'address' => '12 Road, Dhaka',
+        'sales_source' => 'Direct',
+        'ship_id' => $ship->id,
+        'company_id' => $company->id,
+        'journey_date' => '2026-10-01',
+        'ticket_fee' => 500,
+        'other_fee' => 0,
+        'discount_amount' => 0,
+        'total_payable' => 500,
+        'received_amount' => 500,
+        'due_amount' => 0,
+        'issued_date' => '2026-09-26',
+        'number_of_ticket' => 1,
+        'status' => 'ticket-issued',
+    ]);
+    $sale = $referenceSale->replicate();
+    $sale->customer_name = 'New Username Match';
+    $sale->whatsapp_username = '@TRAVELER NAME';
+    $sale->status = 'payment-verified';
+    $sale->save();
+    PrintedTicket::create([
+        'sales_id' => $referenceSale->id,
+        'filename' => 'legacy-ticket-3.pdf',
+        'group_by_id' => $referenceSale->id,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('ship-ticket-issue.show', $sale))
+        ->assertOk()
+        ->assertSee('name="group_tickets"', false)
+        ->assertSee('value="'.$referenceSale->id.'"', false)
+        ->assertSee('data-whatsapp="TRAVELER-NAME"', false);
 });
 
 it('rejects grouping with collected or shipped sales', function () {

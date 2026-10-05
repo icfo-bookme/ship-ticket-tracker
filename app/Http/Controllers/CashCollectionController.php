@@ -57,7 +57,7 @@ class CashCollectionController extends Controller
     public function destroy($id)
     {
         $collection = CashCollection::findOrFail($id);
-        $collection->delete();
+        $this->cashCollections->delete($collection);
 
         return response()->json([
             'message' => 'Cash collection deleted successfully.',

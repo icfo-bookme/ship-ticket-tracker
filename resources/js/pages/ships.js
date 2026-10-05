@@ -1,7 +1,8 @@
+import { initializeDataTable } from '../services/data-table.js';
 import { createCrudPage } from '../components/crud-page';
 import { refreshDataTable } from '../services/api';
 
-document.getElementById('shipsTable').__dataTableColumns = [
+const columns = [
     { data: 'id' },
     { data: 'name', render: (data, type) => type !== 'display' ? data : escapeHtml(data) },
     { data: 'route', render: (data, type) => type !== 'display' ? data : escapeHtml(data) },
@@ -18,6 +19,7 @@ document.getElementById('shipsTable').__dataTableColumns = [
             </div>`,
     },
 ];
+initializeDataTable({ table: document.getElementById('shipsTable'), columns });
 
 document.addEventListener('DOMContentLoaded', () => {
     createCrudPage({

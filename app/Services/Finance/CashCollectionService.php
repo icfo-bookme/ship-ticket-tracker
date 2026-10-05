@@ -11,6 +11,11 @@ use Illuminate\Validation\ValidationException;
 
 class CashCollectionService
 {
+    public function delete(CashCollection $collection): void
+    {
+        $collection->delete();
+    }
+
     /**
      * @return array{availableCashAmount: float, totalReceivedAmount: float, totalRefundedAmount: float, totalCashedOutAmount: float}
      */

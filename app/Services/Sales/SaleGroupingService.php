@@ -65,7 +65,7 @@ class SaleGroupingService
 
         return ShipTicketSale::query()
             ->whereIn('id', $saleIds)
-            ->get(['id', 'status', 'collect_from_office', 'whatsapp', 'address']);
+            ->get(['id', 'status', 'collect_from_office', 'whatsapp', 'whatsapp_username', 'address']);
     }
 
     public function courierParcelGroupFailureMessage(Collection $sales): ?string
@@ -75,9 +75,10 @@ class SaleGroupingService
             return 'This ticket group contains a Collect from Office sale. Separate it from courier delivery before creating a parcel.';
         }
 
-        if ($sales->pluck('whatsapp')->filter()->unique()->count() !== 1
-            || $sales->contains(fn (ShipTicketSale $sale): bool => empty($sale->whatsapp))) {
-            return 'All courier sales in a parcel group must use the same WhatsApp number.';
+        $contactIdentities = $sales->map(fn (ShipTicketSale $sale): ?string => $this->contactIdentity($sale));
+
+        if ($contactIdentities->contains(null) || $contactIdentities->unique()->count() !== 1) {
+            return 'All courier sales in a parcel group must use the same WhatsApp number or username.';
         }
 
         if ($sales->contains(fn (ShipTicketSale $sale): bool => empty(trim((string) $sale->address)))) {
@@ -106,7 +107,8 @@ class SaleGroupingService
 
     private function salesCanGroup(ShipTicketSale $sale, ShipTicketSale $groupSale): bool
     {
-        if (empty($sale->whatsapp) || $sale->whatsapp !== $groupSale->whatsapp) {
+        if ($this->contactIdentity($sale) === null
+            || $this->contactIdentity($sale) !== $this->contactIdentity($groupSale)) {
             return false;
         }
 
@@ -124,6 +126,10 @@ class SaleGroupingService
 
     private function pairFailureMessage(ShipTicketSale $sale, ShipTicketSale $otherSale): ?string
     {
+        if ($this->contactIdentity($sale) !== $this->contactIdentity($otherSale)) {
+            return 'Both sales must share the same WhatsApp number or username before grouping.';
+        }
+
         if ($this->isOfficeCollection($sale) !== $this->isOfficeCollection($otherSale)) {
             return 'এই WhatsApp নম্বর দিয়ে ইতোমধ্যে সেল রেকর্ড তৈরি করা আছে। তবে ডেলিভারি পদ্ধতি ভিন্ন হওয়ায়, অর্থাৎ একটি “Collect from Office” এবং অন্যটি “Courier Delivery”, এগুলো একসাথে গ্রুপ করা যাবে না।';
         }
@@ -131,6 +137,19 @@ class SaleGroupingService
         if (! $this->isOfficeCollection($sale)
             && (empty(trim((string) $sale->address)) || empty(trim((string) $otherSale->address)))) {
             return 'Both courier sales must have a delivery address before grouping.';
+        }
+
+        return null;
+    }
+
+    private function contactIdentity(ShipTicketSale $sale): ?string
+    {
+        if (filled($sale->whatsapp)) {
+            return 'number:'.trim((string) $sale->whatsapp);
+        }
+
+        if (filled($sale->whatsapp_username)) {
+            return 'username:'.mb_strtolower(trim((string) $sale->whatsapp_username));
         }
 
         return null;

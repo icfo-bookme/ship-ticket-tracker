@@ -19,7 +19,8 @@ class UpdateShipTicketSaleRequest extends FormRequest
         return [
             'customer_name' => 'required|string|max:255',
             'customer_mobile' => 'required|string|min:11|max:20',
-            'whatsapp' => 'nullable|string|min:11|max:20',
+            'whatsapp' => 'required_without:whatsapp_username|nullable|string|min:11|max:20',
+            'whatsapp_username' => 'required_without:whatsapp|nullable|string|max:100',
             'email' => 'nullable|email|max:255',
             'nid' => 'nullable|string|max:255',
             'date_of_birth' => 'nullable|date|before_or_equal:'.now()->subYears(18)->toDateString(),
@@ -41,10 +42,9 @@ class UpdateShipTicketSaleRequest extends FormRequest
             'sold_by' => 'nullable|string|max:255',
             'issued_date' => 'nullable|date',
             'status' => 'required',
+            'shipment_id' => 'nullable|string|max:255',
             'remark1' => 'nullable|string',
             'remark2' => 'nullable|string',
-            'group_by_id' => 'nullable|integer',
-            'group_tickets' => 'nullable|in:yes,no',
             'departure_quantity' => 'nullable|array',
             'return_quantity' => 'nullable|array',
             'departure_quantity.*' => 'nullable|integer|min:0',
@@ -63,6 +63,16 @@ class UpdateShipTicketSaleRequest extends FormRequest
             'co_passengers.*.nid' => 'nullable|string|max:255',
             'co_passengers.*.co_passernger_number' => 'nullable|string|max:20',
             'co_passengers.*.date_of_birth' => 'nullable|date|before_or_equal:'.now()->subYears(18)->toDateString(),
+            'additional_pdf' => 'nullable|array',
+            'additional_pdf.*' => 'nullable|string|max:255',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'whatsapp.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',
+            'whatsapp_username.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',
         ];
     }
 }

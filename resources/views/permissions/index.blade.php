@@ -3,7 +3,7 @@
         <div class="mx-auto sm:px-6 lg:px-8">
             <div class="flex items-center justify-between pb-5">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">Permissions Management</h2>
-                <button type="button" data-modal-target="permission-modal" data-modal-toggle="permission-modal" class="addBtn rounded bg-blue-600 px-3 py-1.5 text-white">+ Add New Permission</button>
+                <button type="button" data-modal-target="permission-modal" class="addBtn rounded bg-blue-600 px-3 py-1.5 text-white">+ Add New Permission</button>
             </div>
             <x-data-table id="permissionsTable" :headings="['ID', 'Permission Name', 'Group', 'Assigned Roles', 'Action']" url="{{ route('permissions.index') }}" :delegateActions="false" />
         </div>

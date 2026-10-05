@@ -54,6 +54,7 @@ Total output lines: 1768
                         id="ticketForm" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
+                        <input type="hidden" name="status" value="{{ old('status', $sale->status) }}">
 
                         <!-- Customer Information -->
                         <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
@@ -115,6 +116,15 @@ Total output lines: 1768
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
                                 </div>
 
+                                <div>
+                                    <label for="whatsapp_username" class="block text-sm font-semibold text-gray-700">WhatsApp Username</label>
+                                    <input type="text" name="whatsapp_username" id="whatsapp_username" maxlength="100"
+                                        value="{{ old('whatsapp_username', $sale->whatsapp_username) }}"
+                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm py-1.5 px-2.5">
+                                    @error('whatsapp') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                                    @error('whatsapp_username') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                                </div>
+
                                 <div class="bg-red-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-1">
                                         <label for="email"
@@ -129,9 +139,6 @@ Total output lines: 1768
                                         value="{{ old('email', $sale->email) }}"
                                         class="copyable-field bg-red-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
                                 </div>
-
-
-                                <input type="number" value={{ $nextSale->id ?? '' }} name="next_sale_id" hidden>
 
 
                                 <div class="bg-red-500 rounded-lg p-4">
@@ -285,9 +292,9 @@ Total output lines: 1768
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
-                                    <input type="number" name="number_of_ticket" id="number_of_ticket" required
+                                    <input type="number" name="number_of_ticket" id="number_of_ticket" required readonly
                                         min="1" value="{{ old('number_of_ticket', $sale->number_of_ticket) }}"
-                                        class="copyable-field bg-green-500 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
+                                        class="copyable-field bg-green-50 w-full border-gray-300 rounded-lg shadow-sm py-1.5 px-2.5">
                                 </div>
 
 
@@ -310,7 +317,7 @@ Total output lines: 1768
                                         <i class="fas fa-ship mr-2 text-blue-600"></i>
                                         Departure Packages
                                     </h4>
-                                    <div class="space-y-3">
+                                    <div class="space-y-3" id="departure-packages-container">
                                         @foreach ($sale->ships->packages as $package)
                                             @php
                                                 $departureCategory = $sale->categories
@@ -324,17 +331,11 @@ Total output lines: 1768
                                             <div
                                                 class="grid grid-cols-2 items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
                                                 <div class="flex items-center">
-                                                    <input type="radio" name="departure_package"
-                                                        value="{{ $package->id }}"
-                                                        id="departure_package_{{ $package->id }}"
-                                                        {{ $departureCategory ? 'checked' : '' }}
-                                                        class="copyable-field focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300">
-                                                    <label for="departure_package_{{ $package->id }}"
-                                                        class="ml-3 block text-sm font-medium text-gray-700">
+                                                    <div class="block text-sm font-medium text-gray-700">
                                                         <span class="font-semibold">{{ $package->name }}</span>
                                                         <span
                                                             class="text-blue-600 font-bold ml-2">৳{{ number_format($package->price, 2) }}</span>
-                                                    </label>
+                                                    </div>
                                                 </div>
                                                 <div class="flex items-center justify-end space-x-2">
                                                     <label for="departure_quantity_{{ $package->id }}"
@@ -345,7 +346,10 @@ Total output lines: 1768
                                                         name="departure_quantity[{{ $package->id }}]"
                                                         id="departure_quantity_{{ $package->id }}"
                                                         value="{{ $departureQuantity }}" min="0"
-                                                        class="w-20 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5 text-center">
+                                                        data-package-id="{{ $package->id }}"
+                                                        data-package-price="{{ $package->price }}"
+                                                        data-round-trip-price="{{ $package->round_trip_price }}"
+                                                        class="ticket-category-quantity w-20 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5 text-center">
                                                 </div>
                                             </div>
                                         @endforeach
@@ -358,7 +362,7 @@ Total output lines: 1768
                                         <i class="fas fa-undo-alt mr-2 text-blue-600"></i>
                                         Return Packages
                                     </h4>
-                                    <div class="space-y-3">
+                                    <div class="space-y-3" id="return-packages-container">
                                         @foreach ($sale->ships->packages as $package)
                                             @php
                                                 $returnCategory = $sale->categories
@@ -370,19 +374,12 @@ Total output lines: 1768
                                             <div
                                                 class="grid grid-cols-2 items-center p-3 hover:bg-blue-50 rounded-lg transition duration-200 ease-in-out">
                                                 <div class="flex items-center">
-                                                    <input type="radio" name="return_package"
-                                                        value="{{ $package->id }}"
-                                                        id="return_package_{{ $package->id }}"
-                                                        {{ $returnCategory ? 'checked' : '' }}
-                                                        class="copyable-field focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300">
-                                                    <label for="return_package_{{ $package->id }}"
-                                                        class="ml-3 block text-sm font-medium text-gray-700">
+                                                    <div class="block text-sm font-medium text-gray-700">
                                                         <span class="font-semibold">{{ $package->name }}</span>
                                                         <span class="text-blue-600 font-bold ml-2">
                                                             ৳{{ number_format($package->round_trip_price - $package->price, 2) }}
                                                         </span>
-
-                                                    </label>
+                                                    </div>
                                                 </div>
                                                 <div class="flex items-center justify-end space-x-2">
                                                     <label for="return_quantity_{{ $package->id }}"
@@ -392,7 +389,10 @@ Total output lines: 1768
                                                     <input type="number" name="return_quantity[{{ $package->id }}]"
                                                         id="return_quantity_{{ $package->id }}"
                                                         value="{{ $returnQuantity }}" min="0"
-                                                        class="w-20 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5 text-center">
+                                                        data-package-id="{{ $package->id }}"
+                                                        data-package-price="{{ $package->price }}"
+                                                        data-round-trip-price="{{ $package->round_trip_price }}"
+                                                        class="ticket-category-quantity w-20 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5 text-center">
                                                 </div>
                                             </div>
                                         @endforeach
@@ -425,9 +425,9 @@ Total output lines: 1768
                                     </div>
                                     <div class="flex items-center">
                                         <span class="text-gray-500 mr-2">৳</span>
-                                        <input type="number" step="0.01" name="ticket_fee" id="ticket_fee"
+                                        <input type="number" step="0.01" min="0" name="ticket_fee" id="ticket_fee" readonly
                                             required value="{{ old('ticket_fee', $sale->ticket_fee) }}"
-                                            class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5 text-sm font-bold text-gray-800">
+                                            class="copyable-field w-full border-gray-300 bg-gray-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-gray-800">
                                     </div>
                                 </div>
 
@@ -504,7 +504,7 @@ Total output lines: 1768
                                 <div class="bg-white rounded-lg p-3 shadow-sm border border-blue-200">
                                     <div class="flex items-center justify-between mb-1">
                                         <label for="received_amount"
-                                            class="block text-sm font-semibold text-gray-700">Total Received</label>
+                                            class="block text-sm font-semibold text-gray-700">Total Received (autofill)</label>
                                         <button type="button"
                                             class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
                                             data-field="received_amount" title="Copy Received Amount">
@@ -514,9 +514,9 @@ Total output lines: 1768
                                     <div class="flex items-center">
                                         <span class="text-gray-500 mr-2">৳</span>
                                         <input type="number" step="0.01" name="received_amount"
-                                            id="received_amount" readonly
+                                            id="received_amount" disabled
                                             value="{{ old('received_amount', $sale->received_amount) }}"
-                                            class="copyable-field w-full border-blue-200 bg-blue-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-blue-700">
+                                            class="copyable-field w-full border-blue-200 bg-blue-50 disabled:cursor-not-allowed disabled:opacity-75 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-blue-700">
                                     </div>
                                 </div>
 
@@ -772,12 +772,9 @@ Total output lines: 1768
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
-  …626 tokens truncated…nt_id_entered' ? 'selected' : '' }}>Parcel
-                                            Created</option>
-                                        <option value="shipped" {{ $sale->status == 'shipped' ? 'selected' : '' }}>
-                                            shipped
-                                        </option>
-                                    </select>
+                                    <input type="date" name="issued_date" id="issued_date"
+                                        value="{{ old('issued_date', $sale->issued_date) }}"
+                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
                                 </div>
                             </div>
                         </div>
@@ -910,57 +907,16 @@ Total output lines: 1768
                                 <i class="fas fa-user-plus mr-2"></i>Add Co-Passenger
                             </button>
                         </div>
-                        @if ($sale->status == 'payment-verified')
-                            @php $count = $number + 1; @endphp
-                            <div class="bg-blue-950 rounded-lg p-3">
-                                <div id="pdf-fields"
-                                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2  shadow-sm mt-3">
-
-                                    @for ($i = 1; $i <= $totalDepartureTickets; $i += 5)
-                                        <div class="pdf-item mb-2 border p-3 rounded-lg relative">
-                                            <div class="flex items-center justify-between m-2">
-                                                <label for="pdf-{{ $i }}"
-                                                    class="text-sm font-semibold text-gray-100">
-                                                    Pdf-{{ $count }}
-                                                </label>
-
-                                                <div class="flex gap-2">
-                                                    <button type="button" class="copy-field-btn text-blue-600"
-                                                        data-field="pdf-{{ $i }}">
-                                                        <i class="fas fa-copy text-xs"></i>
-                                                    </button>
-                                                </div>
-
-                                                <button type="button" class="remove-pdf-btn text-red-600"
-                                                    title="Remove">
-                                                    <i class="fas fa-times text-xs"></i>
-                                                </button>
-                                            </div>
-
-                                            <input type="text" id="pdf-{{ $i }}" readonly
-                                                name="pdf[{{ $i }}]"
-                                                value="{{ ($sale->whatsapp ?? 'whatsapp') . '-' . $count }}"
-                                                class="copyable-field w-full border-gray-300 rounded-lg py-1.5 px-2.5">
-                                        </div>
-
-                                        @php $count++; @endphp
-                                    @endfor
-
-                                </div>
-
-                                <div class="">
-                                    <button type="button" id="addPdfField"
-                                        class="mt-3 px-2.5 py-1.5 bg-blue-600 text-white rounded-lg rounded-lg hover:bg-blue-700">
-                                        + Add New PDF Field
-                                    </button>
-                                </div>
-                            </div>
-                        @endif
-
-
-
                         <!-- PDF Section -->
                         <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100 mt-3">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-bold text-sm text-gray-800">PDF Files</h3>
+                                <button type="button" id="add-additional-pdf"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-3 rounded-md">
+                                    <i class="fas fa-plus mr-1"></i>Add PDF Field
+                                </button>
+                            </div>
+                            <div id="additional-pdf-fields" class="space-y-2 mb-3"></div>
 
                             <!-- Existing PDF Files -->
                             @if ($sale->printedTickets->count() > 0)
@@ -1002,89 +958,16 @@ Total output lines: 1768
 
                         </div>
 
-                        <!-- ADD MORE PDF FIELDS SECTION -->
-                        @if ($sale->status != 'pending' && $sale->status != 'payment-verified')
-                            <div class="bg-yellow-50 rounded-lg p-3 shadow-sm border border-yellow-200 mt-3">
-                                <div class="flex items-center mb-2">
-                                    <div class="bg-yellow-600 p-2 rounded-lg mr-3">
-                                        <i class="fas fa-file-pdf text-white text-sm"></i>
-                                    </div>
-                                    <h3 class="text-base font-bold text-gray-800">Add More PDF Fields</h3>
-                                </div>
-
-                                <div class="mb-3">
-                                    <p class="text-gray-600 mb-2">Add more PDF filename fields. Format:
-                                        {{ $sale->whatsapp ?? 'whatsapp' }}-{number}</p>
-
-                                    @php
-                                        $existingPdfCount = $sale->printedTickets->count();
-                                        $nextPdfNumber = $existingPdfCount + 1;
-                                    @endphp
-
-                                    <div id="additional-pdf-fields" class="space-y-2">
-                                        <!-- Additional PDF fields will be added here -->
-                                    </div>
-
-                                    <button type="button" id="add-additional-pdf"
-                                        class="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold py-1.5 px-2.5 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md">
-                                        <i class="fas fa-plus-circle mr-2"></i>Add PDF Field
-                                    </button>
-                                </div>
-                            </div>
-                        @endif
-
-
-                        @if ($sale->status == 'payment-verified')
-                            <div class="bg-yellow-50 rounded-lg p-3 shadow-sm border border-yellow-200 mt-3">
-
-                                <div class="flex items-center mb-2">
-                                    <div class="bg-yellow-600 p-2 rounded-lg mr-3">
-                                        <i class="fas fa-exclamation-triangle text-white text-sm"></i>
-                                    </div>
-
-                                    <h3 class="text-base font-bold text-gray-800">
-                                        Important Notice
-                                    </h3>
-                                </div>
-
-                                <p class="text-gray-700 text-sm leading-relaxed">
-                                    Tickets PDF document has already been generated using this WhatsApp number.
-                                    Please review the existing document before requesting a new one.
-                                </p>
-
-                            </div>
-                        @endif
-
-                        @if ($groupByStatus)
-                            <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100 mt-3">
-                                <p class="font-bold text-base">Do You Want to group tickets:</p>
-                                <div class="mt-2 flex justify-around">
-                                    <div>
-                                        <input type="radio" id="group_tickets_yes" name="group_tickets"
-                                            value="yes">
-                                        <label for="group_tickets_yes">Yes</label><br>
-                                    </div>
-                                    <div>
-                                        <input type="radio" id="group_tickets_no" name="group_tickets"
-                                            value="no" checked>
-                                        <label for="group_tickets_no">No</label><br>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <input type="hidden" name="group_by_id" value="{{ $groupById }}">
-                                </div>
-                            </div>
-                        @endif
-
-                        @if ($sale->status == 'shipped' || $sale->status == 'ticket-printed' || $sale->status == 'shipment_id_entered')
+                        @if ($sale->shipment || in_array($sale->status, ['shipped', 'ticket-printed', 'shipment_id_entered'], true))
                             <!-- Shipment Info Section -->
                             <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
                                 <div class="flex items-center mb-2">
                                     <div class="bg-red-600 p-2 rounded-lg mr-3">
                                         <i class="fas fa-truck text-white text-sm"></i>
                                     </div>
-                                    <h3 class="text-base font-bold text-red-800">Add Shipment Info</h3>
+                                    <h3 class="text-base font-bold text-red-800">
+                                        {{ $sale->shipment ? 'Shipment Details' : 'Add Shipment Info' }}
+                                    </h3>
                                 </div>
                                 <div>
                                     <input type="text" name="shipment_id"
@@ -1101,31 +984,10 @@ Total output lines: 1768
                                 <i class="fas fa-times mr-2"></i>Cancel
                             </a>
 
-                            <!-- Regular Update Button -->
-                            <button type="submit" name="action" value="update"
+                            <button type="submit"
                                 class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
                                 <i class="fas fa-save mr-2"></i>Update Ticket Sale
                             </button>
-
-                            <!-- Update and Next Button -->
-                            @if ($nextSale && $sale->status == 'payment-verified')
-                                <button type="submit" name="action" value="update_and_next"
-                                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
-                                    <i class="fas fa-save mr-2"></i>
-                                    <i class="fas fa-arrow-right mr-2"></i>
-                                    Verify & Next
-                                </button>
-                            @endif
-
-                            @if ($sale->status != 'payment-verified' && $sale->status != 'pending')
-                                <button type="submit" name="action" value="update_and_reverify"
-                                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
-                                    <i class="fas fa-save mr-2"></i>
-                                    <i class="fas fa-arrow-right mr-2"></i>
-                                    Update & Re-verify
-                                </button>
-                            @endif
-
                         </div>
 
 
@@ -1197,10 +1059,8 @@ Total output lines: 1768
     <div id="editSaleConfig"
         data-passenger-count="{{ count($sale->coPassengers) }}"
         data-payment-count="{{ count($sale->payments) }}"
-        data-whatsapp="{{ $sale->whatsapp ?? 'whatsapp' }}"
-        data-existing-pdf-count="{{ $sale->printedTickets->count() }}"
-        data-pdf-index="{{ $sale->status == 'payment-verified' ? (($count ?? ($number + 1)) - 1) : 0 }}"
-        data-payment-verified="{{ $sale->status === 'payment-verified' ? 'true' : 'false' }}"
+        data-pdf-prefix="{{ $pdfFilenamePrefix }}"
+        data-next-pdf-number="{{ $nextPdfNumber }}"
         data-maximum-birth-date="{{ now()->subYears(18)->format('Y-m-d') }}"></div>
 
     @vite(['resources/js/pages/edit-sale.js'])

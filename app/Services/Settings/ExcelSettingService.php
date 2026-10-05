@@ -31,4 +31,9 @@ class ExcelSettingService
 
         return $excelSetting;
     }
+
+    public function delete(ExcelSetting $excelSetting): void
+    {
+        $excelSetting->delete();
+    }
 }

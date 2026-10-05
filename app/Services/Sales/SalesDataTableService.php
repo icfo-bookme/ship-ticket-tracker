@@ -20,6 +20,7 @@ class SalesDataTableService
             'payments',
             'refunds',
             'bftn',
+            'printedTickets',
             'groupedTickets.sale:id,status',
             'verifyby.verifiedByUser',
         ]);
@@ -31,13 +32,17 @@ class SalesDataTableService
         $this->applySearch($query, (string) $request->input('search.value', ''));
 
         $filteredRecords = $query->count();
+        $start = max(0, $request->integer('start', 0));
+        $requestedLength = $request->integer('length', 10);
+        $length = $requestedLength < 1 ? 10 : min($requestedLength, 100);
 
         $sales = $query
-            ->skip((int) $request->input('start', 0))
-            ->take((int) $request->input('length', 10))
+            ->skip($start)
+            ->take($length)
             ->get();
 
         $sales->each(function (ShipTicketSale $sale): void {
+            $sale->setAttribute('whatsapp_display', $sale->whatsapp ?: $sale->whatsapp_username);
             $sale->setAttribute(
                 'bftn_received',
                 $sale->bftn_status === 'yes' && (bool) $sale->bftn?->received_status
@@ -124,11 +129,14 @@ class SalesDataTableService
         $query->where(function ($q) use ($searchValue): void {
             $q->where('customer_name', 'like', "%{$searchValue}%")
                 ->orWhere('customer_mobile', 'like', "%{$searchValue}%")
+                ->orWhere('whatsapp', 'like', "%{$searchValue}%")
+                ->orWhere('whatsapp_username', 'like', "%{$searchValue}%")
                 ->orWhere('email', 'like', "%{$searchValue}%")
                 ->orWhere('nid', 'like', "%{$searchValue}%")
                 ->orWhere('sales_source', 'like', "%{$searchValue}%")
                 ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
                 ->orWhere('discount_amount', 'like', "%{$searchValue}%")
+                ->orWhere('total_payable', 'like', "%{$searchValue}%")
                 ->orWhereHas('payments', fn ($payments) => $payments->where('payment_method', 'like', "%{$searchValue}%"))
                 ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
                 ->orWhere('received_amount', 'like', "%{$searchValue}%")

@@ -33,4 +33,9 @@ class ShipService
 
         return $ship;
     }
+
+    public function delete(Ship $ship): void
+    {
+        $ship->delete();
+    }
 }

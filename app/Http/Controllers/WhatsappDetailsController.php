@@ -45,7 +45,7 @@ class WhatsappDetailsController extends Controller
 
     public function destroy(WhatsappDetail $whatsapp): \Illuminate\Http\JsonResponse
     {
-        $whatsapp->delete();
+        $this->whatsappDetails->delete($whatsapp);
 
         return response()->json(['success' => true, 'message' => 'WhatsApp details deleted successfully.']);
     }

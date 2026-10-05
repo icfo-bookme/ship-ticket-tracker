@@ -73,6 +73,7 @@
         $status == $pendingStatus ? 'Total Ticket Value' : null,
         $status == $pendingStatus ? 'Other Fee' : null,
         $status == $pendingStatus ? 'Discount Amount' : null,
+        $status == $pendingStatus ? 'Total Payable' : null,
         $status == $pendingStatus ? 'Received Amount' : null,
         $status == $pendingStatus ? 'Transaction ID' : null,
         $status == $pendingStatus ? 'Payment Methods' : null,
@@ -109,23 +110,17 @@
         </div>
     </x-entity-modal>
 
-    <div id="bftnReceivedModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
-        <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 class="text-lg font-bold text-gray-800">Confirm BFTN Received</h3>
-            <p class="mt-2 text-sm text-gray-600">Tentative Date: <span id="bftnTentativeDate" class="font-semibold"></span></p>
-            <form id="bftnReceivedForm" class="mt-4 space-y-4">
-                <div>
-                    <label for="bftnReceivedAt" class="block text-sm font-semibold text-gray-700">Received At</label>
-                    <input id="bftnReceivedAt" type="datetime-local" required
-                        class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div class="flex justify-end gap-2">
-                    <button type="button" class="rounded bg-gray-200 px-4 py-2 text-gray-800" onclick="closeBftnReceivedModal()">Cancel</button>
-                    <button type="submit" class="rounded bg-green-600 px-4 py-2 text-white">Save Received Date</button>
-                </div>
+    <x-entity-modal id="bftnReceivedModal" title="Confirm BFTN Received" maxWidth="md"
+        formId="bftnReceivedForm" submitText="Save Received Date">
+        <div class="space-y-4 p-5">
+            <p class="text-sm text-gray-600 dark:text-gray-300">Tentative Date: <span id="bftnTentativeDate" class="font-semibold"></span></p>
+            <form id="bftnReceivedForm">
+                <label for="bftnReceivedAt" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Received At</label>
+                <input id="bftnReceivedAt" type="datetime-local" required
+                    class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
             </form>
         </div>
-    </div>
+    </x-entity-modal>
 </div>
 
 <div id="verifySalesConfig"

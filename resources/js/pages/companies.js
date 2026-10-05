@@ -1,7 +1,8 @@
+import { initializeDataTable } from '../services/data-table.js';
 import { refreshDataTable } from '../services/api';
 import { createCrudPage } from '../components/crud-page';
 
-document.getElementById('companiesTable').__dataTableColumns = [
+const columns = [
     { data: 'id' },
     { data: 'name', render: (data, type) => type !== 'display' ? data : escapeHtml(data) },
     { data: 'status', render: (data, type) => type !== 'display' ? data : (data == 1 ? 'Active' : 'Inactive') },
@@ -16,6 +17,7 @@ document.getElementById('companiesTable').__dataTableColumns = [
             </div>`,
     },
 ];
+initializeDataTable({ table: document.getElementById('companiesTable'), columns });
 
 document.addEventListener('DOMContentLoaded', () => {
     createCrudPage({

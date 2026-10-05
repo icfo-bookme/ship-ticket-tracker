@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SaleDraft extends Model
@@ -13,6 +14,7 @@ class SaleDraft extends Model
     protected $fillable = [
         'departure_date',
         'return_date',
+        'ship_id',
         'details',
         'note',
         'created_by',
@@ -29,5 +31,15 @@ class SaleDraft extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function ship(): BelongsTo
+    {
+        return $this->belongsTo(Ship::class);
+    }
+
+    public function categories(): HasMany
+    {
+        return $this->hasMany(SaleDraftCategory::class);
     }
 }

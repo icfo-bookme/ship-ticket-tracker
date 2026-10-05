@@ -41,4 +41,9 @@ class ShipPackageService
 
         return $shipPackage;
     }
+
+    public function delete(ShipPackage $shipPackage): void
+    {
+        $shipPackage->delete();
+    }
 }

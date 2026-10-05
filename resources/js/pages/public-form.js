@@ -582,6 +582,7 @@ class TicketSalesSystem {
             showCancelButton: true,
             confirmButtonText: "Yes, continue",
             cancelButtonText: "Cancel",
+            buttonsStyling: false,
             customClass: {
                 confirmButton: "bg-blue-600 text-white",
                 cancelButton: "bg-red-500 text-white",

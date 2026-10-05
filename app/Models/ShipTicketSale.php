@@ -26,6 +26,7 @@ class ShipTicketSale extends Model
         'customer_name',
         'customer_mobile',
         'whatsapp',
+        'whatsapp_username',
         'sales_source',
         'ship_id',
         'journey_date',

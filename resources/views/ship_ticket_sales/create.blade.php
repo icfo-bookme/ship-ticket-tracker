@@ -80,13 +80,18 @@
                         <div>
                             <label for="whatsapp"
                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                WhatsApp Number
+                                WhatsApp Number <span class="text-gray-500">(number or username required)</span>
                             </label>
 
                             <div class="space-y-2">
                                 <!-- WhatsApp Input -->
-                                <input type="text" id="whatsapp" name="whatsapp" placeholder="Enter WhatsApp number"
+                                <input type="text" id="whatsapp" name="whatsapp" value="{{ old('whatsapp') }}" placeholder="Enter WhatsApp number"
                                     class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+
+                                <input type="text" id="whatsapp_username" name="whatsapp_username" value="{{ old('whatsapp_username') }}" placeholder="Enter WhatsApp username"
+                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                                @error('whatsapp') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                                @error('whatsapp_username') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
 
                                 <!-- Checkbox -->
                                 <label for="sameAsMobileCheckbox"
@@ -392,10 +397,10 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Total Received (৳) <span class="text-red-500">(autofill)</span>
                             </label>
-                            <input type="number" id="received_amount" name="received_amount"
+                            <input type="number" id="received_amount" name="received_amount" disabled
                                 value="{{ old('received_amount', 0) }}" step="0.01" min="0"
                                 placeholder="0.00"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:cursor-not-allowed disabled:opacity-75 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
                                 required>
                         </div>
 

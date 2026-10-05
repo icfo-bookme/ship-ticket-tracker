@@ -88,7 +88,6 @@
                                     </div>
                                     <h3 class="text-base font-bold text-gray-800">Customer Information</h3>
                                 </div>
-
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -137,6 +136,15 @@
                                     <input type="text" name="whatsapp" id="whatsapp"
                                         value="{{ old('whatsapp', $sale->whatsapp) }}"
                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
+                                </div>
+
+                                <div>
+                                    <label for="whatsapp_username" class="block text-sm font-semibold text-gray-700">WhatsApp Username</label>
+                                    <input type="text" name="whatsapp_username" id="whatsapp_username" maxlength="100"
+                                        value="{{ old('whatsapp_username', $sale->whatsapp_username) }}"
+                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm py-1.5 px-2.5">
+                                    @error('whatsapp') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                                    @error('whatsapp_username') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div class="bg-red-500 rounded-lg p-4">
@@ -957,7 +965,7 @@
 
                                             <input type="text" id="pdf-{{ $i }}" readonly
                                                 name="pdf[{{ $i }}]"
-                                                value="{{ ($sale->whatsapp ?? 'whatsapp') . '-' . $count }}"
+                                                value="{{ $pdfFilenamePrefix . '-' . $count }}"
                                                 class="copyable-field w-full border-gray-300 rounded-lg py-1.5 px-2.5">
                                         </div>
 
@@ -1032,7 +1040,7 @@
 
                                 <div class="mb-3">
                                     <p class="text-gray-600 mb-2">Add more PDF filename fields. Format:
-                                        {{ $sale->whatsapp ?? 'whatsapp' }}-{number}</p>
+                                        {{ $pdfFilenamePrefix }}-{number}</p>
 
                                     @php $nextPdfNumber = $number + 1; @endphp
 
@@ -1209,7 +1217,7 @@
     
 
 
-    <div id="ticketIssueConfig" data-whatsapp="{{ $sale->whatsapp ?? 'whatsapp' }}" data-current-pdf-number="{{ $number + 1 }}" data-pdf-index="{{ $count - 1 }}" data-payment-verified="{{ $sale->status === 'payment-verified' ? 'true' : 'false' }}"></div>
+    <div id="ticketIssueConfig" data-whatsapp="{{ $pdfFilenamePrefix }}" data-current-pdf-number="{{ $number + 1 }}" data-pdf-index="{{ ($count ?? ($number ?? 1)) - 1 }}" data-payment-verified="{{ $sale->status === 'payment-verified' ? 'true' : 'false' }}"></div>
 
     @vite(['resources/js/pages/ticket-issue.js'])
 </x-app-layout>

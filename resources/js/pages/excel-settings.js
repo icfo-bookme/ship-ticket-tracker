@@ -1,7 +1,8 @@
+import { initializeDataTable } from '../services/data-table.js';
 import { refreshDataTable } from '../services/api';
 import { createCrudPage } from '../components/crud-page';
 
-document.getElementById('excelTable').__dataTableColumns = [
+const columns = [
     { data: 'id' },
     { data: 'spreadsheet_id', render: (data, type, row) => type !== 'display' ? (row.spreadsheetId ?? data) : escapeHtml(row.spreadsheetId ?? data) },
     { data: 'range', render: (data, type) => type !== 'display' ? data : escapeHtml(data) },
@@ -12,6 +13,7 @@ document.getElementById('excelTable').__dataTableColumns = [
         render: (data, type, row) => type !== 'display' ? '' : `<button type="button" class="editBtn rounded bg-yellow-500 px-2 py-1 text-white" data-id="${row.id}">Edit</button>`,
     },
 ];
+initializeDataTable({ table: document.getElementById('excelTable'), columns });
 
 document.addEventListener('DOMContentLoaded', () => {
     const page = document.getElementById('excelSettingsPage');

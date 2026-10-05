@@ -1,7 +1,8 @@
+import { initializeDataTable } from '../services/data-table.js';
 import { refreshDataTable } from '../services/api';
 import { createCrudPage } from '../components/crud-page';
 
-document.getElementById('rolesTable').__dataTableColumns = [
+const columns = [
     { data: 'id' },
     { data: 'name', render: (data, type, row) => type !== 'display' ? data : `${escapeHtml(data)}${row.is_super_admin ? ' <span class="text-xs text-amber-700">Super Admin</span>' : ''}` },
     {
@@ -15,6 +16,7 @@ document.getElementById('rolesTable').__dataTableColumns = [
             </div>`,
     },
 ];
+initializeDataTable({ table: document.getElementById('rolesTable'), columns });
 
 document.addEventListener('DOMContentLoaded', () => {
     const page = document.getElementById('rolesPage');

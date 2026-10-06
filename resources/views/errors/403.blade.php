@@ -13,6 +13,10 @@
     <style>
         body { font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif; }
     </style>
+        @vite([
+        'resources/css/app.css',
+        'resources/js/app.js',
+    ])
 </head>
 <body class="bg-slate-200">
     <div class="min-h-screen flex flex-col items-center justify-center px-4">

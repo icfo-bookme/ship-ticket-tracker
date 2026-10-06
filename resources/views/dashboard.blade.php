@@ -351,6 +351,7 @@
                 </div>
             </div>
 
+            @can('sales.view')
             {{-- Recent Tickets Table --}}
             <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
                 <div class="px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
@@ -463,10 +464,10 @@
                                                 </svg>
                                             </a> --}}
                                             @can('sales.edit')
-                                            <button
+                                            <a href="{{ route('ship-ticket-sales.show', $ticket->id) }}" data-permission="sales.edit"
                                                 class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                                                 Edit
-                                            </button>
+                                            </a>
                                             @endcan
                                         </div>
                                     </td>
@@ -476,6 +477,7 @@
                     </table>
                 </div>
             </div>
+            @endcan
 
         </div>
     </div>

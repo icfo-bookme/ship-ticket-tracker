@@ -96,10 +96,7 @@
     data-destroy-url="{{ route('sale.destroy', ['id' => '__ID__']) }}"
     data-verify-url="{{ route('sale.verify', ['id' => '__ID__', 'status' => '__STATUS__']) }}"
     data-bftn-received-url="{{ route('sale.bftn-received', ['id' => '__ID__']) }}"
-    data-can-payments-manage="{{ auth()->user()->can('payments.manage') ? 'true' : 'false' }}"
-    data-can-sales-edit="{{ auth()->user()->can('sales.edit') ? 'true' : 'false' }}"
-    data-can-sales-delete="{{ auth()->user()->can('sales.delete') ? 'true' : 'false' }}"
-    data-can-sales-verify="{{ auth()->user()->can('sales.verify') ? 'true' : 'false' }}"></div>
+    data-can-collect-due="{{ auth()->user()->can('payments.due.collect') ? 'true' : 'false' }}"></div>
 
 @vite(['resources/js/pages/sale-status.js'])
 
@@ -127,4 +124,3 @@
     data-url-template="{{ route('sale.verify', ['id' => '__ID__', 'status' => '__STATUS__']) }}"></div>
 
 @vite(['resources/js/pages/verify-sales.js'])
-

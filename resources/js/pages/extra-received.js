@@ -20,8 +20,8 @@ if (table && page) {
             searchable: false,
             render: (data, type, row) => type !== 'display' ? '' : `
                 <div class="flex justify-center gap-2">
-                    <button type="button" class="rounded bg-red-600 px-2 py-1 text-white refundExtraBtn" data-id="${row.id}">Refund Extra</button>
-                    <button type="button" class="rounded bg-blue-600 px-2 py-1 text-white adjustExtraBtn" data-id="${row.id}">Adjust to Other Fee</button>
+                    <button type="button" data-permission="extra_received.refund" class="rounded bg-red-600 px-2 py-1 text-white refundExtraBtn" data-id="${row.id}">Refund Extra</button>
+                    <button type="button" data-permission="extra_received.adjust" class="rounded bg-blue-600 px-2 py-1 text-white adjustExtraBtn" data-id="${row.id}">Adjust to Other Fee</button>
                 </div>`,
         },
     ];

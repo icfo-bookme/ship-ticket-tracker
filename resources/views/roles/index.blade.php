@@ -3,9 +3,11 @@
         <div class="mx-auto sm:px-6 lg:px-8">
             <div class="flex items-center justify-between pb-5">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">Roles Management</h2>
-                <button type="button" data-modal-target="role-modal" class="addBtn rounded bg-blue-600 px-3 py-1.5 text-white">+ Add New Role</button>
+                <button type="button" data-permission="roles.create" data-modal-target="role-modal" class="addBtn rounded bg-blue-600 px-3 py-1.5 text-white">+ Add New Role</button>
             </div>
-            <x-data-table id="rolesTable" :headings="['ID', 'Role Name', 'Action']" url="{{ route('roles.index') }}" :delegateActions="false" />
+            @can('roles.view')
+                <x-data-table id="rolesTable" :headings="['ID', 'Role Name', 'Action']" url="{{ route('roles.index') }}" :delegateActions="false" />
+            @endcan
         </div>
     </div>
 

@@ -67,12 +67,11 @@
         </div>
 
         <div class="flex justify-end mt-6">
-            <button id="submitRefundBtn" type="button" class="bg-blue-500 text-white px-4 py-2 rounded">Submit Refund Request</button>
+            <button id="submitRefundBtn" type="button" data-permission="refunds.create" class="bg-blue-500 text-white px-4 py-2 rounded">Submit Refund Request</button>
             <button id="closeModalBtn" type="button" class="bg-gray-400 text-white px-4 py-2 ml-2 rounded">Cancel</button>
         </div>
     </div>
 </x-entity-modal>
-
 
 
 

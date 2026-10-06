@@ -11,10 +11,7 @@ const config = {
     shippedStatus: configElement?.dataset.shippedStatus || '',
     statusLabels: JSON.parse(configElement?.dataset.statusLabels || '{}'),
     ticketIssueUrl: configElement?.dataset.ticketIssueUrl || '',
-    canPaymentsManage: configElement?.dataset.canPaymentsManage === 'true',
-    canSalesEdit: configElement?.dataset.canSalesEdit === 'true',
-    canSalesDelete: configElement?.dataset.canSalesDelete === 'true',
-    canSalesVerify: configElement?.dataset.canSalesVerify === 'true',
+    canCollectDue: configElement?.dataset.canCollectDue === 'true',
     destroyUrl: configElement?.dataset.destroyUrl || '',
     verifyUrl: configElement?.dataset.verifyUrl || '',
     bftnReceivedUrl: configElement?.dataset.bftnReceivedUrl || '',
@@ -167,7 +164,7 @@ const columns = [
     {
         data: null,
         orderable: false,
-        render: (data, type, row) => createActionButtons(row),
+            render: (data, type, row) => createActionButtons(row),
     },
 ];
 
@@ -249,7 +246,7 @@ function renderPaymentProofs(payments) {
     }
 
     const thumbs = proofs.map((payment) => `
-                <button type="button" class="paymentProofBtn" data-proof-url="/payments/${payment.id}/proof"
+                <button type="button" data-permission="payments.proof.view" class="paymentProofBtn" data-proof-url="/payments/${payment.id}/proof"
                     title="Click to view payment proof">
                     <img src="/payments/${payment.id}/proof" alt="Payment proof" loading="lazy"
                         class="h-10 w-10 object-cover rounded border border-gray-300 hover:ring-2 hover:ring-blue-400 transition">
@@ -298,36 +295,36 @@ function createActionButtons(sale) {
     let deleteButton = "";
     let bftnReceivedButton = "";
 
-    if (config.canPaymentsManage) {
+    if (config.canCollectDue) {
         dueButton = Number(sale.due_amount) > 0
-            ? `<button class="bg-yellow-500 text-black px-2 py-1 rounded dueBtn"
+            ? `<button data-permission="payments.due.collect" class="bg-yellow-500 text-black px-2 py-1 rounded dueBtn"
                         data-id="${sale.id}"
                         data-due_amount="${sale.due_amount}"
                         title="Due Amount: ${escapeHtml(sale.due_amount)}">Due</button>`
             : "";
     }
 
-    if (config.canSalesEdit) {
-        editButton = `<a href="/ship-ticket-sales/${sale.id}">
+    {
+        editButton = `<a data-permission="sales.edit" href="/ship-ticket-sales/${sale.id}">
                         <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
                     </a>`;
     }
 
-    if (config.canSalesDelete) {
-        deleteButton = `<button class="fas fa-trash text-red-500 bg-white px-2 py-1 border border-gray-300 rounded deleteBtn"
+    {
+        deleteButton = `<button data-permission="sales.delete" class="fas fa-trash text-red-500 bg-white px-2 py-1 border border-gray-300 rounded deleteBtn"
                         data-id="${sale.id}" title="Delete"></button>`;
     }
 
-    if (config.canSalesVerify) {
+    {
         bftnReceivedButton = sale.bftn_status === 'yes' && !sale.bftn_received
-            ? `<button class="bg-green-600 text-white px-2 py-1 rounded bftnReceivedBtn"
+            ? `<button data-permission="sales.bftn.receive" class="bg-green-600 text-white px-2 py-1 rounded bftnReceivedBtn"
                         data-id="${sale.id}" data-tentative-date="${escapeHtml(sale.bftn?.bftn_date_time || 'Not specified')}" title="Mark BFTN as received">BFTN Received</button>`
             : "";
     }
 
     const activeRefund = (sale.refunds || []).find((refund) => !['cancelled', 'completed'].includes(refund.status));
     const editRefundButton = activeRefund
-        ? `<a href="/refund-requests?search=${encodeURIComponent(sale.id)}"
+        ? `<a data-permission="refunds.view" href="/refund-requests?search=${encodeURIComponent(sale.id)}"
                     class="fas fa-rotate-left text-amber-700 px-2 py-1"
                     title="Edit refund request" aria-label="Edit refund request"></a>`
         : "";
@@ -350,17 +347,13 @@ function createStatusButton(sale) {
             : referenceBy(sale);
     }
 
-    if (!config.canSalesVerify) {
-        return "";
-    }
-
     const verifiedBy = escapeHtml(sale.verifyby?.[0]?.verified_by_user?.name || "Unknown");
     const printedFiles = sale.grouped_tickets || [];
 
     if (sale.status === config.paymentVerifiedStatus) {
         const issueTicketUrl = config.ticketIssueUrl.replace('__SALE_ID__', encodeURIComponent(sale.id));
 
-        return `<a href="${issueTicketUrl}" class="fa-solid fa-ticket text-blue-700 px-2 py-1"
+        return `<a data-permission="sales.issue" href="${issueTicketUrl}" class="fa-solid fa-ticket text-blue-700 px-2 py-1"
                     title="Issue Tickets" aria-label="Issue Tickets"></a>`;
     }
 
@@ -379,7 +372,7 @@ function createStatusButton(sale) {
     }
 
     if (sale.status === config.pendingStatus) {
-        return `<button class="bg-red-500 text-white px-2 py-1 rounded verifyBtn"
+        return `<button data-permission="sales.verify" class="bg-red-500 text-white px-2 py-1 rounded verifyBtn"
                     data-id="${sale.id}" data-status="${config.paymentVerifiedStatus}"
                     title="Sold by: ${escapeHtml(sale.sold_by)}">Verify Payment</button>`;
     }
@@ -475,11 +468,19 @@ async function varifyShipment(button, refresh) {
 }
 
 function statusButton(id, statusValue, label, title, className = "verifyBtn", disabled = false) {
+    const permission = {
+        [config.paymentVerifiedStatus]: 'sales.verify',
+        [config.ticketIssuedStatus]: 'sales.issue',
+        [config.ticketPrintedStatus]: 'sales.mark_printed',
+        [config.shipmentIdEnteredStatus]: 'sales.create_parcel',
+        [config.shippedStatus]: 'sales.mark_shipped',
+        [config.collectFromOfficeStatus]: 'sales.mark_collected',
+    }[statusValue];
     const buttonClass = disabled
         ? "bg-gray-400 text-gray-700 cursor-not-allowed"
         : "bg-red-500 text-white";
 
-    return `<button class="${buttonClass} px-2 py-1 rounded ${className}"
+    return `<button data-permission="${permission}" class="${buttonClass} px-2 py-1 rounded ${className}"
                 data-id="${id}" data-status="${statusValue}" title="${title}"${disabled ? " disabled" : ""}>${label}</button>`;
 }
 
@@ -493,12 +494,12 @@ function printedFileRows(sale, files) {
 
         return `
                     <div class="flex items-center gap-2">
-                        <a href="/ship-ticket-sales/${file.sales_id}" target="_blank"
+                        <a data-permission="sales.edit" href="/ship-ticket-sales/${file.sales_id}" target="_blank"
                            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-semibold">
                             Sale #${escapeHtml(file.sales_id)}
                         </a>
                         ${config.status === config.ticketIssuedStatus ? `
-                            <a href="/tickets/open/${file.sales_id}/${encodeURIComponent(file.filename)}" target="_blank"
+                            <a data-permission="sales.print" href="/tickets/open/${file.sales_id}/${encodeURIComponent(file.filename)}" target="_blank"
                                class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold"
                                title="${escapeHtml(file.filename)}">
                                 <i class="fas fa-file-pdf"></i> ${escapeHtml(file.filename)}
@@ -610,5 +611,3 @@ function bindSalesTableEvents() {
 }
 
 document.addEventListener("DOMContentLoaded", bindSalesTableEvents);
-
-

@@ -2,16 +2,70 @@
 
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Ship Booking User Manual
+        <h2 class="font-semibold text-base text-gray-800 leading-tight">
+            Operations Guide
         </h2>
     </x-slot>
 
     <div class="py-6">
-        <div class=" mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
+            <header class="border-b border-gray-300 pb-6">
+                <p class="text-xs font-semibold uppercase text-blue-700">Ship Booking · Operations</p>
+                <div class="mt-2 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-semibold text-gray-900">Ship Booking User Guide</h1>
+                        <p class="mt-2 max-w-3xl text-sm text-gray-600">
+                            Daily workflows for ticket sales, payment verification, delivery, refunds, and financial review.
+                        </p>
+                    </div>
+                    <span class="border-l-2 border-blue-600 pl-3 text-xs text-gray-500">For authorized system users</span>
+                </div>
+            </header>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">1. Purpose of This Manual</h3>
+            <details class="border-b border-gray-300 pb-4 lg:hidden">
+                <summary class="cursor-pointer text-sm font-semibold text-gray-800">Guide contents</summary>
+                <nav aria-label="Guide contents" class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
+                    <a class="text-gray-600 hover:text-blue-700" href="#manual-purpose">Overview</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#navigation">Navigation</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#sidebar-menus">Sidebar menus</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#setup">Before tickets</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#create-ticket">Create a ticket</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#sales-workflow">Sales workflow</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#due-payments">Due payments</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#shipping">Parcel and shipment</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#searching">Search and filters</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#refunds">Refunds</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#reports">Reports</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#cash-collection">Available cash</a>
+                    <a class="text-gray-600 hover:text-blue-700" href="#best-practices">Best practices</a>
+                </nav>
+            </details>
+
+            <div class="grid grid-cols-1 gap-8 lg:grid-cols-[13rem_minmax(0,1fr)]">
+                <aside class="hidden lg:block">
+                    <nav aria-label="Guide contents" class="sticky top-20 border-l border-gray-300 pl-4">
+                        <p class="mb-3 text-xs font-semibold uppercase text-gray-500">On this page</p>
+                        <div class="space-y-2 text-sm">
+                            <a class="block text-gray-600 hover:text-blue-700" href="#manual-purpose">Overview</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#navigation">Navigation</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#sidebar-menus">Sidebar menus</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#setup">Before tickets</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#create-ticket">Create a ticket</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#sales-workflow">Sales workflow</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#due-payments">Due payments</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#shipping">Parcel and shipment</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#searching">Search and filters</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#refunds">Refunds</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#reports">Reports</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#cash-collection">Available cash</a>
+                            <a class="block text-gray-600 hover:text-blue-700" href="#best-practices">Best practices</a>
+                        </div>
+                    </nav>
+                </aside>
+                <main class="documentation-sections min-w-0">
+
+            <div id="manual-purpose">
+                <h2>1. Purpose of This Manual</h2>
                 <p class="text-gray-700 mb-2">
                     This documentation explains how a user will operate the Ship Booking system from login to ticket
                     delivery. It is written for daily users who create tickets, verify payments, print tickets, collect
@@ -23,8 +77,8 @@
                 </p>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">2. Login and Basic Navigation</h3>
+            <div id="navigation">
+                <h2>2. Login and Basic Navigation</h2>
                 <ol class="list-decimal list-inside text-gray-700 space-y-2">
                     <li>Open the application URL in a modern browser such as Chrome, Edge, or Firefox.</li>
                     <li>Enter your registered email and password, then click Login.</li>
@@ -34,8 +88,8 @@
                 </ol>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">3. Main Sidebar Menus</h3>
+            <div id="sidebar-menus">
+                <h2>3. Main Sidebar Menus</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
                     <div class="border border-gray-200 rounded-lg p-4">
                         <p class="font-semibold text-gray-900 mb-1">Sell</p>
@@ -56,8 +110,8 @@
                 </div>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">4. Before Creating Tickets</h3>
+            <div id="setup">
+                <h2>4. Before Creating Tickets</h2>
                 <ul class="list-disc list-inside text-gray-700 space-y-2">
                     <li>Add the ship from Create > New Ship if it is not already available.</li>
                     <li>Add ticket packages/categories for the ship so users can select departure and return ticket types.</li>
@@ -66,8 +120,8 @@
                 </ul>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">5. Create a New Ticket</h3>
+            <div id="create-ticket">
+                <h2>5. Create a New Ticket</h2>
                 <p class="text-gray-700 mb-3">
                     Go to Sell > Create Tickets. Fill up the form carefully. Required fields are marked with a red star.
                 </p>
@@ -86,8 +140,8 @@
                 </ol>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">6. Sales Status Workflow</h3>
+            <div id="sales-workflow">
+                <h2>6. Sales Status Workflow</h2>
                 <p class="text-gray-700 mb-3">
                     Go to Sell > Sales. The status tabs show where each ticket is in the operation flow.
                 </p>
@@ -128,16 +182,21 @@
                             </tr>
                             <tr>
                                 <td class="px-4 py-3 border font-semibold">Shipped</td>
-                                <td class="px-4 py-3 border">Ticket delivery process is complete.</td>
-                                <td class="px-4 py-3 border">No further regular action is required.</td>
+                                <td class="px-4 py-3 border">The parcel has been marked as shipped.</td>
+                                <td class="px-4 py-3 border">Continue to Collected when the customer receives it.</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 border font-semibold">Collected</td>
+                                <td class="px-4 py-3 border">The customer has collected the parcel.</td>
+                                <td class="px-4 py-3 border">No further delivery action is required.</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">7. Due Payment Modal</h3>
+            <div id="due-payments">
+                <h2>7. Due Payment Modal</h2>
                 <p class="text-gray-700 mb-3">
                     If a ticket has due amount, the Sales table shows a Pay Due action. Use it when the customer pays
                     full or partial due after ticket creation.
@@ -153,8 +212,8 @@
                 </ol>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">8. Steadfast Parcel and Shipment</h3>
+            <div id="shipping">
+                <h2>8. Steadfast Parcel and Shipment</h2>
                 <p class="text-gray-700 mb-3">
                     Steadfast is used when printed tickets need courier delivery. Parcel creation happens from the
                     Ticket Printed status.
@@ -173,8 +232,8 @@
                 </p>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">9. Ticket Search, Filter, and Opening Details</h3>
+            <div id="searching">
+                <h2>9. Ticket Search, Filter, and Opening Details</h2>
                 <ul class="list-disc list-inside text-gray-700 space-y-2">
                     <li>Use status tabs to switch between Pending, Payment Verified, Ticket Issued, Ticket Printed, Parcel Created, and Shipped tickets.</li>
                     <li>Use company, ship, and journey date filters to narrow the table.</li>
@@ -184,20 +243,21 @@
                 </ul>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">10. Refund Workflow</h3>
+            <div id="refunds">
+                <h2>10. Refund Workflow</h2>
                 <ol class="list-decimal list-inside text-gray-700 space-y-2">
                     <li>Go to Refund > Make Refund.</li>
                     <li>Find the sale that needs refund and review ticket/payment information.</li>
-                    <li>Choose full refund or partial refund based on the customer case.</li>
-                    <li>Enter refund amount and required remarks accurately.</li>
-                    <li>Submit the refund. Refunded records can be checked from Refund > Refunded Sell.</li>
-                    <li>Refunded and partially refunded tickets are tracked separately from the active sales flow.</li>
+                    <li>Choose a full or partial refund. For a partial refund, enter only the ticket quantities being returned; do not exceed purchased quantities.</li>
+                    <li>Review the calculated refund preview, including other fee, discount, due adjustment, and any extra-payment refund where applicable.</li>
+                    <li>Add a clear remark and submit the request.</li>
+                    <li>Track the request through Requested, Partner Approved, and Payment Details Added. Record the customer payment to complete the refund.</li>
+                    <li>Review completed refund records under Refund > Refunded Sell. Extra-payment refunds are tracked separately.</li>
                 </ol>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">11. Reports and Cash Collection</h3>
+            <div id="reports">
+                <h2>11. Reports and Cash Collection</h2>
                 <ul class="list-disc list-inside text-gray-700 space-y-2">
                     <li>Open Show Reports > Sales Reports to review sales data for a selected period or filter.</li>
                     <li>Open Show Reports > Cash Collection to check collected amounts and reconcile payments.</li>
@@ -206,27 +266,26 @@
                 </ul>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">11.1 Available Cash Amount Calculation (Cash Collection)</h3>
+            <div id="cash-collection">
+                <h2>11.1 Available Cash Amount Calculation (Cash Collection)</h2>
                 <p class="text-gray-700 mb-3">
                     The <strong>Available Cash Amount</strong> shown in the <em>Add New Cash Collection</em> modal is
-                    calculated automatically from the database. It is a <strong>read-only</strong> field and updates
-                    by itself whenever new sales, refunds, or cash-out entries are recorded.
+                    calculated from recorded sales, completed customer refunds, and previous cash-outs. It is a
+                    <strong>read-only</strong> balance used when recording a cash collection or cash-out.
                 </p>
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3 font-mono text-sm">
-                    Available Cash = Total Received (received_amount) − Total Refunded (refunds.refunded_amount) − Total
-                    Cash-out (cashout_amount)
+                    Available Cash = Total Received - Customer Refunds Paid - Total Cash-out
                 </div>
                 <ul class="list-disc list-inside text-gray-700 space-y-2">
-                    <li><strong>Total Received:</strong> Sum of <code>received_amount</code> of all non-pending sales.</li>
-                    <li><strong>Total Refunded:</strong> Sum of <code>refunds.refunded_amount</code> returned to customers.</li>
+                    <li><strong>Total Received:</strong> Sum of <code>received_amount</code> for sales that are not pending.</li>
+                    <li><strong>Customer Refunds Paid:</strong> Sum of customer refund amounts for completed refunds on non-pending sales.</li>
                     <li><strong>Total Cash-out:</strong> Sum of <code>cashout_amount</code> of all cash collection entries.</li>
                     <li>A negative result means more money has been refunded / cashed out than was received.</li>
                 </ul>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-3">12. Best Practices</h3>
+            <div id="best-practices">
+                <h2>12. Best Practices</h2>
                 <ul class="list-disc list-inside text-gray-700 space-y-2">
                     <li>Check duplicate warning before saving a new ticket for the same mobile and journey date.</li>
                     <li>Never create a Steadfast parcel before confirming address, mobile number, and due/COD amount.</li>
@@ -236,6 +295,8 @@
                 </ul>
             </div>
 
+                </main>
+            </div>
         </div>
     </div>
 </x-app-layout>

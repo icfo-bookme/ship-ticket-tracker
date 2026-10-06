@@ -277,7 +277,7 @@ function createActionButtons(row) {
     if (config.canEdit) {
         return `
                         <div class="flex gap-2 items-center justify-center">
-                            <a href="/ship-ticket-sales/${row.id}">
+                            <a data-permission="sales.edit" href="/ship-ticket-sales/${row.id}">
                                 <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
                             </a>
                         </div>`;

@@ -19,6 +19,4 @@ class Shipment extends Model
     ];
 
     public $timestamps = true;
-
-    
 }

@@ -3,12 +3,14 @@
     <div class="mx-auto sm:px-6 lg:px-8">
         <div class="flex items-center justify-between pb-5">
             <h2 class="text-xl font-semibold leading-tight text-gray-800">Companies Details</h2>
-            <button type="button" data-modal-target="company-modal"
+            <button type="button" data-permission="companies.create" data-modal-target="company-modal"
                 class="addBtn rounded bg-red-500 px-2 py-1 text-white">
                 + Add New Company
             </button>
         </div>
-        <x-data-table id="companiesTable" :headings="['ID', 'Name', 'Status', 'Action']" url="{{ route('companies.index') }}" :delegateActions="false" />
+        @can('companies.view')
+            <x-data-table id="companiesTable" :headings="['ID', 'Name', 'Status', 'Action']" url="{{ route('companies.index') }}" :delegateActions="false" />
+        @endcan
     </div>
 </div>
 

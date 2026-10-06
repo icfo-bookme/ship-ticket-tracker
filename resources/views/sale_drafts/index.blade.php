@@ -50,13 +50,14 @@
                     <textarea id="draftNote" name="note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
                 </div>
                 <div class="flex gap-3 md:col-span-2">
-                    <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"><span data-submit-label>Save Draft</span></button>
+                    <button type="submit" data-permission="sale_drafts.create" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"><span data-submit-label>Save Draft</span></button>
                     <button type="button" id="clearDraftButton" class="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Clear</button>
                 </div>
             </form>
         </div>
 
-        <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+        @can('sale_drafts.view')
+            <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div>
                 <label for="draftShipFilter" class="block text-sm font-medium text-gray-700">Filter by Ship</label>
                 <select id="draftShipFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -83,9 +84,10 @@
             <div class="flex items-end">
                 <button type="button" id="clearDraftFilters" class="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Clear Filters</button>
             </div>
-        </div>
+            </div>
 
-        <x-data-table id="saleDraftsTable" :headings="['ID', 'Departure Date', 'Return Date', 'Ship', 'Categories', 'Details', 'Note', 'Created At', 'Action']" url="{{ route('sale-drafts.index') }}" :ordering="false" :delegateActions="false" :order="[]" />
+            <x-data-table id="saleDraftsTable" :headings="['ID', 'Departure Date', 'Return Date', 'Ship', 'Categories', 'Details', 'Note', 'Created At', 'Action']" url="{{ route('sale-drafts.index') }}" :ordering="false" :delegateActions="false" :order="[]" />
+        @endcan
     </div>
 
     @vite(['resources/js/pages/sale-drafts.js'])

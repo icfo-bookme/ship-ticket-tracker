@@ -77,12 +77,11 @@
         </div>
 
         <div class="flex justify-end mt-6">
-            <button id="submitPaymentBtn" type="button" class="bg-blue-500 text-white px-4 py-2 rounded">Pay Due</button>
+            <button id="submitPaymentBtn" type="button" data-permission="payments.due.collect" class="bg-blue-500 text-white px-4 py-2 rounded">Pay Due</button>
             <button id="closeModalBtn" type="button" class="bg-gray-400 text-white px-4 py-2 ml-2 rounded">Cancel</button>
         </div>
     </div>
 </x-entity-modal>
-
 
 
 

@@ -42,7 +42,7 @@ const columns = [
         data: null,
         orderable: false,
         searchable: false,
-        render: (data, type, row) => type !== 'display' ? '' : `<div class="flex gap-2"><button type="button" class="editBtn rounded bg-blue-600 px-2 py-1 text-xs text-white" data-id="${row.id}">Edit</button><button type="button" class="deleteBtn rounded bg-red-600 px-2 py-1 text-xs text-white" data-id="${row.id}">Delete</button></div>`,
+        render: (data, type, row) => type !== 'display' ? '' : `<div class="flex gap-2"><button type="button" data-permission="sale_drafts.edit" class="editBtn rounded bg-blue-600 px-2 py-1 text-xs text-white" data-id="${row.id}">Edit</button><button type="button" data-permission="sale_drafts.delete" class="deleteBtn rounded bg-red-600 px-2 py-1 text-xs text-white" data-id="${row.id}">Delete</button></div>`,
     },
 ];
 

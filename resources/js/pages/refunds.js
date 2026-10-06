@@ -14,7 +14,7 @@ if (document.getElementById('salesTable')) {
             orderable: false,
             searchable: false,
             render: (data, type, row) => type !== 'display' ? '' :
-                `<input type="checkbox" class="selectSale" data-id="${row.id}" />`,
+                `<input type="checkbox" data-permission="refunds.create" class="selectSale" data-id="${row.id}" />`,
         },
         { data: "id" },
         {
@@ -72,9 +72,9 @@ if (document.getElementById('salesTable')) {
 
         return `
                         <div class="flex gap-2 items-center justify-center">
-                            <a href="${document.getElementById('refundPage').dataset.saleUrl.replace('__ID__', sale.id)}"
+                            <a data-permission="sales.edit" href="${document.getElementById('refundPage').dataset.saleUrl.replace('__ID__', sale.id)}"
                                 class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit" aria-label="Edit sale"></a>
-                            <button class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund"
+                            <button data-permission="refunds.create" class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund"
                                 data-id="${sale.id}"
                                 data-received_total_amount="${sale.ticket_fee}"
                                 data-due-amount="${sale.due_amount || 0}"

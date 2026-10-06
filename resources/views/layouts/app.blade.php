@@ -61,7 +61,7 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div class="min-h-screen w-full overflow-x-hidden bg-slate-200">
+    <div class="min-h-screen w-full overflow-x-clip bg-slate-200">
 
         <!-- Header -->
         <header
@@ -69,6 +69,15 @@
         >
             @include('layouts.navigation')
         </header>
+
+        @auth
+            <div
+                id="authorization-context"
+                data-permissions="{{ auth()->user()->getAllPermissions()->pluck('name')->values()->toJson() }}"
+                data-super-admin="{{ auth()->user()->hasRole(config('roles.super_admin_role')) ? '1' : '0' }}"
+                hidden
+            ></div>
+        @endauth
 
         <!-- Mobile Sidebar Backdrop -->
         <div
@@ -81,7 +90,7 @@
             id="sidebar"
             class="
                 fixed bottom-0 left-0 top-16 z-40
-                w-60 -translate-x-full
+                w-48 -translate-x-full
                 overflow-x-hidden overflow-y-auto
                 bg-white shadow-xl
                 transition-all duration-300 ease-in-out
@@ -98,7 +107,7 @@
                 min-h-screen min-w-0
                 pt-16
                 transition-all duration-300 ease-in-out
-                lg:ml-60
+                lg:ml-48
             "
         >
             <div
@@ -195,11 +204,11 @@
                     return;
                 }
 
-                sidebar.classList.remove('w-60');
-                sidebar.classList.add('w-20');
+                sidebar.classList.remove('w-48');
+                sidebar.classList.add('w-14');
 
-                mainContent.classList.remove('lg:ml-60');
-                mainContent.classList.add('lg:ml-20');
+                mainContent.classList.remove('lg:ml-48');
+                mainContent.classList.add('lg:ml-14');
 
                 if (saveState) {
                     localStorage.setItem(
@@ -216,11 +225,11 @@
                     return;
                 }
 
-                sidebar.classList.remove('w-20');
-                sidebar.classList.add('w-60');
+                sidebar.classList.remove('w-14');
+                sidebar.classList.add('w-48');
 
-                mainContent.classList.remove('lg:ml-20');
-                mainContent.classList.add('lg:ml-60');
+                mainContent.classList.remove('lg:ml-14');
+                mainContent.classList.add('lg:ml-48');
 
                 if (saveState) {
                     localStorage.setItem(
@@ -271,7 +280,7 @@
             sidebarToggle?.addEventListener('click', () => {
                 if (isDesktop()) {
                     const isCollapsed = sidebar.classList.contains(
-                        'w-20'
+                        'w-14'
                     );
 
                     if (isCollapsed) {
@@ -316,8 +325,8 @@
                         return;
                     }
 
-                    mainContent.classList.remove('lg:ml-20');
-                    mainContent.classList.add('lg:ml-60');
+                    mainContent.classList.remove('lg:ml-14');
+                    mainContent.classList.add('lg:ml-48');
 
                     adjustDataTables();
                 }, 150);

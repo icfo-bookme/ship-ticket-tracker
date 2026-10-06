@@ -3,10 +3,12 @@
         <div class="mx-auto sm:px-6 lg:px-8">
             <div class="flex items-center justify-between pb-5">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">Users Management</h2>
-            <button type="button" data-modal-target="user-modal"
+            <button type="button" data-permission="users.create" data-modal-target="user-modal"
                     class="addBtn rounded bg-blue-600 px-3 py-1.5 text-white">+ Add New User</button>
             </div>
-            <x-data-table id="usersTable" :headings="['ID', 'Name', 'Email', 'Role', 'Action']" url="{{ route('users.index') }}" :delegateActions="false" />
+            @can('users.view')
+                <x-data-table id="usersTable" :headings="['ID', 'Name', 'Email', 'Role', 'Action']" url="{{ route('users.index') }}" :delegateActions="false" />
+            @endcan
         </div>
     </div>
 

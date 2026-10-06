@@ -3,9 +3,11 @@
         <div class="mx-auto sm:px-6 lg:px-8">
             <div class="flex items-center justify-between pb-5">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">Cash Collection Details</h2>
-                <button type="button" data-modal-target="cash-collection-modal" class="addBtn rounded bg-red-500 px-2 py-1 text-white">+ Add New Cash Collection</button>
+                <button type="button" data-permission="cash_collections.create" data-modal-target="cash-collection-modal" class="addBtn rounded bg-red-500 px-2 py-1 text-white">+ Add New Cash Collection</button>
             </div>
-            <x-data-table id="cashCollectionsTable" :headings="['ID', 'Cashout Amount', 'Reason', 'Created Date', 'Updated Date', 'Action']" url="{{ route('cash-collections.index') }}" :delegateActions="false" />
+            @can('cash_collections.view')
+                <x-data-table id="cashCollectionsTable" :headings="['ID', 'Cashout Amount', 'Reason', 'Created Date', 'Updated Date', 'Action']" url="{{ route('cash-collections.index') }}" :delegateActions="false" />
+            @endcan
         </div>
     </div>
 

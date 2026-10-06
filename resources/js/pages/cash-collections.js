@@ -18,7 +18,7 @@ const columns = [
         data: null,
         orderable: false,
         searchable: false,
-        render: (data, type, row) => type !== 'display' ? '' : `<div class="flex gap-2"><button type="button" class="editBtn rounded bg-yellow-500 px-2 py-1 text-white" data-id="${row.id}">Edit</button><button type="button" class="deleteBtn rounded bg-red-500 px-2 py-1 text-white" data-id="${row.id}">Delete</button></div>`,
+        render: (data, type, row) => type !== 'display' ? '' : `<div class="flex gap-2"><button type="button" data-permission="cash_collections.edit" class="editBtn rounded bg-yellow-500 px-2 py-1 text-white" data-id="${row.id}">Edit</button><button type="button" data-permission="cash_collections.delete" class="deleteBtn rounded bg-red-500 px-2 py-1 text-white" data-id="${row.id}">Delete</button></div>`,
     },
 ];
 initializeDataTable({ table: document.getElementById('cashCollectionsTable'), columns });

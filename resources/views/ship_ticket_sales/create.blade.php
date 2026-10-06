@@ -1,14 +1,14 @@
 <x-app-layout>
     <div class="max-w-7xl mx-auto p-6">
         <div class="mb-1">
-            <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Create New Ticket</h1>
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Create New Ticket</h1>
             <p class="text-gray-600 dark:text-gray-400">Fill in the passenger details and ticket information below</p>
         </div>
 
         <!-- Success/Error Messages -->
         @if (session('success'))
             <div
-                class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6 flex items-center shadow-sm">
+                class="bg-green-50 border border-green-200 text-green-800 px-2 py-2  rounded-lg mb-6 flex items-center shadow-sm">
                 <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd"
                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -50,48 +50,48 @@
                             <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Passenger Information</h2>
                         </div>
 
-                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Basic details of the primary passenger
+                        <p class="text-gray-600 dark:text-gray-400 text-[12px] mt-1">Basic details of the primary passenger
                         </p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div >
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Passenger Name <span class="text-red-500">*</span>
                             </label>
                             <input type="text" name="customer_name" value="{{ old('customer_name') }}"
                                 placeholder="Full name"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
                                 required>
                         </div>
 
                         <!-- Mobile Number -->
                         <div>
                             <label for="customer_mobile"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Mobile Number <span class="text-red-500">*</span>
                             </label>
                             <input type="text" id="customer_mobile" name="customer_mobile"
                                 placeholder="Enter mobile number (01XXXXXXXXX)"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 transition shadow-sm">
                         </div>
 
                         <!-- WhatsApp Number -->
                         <div>
                             <label for="whatsapp"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 WhatsApp Number <span class="text-gray-500">(number or username required)</span>
                             </label>
 
                             <div class="space-y-2">
                                 <!-- WhatsApp Input -->
                                 <input type="text" id="whatsapp" name="whatsapp" value="{{ old('whatsapp') }}" placeholder="Enter WhatsApp number"
-                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 transition shadow-sm">
 
                                 <input type="text" id="whatsapp_username" name="whatsapp_username" value="{{ old('whatsapp_username') }}" placeholder="Enter WhatsApp username"
-                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 transition shadow-sm">
-                                @error('whatsapp') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
-                                @error('whatsapp_username') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                                @error('whatsapp') <p class="text-[12px] text-red-600">{{ $message }}</p> @enderror
+                                @error('whatsapp_username') <p class="text-[12px] text-red-600">{{ $message }}</p> @enderror
 
                                 <!-- Checkbox -->
                                 <label for="sameAsMobileCheckbox"
@@ -99,42 +99,42 @@
                                     <input type="checkbox" id="sameAsMobileCheckbox"
                                         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded 
                            dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500">
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">Same as Mobile</span>
+                                    <span class="text-[12px] text-gray-700 dark:text-gray-300">Same as Mobile</span>
                                 </label>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Date Of Birth
                             </label>
                             <input type="date" name="date_of_birth" max="{{ now()->subYears(18)->format('Y-m-d') }}" value="{{ old('date_of_birth') }}"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 NID
                             </label>
                             <input type="text" name="nid" value="{{ old('nid') }}"
                                 placeholder="9203-746-48734"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Email
                             </label>
                             <input type="email" name="email" value="{{ old('email') }}" placeholder="abc@gmail.com"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Sales Source <span class="text-red-500">*</span>
                             </label>
                             <select name="sales_source"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                                 <option value="">Select source</option>
                                 <option value="WhatsApp(019)"
                                     {{ old('sales_source') == 'WhatsApp(019)' ? 'selected' : '' }}>
@@ -158,11 +158,11 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Company <span class="text-red-500">*</span>
                             </label>
                             <select name="company_id"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                                 <option value="">Select a Company</option>
                                 @foreach ($companies as $company)
                                     <option value="{{ $company->id }}"
@@ -184,37 +184,37 @@
                             <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Journey Details</h2>
                         </div>
 
-                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Information about the ship and journey
+                        <p class="text-gray-600 dark:text-gray-400 text-[12px] mt-1">Information about the ship and journey
                             dates</p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Departure Date <span class="text-red-500">*</span>
                             </label>
                             <input type="date" name="journey_date" id="journey_date"
                                 value="{{ old('journey_date') }}"
                                 min="{{ now()->format('Y-m-d') }}"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Return Date
                             </label>
                             <input type="date" name="return_date" id="return_date"
                                 value="{{ old('return_date') }}"
                                 min="{{ now()->format('Y-m-d') }}"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Ship Name <span class="text-red-500">*</span>
                             </label>
                             <select name="ship_id" id="ship_id"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                                 <option value="">Select a Ship</option>
                                 @foreach ($ships as $ship)
                                     <option value="{{ $ship->id }}"
@@ -236,7 +236,7 @@
                             <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Ticket Categories</h2>
                         </div>
 
-                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Select ticket types for departure and
+                        <p class="text-gray-600 dark:text-gray-400 text-[12px] mt-1">Select ticket types for departure and
                             return journeys</p>
                     </div>
 
@@ -256,7 +256,7 @@
                                 <!-- Dynamic departure ticket category fields will appear here -->
                             </div>
                             <div id="noDepartureCategoriesMessage"
-                                class="text-gray-500 dark:text-gray-400 text-sm mt-2">
+                                class="text-gray-500 dark:text-gray-400 text-[12px] mt-2">
                                 Select a ship to see available ticket categories.
                             </div>
                         </div>
@@ -276,7 +276,7 @@
                             <div id="returnTicketCategoriesContainer" class="space-y-4">
                                 <!-- Dynamic return ticket category fields will appear here -->
                             </div>
-                            <div id="noReturnCategoriesMessage" class="text-gray-500 dark:text-gray-400 text-sm mt-2">
+                            <div id="noReturnCategoriesMessage" class="text-gray-500 dark:text-gray-400 text-[12px] mt-2">
                                 Select a ship and return date to see available ticket categories.
                             </div>
                         </div>
@@ -292,13 +292,13 @@
                             <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Payment Details</h2>
                         </div>
 
-                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Add payment methods and amounts</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-[12px] mt-1">Add payment methods and amounts</p>
                     </div>
 
                     <div id="paymentInfoWrapper" class="space-y-4">
                         <!-- Add button -->
                         <button type="button" id="addPaymentInfo"
-                            class="mt-3 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 transition flex items-center shadow-sm">
+                            class="mt-3 px-5 py-2.5 text-[12px] font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 transition flex items-center shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -318,7 +318,7 @@
                             <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Ticket Summary</h2>
                         </div>
 
-                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Overview of ticket quantities and
+                        <p class="text-gray-600 dark:text-gray-400 text-[12px] mt-1">Overview of ticket quantities and
                             pricing</p>
                     </div>
 
@@ -326,44 +326,44 @@
                         class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm">
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Total Number of Tickets <span class="text-red-500">*</span>
                                 </label>
                                 <input type="number" id="total_tickets" name="number_of_ticket" value="0"
                                     min="0"
-                                    class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 shadow-sm">
+                                    class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  shadow-sm">
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Total Ticket Value (৳) <span class="text-red-500">*</span>
                                 </label>
                                 <input type="number" id="ticket_fee" name="ticket_fee"
                                     value="{{ old('ticket_fee', 0) }}" step="0.01" min="0"
                                     placeholder="0.00"
-                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Other Fee(bikas,nogod,vat etc if include ) (৳)
                                 </label>
                                 <input type="number" id="other_fee" name="other_fee"
                                     value="{{ old('other_fee', 0) }}" step="0.01" min="0"
                                     placeholder="0.00"
-                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Discount Amount (৳)
                                     <span class="text-xs text-red-600">(deducted from Total Ticket Price only, not Other Fee)</span>
                                 </label>
                                 <input type="number" id="discount_amount" name="discount_amount"
                                     value="{{ old('discount_amount', 0) }}" step="0.01" min="0"
                                     placeholder="0.00"
-                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
-                                <p id="discount-error" class="hidden mt-1 text-sm text-red-600"></p>
+                                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
+                                <p id="discount-error" class="hidden mt-1 text-[12px] text-red-600"></p>
                             </div>
                         </div>
                     </div>
@@ -378,57 +378,57 @@
                             <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Payment Summary</h2>
                         </div>
 
-                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Financial overview of the transaction
+                        <p class="text-gray-600 dark:text-gray-400 text-[12px] mt-1">Financial overview of the transaction
                         </p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Total Payable (৳) <span class="text-red-500">(autofill)</span>
                             </label>
                             <input type="number" id="total_payable" name="total_payable"
                                 value="{{ old('total_payable', 0) }}" step="0.01" min="0"
                                 placeholder="0.00" readonly
-                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  shadow-sm">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Total Received (৳) <span class="text-red-500">(autofill)</span>
                             </label>
                             <input type="number" id="received_amount" name="received_amount" disabled
                                 value="{{ old('received_amount', 0) }}" step="0.01" min="0"
                                 placeholder="0.00"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:cursor-not-allowed disabled:opacity-75 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:cursor-not-allowed disabled:opacity-75 rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
                                 required>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Due Amount (৳) <span class="text-red-500">(autofill)</span>
                             </label>
                             <input type="number" id="due_amount" name="due_amount"
                                 value="{{ old('due_amount', 0) }}" step="0.01" min="0" placeholder="0.00"
-                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  shadow-sm">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Extra Received Amount (৳) <span class="text-xs text-gray-500">(autofill)</span>
                             </label>
                             <input type="number" id="extra_received_amount" readonly value="0.00"
                                 step="0.01" min="0"
-                                class="w-full border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-200 rounded-lg px-4 py-3 font-semibold shadow-sm">
+                                class="w-full border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-200 rounded-lg px-2 py-2  font-semibold shadow-sm">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 BFTN Status
                             </label>
 
                             <select name="bftn_status"
-                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  shadow-sm">
 
                                 <option value="">Select Status</option>
                                 <option value="yes" {{ old('bftn_status') == 'yes' ? 'selected' : '' }}>Yes
@@ -438,13 +438,13 @@
                         </div>
 
                         <div id="bftnIssueDateWrapper" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Tentative Deposit Date & Time
                             </label>
 
                             <input type="datetime-local" name="bftn_issue_datetime"
                                 value="{{ old('bftn_issue_datetime') }}"
-                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 shadow-sm">
+                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  shadow-sm">
                         </div>
 
                     </div>
@@ -459,7 +459,7 @@
                             <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Additional Information</h2>
                         </div>
 
-                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Address and remarks for the booking
+                        <p class="text-gray-600 dark:text-gray-400 text-[12px] mt-1">Address and remarks for the booking
                         </p>
                     </div>
 
@@ -468,36 +468,36 @@
                         <input type="checkbox" id="collect_from_office" name="collect_from_office" value="1"
                             @checked(old('collect_from_office', false))
                             class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
-                        <label for="collect_from_office" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label for="collect_from_office" class="text-[12px] font-medium text-gray-700 dark:text-gray-300">
                             Collect from office
                         </label>
                     </div>
 
                     <div id="addressFieldWrapper">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Full Address
                             <span class="text-xs text-gray-500">(Format: Fla# A1, House# 17/1, Road# 3/A, Dhanmondi,
                                 Dhaka-1209)</span> <span class="text-red-500 font-bold"> N.B: Please follow Steadfast
                                 Courier address format</span>
                         </label>
                         <textarea id="address" name="address" placeholder="Enter your address here" rows="3"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('address') }}</textarea>
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('address') }}</textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Remark-1
                             </label>
                             <textarea id="remark1" name="remark1" placeholder="Enter Remark here" rows="3"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('remark1') }}</textarea>
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('remark1') }}</textarea>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Remark-2
                             </label>
                             <textarea id="remark2" name="remark2" placeholder="Enter your Remark here" rows="3"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('remark2') }}</textarea>
+                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">{{ old('remark2') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -511,14 +511,14 @@
                             <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Co-Passenger Details</h2>
                         </div>
 
-                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Add information for additional
+                        <p class="text-gray-600 dark:text-gray-400 text-[12px] mt-1">Add information for additional
                             passengers</p>
                     </div>
 
                     <div id="coPassengersWrapper" class="space-y-4">
                         <!-- Add button -->
                         <button type="button" id="addCoPassengerBtn"
-                            class="mt-3 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 transition flex items-center shadow-sm">
+                            class="mt-3 px-5 py-2.5 text-[12px] font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 transition flex items-center shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -531,34 +531,34 @@
                 <!-- Hidden Fields -->
                 <div class="hidden">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Issued Date <span class="text-red-500">*</span>
                         </label>
                         <input type="date" name="issued_date" value="{{ old('issued_date', date('Y-m-d')) }}"
-                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Sold By <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="sold_by" value="{{ old('sold_by', Auth::user()->id ?? '') }}"
                             data-seller-name="{{ Auth::user()->name ?? '' }}" placeholder="Seller name" readonly
-                            class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3">
+                            class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2 ">
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex items-center justify-end gap-4 pt-8 border-t border-gray-200 dark:border-gray-700">
                     <button type="button" id="resetDraftButton"
-                        class="px-6 py-3 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50 focus:ring-4 focus:ring-red-100 dark:bg-gray-800 dark:text-red-300 dark:border-red-600 dark:hover:bg-red-900/20 transition shadow-sm">
+                        class="px-6 py-3 text-[12px] font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50 focus:ring-4 focus:ring-red-100 dark:bg-gray-800 dark:text-red-300 dark:border-red-600 dark:hover:bg-red-900/20 transition shadow-sm">
                         Reset Form
                     </button>
                     <a href="{{ route('ship-ticket-sales.create') }}"
-                        class="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition shadow-sm">
+                        class="px-6 py-3 text-[12px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition shadow-sm">
                         Cancel
                     </a>
                     <button type="button" id="reviewButton"
-                        class="px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 dark:focus:ring-blue-800 transition shadow-sm flex items-center">
+                        class="px-6 py-3 text-[12px] font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 dark:focus:ring-blue-800 transition shadow-sm flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
@@ -616,12 +616,12 @@
                 <!-- Footer -->
                 <div class="flex justify-end p-6 border-t dark:border-gray-700 gap-3 bg-gray-50 dark:bg-gray-900">
                     <button type="button" id="editInfoButton"
-                        class="px-5 py-2.5 text-sm font-medium text-gray-800 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition shadow-sm">
+                        class="px-5 py-2.5 text-[12px] font-medium text-gray-800 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition shadow-sm">
                         Edit Information
                     </button>
 
                     <button type="submit" form="ticketForm"
-                        class="px-5 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 rounded-lg dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 transition shadow-sm flex items-center">
+                        class="px-5 py-2.5 text-[12px] font-medium text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 rounded-lg dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 transition shadow-sm flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
                             </path>

@@ -3,9 +3,11 @@
         <div class="mx-auto sm:px-6 lg:px-8">
             <div class="flex items-center justify-between pb-5">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-white">Ship Packages</h2>
-                <button type="button" data-modal-target="package-modal" class="addBtn rounded bg-red-500 px-2 py-1 text-white">+ Add New Package</button>
+                <button type="button" data-permission="packages.create" data-modal-target="package-modal" class="addBtn rounded bg-red-500 px-2 py-1 text-white">+ Add New Package</button>
             </div>
-            <x-data-table id="packagesTable" :headings="['ID', 'Name', 'Price', 'Round Trip Price', 'Action']" url="{{ route('ship-packages.data', ['id' => $id]) }}" :delegateActions="false" />
+            @can('packages.view')
+                <x-data-table id="packagesTable" :headings="['ID', 'Name', 'Price', 'Round Trip Price', 'Action']" url="{{ route('ship-packages.data', ['id' => $id]) }}" :delegateActions="false" />
+            @endcan
         </div>
     </div>
 

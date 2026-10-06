@@ -11,7 +11,6 @@ class VerifyTracker extends Model
 
     protected $table = 'verify_tracker';
 
-    
     protected $fillable = [
         'name',
         'verified_by',

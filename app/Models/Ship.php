@@ -12,15 +12,16 @@ class Ship extends Model
         'name',
         'route',
         'status',
-   
-    ];
-    
-     public $timestamps = true;
 
-      public function packages()
+    ];
+
+    public $timestamps = true;
+
+    public function packages()
     {
         return $this->hasMany(ShipPackage::class, 'ship_id');
     }
+
     public function shipTicketSales()
     {
         return $this->hasMany(ShipTicketSale::class, 'ship_id', 'id');

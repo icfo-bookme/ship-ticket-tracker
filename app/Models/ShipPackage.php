@@ -11,15 +11,13 @@ class ShipPackage extends Model
 
     protected $table = 'ship_packages';
 
-    
     protected $fillable = [
         'ship_id',
         'name',
         'price',
-        'round_trip_price'
+        'round_trip_price',
     ];
 
-   
     public $timestamps = true;
 
     public function ship()

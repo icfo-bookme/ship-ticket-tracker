@@ -13,9 +13,9 @@ const columns = [
         searchable: false,
         render: (data, type, row) => type !== 'display' ? '' : `
             <div class="flex gap-2">
-                <button type="button" class="editBtn rounded bg-yellow-500 px-2 py-1 text-white" data-id="${row.id}">Edit</button>
-                <button type="button" class="deleteBtn rounded bg-red-500 px-2 py-1 text-white" data-id="${row.id}">Delete</button>
-                <a href="${document.getElementById('shipsPage').dataset.packagesUrl.replace('__ID__', row.id)}" class="rounded bg-blue-500 px-2 py-1 text-white">Packages</a>
+                <button type="button" data-permission="ships.edit" class="editBtn rounded bg-yellow-500 px-2 py-1 text-white" data-id="${row.id}">Edit</button>
+                <button type="button" data-permission="ships.delete" class="deleteBtn rounded bg-red-500 px-2 py-1 text-white" data-id="${row.id}">Delete</button>
+                <a data-permission="packages.view" href="${document.getElementById('shipsPage').dataset.packagesUrl.replace('__ID__', row.id)}" class="rounded bg-blue-500 px-2 py-1 text-white">Packages</a>
             </div>`,
     },
 ];

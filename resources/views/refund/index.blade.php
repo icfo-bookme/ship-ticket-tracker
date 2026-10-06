@@ -1,6 +1,6 @@
 <x-app-layout>
     @vite(['resources/js/pages/refunds.js'])
-<div id="refundPage" data-can-manage="{{ auth()->user()?->can('refunds.manage') ? '1' : '0' }}"
+<div id="refundPage" data-can-manage="{{ auth()->user()?->can('refunds.create') ? '1' : '0' }}"
     data-full-refund-url="{{ route('refunds.full') }}"
     data-partial-refund-url="{{ route('refunds.partial', ['id' => '__ID__']) }}"
     data-update-refund-url="{{ route('refunds.update', ['refund' => '__ID__']) }}"
@@ -68,7 +68,7 @@
             :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />
 
         <div class="flex justify-end mt-10">
-            <button id="refundSelectedBtn"
+            <button id="refundSelectedBtn" data-permission="refunds.create"
                 class="px-4 py-2 bg-green-900 text-white rounded-md hover:bg-green-600 focus:outline-none">
                 Refund Selected
             </button>
@@ -79,4 +79,3 @@
 
 
 @include('refund.refundModal')
-

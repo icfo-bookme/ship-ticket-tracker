@@ -6,20 +6,25 @@
             <div class="flex items-center">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
+                    @can('dashboard.view')
                     <a href="{{ route('dashboard') }}">
                         <x-application-logo class="block h-9 w-auto fill-current text-white" />
                     </a>
+                    @else
+                        <x-application-logo class="block h-9 w-auto fill-current text-white" />
+                    @endcan
                 </div>
             </div>
 
             <!-- Right Side -->
             <div class="hidden sm:flex sm:items-center gap-4">
                 <!-- Documentation Button -->
-                <a href="{{ url('/documentation') }}"
+                <a data-permission="documentation.view" href="{{ route('documentation') }}"
                     class="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition">
                     Documentation
                 </a>
 
+                @can('notifications.view')
                 <!-- Notification Icon -->
                 <div class="relative">
                     <button id="notificationButton" class="relative p-2 text-white hover:bg-[#004d5a] rounded-full"
@@ -46,6 +51,7 @@
 
                     </div>
                 </div>
+                @endcan
 
                 <!-- User Dropdown -->
                 <x-dropdown align="right" width="48">
@@ -103,9 +109,11 @@
                 Dashboard
             </x-responsive-nav-link>
 
-            <x-responsive-nav-link href="{{ url('/documentation') }}">
-                Documentation
-            </x-responsive-nav-link>
+            @can('documentation.view')
+                <x-responsive-nav-link href="{{ route('documentation') }}">
+                    Documentation
+                </x-responsive-nav-link>
+            @endcan
         </div>
 
         <div class="pt-4 pb-1 border-t border-gray-200">
@@ -131,11 +139,10 @@
     </div>
 </nav>
 
-<div id="navigationConfig"
-    data-notifications-url="{{ route('notifications.index') }}"
-    data-notification-read-url="{{ url('/notifications') }}/__ID__/read"></div>
+@can('notifications.view')
+    <div id="navigationConfig"
+        data-notifications-url="{{ route('notifications.index') }}"
+        data-notification-read-url="{{ url('/notifications') }}/__ID__/read"></div>
+@endcan
 
 @vite(['resources/js/layout/navigation.js'])
-
-
-

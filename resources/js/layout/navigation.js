@@ -5,10 +5,12 @@
     let notificationCount = 0;
 
     document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('notificationButton')
-            .addEventListener('click', () => {
-                setTimeout(loadNotifications, 100);
-            });
+        const notificationButton = document.getElementById('notificationButton');
+        if (!notificationButton) return;
+
+        notificationButton.addEventListener('click', () => {
+            setTimeout(loadNotifications, 100);
+        });
 
         checkNewNotifications();
         setInterval(checkNewNotifications, 15000);

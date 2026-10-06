@@ -11,9 +11,10 @@ use Spatie\Permission\Models\Role;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $createSales = Permission::findOrCreate('sales.create', 'web');
+    $draftPermissions = collect(['sale_drafts.view', 'sale_drafts.create', 'sale_drafts.edit'])
+        ->map(fn (string $name) => Permission::findOrCreate($name, 'web'));
     $role = Role::findOrCreate('Draft Manager', 'web');
-    $role->givePermissionTo($createSales);
+    $role->givePermissionTo($draftPermissions);
     $this->user = User::factory()->create();
     $this->user->assignRole($role);
 

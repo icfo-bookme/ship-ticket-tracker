@@ -35,10 +35,10 @@ document.addEventListener('DOMContentLoaded', function() {
         function collapseSidebar() {
             sidebarContainer.classList.add('sidebar-collapsed');
             sidebarContainer.classList.remove('sidebar-expanded');
-            sidebarContainer.classList.add('w-20');
-            sidebarContainer.classList.remove('w-60');
-            divHide.classList.remove('w-60');
-            divHide.classList.add('w-20');
+            sidebarContainer.classList.add('w-14');
+            sidebarContainer.classList.remove('w-48');
+            divHide.classList.remove('w-48');
+            divHide.classList.add('w-14');
 
             // Change icon to double arrow right
             toggleIcon.innerHTML =
@@ -58,10 +58,10 @@ document.addEventListener('DOMContentLoaded', function() {
         function expandSidebar() {
             sidebarContainer.classList.remove('sidebar-collapsed');
             sidebarContainer.classList.add('sidebar-expanded');
-            sidebarContainer.classList.remove('w-20');
-            sidebarContainer.classList.add('w-60');
-            divHide.classList.remove('w-20');
-            divHide.classList.add('w-60');
+            sidebarContainer.classList.remove('w-14');
+            sidebarContainer.classList.add('w-48');
+            divHide.classList.remove('w-14');
+            divHide.classList.add('w-48');
 
             // Change icon to double arrow left
             toggleIcon.innerHTML =

@@ -31,15 +31,20 @@ class RolePermissionSeeder extends Seeder
             ]);
         }
 
-        // 2. Create the default roles and sync their permissions.
+        // 2. Create default roles and apply defaults only on first creation.
         foreach (config('roles.default_roles') as $roleName => $permissions) {
-            $role = Role::findOrCreate($roleName, 'web');
+            $role = Role::firstOrCreate([
+                'name' => $roleName,
+                'guard_name' => 'web',
+            ]);
 
-            $role->syncPermissions(
-                $permissions === '*'
-                    ? Permission::all()
-                    : $permissions
-            );
+            if ($role->wasRecentlyCreated) {
+                $role->syncPermissions(
+                    $permissions === '*'
+                        ? Permission::all()
+                        : $permissions
+                );
+            }
         }
 
         $this->command?->info('Roles and permissions seeded: '

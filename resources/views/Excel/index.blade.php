@@ -3,9 +3,11 @@
         <div class="mx-auto sm:px-6 lg:px-8">
             <div class="flex items-center justify-between pb-5">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-white">Excel Setting</h2>
-                <button type="button" data-modal-target="excel-setting-modal" class="addBtn rounded bg-blue-600 px-3 py-1.5 text-white">+ Add Excel Setting</button>
+                <button type="button" data-permission="excel.create" data-modal-target="excel-setting-modal" class="addBtn rounded bg-blue-600 px-3 py-1.5 text-white">+ Add Excel Setting</button>
             </div>
-            <x-data-table id="excelTable" :headings="['ID', 'Spreadsheet ID', 'Range', 'Action']" url="{{ route('excel-settings.index') }}" :delegateActions="false" />
+            @can('excel.view')
+                <x-data-table id="excelTable" :headings="['ID', 'Spreadsheet ID', 'Range', 'Action']" url="{{ route('excel-settings.index') }}" :delegateActions="false" />
+            @endcan
         </div>
     </div>
 

@@ -975,7 +975,7 @@
                                 </div>
 
                                 <div class="">
-                                    <button type="button" id="addPdfField"
+                                    <button type="button" id="addPdfField" data-permission="sales.issue"
                                         class="mt-3 px-2.5 py-1.5 bg-blue-600 text-white rounded-lg rounded-lg hover:bg-blue-700">
                                         + Add New PDF Field
                                     </button>
@@ -1048,7 +1048,7 @@
                                         <!-- Additional PDF fields will be added here -->
                                     </div>
 
-                                    <button type="button" id="add-additional-pdf"
+                                    <button type="button" id="add-additional-pdf" data-permission="sales.issue"
                                         class="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold py-1.5 px-2.5 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md">
                                         <i class="fas fa-plus-circle mr-2"></i>Add PDF Field
                                     </button>
@@ -1146,7 +1146,7 @@
                                 <i class="fas fa-times mr-2"></i>Cancel
                             </a>
 
-                            <button type="submit"
+                            <button type="submit" data-permission="sales.issue"
                                 class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl">
                                 <i class="fas fa-save mr-2"></i>{{ $nextSale ? 'Save & Next' : 'Save PDF & Grouping' }}
                             </button>

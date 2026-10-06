@@ -10,7 +10,7 @@ const columns = [
         data: null,
         orderable: false,
         searchable: false,
-        render: (data, type, row) => type !== 'display' ? '' : `<button type="button" class="editBtn rounded bg-yellow-500 px-2 py-1 text-white" data-id="${row.id}">Edit</button>`,
+        render: (data, type, row) => type !== 'display' ? '' : `<button type="button" data-permission="excel.edit" class="editBtn rounded bg-yellow-500 px-2 py-1 text-white" data-id="${row.id}">Edit</button>`,
     },
 ];
 initializeDataTable({ table: document.getElementById('excelTable'), columns });

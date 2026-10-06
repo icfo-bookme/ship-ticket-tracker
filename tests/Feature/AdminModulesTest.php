@@ -12,10 +12,10 @@ beforeEach(function () {
     $this->adminRole = Role::findOrCreate('Admin', 'web');
     $this->agentRole = Role::create(['name' => 'Agent', 'guard_name' => 'web']);
 
-    Permission::create(['name' => 'users.manage', 'guard_name' => 'web']);
-    Permission::create(['name' => 'roles.manage', 'guard_name' => 'web']);
-    Permission::create(['name' => 'permissions.manage', 'guard_name' => 'web']);
-    Permission::create(['name' => 'reports.view', 'guard_name' => 'web']);
+    Permission::findOrCreate('users.manage', 'web');
+    Permission::findOrCreate('roles.manage', 'web');
+    Permission::findOrCreate('permissions.manage', 'web');
+    Permission::findOrCreate('reports.view', 'web');
 
     $this->admin = User::factory()->create();
     $this->admin->assignRole('Admin');
@@ -75,11 +75,11 @@ test('super admin role cannot be deleted', function () {
 
 test('permission can be created and duplicate is rejected', function () {
     $this->actingAs($this->admin)
-        ->postJson('/permissions', ['name' => 'sales.create'])
+        ->postJson('/permissions', ['name' => 'testing.temporary'])
         ->assertCreated();
 
     $this->actingAs($this->admin)
-        ->postJson('/permissions', ['name' => 'sales.create'])
+        ->postJson('/permissions', ['name' => 'testing.temporary'])
         ->assertStatus(422);
 });
 
@@ -159,12 +159,17 @@ test('sidebar shows admin sections for super admin', function () {
     $response = $this->actingAs($this->admin)->get('/profile');
 
     $response->assertOk();
+    $response->assertSee('w-48', false)
+        ->assertSee('lg:ml-48', false)
+        ->assertSee('w-14', false);
     $response->assertSee('/roles-details', false);
     $response->assertSee('/users-details', false);
     $response->assertSee('/permissions-details', false);
 });
 
 test('role permission seeder creates permissions and default roles', function () {
+    Role::query()->whereIn('name', array_keys(config('roles.default_roles')))->delete();
+
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertSuccessful();
 
     foreach (config('roles.permissions') as $permission) {
@@ -178,11 +183,12 @@ test('role permission seeder creates permissions and default roles', function ()
     $agent = Role::findByName('Agent');
     expect($agent->hasPermissionTo('sales.create'))->toBeTrue()
         ->and($agent->hasPermissionTo('sales.delete'))->toBeFalse()
-        ->and($agent->hasPermissionTo('users.manage'))->toBeFalse();
+        ->and($agent->hasPermissionTo('users.view'))->toBeFalse();
 
     $manager = Role::findByName('Manager');
-    expect($manager->hasPermissionTo('refunds.manage'))->toBeTrue()
-        ->and($manager->hasPermissionTo('excel.manage'))->toBeFalse();
+    expect($manager->hasPermissionTo('refunds.view'))->toBeTrue()
+        ->and($manager->hasPermissionTo('excel.view'))->toBeTrue()
+        ->and($manager->hasPermissionTo('users.view'))->toBeFalse();
 
     expect(Role::findByName('Admin')->hasPermissionTo('sales.view'))->toBeTrue();
 });

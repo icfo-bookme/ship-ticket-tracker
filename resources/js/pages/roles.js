@@ -11,8 +11,8 @@ const columns = [
         searchable: false,
         render: (data, type, row) => type !== 'display' ? '' : `
             <div class="flex gap-2">
-                <button type="button" class="editBtn rounded bg-yellow-500 px-2 py-1 text-white" data-id="${row.id}">Edit</button>
-                <button type="button" class="deleteBtn rounded bg-red-500 px-2 py-1 text-white" data-id="${row.id}" data-is-super-admin="${row.is_super_admin ? 1 : 0}">Delete</button>
+                <button type="button" data-permission="roles.edit" class="editBtn rounded bg-yellow-500 px-2 py-1 text-white" data-id="${row.id}">Edit</button>
+                <button type="button" data-permission="roles.delete" class="deleteBtn rounded bg-red-500 px-2 py-1 text-white" data-id="${row.id}" data-is-super-admin="${row.is_super_admin ? 1 : 0}">Delete</button>
             </div>`,
     },
 ];

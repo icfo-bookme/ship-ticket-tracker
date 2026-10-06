@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 30626)
-Total output lines: 1768
-
 <x-app-layout>
 
     <div class="flex justify-between items-center mt-1 ml-5">
@@ -1065,5 +1062,4 @@ Total output lines: 1768
 
     @vite(['resources/js/pages/edit-sale.js'])
 </x-app-layout>
-
 

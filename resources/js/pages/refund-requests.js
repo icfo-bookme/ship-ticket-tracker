@@ -67,11 +67,11 @@ const columns = isCompleted ? completedColumns : [
         render: (data, type, row) => {
             if (type !== 'display') return '';
             if (isCompleted) {
-                return `<a href="/refunded/${row.sale?.id}/details" class="rounded bg-blue-700 px-2 py-1 text-white" title="View refund details">Details</a>`;
+                return `<a data-permission="refunds.view" href="/refunded/${row.sale?.id}/details" class="rounded bg-blue-700 px-2 py-1 text-white" title="View refund details">Details</a>`;
             }
 
             return `<div class="flex items-center gap-2 pb-2">
-                            <button class="fas fa-edit text-blue-950 px-2 py-1 rounded requestedEditBtn"
+                            <button data-permission="refunds.edit" class="fas fa-edit text-blue-950 px-2 py-1 rounded requestedEditBtn"
                                 data-id="${row.sale?.id ?? ''}"
                                 data-request-id="${row.id}"
                                 data-received_total_amount="${row.sale?.ticket_fee ?? row.gross_refund_amount}"
@@ -87,13 +87,13 @@ const columns = isCompleted ? completedColumns : [
                                 data-customer-charge="${row.customer_charge_percent ?? 0}"
                                 data-partner-share="${row.partner_share_percent ?? 0}"
                                 title="Edit request"></button>
-                            <button class="bg-yellow-600 text-white px-2 py-1 rounded cancelRefundBtn"
+                            <button data-permission="refunds.cancel" class="bg-yellow-600 text-white px-2 py-1 rounded cancelRefundBtn"
                                 data-id="${row.id}" title="Cancel refund request">Cancel</button>
-                            ${isRequested ? `<button class="bg-green-700 text-white px-2 py-1 rounded approveRefundBtn"
+                            ${isRequested ? `<button data-permission="refunds.approve" class="bg-green-700 text-white px-2 py-1 rounded approveRefundBtn"
                                 data-id="${row.id}" title="Approve refund request">Approve</button>` : ''}
-                            ${isPartnerApproved ? `<button class="bg-blue-700 text-white px-2 py-1 rounded addPaymentDetailsBtn"
+                            ${isPartnerApproved ? `<button data-permission="refunds.payment_details" class="bg-blue-700 text-white px-2 py-1 rounded addPaymentDetailsBtn"
                                 data-id="${row.id}" title="Add refund payment details">Add Payment Details</button>` : ''}
-                            ${isPaymentDetailsAdded ? `<button class="bg-green-700 text-white px-2 py-1 rounded refundCustomerBtn"
+                            ${isPaymentDetailsAdded ? `<button data-permission="refunds.customer_payment" class="bg-green-700 text-white px-2 py-1 rounded refundCustomerBtn"
                                 data-id="${row.id}" title="Refund customer">Refund</button>` : ''}
                             </div>`;
         },

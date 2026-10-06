@@ -20,7 +20,7 @@ $maxWidthClass = [
 @endphp
 
 <div id="{{ $id }}" tabindex="-1" aria-hidden="true"
-    class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full bg-gray-900/50 md:inset-0 h-[calc(100%-1rem)] max-h-full dark:bg-gray-900/70">
     <div class="relative p-4 w-full max-w-2xl max-h-[calc(100vh-2rem)] {{ $maxWidthClass }}">
         <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700 flex flex-col max-h-[calc(100vh-2rem)]">
             <!-- Header (fixed at top) -->
@@ -64,10 +64,22 @@ $maxWidthClass = [
 <script>
     (function () {
         const modal = document.getElementById(@json($id));
+        let previousBodyPaddingRight = null;
 
         function openModal() {
+            if (previousBodyPaddingRight === null) {
+                previousBodyPaddingRight = document.body.style.paddingRight;
+                const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+                if (scrollbarWidth > 0) {
+                    const currentPaddingRight = Number.parseFloat(getComputedStyle(document.body).paddingRight) || 0;
+                    document.body.style.paddingRight = `${currentPaddingRight + scrollbarWidth}px`;
+                }
+            }
+
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            document.documentElement.classList.add('overflow-hidden');
             document.body.classList.add('overflow-hidden');
         }
 
@@ -78,14 +90,22 @@ $maxWidthClass = [
             document.querySelectorAll('[modal-backdrop], .modal-backdrop').forEach(function (backdrop) {
                 backdrop.remove();
             });
+            document.documentElement.classList.remove('overflow-hidden');
             document.body.classList.remove('overflow-hidden');
+            document.body.style.paddingRight = previousBodyPaddingRight ?? '';
+            previousBodyPaddingRight = null;
 
         }
         modal._openModal = openModal;
         modal._closeModal = closeModal;
 
-        document.querySelectorAll(`[data-modal-target="${modal.id}"]`).forEach(function (trigger) {
-            trigger.addEventListener('click', openModal);
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('[data-modal-target]');
+
+            if (trigger?.dataset.modalTarget === modal.id) {
+                event.preventDefault();
+                openModal();
+            }
         });
 
         // Cancel / close buttons (also covers the header X button).

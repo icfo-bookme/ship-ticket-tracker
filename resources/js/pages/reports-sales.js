@@ -52,7 +52,7 @@ const columns = [
         data: "id",
         title: "ID",
         render: (data, type) => type !== 'display' ? data :
-            `<button type="button" class="sale-report-detail-trigger font-semibold text-blue-700 underline decoration-dotted underline-offset-2 hover:text-blue-900" data-sale-id="${Number(data) || 0}">#${Number(data) || 'N/A'}</button>`,
+            `<button type="button" class="sale-report-detail-trigger font-semibold text-blue-700 underline decoration-dotted underline-offset-2 hover:text-blue-900" data-modal-target="saleReportDetailModal" data-sale-id="${Number(data) || 0}">#${Number(data) || 'N/A'}</button>`,
     },
     {
         data: "customer_name",
@@ -223,7 +223,6 @@ function showSaleDetails(sale) {
             <dt class="text-xs font-medium uppercase text-gray-500">${escapeHtml(label)}</dt>
             <dd class="mt-1 break-words text-sm font-medium text-gray-900">${escapeHtml(formatDetailValue(value))}</dd>
         </div>`).join('');
-    modal._openModal?.();
 }
 
 function closeSaleDetails() {

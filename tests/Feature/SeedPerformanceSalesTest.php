@@ -10,6 +10,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+it('requires explicit confirmation before modifying sales data', function () {
+    $this->artisan('sales:seed-performance', ['count' => 5, '--status' => 'pending'])
+        ->expectsOutputToContain('--confirm')
+        ->assertExitCode(1);
+
+    expect(ShipTicketSale::query()->where('sales_source', 'performance-test')->count())->toBe(0);
+});
+
 it('creates tagged performance sales and cleans up only their related records', function () {
     $ship = Ship::query()->create(['name' => 'Performance Ship', 'status' => 1]);
     Company::query()->create(['name' => 'Performance Company', 'status' => 1]);
@@ -20,7 +28,7 @@ it('creates tagged performance sales and cleans up only their related records', 
         'round_trip_price' => 180,
     ]);
 
-    $this->artisan('sales:seed-performance', ['count' => 5, '--status' => 'pending'])
+    $this->artisan('sales:seed-performance', ['count' => 5, '--status' => 'pending', '--confirm' => true])
         ->assertExitCode(0);
 
     $sales = ShipTicketSale::query()->where('sales_source', 'performance-test')->get();
@@ -30,7 +38,7 @@ it('creates tagged performance sales and cleans up only their related records', 
         ->and(Category::query()->whereIn('ticket_id', $sales->modelKeys())->count())->toBe(5)
         ->and(Payment::query()->whereIn('sales_id', $sales->modelKeys())->count())->toBeGreaterThan(0);
 
-    $this->artisan('sales:seed-performance', ['--cleanup' => true])
+    $this->artisan('sales:seed-performance', ['--cleanup' => true, '--confirm' => true])
         ->assertExitCode(0);
 
     expect(ShipTicketSale::query()->where('sales_source', 'performance-test')->count())->toBe(0)

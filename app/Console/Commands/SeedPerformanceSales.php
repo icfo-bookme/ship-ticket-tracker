@@ -17,7 +17,7 @@ class SeedPerformanceSales extends Command
 {
     private const SALES_SOURCE = 'performance-test';
 
-    protected $signature = 'sales:seed-performance {count=1000} {--status=pending} {--cleanup}';
+    protected $signature = 'sales:seed-performance {count=1000} {--status=pending} {--cleanup} {--confirm : Confirm that this is a disposable test database}';
 
     protected $description = 'Create or remove local performance-test sales';
 
@@ -25,6 +25,12 @@ class SeedPerformanceSales extends Command
     {
         if (! app()->environment(['local', 'testing'])) {
             $this->error('This command is available only in local or testing environments.');
+
+            return self::FAILURE;
+        }
+
+        if (! $this->option('confirm')) {
+            $this->error('Refusing to modify data without --confirm. Use this only with a disposable local or staging database.');
 
             return self::FAILURE;
         }
@@ -159,7 +165,7 @@ class SeedPerformanceSales extends Command
 
         $this->info("Created {$count} {$status} performance sales.");
         $this->line('Generated rows are tagged with sales_source=performance-test.');
-        $this->line('Remove them with: php artisan sales:seed-performance --cleanup');
+        $this->line('Remove them with: php artisan sales:seed-performance --cleanup --confirm');
 
         return self::SUCCESS;
     }

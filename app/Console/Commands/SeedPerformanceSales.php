@@ -9,6 +9,7 @@ use App\Models\Ship;
 use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
+use Faker\Factory as FakerFactory;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -61,7 +62,7 @@ class SeedPerformanceSales extends Command
             ->whereIn('ship_id', $ships)
             ->get(['id', 'ship_id', 'price'])
             ->groupBy('ship_id');
-        $fake = fake();
+        $fake = FakerFactory::create();
         $now = now();
         $startingId = (int) (ShipTicketSale::query()->max('id') ?? 0);
         $rows = [];

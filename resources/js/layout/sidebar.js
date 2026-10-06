@@ -209,9 +209,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentPath = window.location.pathname;
 
             navLinks.forEach(link => {
-                const linkPath = link.getAttribute('href');
+                const linkPath = new URL(link.href, window.location.origin).pathname;
                 if (currentPath === linkPath || (linkPath !== '/' && currentPath.startsWith(
-                        linkPath))) {
+                        `${linkPath}/`))) {
                     link.classList.add('bg-blue-50', 'text-blue-700');
                     const icon = link.querySelector('svg');
                     if (icon) {

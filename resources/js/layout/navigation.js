@@ -13,7 +13,7 @@
         });
 
         checkNewNotifications();
-        setInterval(checkNewNotifications, 15000);
+        setInterval(checkNewNotifications, 60000);
     });
 
     function loadNotifications() {

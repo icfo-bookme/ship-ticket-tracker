@@ -579,8 +579,13 @@
                                     <div class="mt-2 text-lg font-bold text-red-700">৳ {{ number_format((float) ($sale->extra_refunded_amount ?? 0), 2) }}</div>
                                 </div>
 
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-amber-200">
+                                    <label class="block text-sm font-semibold text-gray-700">Extra Refund Pending</label>
+                                    <div class="mt-2 text-lg font-bold text-amber-700">৳ {{ number_format((float) ($sale->extra_refund_pending_amount ?? 0), 2) }}</div>
+                                </div>
+
                                 <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                                    <label class="block text-sm font-semibold text-gray-700">Remaining Extra Amount</label>
+                                    <label class="block text-sm font-semibold text-gray-700">Extra Available</label>
                                     <div class="mt-2 text-lg font-bold text-gray-700">৳ {{ number_format((float) ($sale->extra_remaining_amount ?? 0), 2) }}</div>
                                 </div>
 

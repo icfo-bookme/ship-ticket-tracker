@@ -101,14 +101,49 @@ class ExtraPaymentService
 
     public function remainingAmount(ShipTicketSale $sale): float
     {
-        $extraReceived = max((float) $sale->received_amount - (float) $sale->total_payable, 0);
-        $refunds = $sale->relationLoaded('refunds') ? $sale->refunds : $sale->refunds()->get();
-        $reservedOrRefunded = (float) $refunds
-            ->where('refund_type', 'extra_payment')
-            ->where('status', '!=', RefundStatus::Cancelled->value)
-            ->sum('refunded_amount');
+        return $this->summary($sale)['extra_available_amount'];
+    }
 
-        return max(round($extraReceived - $reservedOrRefunded, 2), 0);
+    /** @return array{extra_received_amount: float, extra_refunded_amount: float, extra_refund_pending_amount: float, extra_available_amount: float} */
+    public function summary(ShipTicketSale $sale): array
+    {
+        $sale->loadMissing('refunds.customerPayments');
+
+        $extraReceived = max((float) $sale->received_amount - (float) $sale->total_payable, 0);
+        $extraRefunds = $sale->refunds
+            ->where('refund_type', 'extra_payment')
+            ->where('status', '!=', RefundStatus::Cancelled->value);
+        $extraRefunded = 0.0;
+        $extraRefundPending = 0.0;
+
+        foreach ($extraRefunds as $refund) {
+            $paidAmount = (float) $refund->customerPayments
+                ->where('status', 'paid')
+                ->sum('amount');
+            $isSettled = $refund->status === RefundStatus::Completed->value
+                || $refund->customer_refunded_at !== null;
+
+            if ($paidAmount === 0.0 && $isSettled) {
+                $paidAmount = (float) $refund->customer_refund_amount;
+            }
+
+            $extraRefunded += $paidAmount;
+
+            if (! $isSettled) {
+                $extraRefundPending += max((float) $refund->refunded_amount - $paidAmount, 0);
+            }
+        }
+
+        $reservedAmount = (float) $extraRefunds->sum('refunded_amount');
+
+     
+
+        return [
+            'extra_received_amount' => round($extraReceived, 2),
+            'extra_refunded_amount' => round($extraRefunded, 2),
+            'extra_refund_pending_amount' => round($extraRefundPending, 2),
+            'extra_available_amount' => round(max($extraReceived - $reservedAmount, 0), 2),
+        ];
     }
 
     private function hasActiveExtraRefund(ShipTicketSale $sale): bool

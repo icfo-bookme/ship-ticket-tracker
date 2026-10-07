@@ -6,11 +6,15 @@ use App\Enums\SaleStatus;
 use App\Models\Payment;
 use App\Models\ShipTicketSale;
 use App\Services\Finance\CashCollectionService;
+use App\Services\Finance\ExtraPaymentService;
 use Illuminate\Http\Request;
 
 class SalesReportService
 {
-    public function __construct(private readonly CashCollectionService $cashCollectionService) {}
+    public function __construct(
+        private readonly CashCollectionService $cashCollectionService,
+        private readonly ExtraPaymentService $extraPaymentService,
+    ) {}
 
     public function dataTable(Request $request): array
     {
@@ -302,6 +306,7 @@ class SalesReportService
 
     private function formatSale(ShipTicketSale $sale): array
     {
+        $extraPaymentSummary = $this->extraPaymentService->summary($sale);
         $completedRefunds = $sale->refunds->filter(
             fn ($refund): bool => $refund->status === 'completed' || $refund->customer_refunded_at !== null
         );
@@ -332,8 +337,7 @@ class SalesReportService
             'number_of_ticket' => $sale->number_of_ticket,
             'ticket_fee' => $sale->ticket_fee,
             'received_amount' => $sale->received_amount,
-            'extra_received_amount' => max((float) $sale->received_amount - (float) $sale->total_payable, 0),
-            'extra_refunded_amount' => $extraRefundPaid,
+            ...$extraPaymentSummary,
             'other_fee' => $sale->other_fee,
             'discount_amount' => $sale->discount_amount,
             'total_payable' => $sale->total_payable,

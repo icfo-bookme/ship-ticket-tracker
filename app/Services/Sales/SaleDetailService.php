@@ -5,11 +5,15 @@ namespace App\Services\Sales;
 use App\Enums\SaleStatus;
 use App\Models\PrintedTicket;
 use App\Models\ShipTicketSale;
+use App\Services\Finance\ExtraPaymentService;
 use Illuminate\Support\Str;
 
 class SaleDetailService
 {
-    public function __construct(private readonly SaleGroupingService $saleGrouping) {}
+    public function __construct(
+        private readonly SaleGroupingService $saleGrouping,
+        private readonly ExtraPaymentService $extraPayments,
+    ) {}
 
     /**
      * @return array{pdfFilenamePrefix: string, nextPdfNumber: int}
@@ -103,15 +107,11 @@ class SaleDetailService
 
     private function appendExtraPaymentSummary(ShipTicketSale $sale): void
     {
-        $extraReceived = max((float) $sale->received_amount - (float) $sale->total_payable, 0);
-        $extraRefunded = (float) $sale->refunds
-            ->where('refund_type', 'extra_payment')
-            ->filter(fn ($refund): bool => $refund->status === 'completed' || $refund->customer_refunded_at !== null)
-            ->sum('customer_refund_amount');
+        foreach ($this->extraPayments->summary($sale) as $attribute => $amount) {
+            $sale->setAttribute($attribute, $amount);
+        }
 
-        $sale->setAttribute('extra_received_amount', $extraReceived);
-        $sale->setAttribute('extra_refunded_amount', $extraRefunded);
-        $sale->setAttribute('extra_remaining_amount', max($extraReceived - $extraRefunded, 0));
+        $sale->setAttribute('extra_remaining_amount', $sale->extra_available_amount);
     }
 
     /**

@@ -26,22 +26,77 @@ class RefundService
     {
         DB::transaction(function () use ($saleIds): void {
             foreach ($saleIds as $id) {
-                $sale = ShipTicketSale::find($id);
+                $sale = ShipTicketSale::query()
+                    ->with('categories.package')
+                    ->find($id);
 
                 if ($sale && ! in_array($sale->status, [SaleStatus::Pending->value, SaleStatus::Refunded->value], true)) {
-                    $this->ensureRefundableAmount($sale, (int) $sale->number_of_ticket, (float) $sale->ticket_fee);
-                    Refund::create([
+                    $ticketSelections = $sale->categories->map(function ($category): array {
+                        $singlePrice = (float) ($category->package?->price ?? 0);
+                        $roundTripPrice = (float) ($category->package?->round_trip_price ?? 0);
+                        $unitAmount = $category->type === 'return'
+                            ? ($roundTripPrice > 0 ? $roundTripPrice - $singlePrice : $singlePrice)
+                            : $singlePrice;
+                        $quantity = (int) $category->quantity;
+
+                        return [
+                            'category' => $category,
+                            'quantity' => $quantity,
+                            'unitAmount' => $unitAmount,
+                            'categoryAmount' => round($unitAmount * $quantity, 2),
+                        ];
+                    })->all();
+                    $ticketCount = array_sum(array_column($ticketSelections, 'quantity'));
+                    $ticketCount = $ticketCount > 0 ? $ticketCount : (int) $sale->number_of_ticket;
+                    $grossAmount = round((float) $sale->ticket_fee, 2);
+                    $this->ensureRefundableAmount($sale, $ticketCount, $grossAmount);
+                    $refundDiscountAmount = min(max((float) $sale->discount_amount, 0), $grossAmount);
+                    $otherFeeDeduction = $this->otherFeeDeduction($sale);
+                    $customerRefundAmount = $this->customerRefundAmount(
+                        $grossAmount,
+                        0,
+                        $refundDiscountAmount,
+                        $otherFeeDeduction,
+                    );
+
+                    $refund = Refund::create([
                         'sales_id' => $sale->id,
                         'refund_type' => 'bulk',
                         'status' => RefundStatus::Requested->value,
-                        'refunded_number_of_tickets' => $sale->number_of_ticket,
-                        'refunded_amount' => $sale->ticket_fee,
-                        'gross_refund_amount' => $sale->ticket_fee,
-                        'refund_discount_amount' => min((float) $sale->discount_amount, (float) $sale->ticket_fee),
-                        'customer_refund_amount' => round((float) $sale->ticket_fee - min((float) $sale->discount_amount, (float) $sale->ticket_fee), 2),
+                        'refunded_number_of_tickets' => $ticketCount,
+                        'refunded_amount' => $grossAmount,
+                        'gross_refund_amount' => $grossAmount,
+                        'refund_discount_amount' => $refundDiscountAmount,
+                        'other_fee_deduction' => $otherFeeDeduction,
+                        'customer_charge_percent' => 0,
+                        'customer_charge_amount' => 0,
+                        'partner_share_percent' => 0,
+                        'partner_share_amount' => 0,
+                        'company_retained_amount' => 0,
+                        'customer_refund_amount' => $customerRefundAmount,
                         'requested_at' => now(),
                     ]);
 
+                    if ($ticketSelections === []) {
+                        $refund->tickets()->create([
+                            'category_name' => 'All tickets',
+                            'category_type' => 'all',
+                            'purchased_quantity' => $ticketCount,
+                            'refunded_quantity' => $ticketCount,
+                            'unit_amount' => $ticketCount > 0 ? round($grossAmount / $ticketCount, 2) : 0,
+                            'gross_amount' => $grossAmount,
+                        ]);
+                    } else {
+                        $refund->tickets()->createMany(array_map(fn (array $selected): array => [
+                            'category_id' => $selected['category']->id,
+                            'category_name' => $selected['category']->package?->name,
+                            'category_type' => $selected['category']->type,
+                            'purchased_quantity' => $selected['quantity'],
+                            'refunded_quantity' => $selected['quantity'],
+                            'unit_amount' => $selected['unitAmount'],
+                            'gross_amount' => $selected['categoryAmount'],
+                        ], $ticketSelections));
+                    }
                 }
             }
         });

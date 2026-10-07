@@ -21,7 +21,7 @@
         <div class="flex flex-col flex-grow px-1.5 py-3 overflow-y-auto scrollbar-hide" id="nav-container">
             <nav class="flex-1 space-y-1">
                 <!-- Sell Section -->
-                @canany(['sales.create', 'sales.view', 'sale_drafts.view', 'sale_drafts.create', 'excel.view'])
+                @canany(['sales.create', 'sales.view'])
                     <div class="px-2 pt-2">
                         <div id="sell-dropdown" class="mb-1 relative">
                             <button
@@ -60,24 +60,6 @@
                                             class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sales</span>
                                     </a>
                                 @endcan
-                                @can('excel.view')
-                                    <a href="/excel"
-                                        class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                        <span
-                                            class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Excel</span>
-                                    </a>
-                                @endcan
-
-                                @canany(['sale_drafts.view', 'sale_drafts.create'])
-                                    <a href="{{ route('sale-drafts.manage') }}"
-                                        class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition {{ request()->routeIs('sale-drafts.manage') ? 'bg-blue-100 text-blue-700' : '' }}">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
-                                        <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sale
-                                            Drafts</span>
-                                    </a>
-                                @endcan
-
                                 {{-- <a href="/g-drive"
                                 class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
@@ -323,8 +305,40 @@
                     </div>
                 @endcan
 
+                @canany(['sale_drafts.view', 'sale_drafts.create'])
+                    <div class="px-2 pt-2">
+                        <div id="drafts-dropdown" class="mb-1 relative">
+                            <button
+                                class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-gray-700 rounded-lg hover:bg-blue-50 group transition focus:outline-none">
+                                <div class="flex items-center">
+                                    <svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5h6m-6 4h6m-6 4h6m-9 6h12a2 2 0 002-2V5a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <span
+                                        class="ml-3 whitespace-nowrap transition-all duration-300 sidebar-text truncate text-left">Drafts</span>
+                                </div>
+                                <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200 text-gray-500"
+                                    id="drafts-dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="drafts-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
+                                <a href="{{ route('sale-drafts.manage') }}"
+                                    class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition {{ request()->routeIs('sale-drafts.manage') ? 'bg-blue-100 text-blue-700' : '' }}">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
+                                    <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sale Drafts</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endcanany
+
                 <!-- Admin Section (Users / Roles / Permissions) -->
-                @canany(['users.view', 'roles.view', 'permissions.view'])
+                @canany(['users.view', 'roles.view', 'permissions.view', 'excel.view'])
                     <div class="px-2 pt-2">
                         <div id="admin-dropdown" class="mb-1 relative">
                             <button
@@ -349,6 +363,13 @@
                                 </svg>
                             </button>
                             <div id="admin-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
+                                @can('excel.view')
+                                    <a href="/excel"
+                                        class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-3"></span>
+                                        <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Excel</span>
+                                    </a>
+                                @endcan
                                 @can('users.view')
                                     <a href="/users-details"
                                         class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">

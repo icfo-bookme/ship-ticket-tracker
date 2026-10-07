@@ -74,6 +74,7 @@ const columns = isCompleted ? completedColumns : [
                             <button data-permission="refunds.edit" class="fas fa-edit text-blue-950 px-2 py-1 rounded requestedEditBtn"
                                 data-id="${row.sale?.id ?? ''}"
                                 data-request-id="${row.id}"
+                                data-refund-type="${escapeHtml(row.refund_type || 'partial')}"
                                 data-received_total_amount="${row.sale?.ticket_fee ?? row.gross_refund_amount}"
                                 data-ticket-fee="${row.sale?.ticket_fee ?? row.gross_refund_amount}"
                                 data-due-amount="${row.sale?.due_amount ?? 0}"

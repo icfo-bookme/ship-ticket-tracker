@@ -330,6 +330,9 @@ function openRefundModal(btn, editing = false) {
     currentRefundSaleId = btn.dataset.id;
     currentRefundRequestId = editing ? btn.dataset.requestId : null;
     currentRefundEditing = editing;
+    document.querySelector('#refundModal h3').textContent = btn.dataset.refundType === 'bulk'
+        ? 'Bulk Refund Request'
+        : 'Partial Refund Request';
     document.getElementById('submitRefundBtn').textContent = editing
         ? 'Update Refund Request'
         : 'Submit Refund Request';

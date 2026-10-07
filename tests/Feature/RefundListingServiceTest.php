@@ -182,6 +182,74 @@ it('calculates partial refund totals from selected category quantities and appli
         ->and($listing->customer_refund_after_due_adjustment)->toBe(0.0);
 });
 
+it('creates a full bulk refund with returned category details and zero charge and partner share', function () {
+    $ship = Ship::create(['name' => 'Test ship']);
+    $package = ShipPackage::create([
+        'ship_id' => $ship->id,
+        'name' => 'Package 1',
+        'price' => 10,
+        'round_trip_price' => 19,
+    ]);
+    $sale = ShipTicketSale::create([
+        'customer_name' => 'Weather Cancellation Customer',
+        'customer_mobile' => '01234567890',
+        'ship_id' => $ship->id,
+        'ticket_fee' => 38,
+        'other_fee' => 4,
+        'discount_amount' => 3.8,
+        'total_payable' => 38.2,
+        'received_amount' => 0,
+        'due_amount' => 38.2,
+        'issued_date' => now()->toDateString(),
+        'number_of_ticket' => 4,
+        'status' => 'ticket-issued',
+    ]);
+    Category::create([
+        'ticket_id' => $sale->id,
+        'package_id' => $package->id,
+        'quantity' => 2,
+        'type' => 'departure',
+    ]);
+    Category::create([
+        'ticket_id' => $sale->id,
+        'package_id' => $package->id,
+        'quantity' => 2,
+        'type' => 'return',
+    ]);
+
+    app(RefundService::class)->fullRefund([$sale->id]);
+
+    $refund = Refund::query()->with('tickets')->sole();
+    $listing = app(RefundListingService::class)->refundRequests(
+        Request::create('/refund-requests?status=requested'),
+    )['data']->sole();
+
+    expect($refund->refunded_number_of_tickets)->toBe(4)
+        ->and($refund->gross_refund_amount)->toBe('38.00')
+        ->and($refund->refund_discount_amount)->toBe('3.80')
+        ->and($refund->other_fee_deduction)->toBe('4.00')
+        ->and($refund->customer_charge_percent)->toBe('0.00')
+        ->and($refund->customer_charge_amount)->toBe('0.00')
+        ->and($refund->partner_share_percent)->toBe('0.00')
+        ->and($refund->partner_share_amount)->toBe('0.00')
+        ->and($refund->customer_refund_amount)->toBe('30.20')
+        ->and($refund->tickets)->toHaveCount(2)
+        ->and($refund->tickets->sum('refunded_quantity'))->toBe(4)
+        ->and($listing->total_refund_tickets)->toBe(4)
+        ->and($listing->due_adjusted_amount)->toBe('30.20')
+        ->and($listing->customer_refund_after_due_adjustment)->toBe(0.0)
+        ->and($listing->edit_categories)->toHaveCount(2);
+
+    app(RefundService::class)->refundCustomer($refund, []);
+    $refund->refresh();
+    $sale->refresh();
+
+    expect($refund->due_adjusted_amount)->toBe('30.20')
+        ->and($refund->customer_refund_amount)->toBe('0.00')
+        ->and($sale->due_amount)->toBe('8.00')
+        ->and($refund->customerPayments)->toHaveCount(0);
+});
+
 it('rejects a partial refund quantity above the purchased category quantity', function () {
     $ship = Ship::create(['name' => 'Test ship']);
     $package = ShipPackage::create([

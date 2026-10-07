@@ -60,3 +60,25 @@ it('keeps the horizontal overflow out of the page itself', function () {
         ->toContain('autoWidth: false')
         ->not->toContain('min-h-screen min-w-0 overflow-x-auto');
 });
+
+it('provides shared small-screen layout rules for grids and data tables', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)
+        ->toContain('@media (max-width: 639px)')
+        ->toContain('.dataTables_wrapper .dt-buttons')
+        ->toContain('grid-template-columns: minmax(0, 1fr);');
+});
+
+it('animates the mobile navigation drawer and backdrop', function () {
+    $layout = file_get_contents(resource_path('views/layouts/app.blade.php'));
+    $script = file_get_contents(resource_path('js/layout/sidebar.js'));
+
+    expect($layout)
+        ->toContain('opacity-0 backdrop-blur-[1px] transition-opacity duration-300')
+        ->toContain('transition-[width,transform] duration-300');
+    expect($script)
+        ->toContain("mobileSidebarToggle.addEventListener('click', toggleMobileSidebar)")
+        ->toContain("sidebarBackdrop.classList.add('opacity-100')")
+        ->toContain("event.key === 'Escape'");
+});

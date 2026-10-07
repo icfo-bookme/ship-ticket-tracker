@@ -21,11 +21,11 @@ $maxWidthClass = [
 
 <div id="{{ $id }}" tabindex="-1" aria-hidden="true"
     class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full bg-gray-900/50 md:inset-0 h-[calc(100%-1rem)] max-h-full dark:bg-gray-900/70">
-    <div class="relative p-4 w-full max-w-2xl max-h-[calc(100vh-2rem)] {{ $maxWidthClass }}">
-        <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700 flex flex-col max-h-[calc(100vh-2rem)]">
+    <div class="relative w-full max-w-2xl p-2 sm:p-4 max-h-[calc(100dvh-1rem)] {{ $maxWidthClass }}">
+        <div class="relative flex max-h-[calc(100dvh-1rem)] flex-col rounded-lg bg-white shadow-sm dark:bg-gray-700">
             <!-- Header (fixed at top) -->
             <div
-                class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200 shrink-0">
+                class="flex shrink-0 items-center justify-between border-b border-gray-200 p-3 sm:p-4 md:p-5 dark:border-gray-600">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $title }}</h3>
                 <button type="button" data-close-modal="{{ $id }}"
                     class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg p-2.5">

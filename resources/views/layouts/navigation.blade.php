@@ -88,14 +88,21 @@
             </div>
 
             <!-- Hamburger Menu -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = !open"
-                    class="inline-flex items-center justify-center p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none transition">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{ 'hidden': open, 'inline-flex': !open }" stroke-linecap="round"
-                            stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{ 'hidden': !open, 'inline-flex': open }" stroke-linecap="round"
-                            stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <div class="-me-2 flex items-center gap-1 lg:hidden">
+                <button id="mobile-sidebar-toggle" type="button" aria-label="Open navigation menu" aria-controls="sidebar" aria-expanded="false"
+                    class="inline-flex items-center justify-center rounded-md p-2 text-gray-300 transition hover:bg-gray-700 hover:text-white focus:outline-none">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <button @click="open = !open" type="button" aria-label="Open account menu"
+                    class="inline-flex items-center justify-center rounded-md p-2 text-gray-300 transition hover:bg-gray-700 hover:text-white focus:outline-none sm:hidden">
+                    <svg x-show="!open" class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 21a8 8 0 00-16 0m16 0H4m16 0v-1a8 8 0 00-16 0v1m8-10a4 4 0 100-8 4 4 0 000 8z" />
+                    </svg>
+                    <svg x-show="open" x-cloak class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>

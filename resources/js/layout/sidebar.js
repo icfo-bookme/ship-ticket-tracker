@@ -1,6 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
         const sidebarContainer = document.getElementById('sidebar-container');
+        const mainContent = document.getElementById('main-content');
         const sidebarToggle = document.getElementById('sidebar-toggle');
+        const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
+        const sidebarBackdrop = document.getElementById('sidebar-backdrop');
         const toggleIcon = document.getElementById('toggle-icon');
         const logoText = document.getElementById('sidebar-logo-text');
         const divHide = document.getElementById('divHide');
@@ -8,28 +12,130 @@ document.addEventListener('DOMContentLoaded', function() {
         const dropdownContents = document.querySelectorAll('[id$="-dropdown-list"]');
         const dropdownIcons = document.querySelectorAll('[id$="-dropdown-icon"]');
         const navLinks = document.querySelectorAll('#nav-container a[href]');
+        let drawerCloseTimeout;
 
-        // Check localStorage for saved state
-        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        const desktopBreakpoint = 1024;
+        const isDesktop = () => window.innerWidth >= desktopBreakpoint;
+        const isCollapsed = isDesktop() && localStorage.getItem('sidebarCollapsed') === 'true';
+        let resizeTimeout;
 
-        // Initialize sidebar state
+        const adjustDataTables = () => {
+            window.setTimeout(() => {
+                if (window.jQuery?.fn?.dataTable) {
+                    window.jQuery.fn.dataTable
+                        .tables({ visible: true, api: true })
+                        .columns.adjust();
+                }
+            }, 350);
+        };
+
+        const setDesktopWidth = (collapsed) => {
+            sidebar.classList.toggle('w-14', collapsed);
+            sidebar.classList.toggle('w-48', !collapsed);
+            mainContent.classList.toggle('lg:ml-14', collapsed);
+            mainContent.classList.toggle('lg:ml-48', !collapsed);
+        };
+
+        const closeMobileSidebar = () => {
+            sidebar.classList.remove('translate-x-0');
+            sidebar.classList.add('-translate-x-full');
+            sidebarBackdrop.classList.remove('opacity-100');
+            mobileSidebarToggle.setAttribute('aria-expanded', 'false');
+            mobileSidebarToggle.setAttribute('aria-label', 'Open navigation menu');
+            document.body.classList.remove('overflow-hidden');
+
+            window.clearTimeout(drawerCloseTimeout);
+            drawerCloseTimeout = window.setTimeout(() => {
+                sidebarBackdrop.classList.add('hidden');
+            }, 300);
+        };
+
+        const toggleMobileSidebar = () => {
+            if (sidebar.classList.contains('translate-x-0')) {
+                closeMobileSidebar();
+                return;
+            }
+
+            window.clearTimeout(drawerCloseTimeout);
+            sidebarBackdrop.classList.remove('hidden');
+            mobileSidebarToggle.setAttribute('aria-expanded', 'true');
+            mobileSidebarToggle.setAttribute('aria-label', 'Close navigation menu');
+            document.body.classList.add('overflow-hidden');
+
+            window.requestAnimationFrame(() => {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                sidebarBackdrop.classList.add('opacity-100');
+            });
+
+        };
+
         if (isCollapsed) {
             collapseSidebar();
         } else {
             expandSidebar();
         }
+        setDesktopWidth(isCollapsed);
 
-        // Toggle sidebar
         sidebarToggle.addEventListener('click', function() {
+            if (!isDesktop()) {
+                toggleMobileSidebar();
+                return;
+            }
+
             const isCollapsed = sidebarContainer.classList.contains('sidebar-collapsed');
 
             if (isCollapsed) {
                 expandSidebar();
+                setDesktopWidth(false);
                 localStorage.setItem('sidebarCollapsed', 'false');
             } else {
                 collapseSidebar();
+                setDesktopWidth(true);
                 localStorage.setItem('sidebarCollapsed', 'true');
             }
+            adjustDataTables();
+        });
+
+        mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
+        sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !isDesktop()) {
+                closeMobileSidebar();
+            }
+        });
+
+        navLinks.forEach((link) => {
+            link.addEventListener('click', () => {
+                if (!isDesktop()) {
+                    closeMobileSidebar();
+                }
+            });
+        });
+
+        window.addEventListener('resize', function() {
+            window.clearTimeout(resizeTimeout);
+            resizeTimeout = window.setTimeout(() => {
+                if (isDesktop()) {
+                    closeMobileSidebar();
+                    const shouldCollapse = localStorage.getItem('sidebarCollapsed') === 'true';
+
+                    if (shouldCollapse) {
+                        collapseSidebar();
+                    } else {
+                        expandSidebar();
+                    }
+
+                    setDesktopWidth(shouldCollapse);
+                } else {
+                    expandSidebar();
+                    setDesktopWidth(false);
+                    mainContent.classList.remove('lg:ml-14', 'lg:ml-48');
+                }
+
+                adjustDataTables();
+            }, 150);
         });
 
         function collapseSidebar() {
@@ -210,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             navLinks.forEach(link => {
                 const linkPath = new URL(link.href, window.location.origin).pathname;
-                if (currentPath === linkPath || (linkPath !== '/' && currentPath.startsWith(
+                    if (currentPath === linkPath || (linkPath !== '/' && currentPath.startsWith(
                         `${linkPath}/`))) {
                     link.classList.add('bg-blue-50', 'text-blue-700');
                     const icon = link.querySelector('svg');

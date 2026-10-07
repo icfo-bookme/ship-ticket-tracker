@@ -1,8 +1,8 @@
-<div id="sidebar" class="bg-slate-200 h-[100%] border-r border-[#006172]">
+<div id="sidebar-content" class="h-full border-r border-[#006172] bg-slate-200">
     <!-- Sidebar Container -->
     <div class="flex flex-col h-full transition-all duration-300 ease-in-out" id="sidebar-container">
         <!-- Sidebar Header -->
-        <div id="divHide" class="flex items-center w-48 justify-between h-12 px-2.5 bg-blue-900 shadow-md">
+        <div id="divHide" class="flex h-12 min-h-12 max-h-12 w-48 shrink-0 items-center justify-between px-2.5 bg-blue-900 shadow-md transition-[width] duration-300 ease-in-out">
             <span id="sidebar-logo-text"
                 class="text-white text-sm font-semibold whitespace-nowrap transition-all duration-300 sidebar-text truncate">Ship
                 Booking</span>
@@ -248,6 +248,16 @@
                                         <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                         <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sales
                                             Reports</span>
+                                    </a>
+                                    <a href="{{ route('refund-reports.index') }}"
+                                        class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-3"></span>
+                                        <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Refund Report</span>
+                                    </a>
+                                    <a href="{{ route('bftn-reports.index') }}"
+                                        class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-3"></span>
+                                        <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">BFTN Report</span>
                                     </a>
                                 @endcan
                                 @can('extra_received.view')

@@ -255,6 +255,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:reports.view')->group(function () {
         Route::get('/admin/sales-reports', [ReportController::class, 'index'])->name('sales.reports');
         Route::get('/reports', [ReportController::class, 'reports'])->name('reports.data');
+        Route::get('/admin/refund-reports', [ReportController::class, 'refunds'])->name('refund-reports.index');
+        Route::get('/refund-reports/data', [ReportController::class, 'refundReports'])->name('refund-reports.data');
+        Route::get('/admin/bftn-reports', [ReportController::class, 'bftn'])->name('bftn-reports.index');
+        Route::get('/bftn-reports/data', [ReportController::class, 'bftnReports'])->name('bftn-reports.data');
     });
 
     Route::middleware('can:extra_received.view')->group(function () {

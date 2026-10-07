@@ -82,7 +82,7 @@
         <!-- Mobile Sidebar Backdrop -->
         <div
             id="sidebar-backdrop"
-            class="fixed inset-0 top-16 z-30 hidden bg-black/50 backdrop-blur-[1px] lg:hidden"
+            class="fixed inset-0 top-16 z-30 hidden bg-black/50 opacity-0 backdrop-blur-[1px] transition-opacity duration-300 ease-out lg:hidden"
         ></div>
 
         <!-- Sidebar -->
@@ -93,7 +93,7 @@
                 w-48 -translate-x-full
                 overflow-x-hidden overflow-y-auto
                 bg-white shadow-xl
-                transition-all duration-300 ease-in-out
+                transition-[width,transform] duration-300 ease-out
                 lg:translate-x-0 lg:shadow-none
             "
         >
@@ -164,176 +164,5 @@
         }
     </script>
 
-    <!-- Sidebar -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('main-content');
-            const sidebarToggle = document.getElementById('sidebar-toggle');
-            const sidebarBackdrop = document.getElementById('sidebar-backdrop');
-
-            const desktopBreakpoint = 1024;
-            const transitionDuration = 300;
-
-            const isDesktop = () => {
-                return window.innerWidth >= desktopBreakpoint;
-            };
-
-            const adjustDataTables = () => {
-                window.setTimeout(() => {
-                    if (
-                        window.jQuery
-                        && jQuery.fn
-                        && jQuery.fn.dataTable
-                    ) {
-                        jQuery.fn.dataTable
-                            .tables({
-                                visible: true,
-                                api: true,
-                            })
-                            .columns
-                            .adjust();
-                    }
-
-                    window.dispatchEvent(new Event('resize'));
-                }, transitionDuration + 50);
-            };
-
-            const collapseSidebar = (saveState = true) => {
-                if (!isDesktop()) {
-                    return;
-                }
-
-                sidebar.classList.remove('w-48');
-                sidebar.classList.add('w-14');
-
-                mainContent.classList.remove('lg:ml-48');
-                mainContent.classList.add('lg:ml-14');
-
-                if (saveState) {
-                    localStorage.setItem(
-                        'sidebarCollapsed',
-                        'true'
-                    );
-                }
-
-                adjustDataTables();
-            };
-
-            const expandSidebar = (saveState = true) => {
-                if (!isDesktop()) {
-                    return;
-                }
-
-                sidebar.classList.remove('w-14');
-                sidebar.classList.add('w-48');
-
-                mainContent.classList.remove('lg:ml-14');
-                mainContent.classList.add('lg:ml-48');
-
-                if (saveState) {
-                    localStorage.setItem(
-                        'sidebarCollapsed',
-                        'false'
-                    );
-                }
-
-                adjustDataTables();
-            };
-
-            const openMobileSidebar = () => {
-                sidebar.classList.remove('-translate-x-full');
-                sidebar.classList.add('translate-x-0');
-
-                sidebarBackdrop.classList.remove('hidden');
-
-                document.body.classList.add('overflow-hidden');
-            };
-
-            const closeMobileSidebar = () => {
-                sidebar.classList.remove('translate-x-0');
-                sidebar.classList.add('-translate-x-full');
-
-                sidebarBackdrop.classList.add('hidden');
-
-                document.body.classList.remove('overflow-hidden');
-            };
-
-            const restoreSidebarState = () => {
-                if (!isDesktop()) {
-                    return;
-                }
-
-                const isCollapsed = localStorage.getItem(
-                    'sidebarCollapsed'
-                ) === 'true';
-
-                if (isCollapsed) {
-                    collapseSidebar(false);
-
-                    return;
-                }
-
-                expandSidebar(false);
-            };
-
-            sidebarToggle?.addEventListener('click', () => {
-                if (isDesktop()) {
-                    const isCollapsed = sidebar.classList.contains(
-                        'w-14'
-                    );
-
-                    if (isCollapsed) {
-                        expandSidebar();
-
-                        return;
-                    }
-
-                    collapseSidebar();
-
-                    return;
-                }
-
-                const isOpen = sidebar.classList.contains(
-                    'translate-x-0'
-                );
-
-                if (isOpen) {
-                    closeMobileSidebar();
-
-                    return;
-                }
-
-                openMobileSidebar();
-            });
-
-            sidebarBackdrop?.addEventListener(
-                'click',
-                closeMobileSidebar
-            );
-
-            let resizeTimeout;
-
-            window.addEventListener('resize', () => {
-                window.clearTimeout(resizeTimeout);
-
-                resizeTimeout = window.setTimeout(() => {
-                    if (isDesktop()) {
-                        closeMobileSidebar();
-                        restoreSidebarState();
-
-                        return;
-                    }
-
-                    mainContent.classList.remove('lg:ml-14');
-                    mainContent.classList.add('lg:ml-48');
-
-                    adjustDataTables();
-                }, 150);
-            });
-
-            restoreSidebarState();
-        });
-    </script>
 </body>
 </html>

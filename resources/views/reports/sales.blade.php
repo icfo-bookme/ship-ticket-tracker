@@ -92,16 +92,6 @@
                         <option value="Bank Transfer">Bank Transfer</option>
                     </select>
                 </div>
-                <div class="flex flex-col">
-                    <label for="bftnFilter" class="mb-1 text-[12px] font-semibold text-gray-700">BFTN Status</label>
-                    <select id="bftnFilter"
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">All</option>
-                        <option value="all">All BFTN</option>
-                        <option value="pending">BFTN Pending</option>
-                        <option value="received">BFTN Received</option>
-                    </select>
-                </div>
             </div>
         </div>
 
@@ -116,7 +106,7 @@
             'Number Of Tickets',
             'Ticket Price / Other Fee',
             'Total Payable',
-            'Received / Gross Refunded',
+            'Received Amount',
             'BFTN',
             'Net Cash',
             'Due Amount',
@@ -139,33 +129,6 @@
                     <x-report-summary-card id="totalSold" label="Total Payable" />
                     <x-report-summary-card id="totalReceivedAmount" label="Total Received" />
                     <x-report-summary-card id="totalDueAmount" label="Current Due" />
-                </div>
-            </section>
-
-            <section>
-                <h3 class="mb-3 text-base font-semibold text-gray-800">Completed Ticket Refunds</h3>
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <x-report-summary-card id="totalRefundedTickets" label="Tickets Refunded" />
-                    <x-report-summary-card id="totalGrossRefundAmount" label="Gross Ticket Refund" />
-                    <x-report-summary-card id="totalOtherFeeDeduction" label="Other Fee Deducted" />
-                    <x-report-summary-card id="totalRefundDiscountAmount" label="Refund Discount" />
-                    <x-report-summary-card id="totalDueAdjustedAmount" label="Due Adjusted" />
-                    <x-report-summary-card id="totalCustomerRefundPaid" label="Customer Refund Paid" />
-                    <x-report-summary-card id="totalPartnerShareAmount" label="Partner Share" />
-                    <x-report-summary-card id="totalCompanyRetainedAmount" label="Company Retained" />
-                </div>
-            </section>
-
-            <section>
-                <h3 class="mb-3 text-base font-semibold text-gray-800">BFTN & Extra Payments</h3>
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <x-report-summary-card id="totalExtraRefundedAmount" label="Extra Payment Refund Paid" />
-                    <x-report-summary-card id="totalBftn" label="BFTN Sales" />
-                    <x-report-summary-card id="totalBftnPending" label="BFTN Pending" />
-                    <x-report-summary-card id="totalBftnReceived" label="BFTN Received" />
-                    <x-report-summary-card id="totalBftnAmount" label="BFTN Amount" />
-                    <x-report-summary-card id="totalBftnPendingAmount" label="BFTN Pending Amount" />
-                    <x-report-summary-card id="totalBftnReceivedAmount" label="BFTN Received Amount" />
                     <x-report-summary-card id="netCash" label="Available Net Cash" />
                 </div>
             </section>

@@ -11,7 +11,6 @@ const clearFiltersBtn = document.getElementById("clearFilters");
 const toggleAdvancedFiltersBtn = document.getElementById("toggleAdvancedFilters");
 const advancedFilters = document.getElementById("advancedReportFilters");
 const paymentMethodFilter = document.getElementById("payment_method");
-const bftnFilter = document.getElementById("bftnFilter");
 const startDateFilter = document.getElementById("startDate");
 const endDateFilter = document.getElementById("endDate");
 const startCreateDateFilter = document.getElementById("startCreateDate");
@@ -25,23 +24,8 @@ function totalElements() {
         total_other_fee: document.getElementById("totalOtherFees"),
         total_discount_amount: document.getElementById("totalDiscountAmount"),
         total_payable: document.getElementById("totalSold"),
-        total_refunded_tickets: document.getElementById("totalRefundedTickets"),
         total_received_amount: document.getElementById("totalReceivedAmount"),
         total_due_amount: document.getElementById("totalDueAmount"),
-        total_gross_refund_amount: document.getElementById("totalGrossRefundAmount"),
-        total_other_fee_deduction: document.getElementById("totalOtherFeeDeduction"),
-        total_refund_discount_amount: document.getElementById("totalRefundDiscountAmount"),
-        total_customer_refund_paid: document.getElementById("totalCustomerRefundPaid"),
-        total_due_adjusted_amount: document.getElementById("totalDueAdjustedAmount"),
-        total_partner_share_amount: document.getElementById("totalPartnerShareAmount"),
-        total_company_retained_amount: document.getElementById("totalCompanyRetainedAmount"),
-        total_extra_refunded_amount: document.getElementById("totalExtraRefundedAmount"),
-        total_bftn: document.getElementById("totalBftn"),
-        total_bftn_pending: document.getElementById("totalBftnPending"),
-        total_bftn_received: document.getElementById("totalBftnReceived"),
-        total_bftn_amount: document.getElementById("totalBftnAmount"),
-        total_bftn_pending_amount: document.getElementById("totalBftnPendingAmount"),
-        total_bftn_received_amount: document.getElementById("totalBftnReceivedAmount"),
         net_cash: document.getElementById("netCash"),
     };
 }
@@ -87,9 +71,8 @@ const columns = [
     },
     {
         data: null,
-        title: "Received / Refunded",
-        render: (data, type, row) => type !== 'display' ? `${row.received_amount} ${row.refunded_amount}` :
-            `<div class="flex flex-col"><span>${formatCurrency(row.received_amount)} <small class="text-gray-500">received</small></span><span>${formatCurrency(row.refunded_amount)} <small class="text-gray-500">refunded</small></span></div>`,
+        title: "Received Amount",
+        render: (data, type, row) => type !== 'display' ? row.received_amount : formatCurrency(row.received_amount),
     },
     {
         data: "bftn_status",
@@ -118,7 +101,6 @@ const filters = () => {
         company_id: companyFilter?.value || "",
         return_date: returnDateFilter?.value || "",
         payment_method: paymentMethodFilter?.value || "",
-        bftn_status: bftnFilter?.value || "",
         start_date: startDateFilter?.value || "",
         end_date: endDateFilter?.value || "",
         start_create_date: startCreateDateFilter?.value || "",
@@ -184,15 +166,6 @@ function showSaleDetails(sale) {
         ['Extra Refund Pending', formatCurrency(sale.extra_refund_pending_amount)],
         ['Extra Refunded', formatCurrency(sale.extra_refunded_amount)],
         ['Extra Available', formatCurrency(sale.extra_available_amount)],
-        ['Refund Status', sale.refund_status],
-        ['Refunded Tickets', sale.refunded_number_of_tickets],
-        ['Gross Ticket Refund', formatCurrency(sale.gross_refund_amount)],
-        ['Other Fee Deducted', formatCurrency(sale.other_fee_deduction)],
-        ['Refund Discount', formatCurrency(sale.refund_discount_amount)],
-        ['Customer Refund Paid', formatCurrency(sale.customer_refund_paid)],
-        ['Due Adjusted', formatCurrency(sale.due_adjusted_amount)],
-        ['Partner Share', formatCurrency(sale.partner_share_amount)],
-        ['Company Retained', formatCurrency(sale.company_retained_amount)],
         ['BFTN Status', sale.bftn_status === 'yes' ? (sale.bftn_received ? 'Received' : 'Pending') : 'No'],
         ['BFTN Received Date', sale.bftn_received_at],
         ['BFTN Amount', formatCurrency(sale.bftn_amount)],
@@ -234,10 +207,6 @@ function closeSaleDetails() {
 function updateTotals(totals = {}) {
     const countTotals = new Set([
         'total_number_of_tickets',
-        'total_refunded_tickets',
-        'total_bftn',
-        'total_bftn_pending',
-        'total_bftn_received',
     ]);
 
     Object.entries(totalElements()).forEach(([key, element]) => {
@@ -292,7 +261,6 @@ function reportFilterElements() {
         companyFilter,
         returnDateFilter,
         paymentMethodFilter,
-        bftnFilter,
         startDateFilter,
         endDateFilter,
         startCreateDateFilter,

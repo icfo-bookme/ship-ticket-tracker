@@ -115,7 +115,7 @@ it('preselects the last seven days on the report page', function () {
 });
 
 it('renders the sales report filters and summary targets', function () {
-    $this->actingAs($this->admin)
+    $response = $this->actingAs($this->admin)
         ->get('/admin/sales-reports')
         ->assertOk()
         ->assertSee('id="salesTable"', false)
@@ -123,17 +123,21 @@ it('renders the sales report filters and summary targets', function () {
         ->assertSee('data-close-modal="saleReportDetailModal"', false)
         ->assertDontSee('data-modal-hide="saleReportDetailModal"', false)
         ->assertSee('Ticket Price / Other Fee')
-        ->assertSee('Received / Gross Refunded')
+        ->assertSee('Received Amount')
         ->assertSee('id="totalSellTickets"', false)
-        ->assertSee('id="totalCustomerRefundPaid"', false)
-        ->assertSee('id="totalExtraRefundedAmount"', false)
-        ->assertSee('Customer Refund Paid')
-        ->assertSee('Other Fee Deducted')
+        ->assertDontSee('id="totalCustomerRefundPaid"', false)
+        ->assertDontSee('Completed Ticket Refunds')
+        ->assertDontSee('id="totalExtraRefundedAmount"', false)
+        ->assertDontSee('Extra Payment Refund Paid')
         ->assertSee('id="toggleAdvancedFilters"', false)
         ->assertSee('id="advancedReportFilters"', false)
         ->assertSee('More filters')
         ->assertSee('id="payment_method"', false)
-        ->assertSee('id="bftnFilter"', false);
+        ->assertDontSee('id="bftnFilter"', false)
+        ->assertDontSee('id="totalBftnAmount"', false);
+
+    expect(strpos($response->getContent(), 'id="salesTable"'))
+        ->toBeLessThan(strpos($response->getContent(), 'id="totalSellTickets"'));
 });
 
 it('includes every payment record in the sale report details payload', function () {

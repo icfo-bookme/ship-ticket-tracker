@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Ship;
 use App\Services\Finance\ExtraPaymentService;
+use App\Services\Reports\BftnReportService;
+use App\Services\Reports\RefundReportService;
 use App\Services\Reports\SalesReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,6 +17,8 @@ class ReportController extends Controller
     public function __construct(
         private readonly SalesReportService $salesReports,
         private readonly ExtraPaymentService $extraPayments,
+        private readonly RefundReportService $refundReports,
+        private readonly BftnReportService $bftnReports,
     ) {}
 
     public function index()
@@ -35,6 +39,32 @@ class ReportController extends Controller
 
             return response()->json($this->salesReports->emptyResponse($request), 500);
         }
+    }
+
+    public function refunds()
+    {
+        return view('reports.refunds', [
+            'ships' => Ship::query()->orderBy('name')->get(),
+            'companies' => Company::query()->orderBy('name')->get(),
+        ]);
+    }
+
+    public function refundReports(Request $request): JsonResponse
+    {
+        return response()->json($this->refundReports->dataTable($request));
+    }
+
+    public function bftn()
+    {
+        return view('reports.bftn', [
+            'ships' => Ship::query()->orderBy('name')->get(),
+            'companies' => Company::query()->orderBy('name')->get(),
+        ]);
+    }
+
+    public function bftnReports(Request $request): JsonResponse
+    {
+        return response()->json($this->bftnReports->dataTable($request));
     }
 
     public function extraReceived()

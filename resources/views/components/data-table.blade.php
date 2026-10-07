@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div class="">
+    <div class="overflow-x-auto">
         <table id="{{ $id }}" class="border border-gray-300 hidden" data-ajax-url="{{ $url }}"
             data-table-options="{{ json_encode(['ordering' => $ordering, 'pageLength' => $pageLength, 'lengthMenu' => $lengthMenu, 'buttons' => $buttons, 'order' => $order, 'language' => ['lengthMenu' => '_MENU_', 'processing' => $loadingText]]) }}">
             <thead class="bg-[#003366] text-white">

@@ -461,4 +461,65 @@ table.dataTable {
   .documentation-sections td {
     padding: 0.5rem;
   }
+
+  .ship-ticket-create-page,
+  .ship-ticket-create-page #ticketForm,
+  .ship-ticket-create-page #ticketForm > div {
+    min-width: 0;
+  }
+
+  .ship-ticket-create-page input,
+  .ship-ticket-create-page select,
+  .ship-ticket-create-page textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .ship-ticket-create-page #ticketForm > div:last-child button,
+  .ship-ticket-create-page #ticketForm > div:last-child a,
+  .ship-ticket-create-page #reviewModal > div:last-child > div:last-child > div:last-child button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .ship-ticket-create-page #paymentInfoWrapper .payment-entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .ship-ticket-create-page #paymentInfoWrapper .payment-entry > div {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ship-ticket-create-page #paymentInfoWrapper .payment-entry input,
+  .ship-ticket-create-page #paymentInfoWrapper .payment-entry select,
+  .ship-ticket-create-page #paymentInfoWrapper .payment-entry textarea {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.ship-ticket-create-page #ticketForm h2,
+.ship-ticket-create-page #ticketForm h3 {
+  color: #1f2937;
+}
+
+.ship-ticket-create-page #ticketForm input:not([type="checkbox"]):not([type="radio"]),
+.ship-ticket-create-page #ticketForm select,
+.ship-ticket-create-page #ticketForm textarea {
+  background-color: #fff;
+  color: #111827;
+}
+
+.ship-ticket-create-page #paymentInfoWrapper .payment-entry {
+  background-color: #fff;
+}
+
+#reviewModal > div:last-child > div {
+  background-color: #fff;
 }

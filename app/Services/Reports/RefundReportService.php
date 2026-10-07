@@ -50,8 +50,11 @@ class RefundReportService
     {
         return Refund::query()
             ->whereNotNull('requested_at')
-            ->when($request->filled('status') && $request->input('status') !== 'all', fn (Builder $query) => $query
-                ->where('status', $request->input('status')))
+            ->where('status', '!=', RefundStatus::Cancelled->value)
+            ->where(function (Builder $query): void {
+                $query->where('status', RefundStatus::Completed->value)
+                    ->orWhereNotNull('customer_refunded_at');
+            })
             ->when($request->filled('refund_type') && $request->input('refund_type') !== 'all', fn (Builder $query) => $query
                 ->where('refund_type', $request->input('refund_type')))
             ->when($request->filled('ship_id'), fn (Builder $query) => $query->whereHas('sale', fn (Builder $sale) => $sale
@@ -87,45 +90,44 @@ class RefundReportService
     /** @return array<string, string|int> */
     private function totals(Builder $query): array
     {
-        $activeQuery = (clone $query)->where('status', '!=', RefundStatus::Cancelled->value);
-        $summary = (clone $query)->selectRaw('
-            COUNT(*) AS request_count,
-            SUM(CASE WHEN status IN (?, ?, ?) THEN 1 ELSE 0 END) AS open_count,
-            SUM(CASE WHEN status = ? OR customer_refunded_at IS NOT NULL THEN 1 ELSE 0 END) AS completed_count,
-            COALESCE(SUM(CASE WHEN status != ? THEN gross_refund_amount ELSE 0 END), 0) AS gross_amount,
-            COALESCE(SUM(CASE WHEN status != ? THEN refund_discount_amount ELSE 0 END), 0) AS discount_amount,
-            COALESCE(SUM(CASE WHEN status != ? THEN other_fee_deduction ELSE 0 END), 0) AS other_fee_deduction,
-            COALESCE(SUM(CASE WHEN status = ? OR customer_refunded_at IS NOT NULL THEN due_adjusted_amount ELSE 0 END), 0) AS due_adjusted_amount,
-            COALESCE(SUM(CASE WHEN status != ? THEN partner_share_amount ELSE 0 END), 0) AS partner_share_amount
+        $settledQuery = clone $query;
+        $summary = (clone $settledQuery)->selectRaw('
+            COUNT(*) AS refunded_count,
+            COALESCE(SUM(COALESCE(NULLIF(gross_refund_amount, 0), refunded_amount, 0)), 0) AS refund_amount,
+            COALESCE(SUM(CASE WHEN refund_type != ? THEN refund_discount_amount ELSE 0 END), 0) AS discount_amount,
+            COALESCE(SUM(due_adjusted_amount), 0) AS due_adjusted_amount,
+            COALESCE(SUM(CASE WHEN refund_type != ? THEN partner_share_amount ELSE 0 END), 0) AS partner_share_amount,
+            COALESCE(SUM(CASE WHEN refund_type != ? THEN company_retained_amount ELSE 0 END), 0) AS company_retained_amount
         ', [
-            RefundStatus::Requested->value,
-            RefundStatus::PartnerApproved->value,
-            RefundStatus::PaymentDetailsAdded->value,
-            RefundStatus::Completed->value,
-            RefundStatus::Cancelled->value,
-            RefundStatus::Cancelled->value,
-            RefundStatus::Cancelled->value,
-            RefundStatus::Completed->value,
-            RefundStatus::Cancelled->value,
+            'extra_payment',
+            'extra_payment',
+            'extra_payment',
         ])->first();
 
         $paidCustomerRefund = RefundCustomerPayment::query()
             ->where('status', 'paid')
-            ->whereIn('refund_id', (clone $activeQuery)->select('refunds.id'))
+            ->whereIn('refund_id', (clone $settledQuery)->select('refunds.id'))
+            ->whereHas('refund', fn (Builder $refund): Builder => $refund->where('refund_type', '!=', 'extra_payment'))
             ->sum('amount');
-        $extraPaymentRefundPaid = $this->extraPaymentRefundPaid(clone $activeQuery);
+        $extraPaymentRefundPaid = $this->extraPaymentRefundPaid(clone $settledQuery);
 
         return [
-            'request_count' => (int) $summary->request_count,
-            'open_count' => (int) $summary->open_count,
-            'completed_count' => (int) $summary->completed_count,
-            'gross_amount' => number_format((float) $summary->gross_amount, 2, '.', ''),
+            'refunded_count' => (int) $summary->refunded_count,
+            'refund_amount' => number_format((float) $summary->refund_amount, 2, '.', ''),
             'discount_amount' => number_format((float) $summary->discount_amount, 2, '.', ''),
-            'other_fee_deduction' => number_format((float) $summary->other_fee_deduction, 2, '.', ''),
             'due_adjusted_amount' => number_format((float) $summary->due_adjusted_amount, 2, '.', ''),
             'partner_share_amount' => number_format((float) $summary->partner_share_amount, 2, '.', ''),
+            'company_retained_amount' => number_format((float) $summary->company_retained_amount, 2, '.', ''),
             'customer_refund_paid' => number_format((float) $paidCustomerRefund, 2, '.', ''),
             'extra_payment_refund_paid' => number_format($extraPaymentRefundPaid, 2, '.', ''),
+            'refund_outflow_amount' => number_format(
+                (float) $paidCustomerRefund
+                    + (float) $summary->partner_share_amount
+                    + $extraPaymentRefundPaid,
+                2,
+                '.',
+                ''
+            ),
         ];
     }
 
@@ -185,12 +187,19 @@ class RefundReportService
             'company_name' => $sale?->companies?->name ?? 'N/A',
             'journey_date' => $sale?->journey_date,
             'requested_at' => $refund->requested_at?->toDateTimeString(),
+            'refunded_at' => ($refund->customer_refunded_at ?? $refund->updated_at)?->toDateTimeString(),
             'refund_type' => $refund->refund_type,
-            'status' => $refund->status,
+            'status' => $isCompleted ? RefundStatus::Completed->value : $refund->status,
             'refunded_number_of_tickets' => (int) $refund->refunded_number_of_tickets,
-            'gross_refund_amount' => number_format((float) ($refund->gross_refund_amount ?? $refund->refunded_amount), 2, '.', ''),
+            'gross_refund_amount' => number_format(
+                (float) $refund->gross_refund_amount > 0
+                    ? (float) $refund->gross_refund_amount
+                    : (float) $refund->refunded_amount,
+                2,
+                '.',
+                ''
+            ),
             'refund_discount_amount' => number_format((float) $refund->refund_discount_amount, 2, '.', ''),
-            'other_fee_deduction' => number_format((float) $refund->other_fee_deduction, 2, '.', ''),
             'customer_charge_amount' => number_format((float) $refund->customer_charge_amount, 2, '.', ''),
             'partner_share_amount' => number_format((float) $refund->partner_share_amount, 2, '.', ''),
             'company_retained_amount' => number_format((float) $refund->company_retained_amount, 2, '.', ''),

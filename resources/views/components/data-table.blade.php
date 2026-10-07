@@ -5,7 +5,7 @@
     'order' => [[0, 'asc']],
     'ordering' => true,
     'delegateActions' => true,
-    'pageLength' => 25,
+    'pageLength' => 10,
     'lengthMenu' => [[10, 25, 50, 75, 100, 200, 300, 400, 500], [10, 25, 50, 75, 100, 200, 300, 400, 500]],
     'buttons' => ['copy', 'excel', 'csv', 'pdf', 'print', ['extend' => 'colvis', 'text' => 'Column Visibility']],
     'loadingText' => 'Loading data...',

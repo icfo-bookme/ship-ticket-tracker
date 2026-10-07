@@ -78,9 +78,11 @@ it('leaves sales older than seven days out of the default window', function () {
         ->assertJsonPath('totals.total_number_of_tickets', 4);
 });
 
-it('shows the same global available cash as cash collection regardless of report filters', function () {
-    reportSale($this->ship, $this->company, [
+it('shows filter-scoped receipts and refunds before cashout in the report', function () {
+    $filteredSale = reportSale($this->ship, $this->company, [
         'customer_name' => 'Filtered Sale',
+        'ticket_fee' => 90,
+        'total_payable' => 90,
         'received_amount' => 120,
     ]);
     reportSale($this->ship, $this->company, [
@@ -97,13 +99,31 @@ it('shows the same global available cash as cash collection regardless of report
         'entry_by' => $this->admin->id,
         'cashout_amount' => 30,
     ]);
+    $refund = Refund::create([
+        'sales_id' => $filteredSale->id,
+        'status' => 'completed',
+        'refunded_number_of_tickets' => 0,
+        'refund_type' => 'partial',
+        'refunded_amount' => 15,
+        'customer_refund_amount' => 10,
+        'partner_share_amount' => 5,
+        'due_adjusted_amount' => 40,
+    ]);
+    RefundCustomerPayment::create([
+        'refund_id' => $refund->id,
+        'amount' => 10,
+        'status' => 'paid',
+        'paid_at' => now(),
+    ]);
 
     $this->actingAs($this->admin)
         ->getJson('/reports?draw=1&start=0&length=10&search[value]=Filtered%20Sale')
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('totals.total_received_amount', '120.00')
-        ->assertJsonPath('totals.net_cash', '170.00');
+        ->assertJsonPath('totals.total_extra_received_amount', '30.00')
+        ->assertJsonPath('totals.report_refund_outflow', '15.00')
+        ->assertJsonPath('totals.report_net_before_cashout', '105.00');
 });
 
 it('preselects the last seven days on the report page', function () {
@@ -119,16 +139,41 @@ it('renders the sales report filters and summary targets', function () {
         ->get('/admin/sales-reports')
         ->assertOk()
         ->assertSee('id="salesTable"', false)
+        ->assertSee('&quot;pageLength&quot;:10', false)
         ->assertSee('id="saleReportDetailModal"', false)
         ->assertSee('data-close-modal="saleReportDetailModal"', false)
         ->assertDontSee('data-modal-hide="saleReportDetailModal"', false)
-        ->assertSee('Ticket Price / Other Fee')
+        ->assertSee('Ticket Price / Other Fee / Discount')
         ->assertSee('Received Amount')
         ->assertSee('id="totalSellTickets"', false)
-        ->assertDontSee('id="totalCustomerRefundPaid"', false)
+        ->assertSee('id="totalCompletedTicketRefundAmount"', false)
+        ->assertSee('Gross Ticket Refund')
+        ->assertSee('Net Ticket Refund')
+        ->assertSee('Refunds &amp; Adjustments', false)
+        ->assertSee('BFTN Settlement')
+        ->assertSee('Filtered Cash Summary')
+        ->assertSee('id="netSalesAmount"', false)
+        ->assertSee('Sales After Ticket Refunds')
+        ->assertDontSee('Ticket Sales After Discount = Ticket Value')
+        ->assertDontSee('Available Net Cash is global and is not affected by the report filters.')
+        ->assertSee('id="totalExtraRefundedAmount"', false)
+        ->assertSee('Extra Payment Refund Paid')
+        ->assertSee('id="totalDueAdjustedAmount"', false)
+        ->assertSee('id="totalCompanyRetainedAmount"', false)
+        ->assertSee('id="totalBftnPendingAmount"', false)
+        ->assertSee('id="totalBftnReceivedAmount"', false)
+        ->assertSee('id="totalReceivedAmount"', false)
+        ->assertSee('id="totalExtraReceivedAmount"', false)
+        ->assertSee('Extra Payment Received (Included in Total Received)')
+        ->assertSee('id="reportRefundOutflow"', false)
+        ->assertSee('Refund Outflow (Customer + Partner + Extra Refunds)')
+        ->assertDontSee('id="cashCollectionTotalCashout"', false)
+        ->assertSee('id="totalCustomerRefundPaid"', false)
+        ->assertSee('id="totalPartnerShareAmount"', false)
+        ->assertSee('id="totalRefundDiscountAmount"', false)
+        ->assertSee('id="reportNetBeforeCashout"', false)
+        ->assertSee('Net Receipts Before Cashout')
         ->assertDontSee('Completed Ticket Refunds')
-        ->assertDontSee('id="totalExtraRefundedAmount"', false)
-        ->assertDontSee('Extra Payment Refund Paid')
         ->assertSee('id="toggleAdvancedFilters"', false)
         ->assertSee('id="advancedReportFilters"', false)
         ->assertSee('More filters')
@@ -137,7 +182,15 @@ it('renders the sales report filters and summary targets', function () {
         ->assertDontSee('id="totalBftnAmount"', false);
 
     expect(strpos($response->getContent(), 'id="salesTable"'))
-        ->toBeLessThan(strpos($response->getContent(), 'id="totalSellTickets"'));
+        ->toBeLessThan(strpos($response->getContent(), 'id="totalSellTickets"'))
+        ->and(strpos($response->getContent(), 'id="totalBftnReceivedAmount"'))
+        ->toBeLessThan(strpos($response->getContent(), 'id="reportRefundOutflow"'))
+        ->and(strpos($response->getContent(), 'id="totalReceivedAmount"'))
+        ->toBeLessThan(strpos($response->getContent(), 'id="reportRefundOutflow"'))
+        ->and(strpos($response->getContent(), 'id="reportRefundOutflow"'))
+        ->toBeLessThan(strpos($response->getContent(), 'id="reportNetBeforeCashout"'))
+        ->and(strpos($response->getContent(), 'border-emerald-300 bg-emerald-50'))
+        ->toBeLessThan(strpos($response->getContent(), 'id="reportNetBeforeCashout"'));
 });
 
 it('includes every payment record in the sale report details payload', function () {
@@ -232,7 +285,8 @@ it('reports completed ticket refund allocations separately from extra payment re
     $sale = reportSale($this->ship, $this->company, [
         'customer_name' => 'Refunded Report Customer',
         'ticket_fee' => 100,
-        'total_payable' => 100,
+        'discount_amount' => 10,
+        'total_payable' => 90,
         'received_amount' => 120,
         'due_amount' => 0,
     ]);
@@ -280,16 +334,22 @@ it('reports completed ticket refund allocations separately from extra payment re
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('totals.total_refunded_tickets', 1)
-        ->assertJsonPath('totals.total_gross_refund_amount', '50.00')
-        ->assertJsonPath('totals.total_other_fee_deduction', '2.00')
+        ->assertJsonPath('totals.total_ticket_sales_after_discount', '90.00')
+        ->assertJsonPath('totals.total_gross_ticket_refund_amount', '50.00')
+        ->assertJsonPath('totals.total_completed_ticket_refund_amount', '47.00')
         ->assertJsonPath('totals.total_refund_discount_amount', '3.00')
         ->assertJsonPath('totals.total_due_adjusted_amount', '5.00')
         ->assertJsonPath('totals.total_customer_refund_paid', '35.00')
         ->assertJsonPath('totals.total_partner_share_amount', '4.00')
         ->assertJsonPath('totals.total_company_retained_amount', '1.00')
         ->assertJsonPath('totals.total_extra_refunded_amount', '20.00')
-        ->assertJsonPath('totals.net_cash', '65.00')
+        ->assertJsonPath('totals.net_sales_amount', '43.00')
+        ->assertJsonPath('totals.report_refund_outflow', '59.00')
+        ->assertJsonPath('totals.report_net_before_cashout', '61.00')
         ->assertJsonPath('data.0.gross_refund_amount', 50)
+        ->assertJsonPath('data.0.discount_amount', '10.00')
+        ->assertJsonPath('data.0.refunded_amount', 47)
+        ->assertJsonPath('data.0.due_adjusted_amount', 5)
         ->assertJsonPath('data.0.customer_refund_paid', 35)
         ->assertJsonPath('data.0.extra_refunded_amount', 20)
         ->assertJsonPath('data.0.net_cash', 61);
@@ -377,19 +437,32 @@ it('creates a refund request for extra received amount', function () {
 });
 
 it('separates bftn pending and received report filters', function () {
-    $pending = reportSale($this->ship, $this->company, ['bftn_status' => 'yes']);
-    $received = reportSale($this->ship, $this->company, ['bftn_status' => 'yes']);
+    $pending = reportSale($this->ship, $this->company, [
+        'bftn_status' => 'yes',
+        'received_amount' => 125,
+    ]);
+    $received = reportSale($this->ship, $this->company, [
+        'bftn_status' => 'yes',
+        'received_amount' => 275,
+    ]);
     Bftn::create(['sales_id' => $pending->id, 'received_status' => 0]);
     Bftn::create(['sales_id' => $received->id, 'received_status' => 1]);
 
     $this->actingAs($this->admin)
-        ->getJson('/reports?draw=1&start=0&length=10&bftn_status=pending')
+        ->getJson('/reports?draw=1&start=0&length=10')
+        ->assertOk()
+        ->assertJsonCount(2, 'data')
+        ->assertJsonPath('totals.total_bftn_pending_amount', '125.00')
+        ->assertJsonPath('totals.total_bftn_received_amount', '275.00');
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?draw=2&start=0&length=10&bftn_status=pending')
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $pending->id);
 
     $this->actingAs($this->admin)
-        ->getJson('/reports?draw=2&start=0&length=10&bftn_status=received')
+        ->getJson('/reports?draw=3&start=0&length=10&bftn_status=received')
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $received->id);

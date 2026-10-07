@@ -5,14 +5,12 @@ namespace App\Services\Reports;
 use App\Enums\SaleStatus;
 use App\Models\Payment;
 use App\Models\ShipTicketSale;
-use App\Services\Finance\CashCollectionService;
 use App\Services\Finance\ExtraPaymentService;
 use Illuminate\Http\Request;
 
 class SalesReportService
 {
     public function __construct(
-        private readonly CashCollectionService $cashCollectionService,
         private readonly ExtraPaymentService $extraPaymentService,
     ) {}
 
@@ -41,6 +39,9 @@ class SalesReportService
 
         $sales = $query->skip($start)->take($length)->get();
         $totals = $this->totals($filters, $searchValue);
+        $refundOutflow = $totals->total_customer_refund_paid
+            + $totals->total_extra_refunded_amount
+            + $totals->total_partner_share_amount;
 
         return [
             'draw' => $draw,
@@ -53,13 +54,14 @@ class SalesReportService
                 'total_other_fee' => number_format($totals->total_other_fee, 2),
                 'total_discount_amount' => number_format($totals->total_discount_amount, 2),
                 'total_payable' => number_format($totals->total_payable, 2),
+                'total_ticket_sales_after_discount' => number_format($totals->total_ticket_fee - $totals->total_discount_amount, 2),
                 'total_received_amount' => number_format($totals->total_received_amount, 2),
                 'total_extra_received_amount' => number_format($totals->total_extra_received_amount, 2),
                 'total_extra_refunded_amount' => number_format($totals->total_extra_refunded_amount, 2),
                 'total_refunded_tickets' => $totals->total_refunded_tickets,
                 'total_due_amount' => number_format($totals->total_due_amount, 2),
-                'total_gross_refund_amount' => number_format($totals->total_gross_refund_amount, 2),
-                'total_other_fee_deduction' => number_format($totals->total_other_fee_deduction, 2),
+                'total_completed_ticket_refund_amount' => number_format($totals->total_completed_ticket_refund_amount, 2),
+                'total_gross_ticket_refund_amount' => number_format($totals->total_gross_ticket_refund_amount, 2),
                 'total_refund_discount_amount' => number_format($totals->total_refund_discount_amount, 2),
                 'total_customer_refund_paid' => number_format($totals->total_customer_refund_paid, 2),
                 'total_due_adjusted_amount' => number_format($totals->total_due_adjusted_amount, 2),
@@ -71,8 +73,14 @@ class SalesReportService
                 'total_bftn_amount' => number_format($totals->total_bftn_amount, 2),
                 'total_bftn_pending_amount' => number_format($totals->total_bftn_pending_amount, 2),
                 'total_bftn_received_amount' => number_format($totals->total_bftn_received_amount, 2),
-                'net_cash' => number_format($this->cashCollectionService->summary()['availableCashAmount'], 2),
-                'net_sales_amount' => number_format($totals->total_received_amount - $totals->total_customer_refund_paid - $totals->total_extra_refunded_amount, 2),
+                'report_refund_outflow' => number_format($refundOutflow, 2),
+                'report_net_before_cashout' => number_format($totals->total_received_amount - $refundOutflow, 2),
+                'net_sales_amount' => number_format(
+                    $totals->total_ticket_fee
+                        - $totals->total_discount_amount
+                        - $totals->total_completed_ticket_refund_amount,
+                    2
+                ),
                 'payment_method_totals' => $totals->payment_method_totals,
             ],
         ];
@@ -91,13 +99,14 @@ class SalesReportService
                 'total_other_fee' => '0.00',
                 'total_discount_amount' => '0.00',
                 'total_payable' => '0.00',
+                'total_ticket_sales_after_discount' => '0.00',
                 'total_received_amount' => '0.00',
                 'total_extra_received_amount' => '0.00',
                 'total_extra_refunded_amount' => '0.00',
                 'total_refunded_tickets' => 0,
                 'total_due_amount' => '0.00',
-                'total_gross_refund_amount' => '0.00',
-                'total_other_fee_deduction' => '0.00',
+                'total_completed_ticket_refund_amount' => '0.00',
+                'total_gross_ticket_refund_amount' => '0.00',
                 'total_refund_discount_amount' => '0.00',
                 'total_customer_refund_paid' => '0.00',
                 'total_due_adjusted_amount' => '0.00',
@@ -109,7 +118,8 @@ class SalesReportService
                 'total_bftn_amount' => '0.00',
                 'total_bftn_pending_amount' => '0.00',
                 'total_bftn_received_amount' => '0.00',
-                'net_cash' => '0.00',
+                'report_refund_outflow' => '0.00',
+                'report_net_before_cashout' => '0.00',
                 'net_sales_amount' => '0.00',
                 'payment_method_totals' => [],
             ],
@@ -290,8 +300,14 @@ class SalesReportService
             COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND COALESCE((SELECT received_status FROM bftn WHERE bftn.sales_id = ship_ticket_sales.id LIMIT 1), 0) = 0 THEN ship_ticket_sales.received_amount ELSE 0 END), 0) AS total_bftn_pending_amount,
             COALESCE(SUM(CASE WHEN ship_ticket_sales.bftn_status = "yes" AND COALESCE((SELECT received_status FROM bftn WHERE bftn.sales_id = ship_ticket_sales.id LIMIT 1), 0) = 1 THEN ship_ticket_sales.received_amount ELSE 0 END), 0) AS total_bftn_received_amount,
             COALESCE(SUM((SELECT COALESCE(SUM(refunded_number_of_tickets), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND COALESCE(refunds.refund_type, "partial") != "extra_payment" AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_refunded_tickets,
-            COALESCE(SUM((SELECT COALESCE(SUM(COALESCE(gross_refund_amount, refunded_amount, 0)), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND COALESCE(refunds.refund_type, "partial") != "extra_payment" AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_gross_refund_amount,
-            COALESCE(SUM((SELECT COALESCE(SUM(other_fee_deduction), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND COALESCE(refunds.refund_type, "partial") != "extra_payment" AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_other_fee_deduction,
+            COALESCE(SUM((SELECT COALESCE(SUM(COALESCE(NULLIF(gross_refund_amount, 0), refunded_amount, 0)), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND COALESCE(refunds.refund_type, "partial") != "extra_payment" AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_gross_ticket_refund_amount,
+            COALESCE(SUM((SELECT COALESCE(SUM(CASE
+                WHEN COALESCE(NULLIF(refunds.gross_refund_amount, 0), refunds.refunded_amount, 0)
+                    - COALESCE(refunds.refund_discount_amount, 0) > 0
+                THEN COALESCE(NULLIF(refunds.gross_refund_amount, 0), refunds.refunded_amount, 0)
+                    - COALESCE(refunds.refund_discount_amount, 0)
+                ELSE 0
+            END), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND COALESCE(refunds.refund_type, "partial") != "extra_payment" AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_completed_ticket_refund_amount,
             COALESCE(SUM((SELECT COALESCE(SUM(refund_discount_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND COALESCE(refunds.refund_type, "partial") != "extra_payment" AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_refund_discount_amount,
             COALESCE(SUM((SELECT COALESCE(SUM(due_adjusted_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND COALESCE(refunds.refund_type, "partial") != "extra_payment" AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_due_adjusted_amount,
             COALESCE(SUM((SELECT COALESCE(SUM(partner_share_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND COALESCE(refunds.refund_type, "partial") != "extra_payment" AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))), 0) AS total_partner_share_amount,
@@ -313,8 +329,15 @@ class SalesReportService
         $ticketRefunds = $completedRefunds->where('refund_type', '!=', 'extra_payment');
         $extraRefunds = $completedRefunds->where('refund_type', 'extra_payment');
         $refundedTickets = (int) $ticketRefunds->sum('refunded_number_of_tickets');
-        $refundedAmount = (float) $ticketRefunds->sum(
+        $grossRefundedAmount = (float) $ticketRefunds->sum(
             fn ($refund): float => (float) ($refund->gross_refund_amount ?? $refund->refunded_amount ?? 0)
+        );
+        $refundedAmount = (float) $ticketRefunds->sum(
+            fn ($refund): float => max(
+                (float) ($refund->gross_refund_amount ?? $refund->refunded_amount ?? 0)
+                    - (float) $refund->refund_discount_amount,
+                0,
+            )
         );
         $customerRefundPaid = (float) $ticketRefunds->sum(fn ($refund): float => (float) $refund->customerPayments
             ->where('status', 'paid')
@@ -357,8 +380,7 @@ class SalesReportService
             'refund_status' => $refundStatus,
             'refunded_tickets' => $refundedTickets,
             'refunded_amount' => $refundedAmount,
-            'gross_refund_amount' => $refundedAmount,
-            'other_fee_deduction' => (float) $ticketRefunds->sum('other_fee_deduction'),
+            'gross_refund_amount' => $grossRefundedAmount,
             'refund_discount_amount' => (float) $ticketRefunds->sum('refund_discount_amount'),
             'customer_charge_percent' => $ticketRefunds->last()?->customer_charge_percent,
             'partner_share_percent' => $ticketRefunds->last()?->partner_share_percent,

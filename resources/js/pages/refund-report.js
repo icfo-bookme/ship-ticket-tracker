@@ -7,13 +7,11 @@ if (table) {
     const filterIds = [
         'refundReportShip',
         'refundReportCompany',
-        'refundReportStatus',
         'refundReportType',
     ];
     const filters = () => ({
         ship_id: document.getElementById('refundReportShip').value,
         company_id: document.getElementById('refundReportCompany').value,
-        status: document.getElementById('refundReportStatus').value,
         refund_type: document.getElementById('refundReportType').value,
     });
     const columns = [
@@ -21,12 +19,11 @@ if (table) {
         { data: 'sales_id' },
         { data: null, render: (data, type, row) => type === 'display' ? escapeHtml(row.customer_name) : row.customer_name },
         { data: 'ship_name', render: (data) => escapeHtml(data || 'N/A') },
-        { data: 'requested_at', render: formatDateTime },
+        { data: 'refunded_at', render: formatDateTime },
         { data: 'refund_type' },
         { data: 'refunded_number_of_tickets' },
         { data: 'gross_refund_amount', render: formatMoney },
         { data: 'refund_discount_amount', render: formatMoney },
-        { data: 'other_fee_deduction', render: formatMoney },
         { data: 'customer_charge_amount', render: formatMoney },
         { data: 'partner_share_amount', render: formatMoney },
         { data: 'company_retained_amount', render: formatMoney },
@@ -57,7 +54,7 @@ if (table) {
     document.getElementById('clearRefundReportFilters')?.addEventListener('click', () => {
         filterIds.forEach((id) => {
             const element = document.getElementById(id);
-            if (element) element.value = id === 'refundReportStatus' || id === 'refundReportType' ? 'all' : '';
+            if (element) element.value = id === 'refundReportType' ? 'all' : '';
         });
         refreshDataTable(table.id);
     });
@@ -83,15 +80,14 @@ function formatDateTime(value) {
 
 function updateSummary(totals) {
     const ids = {
-        request_count: 'refundReportCount',
-        open_count: 'refundReportOpen',
-        completed_count: 'refundReportCompleted',
-        gross_amount: 'refundReportGross',
+        refunded_count: 'refundReportCount',
+        refund_amount: 'refundReportTotal',
         discount_amount: 'refundReportDiscount',
-        other_fee_deduction: 'refundReportOtherFee',
         due_adjusted_amount: 'refundReportDueAdjusted',
+        company_retained_amount: 'refundReportCompanyRetained',
         customer_refund_paid: 'refundReportPaid',
         extra_payment_refund_paid: 'refundReportExtraPaid',
+        refund_outflow_amount: 'refundReportOutflow',
     };
     Object.entries(ids).forEach(([key, id]) => {
         const element = document.getElementById(id);
@@ -112,10 +108,10 @@ function showRefundDetails(refund) {
         ['Ship', refund.ship_name],
         ['Journey Date', refund.journey_date],
         ['Requested At', refund.requested_at],
+        ['Refunded At', refund.refunded_at],
         ['Refund Type / Status', `${refund.refund_type} / ${refund.status}`],
         ['Gross Refund', formatMoney(refund.gross_refund_amount)],
         ['Refund Discount', formatMoney(refund.refund_discount_amount)],
-        ['Other Fee Deducted', formatMoney(refund.other_fee_deduction)],
         ['Customer Charge', formatMoney(refund.customer_charge_amount)],
         ['Partner Share', formatMoney(refund.partner_share_amount)],
         ['Company Retained', formatMoney(refund.company_retained_amount)],

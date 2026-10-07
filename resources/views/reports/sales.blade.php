@@ -104,14 +104,14 @@
             'Mobile',
             'Ship Name',
             'Number Of Tickets',
-            'Ticket Price / Other Fee',
+            'Ticket Price / Other Fee / Discount',
             'Total Payable',
             'Received Amount',
             'BFTN',
             'Net Cash',
             'Due Amount',
             'Action',
-        ]" url="/reports" :ordering="false" :delegateActions="false" :order="[]"
+        ]" url="/reports" :ordering="false" :delegateActions="false" :pageLength="10" :order="[]"
             :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />
 
         <x-entity-modal id="saleReportDetailModal" title="Sale Details" maxWidth="2xl" :hideFooter="true">
@@ -120,16 +120,48 @@
 
         <div class="mt-6 grid grid-cols-1 gap-6 max-w-[92%]">
             <section>
-                <h3 class="mb-3 text-base font-semibold text-gray-800">Sales Summary</h3>
+                <h3 class="mb-3 text-base font-semibold text-gray-800">Sales</h3>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <x-report-summary-card id="totalSellTickets" label="Tickets Sold" />
                     <x-report-summary-card id="totalSoldTicketsAmount" label="Ticket Value" />
-                    <x-report-summary-card id="totalOtherFees" label="Other Fees Collected" />
                     <x-report-summary-card id="totalDiscountAmount" label="Sales Discount" />
+                    <x-report-summary-card id="ticketSalesAfterDiscount" label="Ticket Sales After Discount" />
+                    <x-report-summary-card id="totalOtherFees" label="Other Fees Collected" />
                     <x-report-summary-card id="totalSold" label="Total Payable" />
-                    <x-report-summary-card id="totalReceivedAmount" label="Total Received" />
+                    <x-report-summary-card id="totalExtraReceivedAmount" label="Extra Payment Received (Included in Total Received)" />
                     <x-report-summary-card id="totalDueAmount" label="Current Due" />
-                    <x-report-summary-card id="netCash" label="Available Net Cash" />
+                    <x-report-summary-card id="netSalesAmount" label="Sales After Ticket Refunds" />
+                </div>
+            </section>
+
+            <section>
+                <h3 class="mb-3 text-base font-semibold text-gray-800">Refunds &amp; Adjustments</h3>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <x-report-summary-card id="totalGrossTicketRefundAmount" label="Gross Ticket Refund" />
+                    <x-report-summary-card id="totalRefundDiscountAmount" label="Refund Discount" />
+                    <x-report-summary-card id="totalCompletedTicketRefundAmount" label="Net Ticket Refund" />
+                    <x-report-summary-card id="totalCustomerRefundPaid" label="Customer Refund Paid" />
+                    <x-report-summary-card id="totalPartnerShareAmount" label="Partner Share" />
+                    <x-report-summary-card id="totalCompanyRetainedAmount" label="Company Retained" />
+                    <x-report-summary-card id="totalDueAdjustedAmount" label="Due Adjusted (Non-cash)" />
+                    <x-report-summary-card id="totalExtraRefundedAmount" label="Extra Payment Refund Paid" />
+                </div>
+            </section>
+
+            <section>
+                <h3 class="mb-3 text-base font-semibold text-gray-800">BFTN Settlement</h3>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <x-report-summary-card id="totalBftnPendingAmount" label="BFTN Pending Amount (Filtered)" />
+                    <x-report-summary-card id="totalBftnReceivedAmount" label="BFTN Received Amount (Filtered)" />
+                </div>
+            </section>
+
+            <section>
+                <h3 class="mb-3 text-base font-semibold text-gray-800">Filtered Cash Summary</h3>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <x-report-summary-card id="totalReceivedAmount" label="Total Received (BFTN Included)" />
+                    <x-report-summary-card id="reportRefundOutflow" label="Refund Outflow (Customer + Partner + Extra Refunds)" />
+                    <x-report-summary-card id="reportNetBeforeCashout" label="Net Receipts Before Cashout" :emphasis="true" />
                 </div>
             </section>
 

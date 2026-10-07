@@ -12,7 +12,7 @@ class TicketSalesSystem {
 
     //  INITIALIZATION 
     init() {
-        document.addEventListener("DOMContentLoaded", async () => {
+        const initialize = async () => {
             window.ticketSaleSaved = document.getElementById('ticketForm')?.dataset.ticketSaleSaved === '1';
             this.clearDraftAfterSuccessfulSubmit();
             this.setupEventListeners();
@@ -20,7 +20,15 @@ class TicketSalesSystem {
             this.setupPageValidations();
             this.calculateAll();
             this.toggleReturnJourneySection();
-        });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize, { once: true });
+
+            return;
+        }
+
+        initialize();
     }
 
     setupPageValidations() {
@@ -268,7 +276,13 @@ class TicketSalesSystem {
     setupMainActionListeners() {
         this.addEventListener('reviewButton', 'click', () => this.handleReviewClick());
         this.addEventListener('resetDraftButton', 'click', () => this.resetDraftForm());
+        this.addEventListener('cancelDraftButton', 'click', () => this.cancelDraft());
         this.setupFormSubmitGuard();
+    }
+
+    cancelDraft() {
+        this.removeDraft();
+        window.location.assign('/ship-ticket-sales');
     }
 
     setupFormSubmitGuard() {

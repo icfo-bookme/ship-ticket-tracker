@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="max-w-7xl mx-auto p-6">
+    <div class="ship-ticket-create-page mx-auto w-full max-w-7xl min-w-0 bg-white p-3 sm:p-4 md:p-6">
         <div class="mb-1">
             <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Create New Ticket</h1>
             <p class="text-gray-600 dark:text-gray-400">Fill in the passenger details and ticket information below</p>
@@ -36,14 +36,14 @@
         @endif
 
         <!-- Form Card -->
-        <div class=" dark:bg-gray-800  rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <form id="ticketForm" data-ticket-sale-saved="{{ session()->has('success') ? '1' : '0' }}" action="{{ route('ship-ticket-sales.store') }}" method="POST" enctype="multipart/form-data"
-                    class="space-y-8 px-8">
+                    class="min-w-0 space-y-6 px-3 py-4 sm:px-5 sm:py-6 lg:space-y-8 lg:px-8">
                 @csrf
 
                 <!-- Customer & Contact Info -->
                 <div
-                    class="space-y-6 bg-blue-50 p-8 rounded-xl border border-green-200 dark:bg-green-900/20 dark:border-green-800">
+                    class="space-y-6 rounded-xl border border-green-200 bg-white p-4 sm:p-6 lg:p-8">
                     <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-user text-blue-950"></i>
@@ -177,7 +177,7 @@
 
                 <!-- Ship & Journey Info -->
                 <div
-                    class="space-y-6 bg-blue-50 p-8 rounded-xl border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                    class="space-y-6 rounded-xl border border-blue-200 bg-white p-4 sm:p-6 lg:p-8">
                     <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-route text-blue-950"></i>
@@ -229,7 +229,7 @@
 
                 <!-- Ticket Categories -->
                 <div
-                    class="space-y-6 bg-blue-50 p-8 rounded-xl border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
+                    class="space-y-6 rounded-xl border border-yellow-200 bg-white p-4 sm:p-6 lg:p-8">
                     <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-ticket text-blue-950"></i>
@@ -242,7 +242,7 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div
-                            class="border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6 bg-blue-50 dark:bg-blue-900/20 shadow-sm">
+                            class="rounded-xl border-2 border-blue-200 bg-white p-4 shadow-sm sm:p-6">
                             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
                                 <svg class="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
@@ -262,7 +262,7 @@
                         </div>
 
                         <!-- Return Journey Ticket Categories -->
-                        <div class="border-2 border-green-200 dark:border-green-800 rounded-xl p-6 bg-green-50 dark:bg-green-900/20 shadow-sm"
+                        <div class="rounded-xl border-2 border-green-200 bg-white p-4 shadow-sm sm:p-6"
                             id="returnJourneySection" style="display: none;">
                             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
                                 <svg class="w-5 h-5 mr-2 text-green-600 dark:text-green-400" fill="none"
@@ -285,7 +285,7 @@
 
                 <!-- Payment Details -->
                 <div
-                    class="space-y-6 bg-blue-50 p-8 rounded-xl border border-gray-200 dark:bg-gray-900/20 dark:border-gray-800">
+                    class="space-y-6 rounded-xl border border-gray-200 bg-white p-4 sm:p-6 lg:p-8">
                     <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-credit-card text-blue-950"></i>
@@ -310,7 +310,7 @@
 
                 <!-- Ticket Summary -->
                 <div
-                    class="space-y-6 bg-blue-50 p-8 rounded-xl border border-slate-200 dark:bg-slate-900/20 dark:border-slate-800">
+                    class="space-y-6 rounded-xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
                     <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
 
                         <div class="flex items-center gap-2">
@@ -323,7 +323,7 @@
                     </div>
 
                     <div
-                        class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm">
+                        class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div>
                                 <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -371,7 +371,7 @@
 
                 <!-- Payment Summary -->
                 <div
-                    class="space-y-6 bg-blue-50 p-8 rounded-xl border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                    class="space-y-6 rounded-xl border border-blue-200 bg-white p-4 sm:p-6 lg:p-8">
                     <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-credit-card text-blue-950"></i>
@@ -452,7 +452,7 @@
 
                 <!-- Address & Remarks -->
                 <div
-                    class="space-y-6 bg-blue-50 p-8 rounded-xl border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                    class="space-y-6 rounded-xl border border-blue-200 bg-white p-4 sm:p-6 lg:p-8">
                     <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-address-card text-blue-950"></i>
@@ -548,17 +548,17 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex items-center justify-end gap-4 pt-8 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex flex-col-reverse items-stretch justify-end gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center sm:gap-4 sm:pt-8 dark:border-gray-700">
                     <button type="button" id="resetDraftButton"
-                        class="px-6 py-3 text-[12px] font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50 focus:ring-4 focus:ring-red-100 dark:bg-gray-800 dark:text-red-300 dark:border-red-600 dark:hover:bg-red-900/20 transition shadow-sm">
+                        class="w-full rounded-lg border border-red-300 bg-white px-6 py-3 text-[12px] font-medium text-red-700 shadow-sm transition hover:bg-red-50 focus:ring-4 focus:ring-red-100 sm:w-auto">
                         Reset Form
                     </button>
-                    <a href="{{ route('ship-ticket-sales.create') }}"
-                        class="px-6 py-3 text-[12px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition shadow-sm">
+                    <a href="{{ route('ship-ticket-sales.index') }}" id="cancelDraftButton"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-6 py-3 text-[12px] font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:ring-4 focus:ring-gray-200 sm:w-auto">
                         Cancel
                     </a>
                     <button type="button" id="reviewButton"
-                        class="px-6 py-3 text-[12px] font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 dark:focus:ring-blue-800 transition shadow-sm flex items-center">
+                        class="flex w-full items-center rounded-lg bg-blue-600 px-6 py-3 text-[12px] font-medium text-white shadow-sm transition hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 sm:w-auto">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
@@ -579,14 +579,14 @@
         <div id="modalBackdrop" class="absolute inset-0 bg-black bg-opacity-50 transition-opacity"></div>
 
         <!-- Modal Container -->
-        <div class="relative w-full max-w-2xl mx-auto my-8 p-4">
+        <div class="relative mx-auto my-2 w-full max-w-2xl p-2 sm:my-8 sm:p-4">
             <!-- Modal Content -->
             <div
-                class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden">
+                class="relative flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-xl bg-white shadow-xl sm:max-h-[90vh]">
 
                 <!-- Header -->
                 <div
-                    class="flex items-center justify-between p-6 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                    class="flex shrink-0 items-center justify-between border-b border-gray-200 bg-white p-4 sm:p-6">
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
                         <svg class="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
@@ -607,21 +607,21 @@
                 </div>
 
                 <!-- Body (Scrollable) -->
-                <div class="p-6 overflow-y-auto flex-1">
+                <div class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
                     <div id="reviewContent" class="space-y-6">
                         <!-- Populated dynamically by JS -->
                     </div>
                 </div>
 
                 <!-- Footer -->
-                <div class="flex justify-end p-6 border-t dark:border-gray-700 gap-3 bg-gray-50 dark:bg-gray-900">
+                <div class="flex shrink-0 flex-col-reverse justify-end gap-3 border-t border-gray-200 bg-white p-4 sm:flex-row sm:p-6">
                     <button type="button" id="editInfoButton"
-                        class="px-5 py-2.5 text-[12px] font-medium text-gray-800 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition shadow-sm">
+                        class="w-full rounded-lg bg-gray-200 px-5 py-2.5 text-[12px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-300 sm:w-auto">
                         Edit Information
                     </button>
 
                     <button type="submit" form="ticketForm"
-                        class="px-5 py-2.5 text-[12px] font-medium text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 rounded-lg dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 transition shadow-sm flex items-center">
+                        class="flex w-full items-center rounded-lg bg-green-600 px-5 py-2.5 text-[12px] font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-4 focus:ring-green-300 sm:w-auto">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
                             </path>

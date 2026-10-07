@@ -24,10 +24,7 @@ class CashCollectionService
         $totalReceivedAmount = (float) ShipTicketSale::where('status', '!=', SaleStatus::Pending->value)
             ->sum('received_amount');
 
-        $totalRefundedAmount = (float) Refund::query()
-            ->where('status', 'completed')
-            ->whereHas('sale', fn ($sales) => $sales->where('status', '!=', SaleStatus::Pending->value))
-            ->sum('customer_refund_amount');
+        $totalRefundedAmount = $this->totalRefundOutflow();
 
         $totalCashedOutAmount = (float) CashCollection::sum('cashout_amount');
         $availableCashAmount = $totalReceivedAmount - $totalRefundedAmount - $totalCashedOutAmount;
@@ -94,12 +91,18 @@ class CashCollectionService
     {
         $totalReceivedAmount = (float) ShipTicketSale::where('status', '!=', SaleStatus::Pending->value)
             ->sum('received_amount');
-        $totalRefundedAmount = (float) Refund::query()
-            ->where('status', 'completed')
-            ->whereHas('sale', fn ($sales) => $sales->where('status', '!=', SaleStatus::Pending->value))
-            ->sum('customer_refund_amount');
+        $totalRefundedAmount = $this->totalRefundOutflow();
         $totalCashedOutAmount = (float) CashCollection::sum('cashout_amount');
 
         return $totalReceivedAmount - $totalRefundedAmount - $totalCashedOutAmount;
+    }
+
+    private function totalRefundOutflow(): float
+    {
+        return (float) Refund::query()
+            ->where('status', 'completed')
+            ->whereHas('sale', fn ($sales) => $sales->where('status', '!=', SaleStatus::Pending->value))
+            ->selectRaw('COALESCE(SUM(customer_refund_amount + partner_share_amount), 0) AS total')
+            ->value('total');
     }
 }

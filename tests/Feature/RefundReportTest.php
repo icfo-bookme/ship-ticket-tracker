@@ -21,8 +21,13 @@ it('serves the separate refund report page and data endpoint to report viewers',
     $response = $this->actingAs($user)
         ->get(route('refund-reports.index'))
         ->assertOk()
-        ->assertSee('Refund Report')
+        ->assertSee('Refunded Report')
+        ->assertSee('Total Gross Refund Amount')
+        ->assertSee('Refund Outflow (Customer + Partner + Extra Refunds)')
+        ->assertSee('id="refundReportOutflow"', false)
         ->assertSee('refundReportTable')
+        ->assertDontSee('refundReportStatus')
+        ->assertDontSee('refundReportOpen')
         ->assertSee('refundReportTable-page-loader')
         ->assertSee('id="mobile-sidebar-toggle"', false)
         ->assertSee('id="sidebar-backdrop"', false)
@@ -40,7 +45,8 @@ it('serves the separate refund report page and data endpoint to report viewers',
         ->getJson(route('refund-reports.data'))
         ->assertOk()
         ->assertJsonPath('recordsTotal', 0)
-        ->assertJsonPath('totals.request_count', 0);
+        ->assertJsonPath('totals.refunded_count', 0)
+        ->assertJsonPath('totals.refund_outflow_amount', '0.00');
 });
 
 it('reports refund amounts, due adjustment preview, ticket details, and customer payments', function () {
@@ -64,7 +70,7 @@ it('reports refund amounts, due adjustment preview, ticket details, and customer
     ]);
     $refund = Refund::create([
         'sales_id' => $sale->id,
-        'status' => 'requested',
+        'status' => 'completed',
         'refund_type' => 'bulk',
         'refunded_number_of_tickets' => 2,
         'refunded_amount' => 100,
@@ -75,8 +81,11 @@ it('reports refund amounts, due adjustment preview, ticket details, and customer
         'customer_charge_amount' => 0,
         'partner_share_percent' => 0,
         'partner_share_amount' => 0,
-        'customer_refund_amount' => 90,
+        'company_retained_amount' => 5,
+        'customer_refund_amount' => 50,
+        'due_adjusted_amount' => 40,
         'requested_at' => now(),
+        'customer_refunded_at' => now(),
     ]);
     RefundTicket::create([
         'refund_id' => $refund->id,
@@ -94,12 +103,22 @@ it('reports refund amounts, due adjustment preview, ticket details, and customer
         'status' => 'paid',
         'paid_at' => now(),
     ]);
+    Refund::create([
+        'sales_id' => $sale->id,
+        'status' => 'completed',
+        'refund_type' => 'extra_payment',
+        'refunded_number_of_tickets' => 0,
+        'refunded_amount' => 20,
+        'gross_refund_amount' => 20,
+        'customer_refund_amount' => 20,
+        'requested_at' => now(),
+        'customer_refunded_at' => now(),
+    ]);
 
     $result = app(RefundReportService::class)->dataTable(new Request([
         'draw' => 3,
         'start' => 0,
         'length' => 10,
-        'status' => 'requested',
         'refund_type' => 'bulk',
         'ship_id' => $ship->id,
     ]));
@@ -112,12 +131,20 @@ it('reports refund amounts, due adjustment preview, ticket details, and customer
         ->and($result['data'][0]['final_customer_refund'])->toBe('50.00')
         ->and($result['data'][0]['customer_refund_paid'])->toBe('50.00')
         ->and($result['data'][0]['tickets'][0]['category_name'])->toBe('Deck seat')
-        ->and($result['totals']['open_count'])->toBe(1)
-        ->and($result['totals']['gross_amount'])->toBe('100.00')
-        ->and($result['totals']['customer_refund_paid'])->toBe('50.00');
+        ->and($result['totals']['refunded_count'])->toBe(1)
+        ->and($result['totals']['refund_amount'])->toBe('100.00')
+        ->and($result['totals']['company_retained_amount'])->toBe('5.00')
+        ->and($result['totals']['customer_refund_paid'])->toBe('50.00')
+        ->and($result['totals']['extra_payment_refund_paid'])->toBe('0.00')
+        ->and($result['totals']['refund_outflow_amount'])->toBe('50.00');
+
+    $allRefunds = app(RefundReportService::class)->dataTable(new Request([]));
+
+    expect($allRefunds['totals']['refund_amount'])->toBe('120.00')
+        ->and($allRefunds['totals']['refund_outflow_amount'])->toBe('70.00');
 });
 
-it('filters refund report rows by status and requested date', function () {
+it('lists only refunded records for the selected request date range', function () {
     $ship = Ship::create(['name' => 'Report Ship']);
     $sale = ShipTicketSale::create([
         'customer_name' => 'Completed Refund Customer',
@@ -150,8 +177,9 @@ it('filters refund report rows by status and requested date', function () {
     ]));
 
     expect($result['recordsFiltered'])->toBe(1)
-        ->and($result['totals']['completed_count'])->toBe(1)
-        ->and($result['data'][0]['status'])->toBe('completed');
+        ->and($result['totals']['refunded_count'])->toBe(1)
+        ->and($result['data'][0]['status'])->toBe('completed')
+        ->and($result['data'][0]['refunded_at'])->not->toBeNull();
 });
 
 it('reports extra payment refunds paid separately and excludes unpaid payments', function () {
@@ -191,11 +219,54 @@ it('reports extra payment refunds paid separately and excludes unpaid payments',
         'payment_method' => 'Bkash',
         'status' => 'pending',
     ]);
+    Refund::create([
+        'sales_id' => $sale->id,
+        'status' => 'cancelled',
+        'refund_type' => 'partial',
+        'refunded_number_of_tickets' => 1,
+        'refunded_amount' => 999,
+        'gross_refund_amount' => 999,
+        'requested_at' => now(),
+        'customer_refunded_at' => now(),
+    ]);
 
     $result = app(RefundReportService::class)->dataTable(new Request([]));
 
-    expect($result['totals']['extra_payment_refund_paid'])->toBe('12.00')
-        ->and($result['data'][0]['customer_refund_paid'])->toBe('12.00');
+    expect($result['recordsTotal'])->toBe(0)
+        ->and($result['totals']['extra_payment_refund_paid'])->toBe('0.00')
+        ->and($result['totals']['refund_amount'])->toBe('0.00')
+        ->and($result['totals']['customer_refund_paid'])->toBe('0.00');
+});
+
+it('falls back to the legacy refunded amount when gross refund amount is zero', function () {
+    $ship = Ship::create(['name' => 'Legacy Refund Ship']);
+    $sale = ShipTicketSale::create([
+        'customer_name' => 'Legacy Refund Customer',
+        'customer_mobile' => '01700000004',
+        'ship_id' => $ship->id,
+        'ticket_fee' => 40,
+        'total_payable' => 40,
+        'received_amount' => 40,
+        'due_amount' => 0,
+        'issued_date' => now()->toDateString(),
+        'number_of_ticket' => 1,
+        'status' => 'ticket-issued',
+    ]);
+    Refund::create([
+        'sales_id' => $sale->id,
+        'status' => 'completed',
+        'refund_type' => 'partial',
+        'refunded_number_of_tickets' => 1,
+        'refunded_amount' => 40,
+        'gross_refund_amount' => 0,
+        'requested_at' => now(),
+        'customer_refunded_at' => now(),
+    ]);
+
+    $result = app(RefundReportService::class)->dataTable(new Request([]));
+
+    expect($result['totals']['refund_amount'])->toBe('40.00')
+        ->and($result['data'][0]['gross_refund_amount'])->toBe('40.00');
 });
 
 it('counts a completed extra refund without payment rows as paid, matching extra payment accounting', function () {

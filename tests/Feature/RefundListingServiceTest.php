@@ -172,13 +172,13 @@ it('calculates partial refund totals from selected category quantities and appli
 
     expect($refund->gross_refund_amount)->toBe('38.00')
         ->and($refund->refund_discount_amount)->toBe('3.80')
-        ->and($refund->other_fee_deduction)->toBe('25.80')
+        ->and($refund->other_fee_deduction)->toBe('0.00')
         ->and($refund->customer_charge_amount)->toBe('1.90')
         ->and($refund->partner_share_amount)->toBe('1.52')
         ->and($refund->company_retained_amount)->toBe('0.38')
-        ->and($refund->customer_refund_amount)->toBe('6.50')
+        ->and($refund->customer_refund_amount)->toBe('32.30')
         ->and((float) $listing->sale->other_fee)->toBe(25.8)
-        ->and($listing->due_adjusted_amount)->toBe('6.50')
+        ->and($listing->due_adjusted_amount)->toBe('32.30')
         ->and($listing->customer_refund_after_due_adjustment)->toBe(0.0);
 });
 
@@ -227,16 +227,16 @@ it('creates a full bulk refund with returned category details and zero charge an
     expect($refund->refunded_number_of_tickets)->toBe(4)
         ->and($refund->gross_refund_amount)->toBe('38.00')
         ->and($refund->refund_discount_amount)->toBe('3.80')
-        ->and($refund->other_fee_deduction)->toBe('4.00')
+        ->and($refund->other_fee_deduction)->toBe('0.00')
         ->and($refund->customer_charge_percent)->toBe('0.00')
         ->and($refund->customer_charge_amount)->toBe('0.00')
         ->and($refund->partner_share_percent)->toBe('0.00')
         ->and($refund->partner_share_amount)->toBe('0.00')
-        ->and($refund->customer_refund_amount)->toBe('30.20')
+        ->and($refund->customer_refund_amount)->toBe('34.20')
         ->and($refund->tickets)->toHaveCount(2)
         ->and($refund->tickets->sum('refunded_quantity'))->toBe(4)
         ->and($listing->total_refund_tickets)->toBe(4)
-        ->and($listing->due_adjusted_amount)->toBe('30.20')
+        ->and($listing->due_adjusted_amount)->toBe('34.20')
         ->and($listing->customer_refund_after_due_adjustment)->toBe(0.0)
         ->and($listing->edit_categories)->toHaveCount(2);
 
@@ -244,9 +244,9 @@ it('creates a full bulk refund with returned category details and zero charge an
     $refund->refresh();
     $sale->refresh();
 
-    expect($refund->due_adjusted_amount)->toBe('30.20')
+    expect($refund->due_adjusted_amount)->toBe('34.20')
         ->and($refund->customer_refund_amount)->toBe('0.00')
-        ->and($sale->due_amount)->toBe('8.00')
+        ->and($sale->due_amount)->toBe('4.00')
         ->and($refund->customerPayments)->toHaveCount(0);
 });
 
@@ -287,7 +287,7 @@ it('rejects a partial refund quantity above the purchased category quantity', fu
     expect(Refund::query()->count())->toBe(0);
 });
 
-it('deducts the full gateway fee even when only part of the tickets are refunded', function () {
+it('does not deduct other fee from a partial ticket refund', function () {
     $ship = Ship::create(['name' => 'Test ship']);
     $package = ShipPackage::create([
         'ship_id' => $ship->id,
@@ -327,8 +327,8 @@ it('deducts the full gateway fee even when only part of the tickets are refunded
     $refund = Refund::query()->sole();
 
     expect($refund->gross_refund_amount)->toBe('10.00')
-        ->and($refund->other_fee_deduction)->toBe('2.00')
-        ->and($refund->customer_refund_amount)->toBe('8.00');
+        ->and($refund->other_fee_deduction)->toBe('0.00')
+        ->and($refund->customer_refund_amount)->toBe('10.00');
 });
 
 it('blocks completion of a legacy refund with a negative customer refund amount', function () {

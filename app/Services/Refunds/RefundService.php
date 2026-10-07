@@ -51,12 +51,10 @@ class RefundService
                     $grossAmount = round((float) $sale->ticket_fee, 2);
                     $this->ensureRefundableAmount($sale, $ticketCount, $grossAmount);
                     $refundDiscountAmount = min(max((float) $sale->discount_amount, 0), $grossAmount);
-                    $otherFeeDeduction = $this->otherFeeDeduction($sale);
                     $customerRefundAmount = $this->customerRefundAmount(
                         $grossAmount,
                         0,
                         $refundDiscountAmount,
-                        $otherFeeDeduction,
                     );
 
                     $refund = Refund::create([
@@ -67,7 +65,7 @@ class RefundService
                         'refunded_amount' => $grossAmount,
                         'gross_refund_amount' => $grossAmount,
                         'refund_discount_amount' => $refundDiscountAmount,
-                        'other_fee_deduction' => $otherFeeDeduction,
+                        'other_fee_deduction' => 0,
                         'customer_charge_percent' => 0,
                         'customer_charge_amount' => 0,
                         'partner_share_percent' => 0,
@@ -132,7 +130,6 @@ class RefundService
             }
 
             $refundDiscountAmount = $this->proportionalDiscount($sale, $grossAmount);
-            $otherFeeDeduction = $this->otherFeeDeduction($sale);
             $this->ensureRefundableCategories($sale, $selectedTickets, $grossAmount);
 
             $customerChargePercent = (float) $data['customer_charge_percent'];
@@ -149,7 +146,6 @@ class RefundService
                 $grossAmount,
                 $customerChargeAmount,
                 $refundDiscountAmount,
-                $otherFeeDeduction,
             );
 
             Refund::create([
@@ -164,7 +160,7 @@ class RefundService
                 'partner_share_percent' => $partnerSharePercent,
                 'partner_share_amount' => $partnerShareAmount,
                 'refund_discount_amount' => $refundDiscountAmount,
-                'other_fee_deduction' => $otherFeeDeduction,
+                'other_fee_deduction' => 0,
                 'customer_refund_amount' => $customerRefundAmount,
                 'company_retained_amount' => round($customerChargeAmount - $partnerShareAmount, 2),
                 'requested_at' => now(),
@@ -242,19 +238,13 @@ class RefundService
         return $ticketFee > 0 ? round($discount * ($grossAmount / $ticketFee), 2) : 0;
     }
 
-    private function otherFeeDeduction(ShipTicketSale $sale): float
-    {
-        return round(max((float) $sale->other_fee, 0), 2);
-    }
-
     private function customerRefundAmount(
         float $grossAmount,
         float $customerChargeAmount,
         float $refundDiscountAmount,
-        float $otherFeeDeduction = 0,
     ): float {
         $customerRefundAmount = round(
-            $grossAmount - $customerChargeAmount - $refundDiscountAmount - $otherFeeDeduction,
+            $grossAmount - $customerChargeAmount - $refundDiscountAmount,
             2,
         );
 
@@ -329,7 +319,6 @@ class RefundService
             }
 
             $refundDiscountAmount = $this->proportionalDiscount($sale, $grossAmount);
-            $otherFeeDeduction = $this->otherFeeDeduction($sale);
             $this->ensureRefundableCategories($sale, $selectedTickets, $grossAmount, $refund->id);
             $customerChargePercent = (float) $data['customer_charge_percent'];
             $partnerSharePercent = (float) $data['partner_share_percent'];
@@ -345,7 +334,6 @@ class RefundService
                 $grossAmount,
                 $customerChargeAmount,
                 $refundDiscountAmount,
-                $otherFeeDeduction,
             );
 
             $refund->update([
@@ -357,7 +345,7 @@ class RefundService
                 'partner_share_percent' => $partnerSharePercent,
                 'partner_share_amount' => $partnerShareAmount,
                 'refund_discount_amount' => $refundDiscountAmount,
-                'other_fee_deduction' => $otherFeeDeduction,
+                'other_fee_deduction' => 0,
                 'customer_refund_amount' => $customerRefundAmount,
                 'company_retained_amount' => round($customerChargeAmount - $partnerShareAmount, 2),
                 'remark' => $data['remark'] ?? null,

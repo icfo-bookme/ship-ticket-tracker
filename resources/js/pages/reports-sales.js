@@ -23,10 +23,24 @@ function totalElements() {
         total_ticket_fee: document.getElementById("totalSoldTicketsAmount"),
         total_other_fee: document.getElementById("totalOtherFees"),
         total_discount_amount: document.getElementById("totalDiscountAmount"),
+        total_ticket_sales_after_discount: document.getElementById("ticketSalesAfterDiscount"),
         total_payable: document.getElementById("totalSold"),
+        net_sales_amount: document.getElementById("netSalesAmount"),
         total_received_amount: document.getElementById("totalReceivedAmount"),
+        total_extra_received_amount: document.getElementById("totalExtraReceivedAmount"),
+        report_refund_outflow: document.getElementById("reportRefundOutflow"),
+        report_net_before_cashout: document.getElementById("reportNetBeforeCashout"),
         total_due_amount: document.getElementById("totalDueAmount"),
-        net_cash: document.getElementById("netCash"),
+        total_completed_ticket_refund_amount: document.getElementById("totalCompletedTicketRefundAmount"),
+        total_gross_ticket_refund_amount: document.getElementById("totalGrossTicketRefundAmount"),
+        total_refund_discount_amount: document.getElementById("totalRefundDiscountAmount"),
+        total_customer_refund_paid: document.getElementById("totalCustomerRefundPaid"),
+        total_partner_share_amount: document.getElementById("totalPartnerShareAmount"),
+        total_extra_refunded_amount: document.getElementById("totalExtraRefundedAmount"),
+        total_due_adjusted_amount: document.getElementById("totalDueAdjustedAmount"),
+        total_company_retained_amount: document.getElementById("totalCompanyRetainedAmount"),
+        total_bftn_pending_amount: document.getElementById("totalBftnPendingAmount"),
+        total_bftn_received_amount: document.getElementById("totalBftnReceivedAmount"),
     };
 }
 
@@ -60,9 +74,16 @@ const columns = [
     },
     {
         data: null,
-        title: "Ticket Price / Other Fee",
-        render: (data, type, row) => type !== 'display' ? `${row.ticket_fee} ${row.other_fee}` :
-            `<div class="flex flex-col"><span>${formatCurrency(row.ticket_fee)} <small class="text-gray-500">ticket</small></span><span>${formatCurrency(row.other_fee)} <small class="text-gray-500">fee</small></span></div>`,
+        title: "Ticket Price / Other Fee / Discount",
+        render: (data, type, row) => {
+            const discount = Number(row.discount_amount) || 0;
+
+            if (type !== 'display') {
+                return `${row.ticket_fee} ${row.other_fee}${discount > 0 ? ` ${discount}` : ''}`;
+            }
+
+            return `<div class="flex flex-col"><span>${formatCurrency(row.ticket_fee)} <small class="text-gray-500">ticket</small></span><span>${formatCurrency(row.other_fee)} <small class="text-gray-500">fee</small></span>${discount > 0 ? `<span>${formatCurrency(discount)} <small class="text-gray-500">discount</small></span>` : ''}</div>`;
+        },
     },
     {
         data: "total_payable",
@@ -162,9 +183,14 @@ function showSaleDetails(sale) {
         ['Total Payable', formatCurrency(sale.total_payable)],
         ['Received Amount', formatCurrency(sale.received_amount)],
         ['Due Amount', formatCurrency(sale.due_amount)],
+        ['Completed Ticket Refund Amount', formatCurrency(sale.refunded_amount)],
+        ['Gross Ticket Refund Amount', formatCurrency(sale.gross_refund_amount)],
+        ['Ticket Refund Discount', formatCurrency(sale.refund_discount_amount)],
+        ['Due Adjusted', formatCurrency(sale.due_adjusted_amount)],
+        ['Customer Refund Paid', formatCurrency(sale.customer_refund_paid)],
         ['Extra Received', formatCurrency(sale.extra_received_amount)],
         ['Extra Refund Pending', formatCurrency(sale.extra_refund_pending_amount)],
-        ['Extra Refunded', formatCurrency(sale.extra_refunded_amount)],
+        ['Extra Payment Refund Paid', formatCurrency(sale.extra_refunded_amount)],
         ['Extra Available', formatCurrency(sale.extra_available_amount)],
         ['BFTN Status', sale.bftn_status === 'yes' ? (sale.bftn_received ? 'Received' : 'Pending') : 'No'],
         ['BFTN Received Date', sale.bftn_received_at],

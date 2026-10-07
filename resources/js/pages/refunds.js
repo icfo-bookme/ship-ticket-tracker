@@ -80,8 +80,6 @@ if (document.getElementById('salesTable')) {
                                 data-due-amount="${sale.due_amount || 0}"
                                 data-ticket-fee="${sale.ticket_fee || 0}"
                                 data-discount-amount="${sale.discount_amount || 0}"
-                                data-other-fee="${sale.other_fee || 0}"
-                                data-extra-received="${sale.extra_received_amount || 0}"
                                 data-extra-remaining="${sale.extra_remaining_amount || 0}"
                                 data-categories="${encodeURIComponent(JSON.stringify(sale.categories || []))}"
                                 data-status="shipped">
@@ -175,9 +173,7 @@ let refreshRefundList = null;
 let currentRefundDueAmount = 0;
 let currentRefundTicketFee = 0;
 let currentRefundSaleDiscount = 0;
-let currentRefundSaleOtherFee = 0;
 let currentRefundSelectedGrossAmount = 0;
-let currentRefundExtraReceivedAmount = 0;
 let currentRefundExtraRemainingAmount = 0;
 
 function roundRefundMoney(amount) {
@@ -191,13 +187,12 @@ function updateRefundPreview() {
     const refundDiscount = currentRefundTicketFee > 0
         ? roundRefundMoney(Math.min(currentRefundSaleDiscount, currentRefundTicketFee) * grossAmount / currentRefundTicketFee)
         : 0;
-    const otherFeeDeduction = grossAmount > 0 ? roundRefundMoney(currentRefundSaleOtherFee) : 0;
-    const amountAfterFeeAndDiscount = Math.max(roundRefundMoney(grossAmount - otherFeeDeduction - refundDiscount), 0);
+    const amountAfterDiscount = Math.max(roundRefundMoney(grossAmount - refundDiscount), 0);
     const customerCharge = roundRefundMoney(grossAmount * chargePercent / 100);
     const partnerShare = roundRefundMoney(grossAmount * partnerPercent / 100);
-    const refundAfterAdjustments = Math.max(roundRefundMoney(amountAfterFeeAndDiscount - customerCharge), 0);
+    const refundAfterAdjustments = Math.max(roundRefundMoney(amountAfterDiscount - customerCharge), 0);
 
-    document.getElementById('refundAmountInput').value = amountAfterFeeAndDiscount.toFixed(2);
+    document.getElementById('refundAmountInput').value = amountAfterDiscount.toFixed(2);
     const dueAdjustment = roundRefundMoney(Math.min(currentRefundDueAmount, refundAfterAdjustments));
     const finalRefund = roundRefundMoney(refundAfterAdjustments - dueAdjustment);
 
@@ -205,13 +200,12 @@ function updateRefundPreview() {
     document.getElementById('customerChargePreview').textContent = customerCharge.toFixed(2);
     document.getElementById('companyRetainedPreview').textContent = roundRefundMoney(customerCharge - partnerShare).toFixed(2);
     document.getElementById('refundBreakdownNote').textContent =
-        `Ticket subtotal ${grossAmount.toFixed(2)} - other fee ${otherFeeDeduction.toFixed(2)} - discount ${refundDiscount.toFixed(2)} = ${amountAfterFeeAndDiscount.toFixed(2)}`;
+        `Ticket subtotal ${grossAmount.toFixed(2)} - discount ${refundDiscount.toFixed(2)} = ${amountAfterDiscount.toFixed(2)}`;
     document.getElementById('refundDueAmountPreview').textContent = currentRefundDueAmount.toFixed(2);
     document.getElementById('dueAdjustmentPreview').textContent = dueAdjustment.toFixed(2);
     document.getElementById('payableRefundPreview').textContent = finalRefund.toFixed(2);
     document.getElementById('finalCustomerRefundPreview').textContent = finalRefund.toFixed(2);
-    document.getElementById('refundExtraReceivedPreview').textContent = currentRefundExtraReceivedAmount.toFixed(2);
-    document.getElementById('refundExtraAvailablePreview').textContent = currentRefundExtraRemainingAmount.toFixed(2);
+    document.getElementById('refundExtraReceivedPreview').textContent = currentRefundExtraRemainingAmount.toFixed(2);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -341,8 +335,6 @@ function openRefundModal(btn, editing = false) {
     currentRefundDueAmount = Number(btn.dataset.dueAmount || 0);
     currentRefundTicketFee = Number(btn.dataset.ticketFee || btn.dataset.received_total_amount || 0);
     currentRefundSaleDiscount = Number(btn.dataset.discountAmount || 0);
-    currentRefundSaleOtherFee = Number(btn.dataset.otherFee || 0);
-    currentRefundExtraReceivedAmount = Number(btn.dataset.extraReceived || 0);
     currentRefundExtraRemainingAmount = Number(btn.dataset.extraRemaining || 0);
     document.getElementById('customerChargePercentInput').value = editing ? (btn.dataset.customerCharge || 0) : 0;
     document.getElementById('partnerSharePercentInput').value = editing ? (btn.dataset.partnerShare || 0) : 0;

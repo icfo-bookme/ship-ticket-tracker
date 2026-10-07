@@ -252,7 +252,7 @@
                                     <a href="{{ route('refund-reports.index') }}"
                                         class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                         <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-3"></span>
-                                        <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Refund Report</span>
+                                        <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Refunded Report</span>
                                     </a>
                                     <a href="{{ route('bftn-reports.index') }}"
                                         class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">

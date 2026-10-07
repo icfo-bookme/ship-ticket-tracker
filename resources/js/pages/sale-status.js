@@ -374,7 +374,7 @@ function createStatusButton(sale) {
     if (sale.status === config.pendingStatus) {
         return `<button data-permission="sales.verify" class="bg-red-500 text-white px-2 py-1 rounded verifyBtn"
                     data-id="${sale.id}" data-status="${config.paymentVerifiedStatus}"
-                    title="Sold by: ${escapeHtml(sale.sold_by)}">Verify Payment</button>`;
+                    title="Sold by: ${escapeHtml(sale.seller?.name || 'Unknown')}">Verify Payment</button>`;
     }
 
     if (sale.status === config.ticketIssuedStatus) {

@@ -29,6 +29,22 @@ it('returns the WhatsApp username for sales without a WhatsApp number', function
         ->and(array_key_exists('total_payable', $response['data'][0]))->toBeTrue();
 });
 
+it('includes the seller name in the sales table response', function () {
+    $ship = Ship::create(['name' => 'Seller Ship', 'status' => 1]);
+    $company = Company::create(['name' => 'Seller Company', 'status' => 1]);
+    $seller = User::factory()->create(['name' => 'Sales Representative']);
+    $sale = salesDataTableSale($ship, $company, 'pending');
+    $sale->update(['sold_by' => $seller->id]);
+
+    $response = app(SalesDataTableService::class)->response(
+        new Request(['start' => 0, 'length' => 10]),
+        'pending'
+    )->getData(true);
+
+    expect($response['data'][0]['sold_by'])->toBe($seller->id)
+        ->and($response['data'][0]['seller']['name'])->toBe('Sales Representative');
+});
+
 it('keeps sales table pagination bounded for invalid and oversized lengths', function () {
     $ship = Ship::create(['name' => 'Pagination Ship', 'status' => 1]);
     $company = Company::create(['name' => 'Pagination Company', 'status' => 1]);

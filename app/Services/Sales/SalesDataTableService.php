@@ -19,6 +19,7 @@ class SalesDataTableService
             'shipment',
             'payments',
             'refunds',
+            'seller:id,name',
             'bftn',
             'printedTickets',
             'groupedTickets.sale:id,status',

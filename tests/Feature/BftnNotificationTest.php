@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Bftn;
 use App\Models\Company;
+use App\Models\Payment;
 use App\Models\Ship;
 use App\Models\ShipTicketSale;
 use App\Models\User;
@@ -17,6 +17,9 @@ beforeEach(function () {
     $role->syncPermissions([
         Permission::findOrCreate('sales.view', 'web'),
         Permission::findOrCreate('sales.verify', 'web'),
+        Permission::findOrCreate('sales.bftn.receive', 'web'),
+        Permission::findOrCreate('notifications.view', 'web'),
+        Permission::findOrCreate('notifications.verify', 'web'),
     ]);
     $this->user->assignRole($role);
 
@@ -34,11 +37,10 @@ function notificationSale(Ship $ship, Company $company): ShipTicketSale
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
-        'received_amount' => 100,
+        'ticket_value' => 500,
         'due_amount' => 400,
         'issued_date' => '2026-09-23',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'pending',
     ]);
 }
@@ -46,18 +48,22 @@ function notificationSale(Ship $ship, Company $company): ShipTicketSale
 it('returns due bftn notifications with the active count', function () {
     $sale = notificationSale($this->ship, $this->company);
 
-    Bftn::create([
+    $duePayment = Payment::create([
         'sales_id' => $sale->id,
-        'bftn_date_time' => now()->subHour(),
-        'notifications_status' => 1,
+        'payment_method' => 'Bank Transfer',
+        'is_bftn' => true,
+        'settlement_status' => 'pending',
+        'received_amount' => 100,
+        'bftn_issue_datetime' => now()->subHour(),
     ]);
-
-    Bftn::create([
+    $futurePayment = Payment::create([
         'sales_id' => $sale->id,
-        'bftn_date_time' => now()->addDay(),
-        'notifications_status' => 1,
+        'payment_method' => 'Bank Transfer',
+        'is_bftn' => true,
+        'settlement_status' => 'pending',
+        'received_amount' => 100,
+        'bftn_issue_datetime' => now()->addDay(),
     ]);
-
     $this->actingAs($this->user)
         ->getJson('/notifications')
         ->assertOk()
@@ -71,30 +77,40 @@ it('returns due bftn notifications with the active count', function () {
 it('marks a notification as read', function () {
     $sale = notificationSale($this->ship, $this->company);
 
-    $notification = Bftn::create([
+    $payment = Payment::create([
         'sales_id' => $sale->id,
-        'bftn_date_time' => now()->subHour(),
-        'notifications_status' => 1,
+        'payment_method' => 'Bank Transfer',
+        'is_bftn' => true,
+        'settlement_status' => 'pending',
+        'received_amount' => 100,
+        'bftn_issue_datetime' => now()->subHour(),
     ]);
-
     $this->actingAs($this->user)
         ->from('/dashboard')
-        ->get("/notification/verify/{$notification->id}")
+        ->get("/notification/verify/{$payment->id}")
         ->assertRedirect('/dashboard');
 
-    expect($notification->fresh()->notifications_status)->toBe(0);
+    expect($payment->fresh()->bftn_notification_read_at)->not->toBeNull();
 });
 
 it('marks a sale bftn as received', function () {
     $sale = notificationSale($this->ship, $this->company);
+    $payment = Payment::create([
+        'sales_id' => $sale->id,
+        'payment_method' => 'Bank Transfer',
+        'is_bftn' => true,
+        'settlement_status' => 'pending',
+        'received_amount' => 100,
+        'bftn_issue_datetime' => now()->subHour(),
+    ]);
 
     $this->actingAs($this->user)
-        ->putJson("/sale/bftn-received/{$sale->id}", [
+        ->putJson("/payment/bftn-received/{$payment->id}", [
             'received_at' => now()->toDateTimeString(),
         ])
         ->assertOk()
         ->assertJsonPath('success', true);
 
-    expect($sale->bftn()->first()->received_status)->toBeTrue()
-        ->and($sale->bftn()->first()->received_at)->not->toBeNull();
+    expect($payment->fresh()->settlement_status)->toBe('received')
+        ->and($payment->fresh()->received_at)->not->toBeNull();
 });

@@ -1,5 +1,11 @@
 <?php
 
+use App\Models\Category;
+use App\Models\Payment;
+use App\Models\Refund;
+use App\Models\Ship;
+use App\Models\ShipPackage;
+use App\Models\ShipTicketSale;
 use App\Models\User;
 use App\Services\Dashboard\DashboardMetricsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -7,6 +13,51 @@ use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
+
+it('calculates dashboard due from grouped payment and refund totals', function () {
+    $ship = Ship::query()->create(['name' => 'Due test ship']);
+    $sale = ShipTicketSale::query()->create([
+        'customer_name' => 'Due test customer',
+        'customer_mobile' => '01234567890',
+        'ship_id' => $ship->id,
+        'issued_date' => now()->toDateString(),
+        'status' => 'ticket-issued',
+        'total_payable' => 100,
+    ]);
+    $package = ShipPackage::query()->create([
+        'ship_id' => $ship->id,
+        'name' => 'Due test package',
+        'price' => 100,
+    ]);
+    Category::query()->create([
+        'ticket_id' => $sale->id,
+        'package_id' => $package->id,
+        'quantity' => 1,
+        'unit_price' => 100,
+        'type' => 'departure',
+    ]);
+    Payment::query()->create([
+        'sales_id' => $sale->id,
+        'payment_method' => 'Cash',
+        'received_amount' => 40,
+    ]);
+    Payment::query()->create([
+        'sales_id' => $sale->id,
+        'payment_method' => 'Bank Transfer',
+        'is_bftn' => true,
+        'settlement_status' => 'pending',
+        'received_amount' => 50,
+    ]);
+    Refund::query()->create([
+        'sales_id' => $sale->id,
+        'status' => 'completed',
+        'refunded_number_of_tickets' => 1,
+        'refunded_amount' => 5,
+        'due_adjusted_amount' => 5,
+    ]);
+
+    expect(app(DashboardMetricsService::class)->metrics()['totalDue'])->toBe(5.0);
+});
 
 it('renders the dashboard with metrics from the service', function () {
     $this->mock(DashboardMetricsService::class, function ($mock): void {

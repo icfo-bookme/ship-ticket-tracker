@@ -23,14 +23,14 @@ beforeEach(function () {
         'ship_id' => $this->ship->id,
         'company_id' => $this->company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 20,
         'discount_amount' => 0,
         'total_payable' => 520,
         'received_amount' => 400,
         'due_amount' => 120,
         'issued_date' => '2026-09-23',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'pending',
     ]);
 });
@@ -49,13 +49,13 @@ function discountSalePayload(Ship $ship, Company $company, User $user, array $ov
         'journey_date' => '2026-10-01',
         'date_of_birth' => null,
         'return_date' => null,
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 20,
         'discount_amount' => 0,
         'total_payable' => 520,
         'received_amount' => 400,
         'due_amount' => 120,
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'bftn_status' => null,
         'company_id' => $company->id,
         'issued_date' => '2026-09-23',
@@ -78,7 +78,7 @@ it('stores the discount amount and the computed totals when a sale is created', 
     $sale = ShipTicketSale::latest('id')->first();
 
     expect((float) $sale->discount_amount)->toBe(50.0)
-        ->and((float) $sale->ticket_fee)->toBe(500.0)
+        ->and((float) $sale->ticket_value)->toBe(500.0)
         ->and((float) $sale->other_fee)->toBe(20.0)
         ->and((float) $sale->total_payable)->toBe(470.0)
         ->and((float) $sale->due_amount)->toBe(70.0);
@@ -144,14 +144,14 @@ it('reports the total discount amount and the discount column', function () {
         'ship_id' => $this->ship->id,
         'company_id' => $this->company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 20,
         'discount_amount' => 45.5,
         'total_payable' => 474.5,
         'received_amount' => 400,
         'due_amount' => 74.5,
         'issued_date' => '2026-09-23',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-issued',
     ]);
 

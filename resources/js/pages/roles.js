@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             permissionInputs(form).forEach((input) => { input.checked = false; });
         },
         prepareData: (data, form) => ({
-            name: data.name,
+            name: form.elements.namedItem('name').value,
             permissions: permissionInputs(form).filter((input) => input.checked).map((input) => input.value),
         }),
         canDelete: (button) => {

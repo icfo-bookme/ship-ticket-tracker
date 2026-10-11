@@ -13,6 +13,7 @@ const config = {
     ticketIssueUrl: configElement?.dataset.ticketIssueUrl || '',
     canCollectDue: configElement?.dataset.canCollectDue === 'true',
     destroyUrl: configElement?.dataset.destroyUrl || '',
+    restoreUrl: configElement?.dataset.restoreUrl || '',
     verifyUrl: configElement?.dataset.verifyUrl || '',
     bftnReceivedUrl: configElement?.dataset.bftnReceivedUrl || '',
 };
@@ -39,7 +40,7 @@ const refreshSalesTable = () => document.dispatchEvent(new CustomEvent('data-tab
 async function deleteSale(button, refresh) {
     const confirmation = await Swal.fire({
         title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        text: 'The sale will leave active lists. Related payment and refund history will be kept.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, delete it!',
@@ -63,7 +64,33 @@ async function deleteSale(button, refresh) {
             throw new Error(result.message || 'Failed to delete sale.');
         }
 
-        await Swal.fire({ title: 'Deleted!', text: 'Sale has been successfully deleted.', icon: 'success' });
+        const undo = await Swal.fire({
+            title: 'Sale deleted',
+            text: 'The sale was moved to deleted records. You can undo this now.',
+            icon: 'success',
+            showCancelButton: true,
+            confirmButtonText: 'Undo',
+            cancelButtonText: 'Close',
+        });
+
+        if (undo.isConfirmed) {
+            const restoreResponse = await fetch(config.restoreUrl.replace('__ID__', button.dataset.id), {
+                method: 'PUT',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+            });
+            const restoreResult = await restoreResponse.json();
+
+            if (!restoreResponse.ok || !restoreResult.success) {
+                throw new Error(restoreResult.message || 'Unable to restore the sale.');
+            }
+
+            await Swal.fire({ title: 'Restored', text: 'Sale restored successfully.', icon: 'success' });
+        }
+
         refresh();
     } catch (error) {
         await Swal.fire({ title: 'Error', text: error.message || 'Unable to delete the sale.', icon: 'error' });
@@ -115,7 +142,7 @@ const columns = [
     ] : []),
     ...(config.status === config.pendingStatus ? [
         {
-            data: "ticket_fee",
+            data: "ticket_value",
             title: "Total Ticket Value",
             render: (data) => escapeHtml(Number(data || 0).toFixed(2)),
         },
@@ -227,11 +254,14 @@ function renderPayments(payments) {
         const proofLink = payment.payment_proof
             ? ` <a href="/payments/${payment.id}/proof" target="_blank" class="text-blue-600 hover:text-blue-800 text-xs" title="Payment proof"><i class="fas fa-paperclip"></i> proof</a>`
             : "";
+        const settlementLabel = payment.is_bftn
+            ? ` <span class="text-xs ${payment.settlement_status === 'received' ? 'text-green-700' : 'text-amber-700'}">BFTN ${payment.settlement_status === 'received' ? 'received' : 'pending'}</span>`
+            : '';
 
         return `
                 <li>
                     <span class="font-medium">${escapeHtml(payment.payment_method)}</span> :
-                    <span class="text-green-600 font-semibold">${escapeHtml(payment.received_amount)}</span>${proofLink}
+                    <span class="text-green-600 font-semibold">${escapeHtml(payment.received_amount)}</span>${settlementLabel}${proofLink}
                 </li>`;
     });
 
@@ -293,7 +323,7 @@ function createActionButtons(sale) {
     let dueButton = "";
     let editButton = "";
     let deleteButton = "";
-    let bftnReceivedButton = "";
+    let bftnReceivedButtons = "";
 
     if (config.canCollectDue) {
         dueButton = Number(sale.due_amount) > 0
@@ -315,12 +345,11 @@ function createActionButtons(sale) {
                         data-id="${sale.id}" title="Delete"></button>`;
     }
 
-    {
-        bftnReceivedButton = sale.bftn_status === 'yes' && !sale.bftn_received
-            ? `<button data-permission="sales.bftn.receive" class="bg-green-600 text-white px-2 py-1 rounded bftnReceivedBtn"
-                        data-id="${sale.id}" data-tentative-date="${escapeHtml(sale.bftn?.bftn_date_time || 'Not specified')}" title="Mark BFTN as received">BFTN Received</button>`
-            : "";
-    }
+    bftnReceivedButtons = (sale.payments || [])
+        .filter((payment) => payment.is_bftn && payment.settlement_status === 'pending')
+        .map((payment) => `<button data-permission="sales.bftn.receive" class="bg-green-600 text-white px-2 py-1 rounded bftnReceivedBtn"
+                        data-id="${payment.id}" data-tentative-date="${escapeHtml(payment.bftn_issue_datetime || 'Not specified')}" title="Mark this BFTN payment as received">BFTN Received #${payment.id}</button>`)
+        .join("");
 
     const activeRefund = (sale.refunds || []).find((refund) => !['cancelled', 'completed'].includes(refund.status));
     const editRefundButton = activeRefund
@@ -335,7 +364,7 @@ function createActionButtons(sale) {
                     ${editButton}
                     ${deleteButton}
                     ${dueButton}
-                    ${bftnReceivedButton}
+                    ${bftnReceivedButtons}
                     ${createStatusButton(sale)}
                 </div>`;
 }

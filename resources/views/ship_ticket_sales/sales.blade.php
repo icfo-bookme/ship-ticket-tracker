@@ -94,8 +94,9 @@
     data-status-labels='@json(config("sales.statuses"))'
     data-ticket-issue-url="{{ $ticketIssueRouteTemplate }}"
     data-destroy-url="{{ route('sale.destroy', ['id' => '__ID__']) }}"
+    data-restore-url="{{ route('ship-ticket-sales.restore', ['id' => '__ID__']) }}"
     data-verify-url="{{ route('sale.verify', ['id' => '__ID__', 'status' => '__STATUS__']) }}"
-    data-bftn-received-url="{{ route('sale.bftn-received', ['id' => '__ID__']) }}"
+    data-bftn-received-url="{{ route('payment.bftn-received', ['id' => '__ID__']) }}"
     data-can-collect-due="{{ auth()->user()->can('payments.due.collect') ? 'true' : 'false' }}"></div>
 
 @vite(['resources/js/pages/sale-status.js'])

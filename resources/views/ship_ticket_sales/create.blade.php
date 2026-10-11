@@ -329,7 +329,7 @@
                                 <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Total Number of Tickets <span class="text-red-500">*</span>
                                 </label>
-                                <input type="number" id="total_tickets" name="number_of_ticket" value="0"
+                                <input type="number" id="total_tickets" value="0" readonly
                                     min="0"
                                     class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  shadow-sm">
                             </div>
@@ -338,8 +338,8 @@
                                 <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Total Ticket Value (৳) <span class="text-red-500">*</span>
                                 </label>
-                                <input type="number" id="ticket_fee" name="ticket_fee"
-                                    value="{{ old('ticket_fee', 0) }}" step="0.01" min="0"
+                                <input type="number" id="ticket_value" readonly
+                                    value="{{ old('ticket_value', 0) }}" step="0.01" min="0"
                                     placeholder="0.00"
                                     class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                             </div>
@@ -397,19 +397,28 @@
                             <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Total Received (৳) <span class="text-red-500">(autofill)</span>
                             </label>
-                            <input type="number" id="received_amount" name="received_amount" disabled
+                            <input type="number" id="received_amount" name="received_amount" readonly
                                 value="{{ old('received_amount', 0) }}" step="0.01" min="0"
                                 placeholder="0.00"
-                                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:cursor-not-allowed disabled:opacity-75 rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
+                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2 shadow-sm"
                                 required>
+                        </div>
+
+                        <div>
+                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                BFTN Pending (à§³) <span class="text-red-500">(autofill)</span>
+                            </label>
+                            <input type="number" id="bftn_pending_amount" name="bftn_pending_amount" readonly
+                                value="{{ old('bftn_pending_amount', 0) }}" step="0.01" min="0"
+                                class="w-full border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-200 rounded-lg px-2 py-2 shadow-sm">
                         </div>
 
                         <div>
                             <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Due Amount (৳) <span class="text-red-500">(autofill)</span>
                             </label>
-                            <input type="number" id="due_amount" name="due_amount"
-                                value="{{ old('due_amount', 0) }}" step="0.01" min="0" placeholder="0.00"
+                            <input type="number" id="due_amount"
+                                value="0.00" step="0.01" min="0" placeholder="0.00"
                                 class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  shadow-sm">
                         </div>
 
@@ -420,31 +429,6 @@
                             <input type="number" id="extra_received_amount" readonly value="0.00"
                                 step="0.01" min="0"
                                 class="w-full border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-200 rounded-lg px-2 py-2  font-semibold shadow-sm">
-                        </div>
-
-                        <div>
-                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                BFTN Status
-                            </label>
-
-                            <select name="bftn_status"
-                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  shadow-sm">
-
-                                <option value="">Select Status</option>
-                                <option value="yes" {{ old('bftn_status') == 'yes' ? 'selected' : '' }}>Yes
-                                </option>
-                                <option value="no" {{ old('bftn_status') == 'no' ? 'selected' : '' }}>No</option>
-                            </select>
-                        </div>
-
-                        <div id="bftnIssueDateWrapper" class="hidden">
-                            <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Tentative Deposit Date & Time
-                            </label>
-
-                            <input type="datetime-local" name="bftn_issue_datetime"
-                                value="{{ old('bftn_issue_datetime') }}"
-                                class="w-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  shadow-sm">
                         </div>
 
                     </div>

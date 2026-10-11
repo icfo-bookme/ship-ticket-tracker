@@ -20,7 +20,7 @@ const paymentMethodBreakdownEmpty = document.getElementById('paymentMethodBreakd
 function totalElements() {
     return {
         total_number_of_tickets: document.getElementById("totalSellTickets"),
-        total_ticket_fee: document.getElementById("totalSoldTicketsAmount"),
+        total_ticket_value: document.getElementById("totalSoldTicketsAmount"),
         total_other_fee: document.getElementById("totalOtherFees"),
         total_discount_amount: document.getElementById("totalDiscountAmount"),
         total_ticket_sales_after_discount: document.getElementById("ticketSalesAfterDiscount"),
@@ -68,7 +68,7 @@ const columns = [
         render: (data) => data || "N/A",
     },
     {
-        data: "number_of_ticket",
+        data: "ticket_count",
         title: "Number Of Tickets",
         render: (data) => data || "0",
     },
@@ -79,10 +79,10 @@ const columns = [
             const discount = Number(row.discount_amount) || 0;
 
             if (type !== 'display') {
-                return `${row.ticket_fee} ${row.other_fee}${discount > 0 ? ` ${discount}` : ''}`;
+                return `${row.ticket_value} ${row.other_fee}${discount > 0 ? ` ${discount}` : ''}`;
             }
 
-            return `<div class="flex flex-col"><span>${formatCurrency(row.ticket_fee)} <small class="text-gray-500">ticket</small></span><span>${formatCurrency(row.other_fee)} <small class="text-gray-500">fee</small></span>${discount > 0 ? `<span>${formatCurrency(discount)} <small class="text-gray-500">discount</small></span>` : ''}</div>`;
+            return `<div class="flex flex-col"><span>${formatCurrency(row.ticket_value)} <small class="text-gray-500">ticket</small></span><span>${formatCurrency(row.other_fee)} <small class="text-gray-500">fee</small></span>${discount > 0 ? `<span>${formatCurrency(discount)} <small class="text-gray-500">discount</small></span>` : ''}</div>`;
         },
     },
     {
@@ -176,8 +176,8 @@ function showSaleDetails(sale) {
         ['Return Date', formatDate(sale.return_date)],
         ['Created Date', formatDate(sale.created_at)],
         ['Status', sale.status],
-        ['Tickets', sale.number_of_ticket],
-        ['Ticket Price', formatCurrency(sale.ticket_fee)],
+        ['Tickets', sale.ticket_count],
+        ['Ticket Price', formatCurrency(sale.ticket_value)],
         ['Other Fee', formatCurrency(sale.other_fee)],
         ['Discount', formatCurrency(sale.discount_amount)],
         ['Total Payable', formatCurrency(sale.total_payable)],

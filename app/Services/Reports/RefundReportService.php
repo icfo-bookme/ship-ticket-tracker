@@ -93,7 +93,7 @@ class RefundReportService
         $settledQuery = clone $query;
         $summary = (clone $settledQuery)->selectRaw('
             COUNT(*) AS refunded_count,
-            COALESCE(SUM(COALESCE(NULLIF(gross_refund_amount, 0), refunded_amount, 0)), 0) AS refund_amount,
+            COALESCE(SUM(gross_refund_amount), 0) AS refund_amount,
             COALESCE(SUM(CASE WHEN refund_type != ? THEN refund_discount_amount ELSE 0 END), 0) AS discount_amount,
             COALESCE(SUM(due_adjusted_amount), 0) AS due_adjusted_amount,
             COALESCE(SUM(CASE WHEN refund_type != ? THEN partner_share_amount ELSE 0 END), 0) AS partner_share_amount,
@@ -137,17 +137,8 @@ class RefundReportService
         $paidPayments = RefundCustomerPayment::query()
             ->where('status', 'paid')
             ->whereIn('refund_id', (clone $extraRefunds)->select('refunds.id'));
-        $paidAmount = (float) (clone $paidPayments)->sum('amount');
-        $settledWithoutPayment = Refund::query()
-            ->whereIn('id', (clone $extraRefunds)->select('refunds.id'))
-            ->where(function (Builder $query): void {
-                $query->where('status', RefundStatus::Completed->value)
-                    ->orWhereNotNull('customer_refunded_at');
-            })
-            ->whereDoesntHave('customerPayments', fn (Builder $payments) => $payments->where('status', 'paid'))
-            ->sum('customer_refund_amount');
 
-        return $paidAmount + (float) $settledWithoutPayment;
+        return (float) (clone $paidPayments)->sum('amount');
     }
 
     /** @return array<string, mixed> */
@@ -170,14 +161,6 @@ class RefundReportService
             ->where('status', 'paid')
             ->sum('amount');
 
-        if (
-            $refund->refund_type === 'extra_payment'
-            && $customerRefundPaid === 0.0
-            && $isCompleted
-        ) {
-            $customerRefundPaid = (float) $refund->customer_refund_amount;
-        }
-
         return [
             'id' => $refund->id,
             'sales_id' => $refund->sales_id,
@@ -191,14 +174,7 @@ class RefundReportService
             'refund_type' => $refund->refund_type,
             'status' => $isCompleted ? RefundStatus::Completed->value : $refund->status,
             'refunded_number_of_tickets' => (int) $refund->refunded_number_of_tickets,
-            'gross_refund_amount' => number_format(
-                (float) $refund->gross_refund_amount > 0
-                    ? (float) $refund->gross_refund_amount
-                    : (float) $refund->refunded_amount,
-                2,
-                '.',
-                ''
-            ),
+            'gross_refund_amount' => number_format((float) $refund->gross_refund_amount, 2, '.', ''),
             'refund_discount_amount' => number_format((float) $refund->refund_discount_amount, 2, '.', ''),
             'customer_charge_amount' => number_format((float) $refund->customer_charge_amount, 2, '.', ''),
             'partner_share_amount' => number_format((float) $refund->partner_share_amount, 2, '.', ''),

@@ -1,12 +1,13 @@
 <?php
 
-use App\Models\Bftn;
 use App\Models\CashCollection;
+use App\Models\Category;
 use App\Models\Company;
 use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\RefundCustomerPayment;
 use App\Models\Ship;
+use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,34 +25,61 @@ beforeEach(function () {
 
 function reportSale(Ship $ship, Company $company, array $attributes = []): ShipTicketSale
 {
-    return ShipTicketSale::create(array_merge([
+    $receivedAmount = (float) ($attributes['received_amount'] ?? 300);
+    $ticketCount = (int) ($attributes['ticket_count'] ?? 2);
+    $bftnStatus = $attributes['bftn_status'] ?? null;
+    unset($attributes['received_amount'], $attributes['bftn_status'], $attributes['ticket_count']);
+
+    $sale = ShipTicketSale::create(array_merge([
         'customer_name' => 'Report Customer',
         'customer_mobile' => '01712345678',
         'sales_source' => 'Direct',
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 300,
+        'ticket_value' => 300,
         'other_fee' => 0,
         'total_payable' => 300,
-        'received_amount' => 300,
         'due_amount' => 0,
         'issued_date' => '2026-09-23',
-        'number_of_ticket' => 2,
         'status' => 'ticket-issued',
     ], $attributes));
+
+    $package = ShipPackage::create([
+        'ship_id' => $ship->id,
+        'name' => 'Report package',
+        'price' => 150,
+        'round_trip_price' => 250,
+    ]);
+    Category::create([
+        'ticket_id' => $sale->id,
+        'package_id' => $package->id,
+        'quantity' => $ticketCount,
+        'type' => 'departure',
+        'unit_price' => round((float) ($attributes['ticket_value'] ?? 300) / max($ticketCount, 1), 2),
+    ]);
+
+    if ($bftnStatus === null && $receivedAmount > 0) {
+        Payment::create([
+            'sales_id' => $sale->id,
+            'payment_method' => 'Cash',
+            'received_amount' => $receivedAmount,
+        ]);
+    }
+
+    return $sale;
 }
 
 it('returns totals for the requested created date range', function () {
     reportSale($this->ship, $this->company);
-    reportSale($this->ship, $this->company, ['number_of_ticket' => 1, 'ticket_fee' => 200, 'total_payable' => 200, 'received_amount' => 200]);
+    reportSale($this->ship, $this->company, ['ticket_count' => 1, 'ticket_value' => 200, 'total_payable' => 200, 'received_amount' => 200]);
 
     $this->actingAs($this->admin)
         ->getJson('/reports?draw=1&start=0&length=10&start_create_date='.now()->subDays(6)->toDateString().'&end_create_date='.now()->toDateString())
         ->assertOk()
         ->assertJsonCount(2, 'data')
         ->assertJsonPath('totals.total_number_of_tickets', 3)
-        ->assertJsonPath('totals.total_ticket_fee', '500.00')
+        ->assertJsonPath('totals.total_ticket_value', '500.00')
         ->assertJsonPath('totals.total_payable', '500.00')
         ->assertJsonPath('totals.total_received_amount', '500.00')
         ->assertJsonPath('totals.net_sales_amount', '500.00');
@@ -81,7 +109,7 @@ it('leaves sales older than seven days out of the default window', function () {
 it('shows filter-scoped receipts and refunds before cashout in the report', function () {
     $filteredSale = reportSale($this->ship, $this->company, [
         'customer_name' => 'Filtered Sale',
-        'ticket_fee' => 90,
+        'ticket_value' => 90,
         'total_payable' => 90,
         'received_amount' => 120,
     ]);
@@ -195,10 +223,11 @@ it('renders the sales report filters and summary targets', function () {
 
 it('includes every payment record in the sale report details payload', function () {
     $sale = reportSale($this->ship, $this->company, [
-        'ticket_fee' => 100,
+        'ticket_value' => 100,
         'total_payable' => 100,
         'received_amount' => 100,
     ]);
+    $sale->payments()->delete();
     Payment::create([
         'sales_id' => $sale->id,
         'payment_method' => 'Bkash',
@@ -225,10 +254,11 @@ it('includes every payment record in the sale report details payload', function 
 it('shows method totals across report filters independently of the selected payment method', function () {
     $matchingSale = reportSale($this->ship, $this->company, [
         'customer_name' => 'Mixed Method Sale',
-        'ticket_fee' => 1100,
+        'ticket_value' => 1100,
         'total_payable' => 1100,
         'received_amount' => 1100,
     ]);
+    $matchingSale->payments()->delete();
     Payment::create([
         'sales_id' => $matchingSale->id,
         'payment_method' => 'Bkash',
@@ -242,20 +272,22 @@ it('shows method totals across report filters independently of the selected paym
 
     $otherSale = reportSale($this->ship, $this->company, [
         'customer_name' => 'Bank Transfer Sale',
-        'ticket_fee' => 50,
+        'ticket_value' => 50,
         'total_payable' => 50,
         'received_amount' => 50,
         'bftn_status' => 'yes',
     ]);
-    Payment::create([
+    $otherSale->payments()->delete();
+    $bftnPayment = Payment::create([
         'sales_id' => $otherSale->id,
         'payment_method' => 'Bank Transfer',
+        'is_bftn' => true,
+        'settlement_status' => 'received',
         'received_amount' => 50,
     ]);
-    $otherSale->bftn()->create(['received_status' => 1]);
     $nonBftnBankSale = reportSale($this->ship, $this->company, [
         'customer_name' => 'Non-BFTN Bank Transfer Sale',
-        'ticket_fee' => 25,
+        'ticket_value' => 25,
         'total_payable' => 25,
         'received_amount' => 25,
         'bftn_status' => 'no',
@@ -265,7 +297,6 @@ it('shows method totals across report filters independently of the selected paym
         'payment_method' => 'Bank Transfer',
         'received_amount' => 25,
     ]);
-    $nonBftnBankSale->bftn()->create(['received_status' => 0]);
 
     $this->actingAs($this->admin)
         ->getJson('/reports?draw=1&start=0&length=10&payment_method=Bkash')
@@ -284,7 +315,7 @@ it('shows method totals across report filters independently of the selected paym
 it('reports completed ticket refund allocations separately from extra payment refunds', function () {
     $sale = reportSale($this->ship, $this->company, [
         'customer_name' => 'Refunded Report Customer',
-        'ticket_fee' => 100,
+        'ticket_value' => 100,
         'discount_amount' => 10,
         'total_payable' => 90,
         'received_amount' => 120,
@@ -356,14 +387,14 @@ it('reports completed ticket refund allocations separately from extra payment re
 });
 
 it('applies the report search term to summary totals as well as rows', function () {
-    reportSale($this->ship, $this->company, ['customer_name' => 'Search Match', 'ticket_fee' => 100]);
-    reportSale($this->ship, $this->company, ['customer_name' => 'Search Excluded', 'ticket_fee' => 900]);
+    reportSale($this->ship, $this->company, ['customer_name' => 'Search Match', 'ticket_value' => 100]);
+    reportSale($this->ship, $this->company, ['customer_name' => 'Search Excluded', 'ticket_value' => 900]);
 
     $this->actingAs($this->admin)
         ->getJson('/reports?draw=1&start=0&length=10&search[value]=Search%20Match')
         ->assertOk()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('totals.total_ticket_fee', '100.00');
+        ->assertJsonPath('totals.total_ticket_value', '100.00');
 });
 
 it('accepts a null DataTables search value', function () {
@@ -373,7 +404,7 @@ it('accepts a null DataTables search value', function () {
         ->getJson('/reports?draw=1&start=0&length=10&search[value]=')
         ->assertOk()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('totals.total_ticket_fee', '300.00');
+        ->assertJsonPath('totals.total_ticket_value', '300.00');
 });
 
 it('loads the report when DataTables omits the search value', function () {
@@ -383,7 +414,22 @@ it('loads the report when DataTables omits the search value', function () {
         ->getJson('/reports?draw=1&start=0&length=10')
         ->assertOk()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('totals.total_ticket_fee', '300.00');
+        ->assertJsonPath('totals.total_ticket_value', '300.00');
+});
+
+it('ignores unsupported DataTables sort directions instead of treating them as SQL', function () {
+    $ascending = reportSale($this->ship, $this->company, [
+        'customer_name' => 'A Customer',
+    ]);
+    $descending = reportSale($this->ship, $this->company, [
+        'customer_name' => 'Z Customer',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?draw=1&start=0&length=10&order[0][column]=1&order[0][dir]=desc%2C%20(SELECT%201)')
+        ->assertOk()
+        ->assertJsonPath('data.0.id', $ascending->id)
+        ->assertJsonPath('data.1.id', $descending->id);
 });
 
 it('adjusts extra received amount into other fee', function () {
@@ -445,8 +491,20 @@ it('separates bftn pending and received report filters', function () {
         'bftn_status' => 'yes',
         'received_amount' => 275,
     ]);
-    Bftn::create(['sales_id' => $pending->id, 'received_status' => 0]);
-    Bftn::create(['sales_id' => $received->id, 'received_status' => 1]);
+    $pendingPayment = Payment::create([
+        'sales_id' => $pending->id,
+        'payment_method' => 'Bank Transfer',
+        'is_bftn' => true,
+        'settlement_status' => 'pending',
+        'received_amount' => 125,
+    ]);
+    $receivedPayment = Payment::create([
+        'sales_id' => $received->id,
+        'payment_method' => 'Bank Transfer',
+        'is_bftn' => true,
+        'settlement_status' => 'received',
+        'received_amount' => 275,
+    ]);
 
     $this->actingAs($this->admin)
         ->getJson('/reports?draw=1&start=0&length=10')
@@ -466,4 +524,30 @@ it('separates bftn pending and received report filters', function () {
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $received->id);
+});
+
+it('reports pending BFTN separately without counting it as due or received', function () {
+    $sale = reportSale($this->ship, $this->company, [
+        'ticket_value' => 100,
+        'total_payable' => 100,
+        'received_amount' => 0,
+        'due_amount' => 0,
+        'bftn_status' => 'yes',
+    ]);
+    Payment::create([
+        'sales_id' => $sale->id,
+        'payment_method' => 'Bank Transfer',
+        'is_bftn' => true,
+        'settlement_status' => 'pending',
+        'received_amount' => 100,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?draw=1&start=0&length=10')
+        ->assertOk()
+        ->assertJsonPath('data.0.received_amount', 0)
+        ->assertJsonPath('data.0.due_amount', '0.00')
+        ->assertJsonPath('totals.total_received_amount', '0.00')
+        ->assertJsonPath('totals.total_due_amount', '0.00')
+        ->assertJsonPath('totals.total_bftn_pending_amount', '100.00');
 });

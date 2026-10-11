@@ -60,12 +60,12 @@ class TicketSalesSystem {
 
     setupDiscountValidation() {
         const form = document.getElementById('ticketForm');
-        const ticketFee = document.getElementById('ticket_fee');
+        const TicketValue = document.getElementById('ticket_value');
         const discount = document.getElementById('discount_amount');
         const error = document.getElementById('discount-error');
 
         const validate = () => {
-            const ticketValue = Number(ticketFee?.value || 0);
+            const ticketValue = Number(TicketValue?.value || 0);
             const discountValue = Number(discount?.value || 0);
             const invalid = discountValue > ticketValue;
 
@@ -78,7 +78,7 @@ class TicketSalesSystem {
             return !invalid;
         };
 
-        ticketFee?.addEventListener('input', validate);
+        TicketValue?.addEventListener('input', validate);
         discount?.addEventListener('input', validate);
         form?.addEventListener('submit', (event) => {
             if (!validate()) {
@@ -143,7 +143,7 @@ class TicketSalesSystem {
                 whatsappField: '[name="whatsapp"]',
                 whatsappUsernameField: '[name="whatsapp_username"]',
                 sameAsMobileCheckbox: '#sameAsMobileCheckbox',
-                ticketFee: '#ticket_fee',
+                TicketValue: '#ticket_value',
                 receivedAmount: '#received_amount',
                 otherFee: '#other_fee',
                 discountAmount: '#discount_amount',
@@ -162,8 +162,6 @@ class TicketSalesSystem {
                 resetDraftButton: '#resetDraftButton',
                 reviewModal: '#reviewModal',
                 reviewContent: '#reviewContent',
-                bftnSelect: 'select[name="bftn_status"]',
-                bftnIssueDateWrapper: '#bftnIssueDateWrapper'
             },
             classes: {
                 ticketQuantity: '.ticket-quantity',
@@ -195,16 +193,17 @@ class TicketSalesSystem {
                 journey_date: "Departure Date",
                 return_date: "Return Date",
                 company_id: "Company Name",
-                ticket_fee: "Total Ticket Price",
+                ticket_value: "Total Ticket Price",
                 discount_amount: "Discount Amount",
                 total_payable: "Total Payable",
                 received_amount: "Received Amount",
+                bftn_pending_amount: "BFTN Pending",
                 due_amount: "Due Amount",
                 bftn_status: "BFTN Status",
                 bftn_issue_datetime: "BFTN Issue Date & Time",
                 issued_date: "Issued Date",
                 sold_by: "Sold By",
-                number_of_ticket: "Total Tickets",
+                ticket_count: "Total Tickets",
                 remark1: "Remark 1",
                 remark2: "Remark 2",
             },
@@ -213,7 +212,7 @@ class TicketSalesSystem {
                 { name: "customer_mobile", label: "Mobile Number" },
                 { name: "sales_source", label: "Sales Source" },
                 { name: "ship_id", label: "Ship Name" },
-                { name: "ticket_fee", label: "Total Ticket Value" },
+                { name: "ticket_value", label: "Total Ticket Value" },
                 { name: "company_id", label: "Company Name" },
                 { name: "sold_by", label: "Sold By" }
             ]
@@ -238,7 +237,7 @@ class TicketSalesSystem {
     }
 
     setupCalculationListeners() {
-        this.addEventListener('ticket_fee', 'input', () => this.calculateAll());
+        this.addEventListener('ticket_value', 'input', () => this.calculateAll());
         this.addEventListener('received_amount', 'input', () => this.calculateDue());
         this.addEventListener('other_fee', 'input', () => this.calculateAll());
         this.addEventListener('discount_amount', 'input', () => this.calculateAll());
@@ -370,7 +369,7 @@ class TicketSalesSystem {
                 await this.loadTicketCategories();
                 this.restoreNamedFields(fields, 'ticket_categories[');
                 this.calculateTotalTickets();
-                this.calculateTicketFee();
+                this.calculateTicketValue();
                 this.updateCoPassengerRows();
             }
 
@@ -380,7 +379,6 @@ class TicketSalesSystem {
             this.restoreNamedFields(fields, 'co_passengers[');
             this.calculatePaymentTotals();
             this.calculateAll();
-            this.initBftnIssueDateToggle();
         } finally {
             this.isRestoringDraft = false;
         }
@@ -409,7 +407,11 @@ class TicketSalesSystem {
 
             const field = this.getFormField(name);
             if (field && field.type !== 'file') {
-                field.value = value;
+                if (field.type === 'checkbox') {
+                    field.checked = value === '1';
+                } else {
+                    field.value = value;
+                }
                 field.dispatchEvent(new Event('input', { bubbles: true }));
                 field.dispatchEvent(new Event('change', { bubbles: true }));
             }
@@ -503,12 +505,12 @@ class TicketSalesSystem {
         }
 
         this.setValue('total_tickets', '0');
-        this.setValue('ticket_fee', '0');
+        this.setValue('ticket_value', '0');
         this.setValue('other_fee', '0');
         this.setValue('total_payable', '0.00');
         this.setValue('received_amount', '0.00');
+        this.setValue('bftn_pending_amount', '0.00');
         this.setValue('due_amount', '0.00');
-        this.initBftnIssueDateToggle();
     }
 
     removeDynamicRows(wrapper, selector) {
@@ -570,7 +572,6 @@ class TicketSalesSystem {
     initializeComponents() {
         this.initializeCoPassenger();
         this.initializePaymentMethod();
-        this.initBftnIssueDateToggle();
     }
 
     //  DOM UTILITIES 
@@ -726,7 +727,7 @@ class TicketSalesSystem {
 
             this.attachTicketQuantityListeners();
             this.calculateTotalTickets();
-            this.calculateTicketFee();
+            this.calculateTicketValue();
             this.updateCoPassengerRows();
         } else {
             this.showNoCategoriesMessage(departureContainer, returnContainer);
@@ -783,18 +784,18 @@ class TicketSalesSystem {
 
     handleTicketQuantityChange() {
         this.calculateTotalTickets();
-        this.calculateTicketFee();
+        this.calculateTicketValue();
         this.updateCoPassengerRows();
     }
 
     //  CALCULATION METHODS 
-    calculateTicketFee() {
+    calculateTicketValue() {
         const hasReturnJourney = !!this.getValue("return_date");
-        const totalTicketFee = hasReturnJourney ?
+        const totalTicketValue = hasReturnJourney ?
             this.calculateRoundTripPricing() :
             this.calculateSingleJourneyPricing();
 
-        this.setValue("ticket_fee", totalTicketFee.toFixed(2));
+        this.setValue("ticket_value", totalTicketValue.toFixed(2));
         this.calculateTotalPayable();
     }
 
@@ -872,10 +873,10 @@ class TicketSalesSystem {
     }
 
     calculateTotalPayable() {
-        const ticketFee = parseFloat(this.getValue("ticket_fee")) || 0;
+        const TicketValue = parseFloat(this.getValue("ticket_value")) || 0;
         const otherChargesFee = parseFloat(this.getValue("other_fee")) || 0;
         const discountAmount = parseFloat(this.getValue("discount_amount")) || 0;
-        const totalPayable = Math.max(0, ticketFee + otherChargesFee - discountAmount);
+        const totalPayable = Math.max(0, TicketValue + otherChargesFee - discountAmount);
         this.setValue("total_payable", totalPayable.toFixed(2));
         this.calculateDue();
     }
@@ -883,7 +884,8 @@ class TicketSalesSystem {
     calculateDue() {
         const totalPayable = parseFloat(this.getValue("total_payable")) || 0;
         const receivedAmount = parseFloat(this.getValue("received_amount")) || 0;
-        const dueAmount = Math.max(0, totalPayable - receivedAmount);
+        const pendingBftnAmount = parseFloat(this.getValue("bftn_pending_amount")) || 0;
+        const dueAmount = Math.max(0, totalPayable - receivedAmount - pendingBftnAmount);
         const extraReceivedAmount = Math.max(0, receivedAmount - totalPayable);
 
         this.setValue("due_amount", dueAmount.toFixed(2));
@@ -936,7 +938,8 @@ class TicketSalesSystem {
         const collectFromOffice = this.getElement('#collect_from_office')?.checked ?? false;
 
         this.constants.REQUIRED_FIELDS.forEach(({ name, label }) => {
-            const field = this.getElement(`[name="${name}"]`);
+            const field = this.getElement(`[name="${name}"]`)
+                || this.getElement(`#${CSS.escape(name)}`);
             const value = field?.value?.toString().trim() || '';
 
             if (!value) {
@@ -1002,16 +1005,24 @@ class TicketSalesSystem {
         let isValid = true;
         let firstErrorField = null;
 
-        const ticketFee = parseFloat(this.getValue("ticket_fee")) || 0;
+        const TicketValue = parseFloat(this.getValue("ticket_value")) || 0;
         const receivedAmount = parseFloat(this.getValue("received_amount")) || 0;
+        const hasPendingBftnPayment = Array.from(
+            this.getElements(this.selectors.classes.paymentEntry)
+        ).some((entry) => {
+                const isBftn = entry.querySelector('.payment-is-bftn')?.checked;
+                const amount = parseFloat(entry.querySelector(this.selectors.classes.paymentAmountInput)?.value) || 0;
 
-        if (ticketFee <= 0) {
-            this.showFieldError(this.getElement(this.selectors.elements.ticketFee), "Ticket fee must be greater than 0");
+                return isBftn && amount > 0;
+            });
+
+        if (TicketValue <= 0) {
+            this.showFieldError(this.getElement(this.selectors.elements.TicketValue), "Ticket price must be greater than 0");
             isValid = false;
-            firstErrorField = this.getElement(this.selectors.elements.ticketFee);
+            firstErrorField = this.getElement(this.selectors.elements.TicketValue);
         }
 
-        if (receivedAmount <= 0) {
+        if (receivedAmount <= 0 && !hasPendingBftnPayment) {
             this.showFieldError(this.getElement(this.selectors.elements.receivedAmount), "Received amount must be greater than 0");
             isValid = false;
             if (!firstErrorField) firstErrorField = this.getElement(this.selectors.elements.receivedAmount);
@@ -1245,6 +1256,15 @@ class TicketSalesSystem {
                     <option value="Nagad">Nagad</option>
                     <option value="Bank Transfer">Bank Transfer</option>
                 </select>
+                <label class="mt-2 flex items-center gap-2 text-xs text-gray-700">
+                    <input type="checkbox" name="payment_methods[${this.paymentIndex}][is_bftn]" value="1" class="payment-is-bftn" disabled>
+                    This payment is BFTN
+                </label>
+                <div class="payment-bftn-date-wrapper mt-2 hidden">
+                    <label class="mb-1 block text-xs text-gray-600">Tentative deposit date</label>
+                    <input type="datetime-local" name="payment_methods[${this.paymentIndex}][bftn_issue_datetime]"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                </div>
             </div>
 
             <div class="col-span-2">
@@ -1337,6 +1357,20 @@ class TicketSalesSystem {
         const methodSelect = div.querySelector(this.selectors.classes.paymentMethodSelect);
         const removeBtn = div.querySelector(this.selectors.classes.removePaymentBtn);
         const proofInput = div.querySelector('.payment-proof-input');
+        const bftnCheckbox = div.querySelector('.payment-is-bftn');
+        const bftnDateWrapper = div.querySelector('.payment-bftn-date-wrapper');
+
+        const updateBftnAvailability = () => {
+            const isBankTransfer = methodSelect.value === 'Bank Transfer';
+            bftnCheckbox.disabled = !isBankTransfer;
+
+            if (!isBankTransfer) {
+                bftnCheckbox.checked = false;
+            }
+
+            bftnDateWrapper.classList.toggle('hidden', !isBankTransfer || !bftnCheckbox.checked);
+            this.calculatePaymentTotals();
+        };
 
         amountInput.addEventListener('input', () => {
             this.calculatePaymentTotals();
@@ -1345,7 +1379,13 @@ class TicketSalesSystem {
         });
 
         methodSelect.addEventListener('change', () => {
+            updateBftnAvailability();
             this.calculateTotalPayable();
+            this.saveDraftSoon();
+        });
+
+        bftnCheckbox.addEventListener('change', () => {
+            updateBftnAvailability();
             this.saveDraftSoon();
         });
 
@@ -1361,6 +1401,7 @@ class TicketSalesSystem {
 
         div.addEventListener('input', () => this.saveDraftSoon());
         div.addEventListener('change', () => this.saveDraftSoon());
+        updateBftnAvailability();
     }
 
     previewPaymentProof(input) {
@@ -1400,10 +1441,20 @@ class TicketSalesSystem {
 
     calculatePaymentTotals() {
         let totalReceived = 0;
-        this.getElements(this.selectors.classes.paymentAmountInput).forEach(input => {
-            totalReceived += parseFloat(input.value) || 0;
+        let pendingBftnAmount = 0;
+
+        this.getElements(this.selectors.classes.paymentEntry).forEach(entry => {
+            const amount = parseFloat(entry.querySelector(this.selectors.classes.paymentAmountInput)?.value) || 0;
+            const isPendingBftn = entry.querySelector('.payment-is-bftn')?.checked;
+
+            if (isPendingBftn) {
+                pendingBftnAmount += amount;
+            } else {
+                totalReceived += amount;
+            }
         });
         this.setValue("received_amount", totalReceived.toFixed(2));
+        this.setValue("bftn_pending_amount", pendingBftnAmount.toFixed(2));
         this.calculateDue();
     }
 
@@ -1479,7 +1530,7 @@ class TicketSalesSystem {
             return this.escapeHtml(sellerName || value);
         }
 
-        if (["ticket_fee", "other_fee", "discount_amount", "total_payable", "received_amount", "due_amount"].includes(field)) {
+        if (["ticket_value", "other_fee", "discount_amount", "total_payable", "received_amount", "bftn_pending_amount", "due_amount"].includes(field)) {
             const formattedAmount = "৳ " + (parseFloat(value) || 0).toFixed(2);
 
             if (field === "discount_amount" || field === "due_amount") {
@@ -1619,7 +1670,7 @@ class TicketSalesSystem {
             this.getElement("#returnTicketCategoriesContainer").innerHTML = '';
             noReturnMessage.classList.remove("hidden");
             this.calculateTotalTickets();
-            this.calculateTicketFee();
+            this.calculateTicketValue();
             this.updateCoPassengerRows();
         }
     }
@@ -1680,30 +1731,12 @@ class TicketSalesSystem {
             .replace(/'/g, "&#039;");
     }
 
-    initBftnIssueDateToggle() {
-        const bftnSelect = this.getElement(this.selectors.elements.bftnSelect);
-        const issueWrapper = this.getElement(this.selectors.elements.bftnIssueDateWrapper);
-
-        if (!bftnSelect || !issueWrapper) return;
-
-        const toggleBftnIssueDate = () => {
-            if (bftnSelect.value === 'yes') {
-                issueWrapper.classList.remove('hidden');
-            } else {
-                issueWrapper.classList.add('hidden');
-            }
-        };
-
-        toggleBftnIssueDate();
-
-        if (bftnSelect.dataset.bftnToggleInitialized === undefined) {
-            bftnSelect.dataset.bftnToggleInitialized = '1';
-            bftnSelect.addEventListener('change', toggleBftnIssueDate);
-        }
-    }
-
     //  ERROR HANDLING 
     showFieldError(field, message) {
+        if (!field) {
+            return;
+        }
+
         this.clearFieldError(field);
 
         field.classList.add("border-red-500", "dark:border-red-500", "focus:ring-red-500", "focus:border-red-500");
@@ -1724,6 +1757,10 @@ class TicketSalesSystem {
     }
 
     clearFieldError(field) {
+        if (!field) {
+            return;
+        }
+
         field.classList.remove("border-red-500", "dark:border-red-500", "focus:ring-red-500", "focus:border-red-500");
         field.classList.add("border-gray-300", "dark:border-gray-600", "focus:ring-blue-500", "focus:border-blue-500");
 

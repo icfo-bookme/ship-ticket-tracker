@@ -3,6 +3,7 @@
 namespace App\Services\Sales;
 
 use App\Enums\SaleStatus;
+use App\Models\Payment;
 use App\Models\PrintedTicket;
 use App\Models\PrintStatus;
 use App\Models\Shipment;
@@ -14,13 +15,20 @@ use Illuminate\Support\Facades\Log;
 
 class SaleStatusWorkflowService
 {
-    public function markBftnReceived(int $saleId, string $receivedAt): void
+    public function markPaymentBftnReceived(int $paymentId, string $receivedAt): void
     {
-        $sale = ShipTicketSale::findOrFail($saleId);
-        $sale->bftn()->updateOrCreate(
-            ['sales_id' => $sale->id],
-            ['received_status' => true, 'received_at' => $receivedAt]
-        );
+        $payment = Payment::with('sale')->findOrFail($paymentId);
+
+        if (! $payment->is_bftn) {
+            abort(422, 'This payment is not marked as BFTN.');
+        }
+
+        $payment->update([
+            'settlement_status' => 'received',
+            'received_at' => $receivedAt,
+        ]);
+
+        $payment->sale->unsetRelation('payments');
     }
 
     public function recordTicketPrint(int $saleId): void
@@ -360,7 +368,7 @@ class SaleStatusWorkflowService
 
         return ShipTicketSale::query()
             ->whereIn('id', $saleIds)
-            ->get(['id', 'due_amount']);
+            ->get();
     }
 
     private function groupReadinessError(int $groupId, array $allowedStatuses, string $nextAction): ?string

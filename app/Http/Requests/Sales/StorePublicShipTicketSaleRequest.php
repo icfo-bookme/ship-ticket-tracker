@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Sales;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StorePublicShipTicketSaleRequest extends FormRequest
 {
@@ -29,21 +30,16 @@ class StorePublicShipTicketSaleRequest extends FormRequest
             'journey_date' => 'nullable|date|after_or_equal:today',
             'date_of_birth' => 'nullable|date|before_or_equal:'.now()->subYears(18)->toDateString(),
             'return_date' => 'nullable|date|after_or_equal:journey_date',
-            'ticket_fee' => 'required|numeric',
-            'received_amount' => 'required|numeric',
             'other_fee' => 'nullable|numeric|min:0',
-            'discount_amount' => 'nullable|numeric|min:0|lte:ticket_fee',
+            'discount_amount' => 'nullable|numeric|min:0',
             'ticket_categories' => 'nullable|array',
             'ticket_categories.departure' => 'nullable|array',
             'ticket_categories.return' => 'nullable|array',
             'ticket_categories.*.*.package_id' => 'required|integer|exists:ship_packages,id',
             'ticket_categories.*.*.quantity' => 'required|integer|min:0',
-            'payment_methods' => 'nullable|array',
+            'payment_methods' => 'required|array|min:1',
             'payment_methods.*.method' => 'required_with:payment_methods|string|max:100',
-            'payment_methods.*.amount' => 'required_with:payment_methods|numeric|min:0',
-            'number_of_ticket' => 'required|numeric',
-            'due_amount' => 'nullable|numeric',
-            'bftn_status' => 'nullable',
+            'payment_methods.*.amount' => 'required_with:payment_methods|numeric|min:0.01',
             'company_id' => 'nullable|string|max:100',
             'issued_date' => 'required|date',
             'sold_by' => 'nullable|string|max:100',
@@ -58,5 +54,18 @@ class StorePublicShipTicketSaleRequest extends FormRequest
             'whatsapp.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',
             'whatsapp_username.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $ticketCount = collect($this->input('ticket_categories', []))
+                ->flatMap(fn (mixed $categories): array => is_array($categories) ? $categories : [])
+                ->sum(fn (mixed $category): int => is_array($category) ? (int) ($category['quantity'] ?? 0) : 0);
+
+            if ($ticketCount < 1) {
+                $validator->errors()->add('ticket_categories', 'Select at least one ticket.');
+            }
+        });
     }
 }

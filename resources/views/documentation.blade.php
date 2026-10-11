@@ -277,7 +277,7 @@
                     Available Cash = Total Received - Customer Refunds Paid - Total Cash-out
                 </div>
                 <ul class="list-disc list-inside text-gray-700 space-y-2">
-                    <li><strong>Total Received:</strong> Sum of <code>received_amount</code> for sales that are not pending.</li>
+                    <li><strong>Total Received:</strong> Sum of settled payment amounts from the <code>payments</code> table.</li>
                     <li><strong>Customer Refunds Paid:</strong> Sum of customer refund amounts for completed refunds on non-pending sales.</li>
                     <li><strong>Total Cash-out:</strong> Sum of <code>cashout_amount</code> of all cash collection entries.</li>
                     <li>A negative result means more money has been refunded / cashed out than was received.</li>

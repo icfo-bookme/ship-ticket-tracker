@@ -25,13 +25,13 @@ beforeEach(function () {
         'ship_id' => Ship::create(['name' => 'MV Detail Ship', 'status' => 1])->id,
         'company_id' => Company::create(['name' => 'Detail Company', 'status' => 1])->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-23',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'payment-verified',
         'sold_by' => $this->admin->id,
     ]);
@@ -47,6 +47,7 @@ beforeEach(function () {
         'package_id' => $package->id,
         'quantity' => 1,
         'type' => 'departure',
+        'unit_price' => 500,
     ]);
 });
 

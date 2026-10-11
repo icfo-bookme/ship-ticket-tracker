@@ -22,6 +22,13 @@ class PaymentService
             $payment = Payment::create([
                 'sales_id' => $saleId,
                 'payment_method' => $data['payment_method'],
+                'is_bftn' => (bool) ($data['is_bftn'] ?? false) && $data['payment_method'] === 'Bank Transfer',
+                'settlement_status' => (bool) ($data['is_bftn'] ?? false) && $data['payment_method'] === 'Bank Transfer'
+                    ? 'pending'
+                    : 'received',
+                'bftn_issue_datetime' => (bool) ($data['is_bftn'] ?? false) && $data['payment_method'] === 'Bank Transfer'
+                    ? now()
+                    : null,
                 'received_amount' => $data['paid_amount'],
                 'transaction_id' => $data['transaction_id'] ?? null,
                 'payment_proof' => $this->paymentProofs->store($data['payment_proof'] ?? null),
@@ -35,7 +42,6 @@ class PaymentService
             if ($otherFee > 0) {
                 $sale->other_fee += $otherFee;
                 $sale->total_payable += $otherFee;
-                $sale->due_amount += $otherFee;
             }
 
             $discount = (float) ($data['discount_amount'] ?? 0);
@@ -43,14 +49,6 @@ class PaymentService
             if ($discount > 0) {
                 $sale->discount_amount += $discount;
                 $sale->total_payable -= $discount;
-                $sale->due_amount -= $discount;
-            }
-
-            $sale->received_amount += $data['paid_amount'];
-            $sale->due_amount -= $data['paid_amount'];
-
-            if ($sale->due_amount < 0) {
-                $sale->due_amount = 0;
             }
 
             $sale->save();

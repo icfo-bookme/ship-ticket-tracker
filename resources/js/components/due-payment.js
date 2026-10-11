@@ -10,6 +10,8 @@
         const paidAmountInput = document.getElementById('paidAmountInput');
         const remainingDueAmountInput = document.getElementById('remainingDueAmountInput');
         const paymentMethodSelect = document.getElementById('paymentMethodSelect');
+        const dueBftnWrapper = document.getElementById('dueBftnWrapper');
+        const dueIsBftn = document.getElementById('dueIsBftn');
         const transactionIdWrapper = document.getElementById('transactionIdWrapper');
         const transactionIdInput = document.getElementById('transactionIdInput');
         const paymentProofInput = document.getElementById('paymentProofInput');
@@ -22,6 +24,8 @@
         paidAmountInput.value = '';
         remainingDueAmountInput.value = dueTotalAmount.toFixed(2);
         paymentMethodSelect.value = '';
+        dueIsBftn.checked = false;
+        dueBftnWrapper.classList.add('hidden');
         transactionIdInput.value = '';
         transactionIdWrapper.classList.add('hidden');
         resetPaymentProof();
@@ -55,6 +59,11 @@
 
         const toggleTransactionId = () => {
             transactionIdWrapper.classList.toggle('hidden', ! needsTransactionId());
+            dueBftnWrapper.classList.toggle('hidden', paymentMethodSelect.value !== 'Bank Transfer');
+
+            if (paymentMethodSelect.value !== 'Bank Transfer') {
+                dueIsBftn.checked = false;
+            }
 
             if (! needsTransactionId()) {
                 transactionIdInput.value = '';
@@ -152,6 +161,7 @@
                     formData.append('other_fee', otherFee);
                     formData.append('discount_amount', discount);
                     formData.append('payment_method', paymentMethod);
+                    formData.append('is_bftn', dueIsBftn.checked ? '1' : '0');
                     formData.append('remark', remark || '');
 
                     if (transactionId) {

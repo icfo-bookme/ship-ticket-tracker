@@ -418,7 +418,7 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="font-bold text-gray-900">
-                                            ৳{{ number_format($ticket->ticket_fee, 2) }}</div>
+                                            ৳{{ number_format($ticket->ticket_value, 2) }}</div>
                                     </td>
                                     <td class="px-6 py-4">
                                         @php

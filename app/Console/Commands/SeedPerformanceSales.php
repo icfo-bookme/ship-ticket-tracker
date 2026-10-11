@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\Payment;
-use App\Models\Ship;
 use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
@@ -54,35 +53,37 @@ class SeedPerformanceSales extends Command
             return self::FAILURE;
         }
 
-        $ships = Ship::query()->pluck('id');
-
-        if ($ships->isEmpty()) {
-            $this->error('Add at least one ship before generating performance sales.');
-
-            return self::FAILURE;
-        }
-
         $companies = Company::query()->pluck('id');
         $sellers = User::query()->pluck('id');
         $packagesByShip = ShipPackage::query()
-            ->whereIn('ship_id', $ships)
             ->get(['id', 'ship_id', 'price'])
             ->groupBy('ship_id');
+        $ships = $packagesByShip->keys();
+
+        if ($ships->isEmpty()) {
+            $this->error('Add at least one ship package before generating performance sales.');
+
+            return self::FAILURE;
+        }
         $fake = FakerFactory::create();
         $now = now();
         $startingId = (int) (ShipTicketSale::query()->max('id') ?? 0);
         $rows = [];
+        $receivedAmounts = [];
         $selectedPackageIds = [];
+        $ticketCounts = [];
 
         for ($index = 0; $index < $count; $index++) {
             $shipId = (int) $ships->random();
-            $package = $packagesByShip->get($shipId)?->random();
-            $selectedPackageIds[] = $package?->id;
+            $package = $packagesByShip->get($shipId)->random();
+            $selectedPackageIds[] = $package->id;
             $ticketCount = $fake->numberBetween(1, 4);
-            $ticketFee = (int) (($package?->price ?: $fake->numberBetween(100, 1000)) * $ticketCount);
+            $ticketCounts[] = $ticketCount;
+            $unitPrice = (float) $package->price;
+            $ticketValue = round($unitPrice * $ticketCount, 2);
             $otherFee = $fake->randomElement([0, 5, 10, 15]);
-            $discount = $fake->numberBetween(0, min($ticketFee, 50));
-            $totalPayable = max($ticketFee + $otherFee - $discount, 0);
+            $discount = $fake->numberBetween(0, (int) min(floor($ticketValue), 50));
+            $totalPayable = max($ticketValue + $otherFee - $discount, 0);
             $receivedAmount = $fake->numberBetween(0, $totalPayable + 20);
 
             $rows[] = [
@@ -91,14 +92,10 @@ class SeedPerformanceSales extends Command
                 'sales_source' => self::SALES_SOURCE,
                 'ship_id' => $shipId,
                 'journey_date' => $fake->dateTimeBetween('-30 days', '+90 days')->format('Y-m-d'),
-                'ticket_fee' => $ticketFee,
-                'received_amount' => $receivedAmount,
-                'due_amount' => max($totalPayable - $receivedAmount, 0),
                 'company_id' => $companies->isEmpty() || $fake->boolean(10) ? null : $companies->random(),
                 'issued_date' => $now->toDateString(),
                 'sold_by' => $sellers->isEmpty() ? null : $sellers->random(),
                 'status' => $status,
-                'number_of_ticket' => $ticketCount,
                 'whatsapp' => $fake->boolean(80) ? $fake->numerify('01#########') : null,
                 'whatsapp_username' => $fake->boolean(20) ? '@'.$fake->userName() : null,
                 'other_fee' => $otherFee,
@@ -108,9 +105,10 @@ class SeedPerformanceSales extends Command
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
+            $receivedAmounts[] = $receivedAmount;
         }
 
-        DB::transaction(function () use ($rows, $count, $startingId, $selectedPackageIds, $fake, $now): void {
+        DB::transaction(function () use ($rows, $count, $startingId, $selectedPackageIds, $ticketCounts, $receivedAmounts, $fake, $now): void {
             foreach (array_chunk($rows, 250) as $chunk) {
                 ShipTicketSale::query()->insert($chunk);
             }
@@ -119,7 +117,7 @@ class SeedPerformanceSales extends Command
                 ->where('sales_source', self::SALES_SOURCE)
                 ->where('id', '>', $startingId)
                 ->orderBy('id')
-                ->get(['id', 'ship_id', 'number_of_ticket', 'received_amount']);
+                ->get(['id', 'ship_id']);
             $payments = [];
             $categories = [];
 
@@ -130,18 +128,21 @@ class SeedPerformanceSales extends Command
                     $categories[] = [
                         'ticket_id' => $sale->id,
                         'package_id' => $packageId,
-                        'quantity' => $sale->number_of_ticket,
+                        'quantity' => $ticketCounts[$index] ?? 1,
                         'type' => 'departure',
+                        'unit_price' => (float) $packagesByShip->get($sale->ship_id)->firstWhere('id', $packageId)->price,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
                 }
 
-                if ((float) $sale->received_amount > 0) {
+                $receivedAmount = (float) ($receivedAmounts[$index] ?? 0);
+
+                if ($receivedAmount > 0) {
                     $payments[] = [
                         'sales_id' => $sale->id,
                         'payment_method' => $fake->randomElement(['Cash', 'Bkash', 'Nagad', 'Bank Transfer']),
-                        'received_amount' => $sale->received_amount,
+                        'received_amount' => $receivedAmount,
                         'paid_date' => $now->toDateString(),
                         'payment_datetime' => $now,
                         'created_at' => $now,

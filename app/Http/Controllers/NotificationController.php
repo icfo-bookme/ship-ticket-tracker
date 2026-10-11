@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bftn;
+use App\Models\Payment;
 use App\Services\Notifications\BftnNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,9 +16,9 @@ class NotificationController extends Controller
         return response()->json($this->bftnNotifications->payload());
     }
 
-    public function verify(Bftn $notification): RedirectResponse
+    public function verify(Payment $payment): RedirectResponse
     {
-        $this->bftnNotifications->markAsRead($notification);
+        $this->bftnNotifications->markAsRead($payment);
 
         return redirect()->back();
     }

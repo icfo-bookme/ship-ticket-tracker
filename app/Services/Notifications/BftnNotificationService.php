@@ -2,7 +2,7 @@
 
 namespace App\Services\Notifications;
 
-use App\Models\Bftn;
+use App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -18,25 +18,26 @@ class BftnNotificationService
         return [
             'success' => true,
             'count' => $notifications
-                ->where('notifications_status', 1)
+                ->whereNull('bftn_notification_read_at')
                 ->count(),
-            'data' => $notifications->map(fn (Bftn $notification): array => $this->format($notification)),
+            'data' => $notifications->map(fn (Payment $payment): array => $this->format($payment)),
         ];
     }
 
-    public function markAsRead(Bftn $notification): void
+    public function markAsRead(Payment $payment): void
     {
-        $notification->notifications_status = 0;
-        $notification->save();
+        $payment->update(['bftn_notification_read_at' => now()]);
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, \App\Models\Bftn>
+     * @return \Illuminate\Support\Collection<int, \App\Models\Payment>
      */
     private function dueNotifications(): Collection
     {
-        return Bftn::with('sale')
-            ->where('bftn_date_time', '<=', Carbon::today()->endOfDay())
+        return Payment::with('sale')
+            ->where('is_bftn', true)
+            ->whereNotNull('bftn_issue_datetime')
+            ->where('bftn_issue_datetime', '<=', Carbon::today()->endOfDay())
             ->latest()
             ->limit(50)
             ->get();
@@ -45,19 +46,21 @@ class BftnNotificationService
     /**
      * @return array<string, mixed>
      */
-    private function format(Bftn $notification): array
+    private function format(Payment $payment): array
     {
-        $customerName = $notification->sale?->customer_name ?? 'Customer';
-        $whatsapp = $notification->sale?->whatsapp ?? 'N/A';
-        $dateTime = Carbon::parse($notification->bftn_date_time)->format('d M Y, h:i A');
+        $sale = $payment->sale;
+        $customerName = $sale?->customer_name ?? 'Customer';
+        $whatsapp = $sale?->whatsapp ?? 'N/A';
+        $dateTime = Carbon::parse($payment->bftn_issue_datetime)->format('d M Y, h:i A');
+        $paymentAmount = number_format((float) $payment->received_amount, 2);
 
         return [
-            'id' => $notification->id,
-            'notification' => "{$customerName} ({$whatsapp}) - Sales BFTN tentative deposit at {$dateTime}",
-            'isActive' => $notification->notifications_status == 1,
-            'created_at' => $notification->created_at,
-            'updated_at' => $notification->updated_at,
-            'redirectUrl' => "/ship-ticket-sales/{$notification->sales_id}",
+            'id' => $payment->id,
+            'notification' => "{$customerName} ({$whatsapp}) - BFTN payment of ৳{$paymentAmount}, tentative deposit at {$dateTime}",
+            'isActive' => $payment->bftn_notification_read_at === null,
+            'created_at' => $payment->created_at,
+            'updated_at' => $payment->updated_at,
+            'redirectUrl' => $sale ? "/ship-ticket-sales/{$sale->id}" : null,
         ];
     }
 }

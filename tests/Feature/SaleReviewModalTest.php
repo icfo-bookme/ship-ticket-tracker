@@ -26,7 +26,8 @@ it('gives the review modal the seller name while still posting the seller id', f
         ->assertSee('id="cancelDraftButton"', false)
         ->assertSee('ship-ticket-sales', false)
         ->assertSee('data-seller-name="Review Seller"', false)
-        ->assertSee('name="sold_by" value="'.$this->admin->id.'"', false);
+        ->assertSee('name="sold_by" value="'.$this->admin->id.'"', false)
+        ->assertSee('id="ticket_value" readonly', false);
 });
 
 it('shows the seller name, discount and due amounts in the review modal script', function () {
@@ -37,6 +38,8 @@ it('shows the seller name, discount and due amounts in the review modal script',
         ->and($script)->toContain('field === "discount_amount" || field === "due_amount"')
         ->and($script)->toContain("document.readyState === 'loading'")
         ->and($script)->toContain("this.addEventListener('cancelDraftButton', 'click', () => this.cancelDraft())")
+        ->and($script)->toContain('this.getElement(`#${CSS.escape(name)}`)')
+        ->and($script)->toContain('if (!field) {')
         ->and($script)->toContain('text-red-600');
 });
 

@@ -17,10 +17,10 @@ class SalesDataTableService
             'ships',
             'companies',
             'shipment',
+            'categories',
             'payments',
             'refunds',
             'seller:id,name',
-            'bftn',
             'printedTickets',
             'groupedTickets.sale:id,status',
             'verifyby.verifiedByUser',
@@ -43,10 +43,21 @@ class SalesDataTableService
             ->get();
 
         $sales->each(function (ShipTicketSale $sale): void {
+            $sale->setAttribute('ticket_count', (int) $sale->categories->sum('quantity'));
+            $sale->setAttribute('ticket_value', $sale->ticket_value);
             $sale->setAttribute('whatsapp_display', $sale->whatsapp ?: $sale->whatsapp_username);
+            $settledAmount = (float) $sale->payments
+                ->reject(fn ($payment): bool => $payment->is_bftn && $payment->settlement_status !== 'received')
+                ->sum('received_amount');
+            $sale->setAttribute('received_amount', $settledAmount);
+            $sale->setAttribute(
+                'bftn_status',
+                $sale->payments->contains(fn ($payment): bool => $payment->is_bftn) ? 'yes' : 'no'
+            );
             $sale->setAttribute(
                 'bftn_received',
-                $sale->bftn_status === 'yes' && (bool) $sale->bftn?->received_status
+                $sale->payments->where('is_bftn', true)->isNotEmpty()
+                    && $sale->payments->where('is_bftn', true)->every(fn ($payment): bool => $payment->settlement_status === 'received')
             );
         });
 
@@ -58,6 +69,52 @@ class SalesDataTableService
             'draw' => $request->input('draw'),
             'recordsTotal' => $recordsTotalQuery->count(),
             'recordsFiltered' => $filteredRecords,
+            'data' => $sales,
+        ]);
+    }
+
+    public function deletedResponse(Request $request): JsonResponse
+    {
+        $query = ShipTicketSale::onlyTrashed()
+            ->with(['ships:id,name', 'companies:id,name']);
+        $recordsTotal = (clone $query)->count();
+        $search = trim((string) $request->input('search.value', ''));
+
+        if ($search !== '') {
+            $query->where(function (Builder $sales) use ($search): void {
+                $sales->where('customer_name', 'like', "%{$search}%")
+                    ->orWhere('customer_mobile', 'like', "%{$search}%")
+                    ->orWhere('id', $search)
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhereHas('ships', fn (Builder $ships) => $ships->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('companies', fn (Builder $companies) => $companies->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        $recordsFiltered = (clone $query)->count();
+        $start = max(0, $request->integer('start', 0));
+        $requestedLength = $request->integer('length', 10);
+        $length = $requestedLength < 1 ? 10 : min($requestedLength, 100);
+
+        $sales = $query->orderByDesc('deleted_at')
+            ->skip($start)
+            ->take($length)
+            ->get()
+            ->map(fn (ShipTicketSale $sale): array => [
+                'id' => $sale->id,
+                'customer_name' => $sale->customer_name,
+                'customer_mobile' => $sale->customer_mobile,
+                'ship_name' => $sale->ships?->name,
+                'company_name' => $sale->companies?->name,
+                'journey_date' => $sale->getRawOriginal('journey_date'),
+                'status' => $sale->status,
+                'deleted_at' => $sale->deleted_at?->format('Y-m-d H:i:s'),
+            ]);
+
+        return response()->json([
+            'draw' => $request->input('draw'),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
             'data' => $sales,
         ]);
     }
@@ -118,7 +175,11 @@ class SalesDataTableService
             FROM refunds
             WHERE refunds.sales_id = ship_ticket_sales.id
                 AND refunds.status != ?
-        ) < ship_ticket_sales.number_of_ticket', ['cancelled']);
+        ) < (
+            SELECT COALESCE(SUM(categories.quantity), 0)
+            FROM categories
+            WHERE categories.ticket_id = ship_ticket_sales.id
+        )', ['cancelled']);
     }
 
     private function applySearch($query, string $searchValue): void
@@ -135,13 +196,21 @@ class SalesDataTableService
                 ->orWhere('email', 'like', "%{$searchValue}%")
                 ->orWhere('nid', 'like', "%{$searchValue}%")
                 ->orWhere('sales_source', 'like', "%{$searchValue}%")
-                ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
+                ->orWhereRaw('(
+                    SELECT COALESCE(SUM(categories.quantity * categories.unit_price), 0)
+                    FROM categories
+                    WHERE categories.ticket_id = ship_ticket_sales.id
+                ) LIKE ?', ["%{$searchValue}%"])
                 ->orWhere('discount_amount', 'like', "%{$searchValue}%")
                 ->orWhere('total_payable', 'like', "%{$searchValue}%")
                 ->orWhereHas('payments', fn ($payments) => $payments->where('payment_method', 'like', "%{$searchValue}%"))
-                ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
-                ->orWhere('received_amount', 'like', "%{$searchValue}%")
-                ->orWhere('due_amount', 'like', "%{$searchValue}%")
+                ->orWhereRaw('(
+                    SELECT COALESCE(SUM(categories.quantity), 0)
+                    FROM categories
+                    WHERE categories.ticket_id = ship_ticket_sales.id
+                ) LIKE ?', ["%{$searchValue}%"])
+                ->orWhereHas('payments', fn ($payments) => $payments->where('received_amount', 'like', "%{$searchValue}%"))
+                ->orWhereRaw('('.ShipTicketSale::dueAmountSql().') LIKE ?', ["%{$searchValue}%"])
                 ->orWhere('sold_by', 'like', "%{$searchValue}%")
                 ->orWhereHas('categories.package', fn ($packages) => $packages->where('name', 'like', "%{$searchValue}%"))
                 ->orWhere('status', 'like', "%{$searchValue}%")

@@ -4,8 +4,8 @@ namespace App\Services\Finance;
 
 use App\Enums\SaleStatus;
 use App\Models\CashCollection;
+use App\Models\Payment;
 use App\Models\Refund;
-use App\Models\ShipTicketSale;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -21,8 +21,7 @@ class CashCollectionService
      */
     public function summary(): array
     {
-        $totalReceivedAmount = (float) ShipTicketSale::where('status', '!=', SaleStatus::Pending->value)
-            ->sum('received_amount');
+        $totalReceivedAmount = $this->settledPaymentsTotal();
 
         $totalRefundedAmount = $this->totalRefundOutflow();
 
@@ -89,8 +88,7 @@ class CashCollectionService
 
     private function availableCashAmount(): float
     {
-        $totalReceivedAmount = (float) ShipTicketSale::where('status', '!=', SaleStatus::Pending->value)
-            ->sum('received_amount');
+        $totalReceivedAmount = $this->settledPaymentsTotal();
         $totalRefundedAmount = $this->totalRefundOutflow();
         $totalCashedOutAmount = (float) CashCollection::sum('cashout_amount');
 
@@ -104,5 +102,15 @@ class CashCollectionService
             ->whereHas('sale', fn ($sales) => $sales->where('status', '!=', SaleStatus::Pending->value))
             ->selectRaw('COALESCE(SUM(customer_refund_amount + partner_share_amount), 0) AS total')
             ->value('total');
+    }
+
+    private function settledPaymentsTotal(): float
+    {
+        $paymentTotal = (float) Payment::query()
+            ->whereHas('sale', fn ($sales) => $sales->where('status', '!=', SaleStatus::Pending->value))
+            ->where(fn ($payments) => $payments->where('is_bftn', false)->orWhere('settlement_status', 'received'))
+            ->sum('received_amount');
+
+        return $paymentTotal;
     }
 }

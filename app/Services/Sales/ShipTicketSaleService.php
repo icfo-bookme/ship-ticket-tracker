@@ -3,11 +3,11 @@
 namespace App\Services\Sales;
 
 use App\Enums\SaleStatus;
-use App\Models\Bftn;
 use App\Models\Category;
 use App\Models\CoPassenger;
 use App\Models\Payment;
 use App\Models\Ship;
+use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use App\Models\WhatsappDetail;
@@ -29,16 +29,31 @@ class ShipTicketSaleService
         ShipTicketSale::findOrFail($saleId)->delete();
     }
 
+    public function restore(int $saleId): ShipTicketSale
+    {
+        $sale = ShipTicketSale::onlyTrashed()->findOrFail($saleId);
+        $sale->restore();
+
+        return $sale;
+    }
+
     public function create(array $data, array $input): ShipTicketSale
     {
         $data = $this->normalizeFinancials($data, $input);
+        $saleAttributes = $data;
+        unset($saleAttributes['received_amount']);
+        unset($saleAttributes['ticket_value']);
+        unset($saleAttributes['due_amount']);
 
-        $ticketSale = DB::transaction(function () use ($data, $input): ShipTicketSale {
-            $ticketSale = ShipTicketSale::create($data);
+        $ticketSale = DB::transaction(function () use ($saleAttributes, $input): ShipTicketSale {
+            $ticketSale = ShipTicketSale::create($saleAttributes);
 
             $this->createCoPassengers($ticketSale, $input['co_passengers'] ?? [], true);
-            $this->createPayments($ticketSale, $input['payment_methods'] ?? [], true);
-            $this->createBftnIfNeeded($ticketSale, $input);
+            $this->createPayments(
+                $ticketSale,
+                $input['payment_methods'] ?? [],
+                true,
+            );
             $this->createTicketCategories($ticketSale, $input['ticket_categories'] ?? []);
 
             return $ticketSale;
@@ -59,8 +74,13 @@ class ShipTicketSaleService
             $data['sales_source'] = $whatsapp?->whatsapp_number;
         }
 
-        $ticketSale = DB::transaction(function () use ($data, $input): ShipTicketSale {
-            $ticketSale = ShipTicketSale::create($data);
+        $saleAttributes = $data;
+        unset($saleAttributes['received_amount']);
+        unset($saleAttributes['ticket_value']);
+        unset($saleAttributes['due_amount']);
+
+        $ticketSale = DB::transaction(function () use ($saleAttributes, $input): ShipTicketSale {
+            $ticketSale = ShipTicketSale::create($saleAttributes);
 
             $this->createCoPassengers($ticketSale, $input['co_passengers'] ?? [], false);
             $this->createPayments($ticketSale, $input['payment_methods'] ?? [], false);
@@ -86,14 +106,14 @@ class ShipTicketSaleService
                 ]);
             }
 
-            $data['number_of_ticket'] = $ticketCount;
-            $data['ticket_fee'] = $this->saleFinancials->ticketFeeFromPackageQuantities(
+            $data['ticket_value'] = $this->saleFinancials->ticketValueFromPackageQuantities(
                 $data['ship_id'] ?? $sale->ship_id,
                 $data['return_date'] ?? $sale->return_date,
                 $input['departure_quantity'] ?? [],
                 $input['return_quantity'] ?? [],
-                (float) ($data['ticket_fee'] ?? $sale->ticket_fee),
             );
+        } else {
+            $data['ticket_value'] = $sale->ticket_value;
         }
         $data = $this->normalizeFinancials($data, $input);
 
@@ -114,14 +134,9 @@ class ShipTicketSaleService
                 'company_id' => $data['company_id'],
                 'journey_date' => $data['journey_date'],
                 'return_date' => $data['return_date'],
-                'number_of_ticket' => $data['number_of_ticket'],
-                'ticket_fee' => $data['ticket_fee'],
-                'received_amount' => $data['received_amount'] ?? 0,
-                'due_amount' => $data['due_amount'] ?? $data['ticket_fee'],
                 'other_fee' => $data['other_fee'] ?? 0,
                 'discount_amount' => $data['discount_amount'] ?? 0,
                 'total_payable' => $data['total_payable'] ?? 0,
-                'bftn_status' => $data['bftn_status'] ?? null,
                 'sales_source' => $data['sales_source'],
                 // sold_by is locked after creation: the edit form shows it disabled.
                 'sold_by' => $sale->sold_by,
@@ -136,6 +151,7 @@ class ShipTicketSaleService
             }
 
             $this->updatePayments($sale, $data['payments'] ?? []);
+            $sale->refresh();
             $this->updateCoPassengers($sale, $data['co_passengers'] ?? []);
             $this->addPrintedTickets($sale, $input['additional_pdf'] ?? []);
 
@@ -223,14 +239,25 @@ class ShipTicketSaleService
         }
     }
 
-    private function createPayments(ShipTicketSale $ticketSale, array $paymentMethods, bool $withExtraFields): void
-    {
+    private function createPayments(
+        ShipTicketSale $ticketSale,
+        array $paymentMethods,
+        bool $withExtraFields,
+    ): void {
         foreach ($paymentMethods as $paymentMethod) {
             if (! empty($paymentMethod['method']) && ! empty($paymentMethod['amount'])) {
+                $isBftn = $paymentMethod['method'] === 'Bank Transfer'
+                    && (bool) ($paymentMethod['is_bftn'] ?? false);
+
                 Payment::create([
                     'sales_id' => $ticketSale->id,
                     'payment_method' => $paymentMethod['method'],
+                    'is_bftn' => $isBftn,
+                    'settlement_status' => $isBftn ? 'pending' : 'received',
                     'received_amount' => $paymentMethod['amount'],
+                    'bftn_issue_datetime' => $isBftn
+                        ? ($paymentMethod['bftn_issue_datetime'] ?? null)
+                        : null,
                     ...($withExtraFields ? [
                         'transaction_id' => $paymentMethod['transaction_id'] ?? null,
                         'payment_datetime' => $paymentMethod['payment_datetime'] ?? null,
@@ -243,28 +270,40 @@ class ShipTicketSaleService
         }
     }
 
-    private function createBftnIfNeeded(ShipTicketSale $ticketSale, array $input): void
-    {
-        if (($input['bftn_status'] ?? null) == 'yes' && ! empty($input['bftn_issue_datetime'])) {
-            Bftn::create([
-                'sales_id' => $ticketSale->id,
-                'bftn_date_time' => $input['bftn_issue_datetime'],
-                'status' => 0,
-                'notifications_status' => 1,
-            ]);
-        }
-    }
-
     private function createTicketCategories(ShipTicketSale $ticketSale, array $ticketCategories): void
     {
+        $packageIds = collect($ticketCategories)
+            ->flatMap(fn (mixed $categories): array => is_array($categories) ? $categories : [])
+            ->pluck('package_id')
+            ->map(fn (mixed $packageId): int => (int) $packageId)
+            ->unique();
+        $packages = ShipPackage::query()
+            ->where('ship_id', $ticketSale->ship_id)
+            ->whereIn('id', $packageIds)
+            ->get()
+            ->keyBy('id');
+
         foreach ($ticketCategories as $type => $categories) {
             foreach ($categories as $category) {
                 if ($category['quantity'] > 0) {
+                    $package = $packages->get((int) $category['package_id']);
+
+                    if (! $package) {
+                        throw ValidationException::withMessages([
+                            'ticket_categories' => 'One or more selected ticket packages are invalid for this ship.',
+                        ]);
+                    }
+
                     Category::create([
                         'ticket_id' => $ticketSale->id,
                         'package_id' => $category['package_id'],
                         'quantity' => $category['quantity'],
                         'type' => $type,
+                        'unit_price' => $this->saleFinancials->categoryUnitPrice(
+                            $package,
+                            $type,
+                            $ticketSale->return_date,
+                        ),
                     ]);
                 }
             }
@@ -274,6 +313,15 @@ class ShipTicketSaleService
     private function updatePackageCategories(ShipTicketSale $sale, array $data): void
     {
         $sale->categories()->delete();
+        $packageIds = array_unique(array_merge(
+            array_map('intval', array_keys($data['departure_quantity'] ?? [])),
+            array_map('intval', array_keys($data['return_quantity'] ?? [])),
+        ));
+        $packages = ShipPackage::query()
+            ->where('ship_id', $data['ship_id'] ?? $sale->ship_id)
+            ->whereIn('id', $packageIds)
+            ->get()
+            ->keyBy('id');
 
         foreach (($data['departure_quantity'] ?? []) as $packageId => $quantity) {
             $quantity = (int) $quantity;
@@ -282,6 +330,11 @@ class ShipTicketSaleService
                     'package_id' => (int) $packageId,
                     'type' => 'departure',
                     'quantity' => $quantity,
+                    'unit_price' => $this->saleFinancials->categoryUnitPrice(
+                        $packages->get((int) $packageId),
+                        'departure',
+                        $data['return_date'] ?? $sale->return_date,
+                    ),
                 ]);
             }
         }
@@ -293,6 +346,11 @@ class ShipTicketSaleService
                     'package_id' => (int) $packageId,
                     'type' => 'return',
                     'quantity' => $quantity,
+                    'unit_price' => $this->saleFinancials->categoryUnitPrice(
+                        $packages->get((int) $packageId),
+                        'return',
+                        $data['return_date'] ?? $sale->return_date,
+                    ),
                 ]);
             }
         }
@@ -300,36 +358,60 @@ class ShipTicketSaleService
 
     private function updatePayments(ShipTicketSale $sale, array $payments): void
     {
-        $existingProofs = $sale->payments()->pluck('payment_proof')->filter()->all();
-
-        $sale->payments()->delete();
-
+        $existingPayments = $sale->payments()->get()->keyBy('id');
         $retainedProofs = [];
+        $updatedIds = [];
 
         foreach ($payments as $payment) {
             if (empty($payment['payment_method']) || empty($payment['received_amount'])) {
                 continue;
             }
 
-            $proof = $this->paymentProofs->store($payment['proof_file'] ?? null) ?? ($payment['payment_proof'] ?? null);
+            $existing = $existingPayments->get((int) ($payment['payment_id'] ?? 0));
+            $isBftn = $payment['payment_method'] === 'Bank Transfer'
+                && (array_key_exists('is_bftn', $payment) ? (bool) $payment['is_bftn'] : (bool) $existing?->is_bftn);
+            $proof = $this->paymentProofs->store($payment['proof_file'] ?? null)
+                ?? ($payment['payment_proof'] ?? $existing?->payment_proof);
 
             if ($proof) {
                 $retainedProofs[] = $proof;
             }
 
-            $sale->payments()->create([
+            $attributes = [
                 'payment_method' => $payment['payment_method'],
+                'is_bftn' => $isBftn,
+                'settlement_status' => $isBftn
+                    ? ($existing?->is_bftn ? $existing->settlement_status : 'pending')
+                    : 'received',
                 'received_amount' => $payment['received_amount'],
                 'paid_date' => $payment['paid_date'] ?? null,
                 'transaction_id' => $payment['transaction_id'] ?? null,
                 'payment_datetime' => $payment['payment_datetime'] ?? null,
+                'bftn_issue_datetime' => $payment['bftn_issue_datetime'] ?? $existing?->bftn_issue_datetime,
+                'received_at' => $existing?->received_at,
+                'bftn_notification_read_at' => $isBftn && $existing?->is_bftn
+                    ? $existing->bftn_notification_read_at
+                    : null,
                 'payment_proof' => $proof,
                 'remark' => $payment['remark'] ?? null,
-            ]);
+            ];
+
+            if ($existing) {
+                $existing->update($attributes);
+                $updatedIds[] = $existing->id;
+            } else {
+                $created = $sale->payments()->create($attributes);
+                $updatedIds[] = $created->id;
+            }
         }
 
-        foreach (array_diff($existingProofs, $retainedProofs) as $removedProof) {
-            $this->paymentProofs->delete($removedProof);
+        foreach ($existingPayments as $existing) {
+            if (! in_array($existing->id, $updatedIds, true)) {
+                $existing->delete();
+                if ($existing->payment_proof && ! in_array($existing->payment_proof, $retainedProofs, true)) {
+                    $this->paymentProofs->delete($existing->payment_proof);
+                }
+            }
         }
     }
 
@@ -434,7 +516,7 @@ class ShipTicketSaleService
                 $data['email'] ?? '',
                 $ship?->name ?? '',
                 $input['sales_source'] ?? null,
-                $data['ticket_fee'],
+                $data['ticket_value'],
                 $data['received_amount'],
                 $this->paymentString($input['payment_methods'] ?? []),
                 $user?->name ?? '',
@@ -460,7 +542,7 @@ class ShipTicketSaleService
             $data['email'] ?? '',
             $ship->name,
             $whatsapp->whatsapp_number ?? 'not found',
-            $data['ticket_fee'],
+            $data['ticket_value'],
             $data['received_amount'],
             $this->paymentString($input['payment_methods'] ?? []),
             'guest',
@@ -486,25 +568,30 @@ class ShipTicketSaleService
 
     private function normalizeFinancials(array $data, array $input, bool $publicPricing = false): array
     {
+        $this->validateBftnPaymentInput($input);
+
         if (array_key_exists('ticket_categories', $input) && is_array($input['ticket_categories'])) {
-            $data['ticket_fee'] = $this->saleFinancials->ticketFeeFromCategories(
+            $data['ticket_value'] = $this->saleFinancials->ticketValueFromCategories(
                 $data['ship_id'],
                 $data['return_date'] ?? null,
                 $input['ticket_categories'],
-                (float) ($data['ticket_fee'] ?? 0),
                 $publicPricing,
             );
+        } elseif (! isset($data['ticket_value'])) {
+            $data['ticket_value'] = 0.0;
         }
 
         $data['other_fee'] = (float) ($data['other_fee'] ?? $input['other_fee'] ?? 0);
         $data['discount_amount'] = (float) ($data['discount_amount'] ?? $input['discount_amount'] ?? 0);
         $receivedAmount = $this->receivedAmountFromPaymentInput($input)
-            ?? (float) ($data['received_amount'] ?? $input['received_amount'] ?? 0);
+            ?? 0.0;
+        $pendingBftnAmount = $this->pendingBftnAmountFromPaymentInput($input);
         $summary = $this->saleFinancials->summary(
-            (float) ($data['ticket_fee'] ?? 0),
+            (float) ($data['ticket_value'] ?? 0),
             $data['other_fee'],
             $data['discount_amount'],
             $receivedAmount,
+            $pendingBftnAmount,
         );
 
         return [...$data, ...$summary, 'other_fee' => $data['other_fee'], 'discount_amount' => $data['discount_amount']];
@@ -523,8 +610,56 @@ class ShipTicketSaleService
 
         return round(array_reduce(
             $payments,
-            fn (float $total, mixed $payment): float => $total + (is_array($payment) ? max((float) ($payment[$amountKey] ?? 0), 0) : 0),
+            fn (float $total, mixed $payment): float => $total + (
+                is_array($payment)
+                    ? $this->settledPaymentInputAmount($payment, $amountKey)
+                    : 0
+            ),
             0.0,
         ), 2);
+    }
+
+    private function pendingBftnAmountFromPaymentInput(array $input): float
+    {
+        $paymentField = array_key_exists('payment_methods', $input) ? 'payment_methods' : 'payments';
+        $amountKey = $paymentField === 'payment_methods' ? 'amount' : 'received_amount';
+
+        return round(array_reduce(
+            $input[$paymentField] ?? [],
+            fn (float $total, mixed $payment): float => $total + (
+                is_array($payment)
+                && ! empty($payment['is_bftn'])
+                && ($payment['settlement_status'] ?? null) !== 'received'
+                    ? max((float) ($payment[$amountKey] ?? 0), 0)
+                    : 0
+            ),
+            0.0,
+        ), 2);
+    }
+
+    private function settledPaymentInputAmount(array $payment, string $amountKey): float
+    {
+        $isBftn = (bool) ($payment['is_bftn'] ?? false)
+            && ($payment['method'] ?? $payment['payment_method'] ?? null) === 'Bank Transfer';
+        $isSettled = ($payment['settlement_status'] ?? null) === 'received';
+
+        return $isBftn && ! $isSettled ? 0.0 : max((float) ($payment[$amountKey] ?? 0), 0);
+    }
+
+    private function validateBftnPaymentInput(array $input): void
+    {
+        $field = array_key_exists('payment_methods', $input) ? 'payment_methods' : 'payments';
+        $payments = $input[$field] ?? [];
+        foreach ($payments as $index => $payment) {
+            if (! is_array($payment) || empty($payment['is_bftn'])) {
+                continue;
+            }
+
+            if (($payment['method'] ?? $payment['payment_method'] ?? null) !== 'Bank Transfer') {
+                throw ValidationException::withMessages([
+                    $field.'.'.$index.'.is_bftn' => 'Only a Bank Transfer payment can be marked as BFTN.',
+                ]);
+            }
+        }
     }
 }

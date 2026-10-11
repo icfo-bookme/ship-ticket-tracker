@@ -13,15 +13,14 @@ class SaleFinancialService
     /**
      * @param  array<string, array<int, array{package_id?: int|string, quantity?: int|string}>>  $ticketCategories
      */
-    public function ticketFeeFromCategories(
+    public function ticketValueFromCategories(
         int|string $shipId,
         ?string $returnDate,
         array $ticketCategories,
-        ?float $fallback,
         bool $publicPricing = false,
     ): float {
         if ($ticketCategories === []) {
-            return round($fallback ?? 0, 2);
+            return 0.0;
         }
 
         $quantities = [];
@@ -41,22 +40,21 @@ class SaleFinancialService
             }
         }
 
-        return $this->calculateTicketFee($shipId, $returnDate, $quantities, $fallback, $publicPricing);
+        return $this->calculateTicketValue($shipId, $returnDate, $quantities, $publicPricing);
     }
 
     /**
      * @param  array<int|string, int|string>  $departureQuantities
      * @param  array<int|string, int|string>  $returnQuantities
      */
-    public function ticketFeeFromPackageQuantities(
+    public function ticketValueFromPackageQuantities(
         int|string $shipId,
         ?string $returnDate,
         array $departureQuantities,
         array $returnQuantities,
-        ?float $fallback,
     ): float {
         if ($departureQuantities === [] && $returnQuantities === []) {
-            return round($fallback ?? 0, 2);
+            return 0.0;
         }
 
         $quantities = [];
@@ -68,55 +66,100 @@ class SaleFinancialService
             }
         }
 
-        return $this->calculateTicketFee($shipId, $returnDate, $quantities, $fallback, false);
-    }
+        $activePackageIds = collect($quantities)
+            ->filter(fn (array $item): bool => (int) ($item['departure'] ?? 0) > 0 || (int) ($item['return'] ?? 0) > 0)
+            ->keys();
 
-    /** @return array{ticket_fee: float, total_payable: float, received_amount: float, due_amount: float} */
-    public function summary(float $ticketFee, float $otherFee, float $discount, float $received): array
-    {
-        $ticketFee = round(max($ticketFee, 0), 2);
-        $otherFee = round(max($otherFee, 0), 2);
-        $discount = round(max($discount, 0), 2);
-        $received = round(max($received, 0), 2);
+        if ($activePackageIds->isEmpty()) {
+            return 0.0;
+        }
 
-        if ($discount > $ticketFee) {
+        $packages = ShipPackage::query()
+            ->where('ship_id', $shipId)
+            ->whereIn('id', $activePackageIds)
+            ->get()
+            ->keyBy('id');
+
+        if ($packages->count() !== $activePackageIds->count()) {
             throw ValidationException::withMessages([
-                'discount_amount' => 'Discount cannot exceed the calculated ticket fee.',
+                'ticket_categories' => 'One or more selected ticket packages are invalid for this ship.',
             ]);
         }
 
-        $totalPayable = round(max($ticketFee + $otherFee - $discount, 0), 2);
+        $total = 0.0;
+        foreach ($quantities as $packageId => $item) {
+            $package = $packages->get($packageId);
+
+            foreach (['departure', 'return'] as $type) {
+                $quantity = (int) ($item[$type] ?? 0);
+                $total += $quantity * $this->categoryUnitPrice($package, $type, $returnDate);
+            }
+        }
+
+        return round($total, 2);
+    }
+
+    /** @return array{ticket_value: float, total_payable: float, received_amount: float, due_amount: float} */
+    public function summary(
+        float $ticketValue,
+        float $otherFee,
+        float $discount,
+        float $received,
+        float $pendingBftn = 0,
+    ): array {
+        $ticketValue = round(max($ticketValue, 0), 2);
+        $otherFee = round(max($otherFee, 0), 2);
+        $discount = round(max($discount, 0), 2);
+        $received = round(max($received, 0), 2);
+        $pendingBftn = round(max($pendingBftn, 0), 2);
+
+        if ($discount > $ticketValue) {
+            throw ValidationException::withMessages([
+                'discount_amount' => 'Discount cannot exceed the calculated ticket price.',
+            ]);
+        }
+
+        $totalPayable = round(max($ticketValue + $otherFee - $discount, 0), 2);
 
         return [
-            'ticket_fee' => $ticketFee,
+            'ticket_value' => $ticketValue,
             'total_payable' => $totalPayable,
             'received_amount' => $received,
-            'due_amount' => round(max($totalPayable - $received, 0), 2),
+            'due_amount' => round(max($totalPayable - $received - $pendingBftn, 0), 2),
         ];
     }
 
-    /** @return array{ticket_fee: float, total_payable: float, received_amount: float, due_amount: float, extra_received_amount: float, extra_remaining_amount: float} */
+    /** @return array{ticket_value: float, total_payable: float, received_amount: float, due_amount: float, extra_received_amount: float, extra_remaining_amount: float} */
     public function currentSummary(ShipTicketSale $sale): array
     {
-        $sale->loadMissing(['payments', 'refunds']);
-        $receivedAmount = $sale->payments->isNotEmpty()
-            ? (float) $sale->payments->sum('received_amount')
-            : (float) $sale->received_amount;
+        $sale->loadMissing(['payments', 'refunds', 'categories']);
+        $receivedAmount = (float) $sale->payments
+            ->reject(fn ($payment): bool => $payment->is_bftn && $payment->settlement_status !== 'received')
+            ->sum('received_amount');
+        $pendingBftnAmount = (float) $sale->payments
+            ->where('is_bftn', true)
+            ->where('settlement_status', 'pending')
+            ->sum('received_amount');
         $summary = $this->summary(
-            (float) $sale->ticket_fee,
+            (float) $sale->ticket_value,
             (float) $sale->other_fee,
             (float) $sale->discount_amount,
             $receivedAmount,
+            $pendingBftnAmount,
         );
+        $summary['total_payable'] = round((float) $sale->total_payable, 2);
         $dueAdjustments = (float) $sale->refunds
             ->filter(fn ($refund): bool => $refund->status === RefundStatus::Completed->value || $refund->customer_refunded_at !== null)
             ->sum('due_adjusted_amount');
-        $summary['due_amount'] = round(max($summary['due_amount'] - $dueAdjustments, 0), 2);
+        $summary['due_amount'] = round(max(
+            (float) $sale->total_payable - $receivedAmount - $pendingBftnAmount - $dueAdjustments,
+            0,
+        ), 2);
         $extraReceivedAmount = round(max($summary['received_amount'] - $summary['total_payable'], 0), 2);
         $extraRefunds = (float) $sale->refunds
             ->where('refund_type', 'extra_payment')
             ->where('status', '!=', RefundStatus::Cancelled->value)
-            ->sum('refunded_amount');
+            ->sum('gross_refund_amount');
         $summary['extra_received_amount'] = $extraReceivedAmount;
         $summary['extra_remaining_amount'] = round(max($extraReceivedAmount - $extraRefunds, 0), 2);
 
@@ -124,11 +167,10 @@ class SaleFinancialService
     }
 
     /** @param array<int, array{departure?: int, return?: int}> $quantities */
-    private function calculateTicketFee(
+    private function calculateTicketValue(
         int|string $shipId,
         ?string $returnDate,
         array $quantities,
-        ?float $fallback,
         bool $publicPricing,
     ): float {
         $activePackageIds = collect($quantities)
@@ -136,7 +178,7 @@ class SaleFinancialService
             ->keys();
 
         if ($activePackageIds->isEmpty()) {
-            return $quantities === [] ? round($fallback ?? 0, 2) : 0.0;
+            return 0.0;
         }
 
         $packages = ShipPackage::query()
@@ -249,5 +291,14 @@ class SaleFinancialService
                 'ticket_categories' => 'Ticket package quantities cannot be negative.',
             ]);
         }
+    }
+
+    public function categoryUnitPrice(ShipPackage $package, string $type, ?string $returnDate): float
+    {
+        if ($type === 'return' && filled($returnDate) && (float) $package->round_trip_price > 0) {
+            return round(max((float) $package->round_trip_price - (float) $package->price, 0), 2);
+        }
+
+        return round((float) $package->price, 2);
     }
 }

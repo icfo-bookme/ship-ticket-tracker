@@ -3,9 +3,9 @@
     <div class="p-6">
         <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
             <div>
-                <label class="block text-sm font-medium text-gray-700">Sale Ticket Fee</label>
+                <label class="block text-sm font-medium text-gray-700">Sale Ticket Price</label>
                 <input type="text" id="receivedAmountInput" class="border px-3 py-2 mb-4 w-full rounded" readonly
-                    placeholder="Ticket fee">
+                    placeholder="Ticket price">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Selected Ticket Refund Amount (Net)</label>

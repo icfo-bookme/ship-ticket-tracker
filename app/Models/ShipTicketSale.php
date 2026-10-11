@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ShipTicketSale extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     /**
      * The table associated with the model.
@@ -31,16 +34,11 @@ class ShipTicketSale extends Model
         'ship_id',
         'journey_date',
         'return_date',
-        'ticket_fee',
-        'received_amount',
-        'due_amount',
-        'bftn_status',
         'company_id',
         'issued_date',
         'sold_by',
         'nid',
         'email',
-        'number_of_ticket',
         'status',
         'date_of_birth',
         'other_fee',
@@ -59,55 +57,86 @@ class ShipTicketSale extends Model
      */
     protected $casts = [
 
-        'ticket_fee' => 'decimal:2',
-        'received_amount' => 'decimal:2',
-        'due_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'collect_from_office' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
 
+    protected $appends = ['due_amount'];
+
+    public function getTicketCountAttribute(): int
+    {
+        if ($this->relationLoaded('categories')) {
+            return (int) $this->categories->sum('quantity');
+        }
+
+        return (int) $this->categories()->sum('quantity');
+    }
+
+    public function getTicketValueAttribute(): float
+    {
+        if ($this->relationLoaded('categories')) {
+            return round((float) $this->categories->sum(
+                fn (Category $category): float => (int) $category->quantity * (float) $category->unit_price
+            ), 2);
+        }
+
+        return round((float) $this->categories()
+            ->selectRaw('COALESCE(SUM(quantity * unit_price), 0) AS aggregate')
+            ->value('aggregate'), 2);
+    }
+
+    public function getDueAmountAttribute(): string
+    {
+        $dueAmount = app(\App\Services\Sales\SaleFinancialService::class)
+            ->currentSummary($this)['due_amount'];
+
+        return number_format($dueAmount, 2, '.', '');
+    }
+
+    public static function dueAmountSql(): string
+    {
+        $totalPayable = 'COALESCE(ship_ticket_sales.total_payable, 0)';
+        $settledPayments = '(SELECT COALESCE(SUM(CASE WHEN payments.is_bftn = 0 OR payments.settlement_status = "received" THEN payments.received_amount ELSE 0 END), 0) FROM payments WHERE payments.sales_id = ship_ticket_sales.id)';
+        $pendingBftnPayments = '(SELECT COALESCE(SUM(received_amount), 0) FROM payments WHERE payments.sales_id = ship_ticket_sales.id AND payments.is_bftn = 1 AND payments.settlement_status = "pending")';
+        $refundDueAdjustments = '(SELECT COALESCE(SUM(due_adjusted_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))';
+        $dueAmount = "{$totalPayable} - {$settledPayments} - {$pendingBftnPayments} - {$refundDueAdjustments}";
+
+        return "CASE WHEN {$dueAmount} > 0 THEN {$dueAmount} ELSE 0 END";
+    }
+
     /**
      * Scope a query to only include pending dues.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function scopeWithDue($query)
+    public function scopeWithDue(Builder $query): Builder
     {
-        return $query->where('due_amount', '>', 0);
+        return $query->whereRaw('('.self::dueAmountSql().') > 0');
     }
 
     /**
      * Scope a query to only include paid tickets.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function scopePaid($query)
+    public function scopePaid(Builder $query): Builder
     {
-        return $query->where('due_amount', 0);
+        return $query->whereRaw('('.self::dueAmountSql().') = 0');
     }
 
     /**
      * Check if the ticket sale has due amount.
-     *
-     * @return bool
      */
-    public function hasDue()
+    public function hasDue(): bool
     {
         return $this->due_amount > 0;
     }
 
     /**
      * Get the total paid amount.
-     *
-     * @return float
      */
-    public function getTotalPaidAttribute()
+    public function getTotalPaidAttribute(): float
     {
-        return $this->ticket_fee - $this->due_amount;
+        return app(\App\Services\Sales\SaleFinancialService::class)
+            ->currentSummary($this)['received_amount'];
     }
 
     public function ships()
@@ -168,11 +197,6 @@ class ShipTicketSale extends Model
     public function shipment()
     {
         return $this->hasOne(Shipment::class, 'ticket_id', 'id');
-    }
-
-    public function bftn()
-    {
-        return $this->hasOne(Bftn::class, 'sales_id', 'id');
     }
 
     public function printStatus()

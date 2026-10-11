@@ -120,9 +120,9 @@ Route::middleware('auth')->group(function () {
         ->middleware('sales.transition')
         ->name('sale.verify');
 
-    Route::put('/sale/bftn-received/{id}', [ShipTicketSaleController::class, 'markBftnReceived'])
+    Route::put('/payment/bftn-received/{id}', [ShipTicketSaleController::class, 'markPaymentBftnReceived'])
         ->middleware('can:sales.bftn.receive')
-        ->name('sale.bftn-received');
+        ->name('payment.bftn-received');
 
     Route::put('ship-ticket-issue/{ship_ticket_sale}', [ShipTicketSaleController::class, 'updateIssue'])
         ->middleware('can:sales.issue')
@@ -130,7 +130,10 @@ Route::middleware('auth')->group(function () {
 
     // SALES — DELETE
     Route::middleware('can:sales.delete')->group(function () {
+        Route::get('admin/deleted-sales', [ShipTicketSaleController::class, 'deletedIndex'])->name('ship-ticket-sales.deleted.index');
+        Route::get('admin/deleted-sales/data', [ShipTicketSaleController::class, 'deletedData'])->name('ship-ticket-sales.deleted.data');
         Route::delete('ship-ticket-sales/{ship_ticket_sale}', [ShipTicketSaleController::class, 'destroy'])->name('ship-ticket-sales.destroy');
+        Route::put('ship-ticket-sales/{id}/restore', [ShipTicketSaleController::class, 'restore'])->name('ship-ticket-sales.restore');
         Route::delete('/sale/delete/{id}', [ShipTicketSaleController::class, 'destroy'])->name('sale.destroy');
     });
 
@@ -407,7 +410,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     });
     Route::middleware('can:notifications.verify')->group(function () {
-        Route::get('/notification/verify/{notification}', [NotificationController::class, 'verify'])->name('notification.verify');
+        Route::get('/notification/verify/{payment}', [NotificationController::class, 'verify'])->name('notification.verify');
     });
 });
 

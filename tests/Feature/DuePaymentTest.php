@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Payment;
 use App\Models\Ship;
+use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,6 +16,12 @@ beforeEach(function () {
     $this->admin->assignRole(Role::findOrCreate('Admin', 'web'));
 
     $this->ship = Ship::create(['name' => 'MV Due Ship', 'status' => 1]);
+    $package = ShipPackage::create([
+        'ship_id' => $this->ship->id,
+        'name' => 'Due Ticket',
+        'price' => 500,
+        'round_trip_price' => 800,
+    ]);
 
     $this->sale = ShipTicketSale::create([
         'customer_name' => 'Due Customer',
@@ -21,16 +29,36 @@ beforeEach(function () {
         'sales_source' => 'Direct',
         'ship_id' => $this->ship->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'total_payable' => 500,
-        'received_amount' => 200,
         'due_amount' => 300,
         'issued_date' => '2026-09-23',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'pending',
     ]);
+
+    Category::create([
+        'ticket_id' => $this->sale->id,
+        'package_id' => $package->id,
+        'quantity' => 1,
+        'type' => 'departure',
+        'unit_price' => 500,
+    ]);
+
+    Payment::create([
+        'sales_id' => $this->sale->id,
+        'payment_method' => 'Cash',
+        'received_amount' => 200,
+    ]);
 });
+
+function dueSaleReceivedAmount(ShipTicketSale $sale): float
+{
+    return (float) $sale->payments()
+        ->where(fn ($query) => $query->where('is_bftn', false)->orWhere('settlement_status', 'received'))
+        ->sum('received_amount');
+}
 
 it('adds the other fee to the sale other fee, total payable and due amount', function () {
     $this->actingAs($this->admin)
@@ -49,14 +77,34 @@ it('adds the other fee to the sale other fee, total payable and due amount', fun
     expect((float) $sale->other_fee)->toBe(20.0)
         ->and((float) $sale->total_payable)->toBe(520.0)
         ->and((float) $sale->due_amount)->toBe(220.0)
-        ->and((float) $sale->received_amount)->toBe(300.0);
+        ->and(dueSaleReceivedAmount($sale))->toBe(300.0);
 
-    $payment = Payment::where('sales_id', $this->sale->id)->sole();
+    $payment = Payment::where('sales_id', $this->sale->id)->latest('id')->firstOrFail();
 
     expect((float) $payment->received_amount)->toBe(100.0)
         ->and($payment->payment_method)->toBe('Bkash')
         ->and($payment->transaction_id)->toBe('TRX-11223344')
         ->and($payment->remark)->toBe('Mobile banking charge');
+});
+
+it('subtracts pending BFTN from due without counting it as received', function () {
+    $this->actingAs($this->admin)
+        ->postJson('/partial/paid/'.$this->sale->id, [
+            'paid_amount' => 100,
+            'payment_method' => 'Bank Transfer',
+            'is_bftn' => true,
+            'transaction_id' => 'BFTN-112233',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    $sale = $this->sale->fresh();
+    $payment = Payment::where('sales_id', $sale->id)->latest('id')->firstOrFail();
+
+    expect(dueSaleReceivedAmount($sale))->toBe(200.0)
+        ->and((float) $sale->due_amount)->toBe(200.0)
+        ->and($payment->settlement_status)->toBe('pending')
+        ->and((float) $payment->received_amount)->toBe(100.0);
 });
 
 it('accumulates the other fee on top of the existing other fee', function () {
@@ -75,7 +123,7 @@ it('accumulates the other fee on top of the existing other fee', function () {
     expect((float) $sale->other_fee)->toBe(50.0)
         ->and((float) $sale->total_payable)->toBe(550.0)
         ->and((float) $sale->due_amount)->toBe(220.0)
-        ->and((float) $sale->received_amount)->toBe(330.0);
+        ->and(dueSaleReceivedAmount($sale))->toBe(330.0);
 });
 
 it('clears the due amount when the other fee is collected in full', function () {
@@ -92,7 +140,7 @@ it('clears the due amount when the other fee is collected in full', function () 
 
     expect((float) $sale->due_amount)->toBe(0.0)
         ->and((float) $sale->total_payable)->toBe(520.0)
-        ->and((float) $sale->received_amount)->toBe(520.0);
+        ->and(dueSaleReceivedAmount($sale))->toBe(520.0);
 });
 
 it('keeps the existing totals when no other fee is provided', function () {
@@ -109,7 +157,7 @@ it('keeps the existing totals when no other fee is provided', function () {
     expect((float) $sale->other_fee)->toBe(0.0)
         ->and((float) $sale->total_payable)->toBe(500.0)
         ->and((float) $sale->due_amount)->toBe(0.0)
-        ->and((float) $sale->received_amount)->toBe(500.0);
+        ->and(dueSaleReceivedAmount($sale))->toBe(500.0);
 });
 
 it('rejects a negative other fee', function () {
@@ -123,7 +171,7 @@ it('rejects a negative other fee', function () {
         ->assertJsonValidationErrors('other_fee');
 
     expect((float) $this->sale->fresh()->other_fee)->toBe(0.0)
-        ->and(Payment::where('sales_id', $this->sale->id)->count())->toBe(0);
+        ->and(Payment::where('sales_id', $this->sale->id)->count())->toBe(1);
 });
 
 it('stores the transaction id with the payment timestamps for mobile banking payments', function () {
@@ -135,7 +183,7 @@ it('stores the transaction id with the payment timestamps for mobile banking pay
         ])
         ->assertOk();
 
-    $payment = Payment::where('sales_id', $this->sale->id)->sole();
+    $payment = Payment::where('sales_id', $this->sale->id)->latest('id')->firstOrFail();
 
     expect($payment->transaction_id)->toBe('TRX-44556677')
         ->and($payment->paid_date)->not->toBeNull()
@@ -151,7 +199,7 @@ it('requires a transaction id for mobile banking and bank payments', function (s
         ->assertUnprocessable()
         ->assertJsonValidationErrors('transaction_id');
 
-    expect(Payment::where('sales_id', $this->sale->id)->count())->toBe(0);
+    expect(Payment::where('sales_id', $this->sale->id)->count())->toBe(1);
 })->with(['Bkash', 'Nagad', 'Bank Transfer']);
 
 it('does not require a transaction id for cash payments', function () {
@@ -162,7 +210,7 @@ it('does not require a transaction id for cash payments', function () {
         ])
         ->assertOk();
 
-    expect(Payment::where('sales_id', $this->sale->id)->sole()->transaction_id)->toBeNull();
+    expect(Payment::where('sales_id', $this->sale->id)->latest('id')->firstOrFail()->transaction_id)->toBeNull();
 });
 
 it('reduces the total payable and the due amount when a discount is given while collecting the due', function () {
@@ -179,7 +227,7 @@ it('reduces the total payable and the due amount when a discount is given while 
 
     expect((float) $sale->discount_amount)->toBe(50.0)
         ->and((float) $sale->total_payable)->toBe(450.0)
-        ->and((float) $sale->received_amount)->toBe(450.0)
+        ->and(dueSaleReceivedAmount($sale))->toBe(450.0)
         ->and((float) $sale->due_amount)->toBe(0.0);
 });
 
@@ -198,7 +246,7 @@ it('applies the other fee and the discount together when collecting the due', fu
     expect((float) $sale->other_fee)->toBe(20.0)
         ->and((float) $sale->discount_amount)->toBe(50.0)
         ->and((float) $sale->total_payable)->toBe(470.0)
-        ->and((float) $sale->received_amount)->toBe(300.0)
+        ->and(dueSaleReceivedAmount($sale))->toBe(300.0)
         ->and((float) $sale->due_amount)->toBe(170.0);
 });
 
@@ -217,7 +265,7 @@ it('rejects a discount larger than the total due amount', function () {
     expect((float) $sale->discount_amount)->toBe(0.0)
         ->and((float) $sale->total_payable)->toBe(500.0)
         ->and((float) $sale->due_amount)->toBe(300.0)
-        ->and(Payment::where('sales_id', $this->sale->id)->count())->toBe(0);
+        ->and(Payment::where('sales_id', $this->sale->id)->count())->toBe(1);
 });
 
 it('counts the other fee as part of the discountable due amount', function () {
@@ -233,8 +281,10 @@ it('counts the other fee as part of the discountable due amount', function () {
 });
 
 it('shows the other fee, discount, total due, transaction id and proof fields in the paid due modal', function () {
-    $this->actingAs($this->admin)
-        ->get('/sales/status/pending')
+    $response = $this->actingAs($this->admin)
+        ->get('/sales/status/pending');
+
+    $response
         ->assertOk()
         ->assertSee('id="otherFeeInput"', false)
         ->assertSee('id="discountInput"', false)
@@ -242,11 +292,15 @@ it('shows the other fee, discount, total due, transaction id and proof fields in
         ->assertSee('id="dueAmountInput"', false)
         ->assertSee('id="transactionIdWrapper"', false)
         ->assertSee('id="transactionIdInput"', false)
-        ->assertSee('id="paymentProofInput"', false)
-        ->assertSee("formData.append('other_fee', otherFee)", false)
-        ->assertSee("formData.append('discount_amount', discount)", false)
-        ->assertSee("formData.append('transaction_id', transactionId)", false)
-        ->assertSee("formData.append('payment_proof', proofFile)", false)
-        ->assertSee("otherFeeInput.value = '0.00'", false)
-        ->assertSee("discountInput.value = '0.00'", false);
+        ->assertSee('id="paymentProofInput"', false);
+
+    $script = file_get_contents(resource_path('js/components/due-payment.js'));
+
+    expect($script)
+        ->toContain("formData.append('other_fee', otherFee)")
+        ->toContain("formData.append('discount_amount', discount)")
+        ->toContain("formData.append('transaction_id', transactionId)")
+        ->toContain("formData.append('payment_proof', proofFile)")
+        ->toContain("otherFeeInput.value = '0.00'")
+        ->toContain("discountInput.value = '0.00'");
 });

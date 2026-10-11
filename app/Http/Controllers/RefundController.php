@@ -22,9 +22,22 @@ class RefundController extends Controller
         private readonly RefundListingService $refundListings,
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $refunds = Refund::all();
+        $perPage = min(max($request->integer('per_page', 25), 1), 100);
+        $search = trim((string) $request->input('search.value', $request->input('search', '')));
+
+        $refunds = Refund::query()
+            ->with('sale:id,customer_name,customer_mobile')
+            ->when($search !== '', fn ($query) => $query->where(function ($refunds) use ($search): void {
+                $refunds->where('id', $search)
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhereHas('sale', fn ($sales) => $sales
+                        ->where('customer_name', 'like', "%{$search}%")
+                        ->orWhere('customer_mobile', 'like', "%{$search}%"));
+            }))
+            ->orderByDesc('id')
+            ->paginate($perPage);
 
         return response()->json($refunds);
     }

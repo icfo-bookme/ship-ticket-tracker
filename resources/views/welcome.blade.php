@@ -329,7 +329,7 @@
                                 <label class="block text-sm font-medium text-gray-700  mb-2">
                                     Total Number of Tickets
                                 </label>
-                                <input type="number" id="total_tickets" name="number_of_ticket" value="0"
+                                <input type="number" id="total_tickets" value="0"
                                     min="0" readonly
                                     class="w-full border border-gray-300  bg-gray-100   rounded-lg px-4 py-3 shadow-sm">
                             </div>
@@ -338,8 +338,8 @@
                                 <label class="block text-sm font-medium text-gray-700  mb-2">
                                     Total Ticket Price (৳) <span class="text-red-500">*</span>
                                 </label>
-                                <input type="number" id="ticket_fee" name="ticket_fee"
-                                    value="{{ old('ticket_fee', 0) }}" step="0.01" min="0"
+                                <input type="number" id="ticket_value" readonly
+                                    value="{{ old('ticket_value', 0) }}" step="0.01" min="0"
                                     placeholder="0.00" readonly
                                     class="w-full border border-gray-300  rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                             </div>
@@ -349,7 +349,7 @@
                                     Other Fee(Vat,Tax,etc if include ) (৳) <span class="text-red-500">*</span>
                                 </label>
                                 <input type="number" id="other_fee" name="other_fee"
-                                    value="{{ old('ticket_fee', 0) }}" step="0.01" min="0"
+                                    value="{{ old('other_fee', 0) }}" step="0.01" min="0"
                                     placeholder="0.00"
                                     class="w-full border border-gray-300  rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                             </div>
@@ -396,8 +396,8 @@
                             <label class="block text-sm font-medium text-gray-700  mb-2">
                                 Due Amount (৳)
                             </label>
-                            <input type="number" id="due_amount" name="due_amount"
-                                value="{{ old('due_amount', 0) }}" step="0.01" min="0" placeholder="0.00"
+                            <input type="number" id="due_amount"
+                                value="0.00" step="0.01" min="0" placeholder="0.00"
                                 class="w-full border border-gray-300  bg-gray-100 rounded-lg px-4 py-3 shadow-sm">
                         </div>
                     </div>

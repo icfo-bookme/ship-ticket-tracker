@@ -13,6 +13,7 @@ class SaleDetailService
     public function __construct(
         private readonly SaleGroupingService $saleGrouping,
         private readonly ExtraPaymentService $extraPayments,
+        private readonly SaleFinancialService $saleFinancials,
     ) {}
 
     /**
@@ -107,6 +108,10 @@ class SaleDetailService
 
     private function appendExtraPaymentSummary(ShipTicketSale $sale): void
     {
+        $sale->setAttribute('ticket_count', $sale->ticket_count);
+        $sale->setAttribute('ticket_value', $sale->ticket_value);
+        $sale->setAttribute('received_amount', $this->saleFinancials->currentSummary($sale)['received_amount']);
+
         foreach ($this->extraPayments->summary($sale) as $attribute => $amount) {
             $sale->setAttribute($attribute, $amount);
         }

@@ -36,6 +36,13 @@
             </div>
         </div>
 
+        <div id="dueBftnWrapper" class="mt-3 hidden rounded-md border border-amber-200 bg-amber-50 p-3">
+            <label class="flex items-center gap-2 text-sm font-medium text-amber-900">
+                <input type="checkbox" id="dueIsBftn" value="1">
+                Track this Bank Transfer as BFTN (pending until received)
+            </label>
+        </div>
+
         <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Payment Method <span class="text-red-500">*</span>

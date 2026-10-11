@@ -25,7 +25,7 @@ class TicketSalesSystem {
     setupEventListeners() {
         try {
             // Payment calculation listeners
-            this.addEventListener('ticket_fee', 'input', () => this.calculateAll());
+            this.addEventListener('ticket_value', 'input', () => this.calculateAll());
             this.addEventListener('received_amount', 'input', () => this.calculateDue());
             this.addEventListener('other_fee', 'input', () => this.calculateAll());
 
@@ -133,7 +133,7 @@ class TicketSalesSystem {
             document.getElementById("returnTicketCategoriesContainer").innerHTML = '';
             noReturnMessage.classList.remove("hidden");
             this.calculateTotalTickets();
-            this.calculateTicketFee();
+            this.calculateTicketValue();
         }
     }
 
@@ -212,7 +212,7 @@ class TicketSalesSystem {
 
             this.attachTicketQuantityListeners();
             this.calculateTotalTickets();
-            this.calculateTicketFee();
+            this.calculateTicketValue();
         } else {
             this.showNoCategoriesMessage(departureContainer, returnContainer);
         }
@@ -279,18 +279,18 @@ class TicketSalesSystem {
 
     handleTicketQuantityChange() {
         this.calculateTotalTickets();
-        this.calculateTicketFee();
+        this.calculateTicketValue();
         this.updateCoPassengerRows();
     }
 
     // Calculation Methods
-    calculateTicketFee() {
+    calculateTicketValue() {
         const hasReturnJourney = !!this.getValue("return_date");
-        const totalTicketFee = hasReturnJourney ?
+        const totalTicketValue = hasReturnJourney ?
             this.calculateRoundTripPricing() :
             this.calculateSingleJourneyPricing();
 
-        this.setValue("ticket_fee", totalTicketFee.toFixed(2));
+        this.setValue("ticket_value", totalTicketValue.toFixed(2));
         this.calculateTotalPayable();
     }
 
@@ -447,9 +447,9 @@ class TicketSalesSystem {
     }
 
     calculateTotalPayable() {
-        const ticketFee = parseFloat(this.getValue("ticket_fee")) || 0;
+        const TicketValue = parseFloat(this.getValue("ticket_value")) || 0;
         const otherChargesFee = parseFloat(this.getValue("other_fee")) || 0;
-        const totalPayable = ticketFee + otherChargesFee;
+        const totalPayable = TicketValue + otherChargesFee;
         this.setValue("total_payable", totalPayable.toFixed(2));
         this.calculateDue();
     }
@@ -463,7 +463,7 @@ class TicketSalesSystem {
 
     // NEW: Calculate 2% fee for Bkash/Nagad
     calculateDigitalPaymentFee() {
-        const ticketFee = parseFloat(this.getValue("ticket_fee")) || 0;
+        const TicketValue = parseFloat(this.getValue("ticket_value")) || 0;
         let totalDigitalPaymentAmount = 0;
         
         // Calculate total amount from Bkash/Nagad payments
@@ -664,13 +664,13 @@ class TicketSalesSystem {
         let isValid = true;
         let firstErrorField = null;
 
-        const ticketFee = parseFloat(this.getValue("ticket_fee")) || 0;
+        const TicketValue = parseFloat(this.getValue("ticket_value")) || 0;
         const receivedAmount = parseFloat(this.getValue("received_amount")) || 0;
 
-        if (ticketFee <= 0) {
-            this.showFieldError(document.getElementById("ticket_fee"), "Ticket fee must be greater than 0");
+        if (TicketValue <= 0) {
+            this.showFieldError(document.getElementById("ticket_value"), "Ticket price must be greater than 0");
             isValid = false;
-            firstErrorField = document.getElementById("ticket_fee");
+            firstErrorField = document.getElementById("ticket_value");
         }
 
         if (receivedAmount <= 0) {

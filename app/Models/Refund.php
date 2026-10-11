@@ -54,7 +54,7 @@ class Refund extends Model
 
     public function sale()
     {
-        return $this->belongsTo(ShipTicketSale::class, 'sales_id');
+        return $this->belongsTo(ShipTicketSale::class, 'sales_id')->withTrashed();
     }
 
     public function tickets()

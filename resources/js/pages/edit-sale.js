@@ -118,6 +118,15 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <option value="Bank Transfer">Bank Transfer</option>
                                 <option value="Card">Card</option>
                             </select>
+                            <label class="mt-2 flex items-center gap-2 text-xs text-gray-700">
+                                <input type="checkbox" name="payments[${paymentIndex}][is_bftn]" value="1" disabled>
+                                This payment is BFTN
+                            </label>
+                            <div class="payment-bftn-date-wrapper mt-2 hidden">
+                                <label class="mb-1 block text-xs text-gray-600">Tentative deposit date</label>
+                                <input type="datetime-local" name="payments[${paymentIndex}][bftn_issue_datetime]"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                            </div>
                         </div>
                         <div>
                             <div class="flex items-center justify-between mb-1">
@@ -180,6 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 `;
         container.appendChild(newPayment);
+        syncBftnPaymentControls(newPayment);
         paymentIndex++;
         updatePaymentCount();
 
@@ -214,27 +224,19 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         const hasReturnJourney = Boolean(document.getElementById('return_date')?.value);
-        let ticketFee = 0;
+        let ticketValue = 0;
 
         packages.forEach((item) => {
-            if (!hasReturnJourney) {
-                ticketFee += (item.departure + item.return) * item.price;
-                return;
-            }
-
-            const returnOnlyPrice = item.roundTripPrice > 0
-                ? item.roundTripPrice - item.price
+            const returnUnitPrice = hasReturnJourney && item.roundTripPrice > 0
+                ? Math.max(item.roundTripPrice - item.price, 0)
                 : item.price;
-            const paired = Math.min(item.departure, item.return);
-            ticketFee += paired > 0 && item.roundTripPrice > 0
-                ? paired * item.roundTripPrice
-                : paired * (item.price + returnOnlyPrice);
-            ticketFee += (item.departure - paired) * item.price;
-            ticketFee += (item.return - paired) * returnOnlyPrice;
+
+            ticketValue += item.departure * item.price;
+            ticketValue += item.return * returnUnitPrice;
         });
 
-        document.getElementById('number_of_ticket').value = ticketCount;
-        document.getElementById('ticket_fee').value = ticketFee.toFixed(2);
+        document.getElementById('ticket_count').value = ticketCount;
+        document.getElementById('ticket_value').value = ticketValue.toFixed(2);
     }
 
     function escapeHtml(value) {
@@ -325,48 +327,79 @@ document.addEventListener('DOMContentLoaded', function () {
     function calculateFinancials() {
         // Calculate total received amount from all payments
         let totalReceived = 0;
+        let pendingBftnAmount = 0;
         document.querySelectorAll('.payment-amount').forEach(input => {
             const value = parseFloat(input.value) || 0;
-            totalReceived += value;
+            const payment = input.closest('.payment-item');
+            const isPendingBftn = payment?.querySelector('input[name$="[is_bftn]"]')?.checked
+                && payment?.querySelector('input[name$="[settlement_status]"]')?.value !== 'received';
+
+            if (isPendingBftn) {
+                pendingBftnAmount += value;
+            } else {
+                totalReceived += value;
+            }
         });
 
         // Update received amount field
         const receivedAmountInput = document.getElementById('received_amount');
         receivedAmountInput.value = totalReceived.toFixed(2);
+        document.getElementById('bftn_pending_amount').value = pendingBftnAmount.toFixed(2);
 
-        // Get ticket fee, other fee and discount
-        const ticketFee = parseFloat(document.getElementById('ticket_fee').value) || 0;
+        // Read ticket value, other fee and discount.
+        const TicketValue = parseFloat(document.getElementById('ticket_value').value) || 0;
         const otherFee = parseFloat(document.getElementById('other_fee').value) || 0;
         const discountAmount = parseFloat(document.getElementById('discount_amount').value) || 0;
 
         validateDiscountAmount();
 
-        // Calculate total payable (ticket fee + other fee - discount)
-        const totalPayable = Math.max(0, ticketFee + otherFee - discountAmount);
+        // Calculate total payable (ticket value + other fee - discount).
+        const totalPayable = Math.max(0, TicketValue + otherFee - discountAmount);
         document.getElementById('total_payable').value = totalPayable.toFixed(2);
 
         const extraReceivedAmount = Math.max(0, totalReceived - totalPayable);
         document.getElementById('extra_received_amount').value = extraReceivedAmount.toFixed(2);
 
-        // Calculate due amount (total payable - total received)
-        const dueAmount = Math.max(0, totalPayable - totalReceived);
+        // Pending BFTN is tracked separately, not as customer due.
+        const dueAmount = Math.max(0, totalPayable - totalReceived - pendingBftnAmount);
         document.getElementById('due_amount').value = dueAmount.toFixed(2);
 
         // Update payment count
         updatePaymentCount();
     }
 
+    function syncBftnPaymentControls(root = document) {
+        const paymentRows = root.matches?.('.payment-item')
+            ? [root]
+            : [...root.querySelectorAll('.payment-item')];
+
+        paymentRows.forEach((payment) => {
+            const method = payment.querySelector('select[name$="[payment_method]"]');
+            const checkbox = payment.querySelector('input[type="checkbox"][name$="[is_bftn]"]');
+            const dateWrapper = payment.querySelector('.payment-bftn-date-wrapper');
+
+            if (!method || !checkbox || !dateWrapper) return;
+
+            const canBeBftn = method.value === 'Bank Transfer';
+            checkbox.disabled = !canBeBftn;
+
+            if (!canBeBftn) checkbox.checked = false;
+
+            dateWrapper.classList.toggle('hidden', !canBeBftn || !checkbox.checked);
+        });
+    }
+
     function validateDiscountAmount() {
-        const ticketFeeInput = document.getElementById('ticket_fee');
+        const TicketValueInput = document.getElementById('ticket_value');
         const discountInput = document.getElementById('discount_amount');
         const error = document.getElementById('discount-error');
-        const ticketFee = parseFloat(ticketFeeInput.value) || 0;
+        const TicketValue = parseFloat(TicketValueInput.value) || 0;
         const discount = parseFloat(discountInput.value) || 0;
-        const invalid = discount > ticketFee;
+        const invalid = discount > TicketValue;
 
-        discountInput.max = ticketFee.toFixed(2);
-        discountInput.setCustomValidity(invalid ? 'Discount Amount cannot exceed Total Ticket Fee.' : '');
-        error.textContent = invalid ? 'Discount Amount cannot exceed Total Ticket Fee.' : '';
+        discountInput.max = TicketValue.toFixed(2);
+        discountInput.setCustomValidity(invalid ? 'Discount Amount cannot exceed Total Ticket Price.' : '');
+        error.textContent = invalid ? 'Discount Amount cannot exceed Total Ticket Price.' : '';
         error.classList.toggle('hidden', !invalid);
         discountInput.classList.toggle('border-red-500', invalid);
 
@@ -385,9 +418,23 @@ document.addEventListener('DOMContentLoaded', function () {
             calculateCategoryFinancials();
             calculateFinancials();
         } else if (e.target.classList.contains('payment-amount') ||
-            e.target.id === 'ticket_fee' ||
+            e.target.id === 'ticket_value' ||
             e.target.id === 'other_fee' ||
             e.target.id === 'discount_amount') {
+            calculateFinancials();
+        }
+    });
+
+    document.addEventListener('change', function (event) {
+        if (event.target.matches('.ticket-category-quantity')) {
+            calculateCategoryFinancials();
+            calculateFinancials();
+        }
+    });
+
+    document.addEventListener('change', function (event) {
+        if (event.target.matches('select[name$="[payment_method]"], input[name$="[is_bftn]"]')) {
+            syncBftnPaymentControls(event.target.closest('.payment-item'));
             calculateFinancials();
         }
     });
@@ -546,6 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initial calculation
     calculateCategoryFinancials();
     calculateFinancials();
+    syncBftnPaymentControls();
 
 });
 

@@ -348,7 +348,7 @@
                 @endcanany
 
                 <!-- Admin Section (Users / Roles / Permissions) -->
-                @canany(['users.view', 'roles.view', 'permissions.view', 'excel.view'])
+                @canany(['users.view', 'roles.view', 'permissions.view', 'excel.view', 'sales.delete'])
                     <div class="px-2 pt-2">
                         <div id="admin-dropdown" class="mb-1 relative">
                             <button
@@ -373,6 +373,13 @@
                                 </svg>
                             </button>
                             <div id="admin-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
+                                @can('sales.delete')
+                                    <a href="{{ route('ship-ticket-sales.deleted.index') }}"
+                                        class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition {{ request()->routeIs('ship-ticket-sales.deleted.*') ? 'bg-blue-100 text-blue-700' : '' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-3"></span>
+                                        <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Deleted Sales</span>
+                                    </a>
+                                @endcan
                                 @can('excel.view')
                                     <a href="/excel"
                                         class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">

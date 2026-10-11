@@ -32,6 +32,7 @@ class SaveDuePaymentRequest extends FormRequest
             ],
             'payment_proof' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
             'payment_method' => 'required|string|in:Cash,Bkash,Nagad,Bank Transfer',
+            'is_bftn' => 'nullable|boolean',
             'remark' => 'nullable|string|max:500',
         ];
     }

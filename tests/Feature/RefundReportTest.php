@@ -1,10 +1,12 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Company;
 use App\Models\Refund;
 use App\Models\RefundCustomerPayment;
 use App\Models\RefundTicket;
 use App\Models\Ship;
+use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use App\Services\Reports\RefundReportService;
@@ -57,7 +59,7 @@ it('reports refund amounts, due adjustment preview, ticket details, and customer
         'customer_mobile' => '01700000000',
         'ship_id' => $ship->id,
         'company_id' => $company->id,
-        'ticket_fee' => 100,
+        'ticket_value' => 100,
         'other_fee' => 5,
         'discount_amount' => 5,
         'total_payable' => 100,
@@ -65,8 +67,20 @@ it('reports refund amounts, due adjustment preview, ticket details, and customer
         'due_amount' => 40,
         'issued_date' => now()->toDateString(),
         'journey_date' => now()->addDay()->toDateString(),
-        'number_of_ticket' => 2,
+        'ticket_count' => 2,
         'status' => 'ticket-issued',
+    ]);
+    $package = ShipPackage::create([
+        'ship_id' => $ship->id,
+        'name' => 'Refund report package',
+        'price' => 50,
+    ]);
+    Category::create([
+        'ticket_id' => $sale->id,
+        'package_id' => $package->id,
+        'quantity' => 2,
+        'type' => 'departure',
+        'unit_price' => 50,
     ]);
     $refund = Refund::create([
         'sales_id' => $sale->id,
@@ -141,7 +155,7 @@ it('reports refund amounts, due adjustment preview, ticket details, and customer
     $allRefunds = app(RefundReportService::class)->dataTable(new Request([]));
 
     expect($allRefunds['totals']['refund_amount'])->toBe('120.00')
-        ->and($allRefunds['totals']['refund_outflow_amount'])->toBe('70.00');
+        ->and($allRefunds['totals']['refund_outflow_amount'])->toBe('50.00');
 });
 
 it('lists only refunded records for the selected request date range', function () {
@@ -150,12 +164,12 @@ it('lists only refunded records for the selected request date range', function (
         'customer_name' => 'Completed Refund Customer',
         'customer_mobile' => '01700000001',
         'ship_id' => $ship->id,
-        'ticket_fee' => 20,
+        'ticket_value' => 20,
         'total_payable' => 20,
         'received_amount' => 20,
         'due_amount' => 0,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'refunded',
     ]);
     Refund::create([
@@ -188,12 +202,12 @@ it('reports extra payment refunds paid separately and excludes unpaid payments',
         'customer_name' => 'Extra Refund Customer',
         'customer_mobile' => '01700000002',
         'ship_id' => $ship->id,
-        'ticket_fee' => 100,
+        'ticket_value' => 100,
         'total_payable' => 100,
         'received_amount' => 120,
         'due_amount' => 0,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-issued',
     ]);
     $extraRefund = Refund::create([
@@ -238,18 +252,18 @@ it('reports extra payment refunds paid separately and excludes unpaid payments',
         ->and($result['totals']['customer_refund_paid'])->toBe('0.00');
 });
 
-it('falls back to the legacy refunded amount when gross refund amount is zero', function () {
+it('uses the gross refund amount without substituting the duplicate refunded amount', function () {
     $ship = Ship::create(['name' => 'Legacy Refund Ship']);
     $sale = ShipTicketSale::create([
         'customer_name' => 'Legacy Refund Customer',
         'customer_mobile' => '01700000004',
         'ship_id' => $ship->id,
-        'ticket_fee' => 40,
+        'ticket_value' => 40,
         'total_payable' => 40,
         'received_amount' => 40,
         'due_amount' => 0,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-issued',
     ]);
     Refund::create([
@@ -265,22 +279,22 @@ it('falls back to the legacy refunded amount when gross refund amount is zero', 
 
     $result = app(RefundReportService::class)->dataTable(new Request([]));
 
-    expect($result['totals']['refund_amount'])->toBe('40.00')
-        ->and($result['data'][0]['gross_refund_amount'])->toBe('40.00');
+    expect($result['totals']['refund_amount'])->toBe('0.00')
+        ->and($result['data'][0]['gross_refund_amount'])->toBe('0.00');
 });
 
-it('counts a completed extra refund without payment rows as paid, matching extra payment accounting', function () {
+it('does not count a completed extra refund as paid without a payment record', function () {
     $ship = Ship::create(['name' => 'Settled Refund Ship']);
     $sale = ShipTicketSale::create([
         'customer_name' => 'Settled Extra Refund Customer',
         'customer_mobile' => '01700000003',
         'ship_id' => $ship->id,
-        'ticket_fee' => 50,
+        'ticket_value' => 50,
         'total_payable' => 50,
         'received_amount' => 60,
         'due_amount' => 0,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-issued',
     ]);
     Refund::create([
@@ -297,6 +311,6 @@ it('counts a completed extra refund without payment rows as paid, matching extra
 
     $result = app(RefundReportService::class)->dataTable(new Request([]));
 
-    expect($result['totals']['extra_payment_refund_paid'])->toBe('10.00')
-        ->and($result['data'][0]['customer_refund_paid'])->toBe('10.00');
+    expect($result['totals']['extra_payment_refund_paid'])->toBe('0.00')
+        ->and($result['data'][0]['customer_refund_paid'])->toBe('0.00');
 });

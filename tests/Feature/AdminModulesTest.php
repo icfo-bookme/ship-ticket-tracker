@@ -65,6 +65,16 @@ test('role name must be unique', function () {
         ->assertStatus(422);
 });
 
+test('super admin role accepts its unchanged name when permissions are updated', function () {
+    $this->actingAs($this->admin)
+        ->putJson('/roles/'.$this->adminRole->id, [
+            'name' => $this->adminRole->name,
+            'permissions' => ['reports.view'],
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.name', $this->adminRole->name);
+});
+
 test('super admin role cannot be deleted', function () {
     $this->actingAs($this->admin)
         ->deleteJson('/roles/'.$this->adminRole->id)

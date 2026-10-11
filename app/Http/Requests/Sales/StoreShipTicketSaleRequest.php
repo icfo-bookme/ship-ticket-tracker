@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Sales;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreShipTicketSaleRequest extends FormRequest
 {
@@ -30,22 +31,20 @@ class StoreShipTicketSaleRequest extends FormRequest
             'journey_date' => 'nullable|date|after_or_equal:today',
             'date_of_birth' => 'nullable|date|before_or_equal:'.now()->subYears(18)->toDateString(),
             'return_date' => 'nullable|date|after_or_equal:journey_date',
-            'ticket_fee' => 'required|numeric',
-            'received_amount' => 'nullable|numeric|min:0',
-            'number_of_ticket' => 'required|numeric',
-            'due_amount' => 'nullable|numeric',
-            'bftn_status' => 'nullable',
             'company_id' => 'nullable',
             'issued_date' => 'required|date',
             'sold_by' => 'required|string|max:100',
             'remark1' => 'nullable|string',
             'remark2' => 'nullable|string',
             'other_fee' => 'nullable|numeric',
-            'discount_amount' => 'nullable|numeric|min:0|lte:ticket_fee',
+            'discount_amount' => 'nullable|numeric|min:0',
             'total_payable' => 'nullable|numeric|min:0',
-            'payment_methods' => 'nullable|array',
+            'payment_methods' => 'required|array|min:1',
             'payment_methods.*.method' => 'required_with:payment_methods|string|max:100',
-            'payment_methods.*.amount' => 'required_with:payment_methods|numeric|min:0',
+            'payment_methods.*.amount' => 'required_with:payment_methods|numeric|min:0.01',
+            'payment_methods.*.is_bftn' => 'nullable|boolean',
+            'payment_methods.*.bftn_issue_datetime' => 'nullable|date',
+            'bftn_issue_datetime' => 'nullable|date',
             'payment_methods.*.transaction_id' => 'nullable|string|max:255',
             'payment_methods.*.proof_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
             'ticket_categories' => 'nullable|array',
@@ -67,5 +66,18 @@ class StoreShipTicketSaleRequest extends FormRequest
             'whatsapp.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',
             'whatsapp_username.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $ticketCount = collect($this->input('ticket_categories', []))
+                ->flatMap(fn (mixed $categories): array => is_array($categories) ? $categories : [])
+                ->sum(fn (mixed $category): int => is_array($category) ? (int) ($category['quantity'] ?? 0) : 0);
+
+            if ($ticketCount < 1) {
+                $validator->errors()->add('ticket_categories', 'Select at least one ticket.');
+            }
+        });
     }
 }

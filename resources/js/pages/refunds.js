@@ -33,8 +33,8 @@ if (document.getElementById('salesTable')) {
             data: "journey_date",
             render: formatDate,
         },
-        { data: "number_of_ticket" },
-        { data: "ticket_fee" },
+        { data: "ticket_count" },
+        { data: "ticket_value" },
         { data: "other_fee" },
         { data: "discount_amount" },
         { data: "total_payable" },
@@ -76,9 +76,8 @@ if (document.getElementById('salesTable')) {
                                 class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit" aria-label="Edit sale"></a>
                             <button data-permission="refunds.create" class="bg-blue-900 text-white px-2 py-1 rounded verifyRefund"
                                 data-id="${sale.id}"
-                                data-received_total_amount="${sale.ticket_fee}"
+                                data-received_total_amount="${sale.ticket_value}"
                                 data-due-amount="${sale.due_amount || 0}"
-                                data-ticket-fee="${sale.ticket_fee || 0}"
                                 data-discount-amount="${sale.discount_amount || 0}"
                                 data-extra-remaining="${sale.extra_remaining_amount || 0}"
                                 data-categories="${encodeURIComponent(JSON.stringify(sale.categories || []))}"
@@ -171,7 +170,7 @@ let currentRefundRequestId = null;
 let currentRefundEditing = false;
 let refreshRefundList = null;
 let currentRefundDueAmount = 0;
-let currentRefundTicketFee = 0;
+let currentRefundTicketValue = 0;
 let currentRefundSaleDiscount = 0;
 let currentRefundSelectedGrossAmount = 0;
 let currentRefundExtraRemainingAmount = 0;
@@ -184,8 +183,8 @@ function updateRefundPreview() {
     const grossAmount = currentRefundSelectedGrossAmount;
     const chargePercent = Number(document.getElementById('customerChargePercentInput')?.value || 0);
     const partnerPercent = Number(document.getElementById('partnerSharePercentInput')?.value || 0);
-    const refundDiscount = currentRefundTicketFee > 0
-        ? roundRefundMoney(Math.min(currentRefundSaleDiscount, currentRefundTicketFee) * grossAmount / currentRefundTicketFee)
+    const refundDiscount = currentRefundTicketValue > 0
+        ? roundRefundMoney(Math.min(currentRefundSaleDiscount, currentRefundTicketValue) * grossAmount / currentRefundTicketValue)
         : 0;
     const amountAfterDiscount = Math.max(roundRefundMoney(grossAmount - refundDiscount), 0);
     const customerCharge = roundRefundMoney(grossAmount * chargePercent / 100);
@@ -333,7 +332,7 @@ function openRefundModal(btn, editing = false) {
     refreshRefundList = () => refreshDataTable('salesTable');
     document.getElementById('receivedAmountInput').value = btn.dataset.received_total_amount;
     currentRefundDueAmount = Number(btn.dataset.dueAmount || 0);
-    currentRefundTicketFee = Number(btn.dataset.ticketFee || btn.dataset.received_total_amount || 0);
+    currentRefundTicketValue = Number(btn.dataset.received_total_amount);
     currentRefundSaleDiscount = Number(btn.dataset.discountAmount || 0);
     currentRefundExtraRemainingAmount = Number(btn.dataset.extraRemaining || 0);
     document.getElementById('customerChargePercentInput').value = editing ? (btn.dataset.customerCharge || 0) : 0;
@@ -343,9 +342,7 @@ function openRefundModal(btn, editing = false) {
     document.getElementById('remark').value = '';
     const categories = JSON.parse(decodeURIComponent(btn.dataset.categories || '[]'));
     document.getElementById('refundCategoryRows').innerHTML = categories.map((category) => {
-        const price = Number(category.package?.price || category.unit_amount || 0);
-        const roundTripTotal = Number(category.package?.round_trip_price || 0);
-        const returnPrice = roundTripTotal > 0 ? roundTripTotal - price : price;
+        const unitPrice = Number(category.unit_price);
         const purchasedQuantity = Number(category.quantity || category.purchased_quantity || 0);
         const refundedQuantity = editing
             ? Number(category.refunded_quantity ?? category.quantity_refunded ?? 0)
@@ -354,9 +351,9 @@ function openRefundModal(btn, editing = false) {
         return `<div class="grid grid-cols-5 items-center gap-2 rounded border p-2 text-sm">
                 <span class="col-span-2">${escapeHtml(category.package?.name || 'Ticket')}</span>
                 <span>${escapeHtml(category.type || '')}</span>
-                <span>Qty: ${purchasedQuantity}<br>৳${(category.type === 'return' ? returnPrice : price).toFixed(2)}</span>
+                <span>Qty: ${purchasedQuantity}<br>৳${unitPrice.toFixed(2)}</span>
                 <input type="number" min="0" max="${purchasedQuantity}" value="${refundedQuantity}"
-                    data-category-id="${category.category_id ?? category.id}" data-price="${category.type === 'return' ? returnPrice : price}"
+                    data-category-id="${category.category_id ?? category.id}" data-price="${unitPrice}"
                     class="refundCategoryQuantity w-full rounded border px-2 py-1" aria-label="Return quantity">
             </div>`;
     }).join('');

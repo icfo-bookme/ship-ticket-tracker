@@ -24,7 +24,7 @@ const completedColumns = [
     { data: 'sale.customer_mobile', render: (data) => escapeHtml(data || 'N/A') },
     { data: null, render: (data, type, row) => escapeHtml(row.sale?.ships?.name || 'N/A') },
     { data: 'sale.journey_date', render: formatRequestedDate },
-    { data: 'sale.number_of_ticket' },
+    { data: 'sale.ticket_count' },
     { data: 'total_refund_tickets' },
     { data: 'gross_refund_amount' },
     { data: 'customer_refund_amount', render: formatCustomerRefund },
@@ -75,16 +75,15 @@ const columns = isCompleted ? completedColumns : [
                                 data-id="${row.sale?.id ?? ''}"
                                 data-request-id="${row.id}"
                                 data-refund-type="${escapeHtml(row.refund_type || 'partial')}"
-                                data-received_total_amount="${row.sale?.ticket_fee ?? row.gross_refund_amount}"
-                                data-ticket-fee="${row.sale?.ticket_fee ?? row.gross_refund_amount}"
+                                data-received_total_amount="${row.sale.ticket_value}"
                                 data-due-amount="${row.sale?.due_amount ?? 0}"
                                 data-discount-amount="${row.sale?.discount_amount ?? 0}"
                                 data-other-fee="${row.sale?.other_fee ?? 0}"
                                 data-extra-received="${row.sale?.extra_received_amount ?? 0}"
                                 data-extra-remaining="${row.sale?.extra_remaining_amount ?? 0}"
                                 data-categories="${encodeURIComponent(JSON.stringify(row.edit_categories || []))}"
-                                data-gross-amount="${row.gross_refund_amount ?? 0}"
-                                data-ticket-count="${row.refunded_number_of_tickets ?? 0}"
+                                data-gross-amount="${row.gross_refund_amount}"
+                                data-ticket-count="${row.refunded_number_of_tickets}"
                                 data-customer-charge="${row.customer_charge_percent ?? 0}"
                                 data-partner-share="${row.partner_share_percent ?? 0}"
                                 title="Edit request"></button>

@@ -2,6 +2,7 @@
 
 use App\Models\Company;
 use App\Models\Ship;
+use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,14 +27,14 @@ beforeEach(function () {
         'company_id' => $this->company->id,
         'journey_date' => '2026-10-01',
         'return_date' => '2026-10-05',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-23',
         'sold_by' => $this->seller->id,
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'pending',
     ]);
 });
@@ -63,8 +64,8 @@ it('keeps sold by unchanged when the sale is updated', function () {
             'company_id' => $this->company->id,
             'journey_date' => '2026-10-01',
             'return_date' => '2026-10-05',
-            'number_of_ticket' => 1,
-            'ticket_fee' => 500,
+            'ticket_count' => 1,
+            'ticket_value' => 500,
             'received_amount' => 500,
             'due_amount' => 0,
             'other_fee' => 0,
@@ -83,4 +84,98 @@ it('keeps sold by unchanged when the sale is updated', function () {
 
     expect($sale->customer_name)->toBe('Customer Updated')
         ->and($sale->sold_by)->toBe($this->seller->id);
+});
+
+it('recalculates payable from departure and return quantities across packages', function () {
+    $departurePackage = ShipPackage::create([
+        'ship_id' => $this->ship->id,
+        'name' => 'Departure package',
+        'price' => 200,
+        'round_trip_price' => 390,
+    ]);
+    $returnPackage = ShipPackage::create([
+        'ship_id' => $this->ship->id,
+        'name' => 'Return package',
+        'price' => 100,
+        'round_trip_price' => 180,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->put('/ship-ticket-sales/'.$this->sale->id, [
+            'customer_name' => 'Customer One',
+            'customer_mobile' => '01712345678',
+            'whatsapp' => '01712345678',
+            'email' => null,
+            'nid' => null,
+            'date_of_birth' => null,
+            'collect_from_office' => 1,
+            'address' => null,
+            'ship_id' => $this->ship->id,
+            'company_id' => $this->company->id,
+            'journey_date' => '2026-10-01',
+            'return_date' => '2026-10-05',
+            'other_fee' => 20,
+            'discount_amount' => 10,
+            'total_payable' => 0,
+            'sales_source' => 'Direct',
+            'sold_by' => (string) $this->seller->id,
+            'issued_date' => '2026-09-23',
+            'status' => 'pending',
+            'departure_quantity' => [$departurePackage->id => 3],
+            'return_quantity' => [$returnPackage->id => 2],
+            'remark1' => null,
+            'remark2' => null,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertSessionMissing('error');
+
+    $sale = $this->sale->fresh();
+
+    expect($sale->ticket_count)->toBe(5)
+        ->and((float) $sale->ticket_value)->toBe(760.0)
+        ->and((float) $sale->total_payable)->toBe(770.0);
+});
+
+it('includes the increased return quantity without changing departure quantity', function () {
+    $package = ShipPackage::create([
+        'ship_id' => $this->ship->id,
+        'name' => 'Round trip package',
+        'price' => 200,
+        'round_trip_price' => 390,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->put('/ship-ticket-sales/'.$this->sale->id, [
+            'customer_name' => 'Customer One',
+            'customer_mobile' => '01712345678',
+            'whatsapp' => '01712345678',
+            'email' => null,
+            'nid' => null,
+            'date_of_birth' => null,
+            'collect_from_office' => 1,
+            'address' => null,
+            'ship_id' => $this->ship->id,
+            'company_id' => $this->company->id,
+            'journey_date' => '2026-10-01',
+            'return_date' => '2026-10-05',
+            'other_fee' => 0,
+            'discount_amount' => 0,
+            'total_payable' => 0,
+            'sales_source' => 'Direct',
+            'sold_by' => (string) $this->seller->id,
+            'issued_date' => '2026-09-23',
+            'status' => 'pending',
+            'departure_quantity' => [$package->id => 2],
+            'return_quantity' => [$package->id => 3],
+            'remark1' => null,
+            'remark2' => null,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertSessionMissing('error');
+
+    $sale = $this->sale->fresh();
+
+    expect($sale->ticket_count)->toBe(5)
+        ->and((float) $sale->ticket_value)->toBe(970.0)
+        ->and((float) $sale->total_payable)->toBe(970.0);
 });

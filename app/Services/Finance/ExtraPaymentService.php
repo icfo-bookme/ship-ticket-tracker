@@ -15,8 +15,8 @@ class ExtraPaymentService
      */
     public function dataTable(Request $request): array
     {
-        $query = ShipTicketSale::with(['ships', 'companies', 'refunds'])
-            ->whereColumn('received_amount', '>', 'total_payable')
+        $query = ShipTicketSale::with(['ships', 'companies', 'refunds', 'payments'])
+            ->whereRaw('(SELECT COALESCE(SUM(CASE WHEN payments.is_bftn = 0 OR payments.settlement_status = "received" THEN payments.received_amount ELSE 0 END), 0) FROM payments WHERE payments.sales_id = ship_ticket_sales.id) > ship_ticket_sales.total_payable')
             ->whereDoesntHave('refunds', function ($refunds): void {
                 $refunds->where('refund_type', 'extra_payment')
                     ->whereNotIn('status', [RefundStatus::Cancelled->value]);
@@ -40,7 +40,7 @@ class ExtraPaymentService
                 'company_name' => $sale->companies?->name,
                 'journey_date' => $sale->journey_date,
                 'total_payable' => (float) $sale->total_payable,
-                'received_amount' => (float) $sale->received_amount,
+                'received_amount' => $this->settledAmount($sale),
                 'extra_remaining_amount' => $this->remainingAmount($sale),
             ])->all(),
         ];
@@ -60,7 +60,6 @@ class ExtraPaymentService
             $sale->update([
                 'other_fee' => (float) $sale->other_fee + $extra,
                 'total_payable' => (float) $sale->total_payable + $extra,
-                'due_amount' => 0,
             ]);
 
             return ['success' => true, 'amount' => $extra];
@@ -109,7 +108,7 @@ class ExtraPaymentService
     {
         $sale->loadMissing('refunds.customerPayments');
 
-        $extraReceived = max((float) $sale->received_amount - (float) $sale->total_payable, 0);
+        $extraReceived = max($this->settledAmount($sale) - (float) $sale->total_payable, 0);
         $extraRefunds = $sale->refunds
             ->where('refund_type', 'extra_payment')
             ->where('status', '!=', RefundStatus::Cancelled->value);
@@ -130,13 +129,11 @@ class ExtraPaymentService
             $extraRefunded += $paidAmount;
 
             if (! $isSettled) {
-                $extraRefundPending += max((float) $refund->refunded_amount - $paidAmount, 0);
+                $extraRefundPending += max((float) $refund->gross_refund_amount - $paidAmount, 0);
             }
         }
 
-        $reservedAmount = (float) $extraRefunds->sum('refunded_amount');
-
-     
+        $reservedAmount = (float) $extraRefunds->sum('gross_refund_amount');
 
         return [
             'extra_received_amount' => round($extraReceived, 2),
@@ -151,5 +148,14 @@ class ExtraPaymentService
         return $sale->refunds
             ->contains(fn (Refund $refund): bool => $refund->refund_type === 'extra_payment'
                 && $refund->status !== RefundStatus::Cancelled->value);
+    }
+
+    private function settledAmount(ShipTicketSale $sale): float
+    {
+        $sale->loadMissing('payments');
+
+        return (float) $sale->payments
+            ->reject(fn ($payment): bool => $payment->is_bftn && $payment->settlement_status !== 'received')
+            ->sum('received_amount');
     }
 }

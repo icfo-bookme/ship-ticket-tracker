@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Company;
 use App\Models\PrintedTicket;
 use App\Models\Ship;
+use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use App\Services\Sales\SalesDataTableService;
@@ -212,18 +214,33 @@ it('shows every member of an office collection group in the collected list', fun
 
 function salesDataTableSale(Ship $ship, Company $company, string $status): ShipTicketSale
 {
-    return ShipTicketSale::create([
+    $sale = ShipTicketSale::create([
         'customer_name' => 'Grouped Customer',
         'customer_mobile' => '01712345678',
         'sales_source' => 'Direct',
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
         'status' => $status,
     ]);
+
+    $package = ShipPackage::create([
+        'ship_id' => $ship->id,
+        'name' => 'Sales table package',
+        'price' => 500,
+        'round_trip_price' => 800,
+    ]);
+    Category::create([
+        'ticket_id' => $sale->id,
+        'package_id' => $package->id,
+        'quantity' => 1,
+        'type' => 'departure',
+        'unit_price' => 500,
+    ]);
+
+    return $sale;
 }

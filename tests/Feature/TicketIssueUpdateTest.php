@@ -31,14 +31,14 @@ it('only saves PDF and grouping data from the ticket issue page', function () {
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'payment-verified',
     ]);
     $nextSale = $sale->replicate();
@@ -57,13 +57,13 @@ it('only saves PDF and grouping data from the ticket issue page', function () {
     $this->actingAs($user)
         ->put(route('ship-ticket-issue.update', $sale), [
             'customer_name' => 'Tampered Customer',
-            'ticket_fee' => 1,
+            'ticket_value' => 1,
             'additional_pdf' => ['1' => '01712345678-2.pdf'],
         ])
         ->assertRedirect(route('ship-ticket-issue.show', $nextSale));
 
     expect($sale->fresh()->customer_name)->toBe('Original Customer')
-        ->and((float) $sale->fresh()->ticket_fee)->toBe(500.0)
+        ->and((float) $sale->fresh()->ticket_value)->toBe(500.0)
         ->and($sale->fresh()->status)->toBe('ticket-issued')
         ->and($sale->printedTickets()->pluck('filename')->all())->toBe(['01712345678-2.pdf']);
 });
@@ -90,14 +90,14 @@ it('saves added PDF filenames from sale edit without automatically changing its 
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
         'return_date' => null,
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'payment-verified',
         'remark1' => null,
         'remark2' => null,
@@ -124,8 +124,8 @@ it('saves added PDF filenames from sale edit without automatically changing its 
             'company_id' => $company->id,
             'journey_date' => '2026-10-01',
             'return_date' => '2026-10-02',
-            'number_of_ticket' => 1,
-            'ticket_fee' => 500,
+            'ticket_count' => 1,
+            'ticket_value' => 500,
             'other_fee' => 10,
             'discount_amount' => 5,
             'total_payable' => 500,
@@ -146,9 +146,9 @@ it('saves added PDF filenames from sale edit without automatically changing its 
 
     expect($sale->fresh()->customer_name)->toBe('Updated Customer')
         ->and($sale->fresh()->status)->toBe('payment-verified')
-        ->and((float) $sale->fresh()->ticket_fee)->toBe(280.0)
+        ->and((float) $sale->fresh()->ticket_value)->toBe(280.0)
         ->and((float) $sale->fresh()->total_payable)->toBe(285.0)
-        ->and($sale->fresh()->number_of_ticket)->toBe(3)
+        ->and($sale->fresh()->ticket_count)->toBe(3)
         ->and($sale->fresh()->shipment?->shipment_id)->toBe('TRACK-UPDATE-1')
         ->and($sale->printedTickets()->pluck('filename')->all())->toBe(['01712345678-2.pdf']);
 });
@@ -170,14 +170,14 @@ it('keeps grouped sales ticket issued until the ticket printed action', function
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-printed',
     ]);
     $sale = $referenceSale->replicate();
@@ -227,14 +227,14 @@ it('allows a new sale to join a group whose parcel is already created', function
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'shipment_id_entered',
     ]);
     $sale = $referenceSale->replicate();
@@ -272,14 +272,14 @@ it('finds group candidates by the sale WhatsApp number instead of the PDF filena
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-issued',
     ]);
     $sale = $referenceSale->replicate();
@@ -322,14 +322,14 @@ it('finds username-based groups and uses the username as the PDF prefix when no 
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-issued',
     ]);
     $sale = $referenceSale->replicate();
@@ -369,14 +369,14 @@ it('rejects grouping with collected or shipped sales', function () {
             'ship_id' => $ship->id,
             'company_id' => $company->id,
             'journey_date' => '2026-10-01',
-            'ticket_fee' => 500,
+            'ticket_value' => 500,
             'other_fee' => 0,
             'discount_amount' => 0,
             'total_payable' => 500,
             'received_amount' => 500,
             'due_amount' => 0,
             'issued_date' => '2026-09-26',
-            'number_of_ticket' => 1,
+            'ticket_count' => 1,
             'status' => $status,
         ]);
         PrintedTicket::create([
@@ -425,14 +425,14 @@ it('shows a mixed delivery mode message and rejects grouping when the current sa
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-printed',
     ]);
     PrintedTicket::create([
@@ -484,14 +484,14 @@ it('allows grouping when both same-whatsapp sales are office collection', functi
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-printed',
     ]);
     PrintedTicket::create([
@@ -507,14 +507,14 @@ it('allows grouping when both same-whatsapp sales are office collection', functi
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'collect_from_office' => true,
         'status' => 'ticket-printed',
     ]);
@@ -572,14 +572,14 @@ it('allows courier sales with the same whatsapp to group when their addresses di
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-26',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-printed',
     ]);
     PrintedTicket::create([

@@ -31,14 +31,14 @@ function saleWithProofPayment(Ship $ship, Company $company): ShipTicketSale
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 200,
         'due_amount' => 300,
         'issued_date' => '2026-09-23',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'pending',
     ]);
 
@@ -68,13 +68,13 @@ function proofSalePayload(Ship $ship, Company $company, User $user, array $overr
         'journey_date' => '2026-10-01',
         'date_of_birth' => null,
         'return_date' => null,
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'other_fee' => 0,
         'discount_amount' => 0,
         'total_payable' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'bftn_status' => null,
         'company_id' => $company->id,
         'issued_date' => '2026-09-23',
@@ -143,7 +143,7 @@ it('calculates the sale received amount from payments when the disabled total fi
 
     $sale = ShipTicketSale::latest('id')->firstOrFail();
 
-    expect((float) $sale->received_amount)->toBe(200.0)
+    expect((float) Payment::where('sales_id', $sale->id)->sum('received_amount'))->toBe(200.0)
         ->and((float) $sale->due_amount)->toBe(300.0)
         ->and((float) Payment::where('sales_id', $sale->id)->sum('received_amount'))->toBe(200.0);
 });

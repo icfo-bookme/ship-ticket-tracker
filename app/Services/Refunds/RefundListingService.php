@@ -48,7 +48,8 @@ class RefundListingService
     /** @return array<string, mixed> */
     public function refundedSales(Request $request): array
     {
-        $query = ShipTicketSale::with(['ships', 'companies', 'refunds', 'payments', 'categories.package'])
+        $query = ShipTicketSale::query()
+            ->with(['ships', 'companies', 'refunds', 'payments', 'categories.package'])
             ->where(fn (Builder $sales) => $sales
                 ->whereIn('status', [SaleStatus::Refunded->value, SaleStatus::PartialRefunded->value])
                 ->orWhereHas('refunds', fn (Builder $refunds) => $refunds
@@ -71,7 +72,7 @@ class RefundListingService
             $sale->setRelation('refund', (new Refund)->forceFill([
                 'id' => $latestRefund?->id,
                 'refunded_number_of_tickets' => $completedRefunds->sum('refunded_number_of_tickets'),
-                'refunded_amount' => $completedRefunds->sum('refunded_amount'),
+                'refunded_amount' => $completedRefunds->sum('gross_refund_amount'),
                 'gross_refund_amount' => $completedRefunds->sum('gross_refund_amount'),
                 'refund_discount_amount' => $completedRefunds->sum('refund_discount_amount'),
                 'customer_charge_percent' => $latestRefund?->customer_charge_percent,
@@ -104,7 +105,7 @@ class RefundListingService
 
     public function refundedSale(int $saleId): ShipTicketSale
     {
-        $sale = ShipTicketSale::with([
+        $sale = ShipTicketSale::withTrashed()->with([
             'ships', 'companies', 'payments', 'refunds.tickets', 'refunds.customerPayments',
         ])->findOrFail($saleId);
 
@@ -130,6 +131,7 @@ class RefundListingService
             'sale.ships', 'sale.companies', 'sale.categories.package', 'sale.payments', 'sale.refunds', 'tickets',
         ])
             ->whereNotNull('requested_at')
+            ->whereHas('sale', fn (Builder $sale) => $sale->whereNull('deleted_at'))
             ->when($status !== RefundStatus::Completed->value, fn (Builder $query) => $query->whereNull('customer_refunded_at'))
             ->where('status', $status)
             ->when($request->filled('journey_date'), fn (Builder $query) => $query->whereHas('sale', fn (Builder $sale) => $sale->whereDate('journey_date', $request->input('journey_date'))))
@@ -158,6 +160,7 @@ class RefundListingService
     private function appendRefundRequestSummary(Refund $refund): void
     {
         if ($refund->sale) {
+            $refund->sale->setAttribute('ticket_count', (int) $refund->sale->categories->sum('quantity'));
             $this->appendCurrentFinancials($refund->sale);
         }
 
@@ -183,6 +186,7 @@ class RefundListingService
             'purchased_quantity' => $category->quantity,
             'refunded_quantity' => $requestedQuantities->get($category->id)?->refunded_quantity ?? 0,
             'unit_amount' => $requestedQuantities->get($category->id)?->unit_amount,
+            'unit_price' => $category->unit_price,
             'package' => $category->package,
         ])->values());
     }
@@ -195,7 +199,7 @@ class RefundListingService
         return $sales->reduce(function (array $totals, ShipTicketSale $sale): array {
             $refunds = $sale->refunds->filter($this->isCompletedRefund(...));
             $totals['tickets'] += (int) $refunds->sum('refunded_number_of_tickets');
-            $totals['amount'] += (float) $refunds->sum('refunded_amount');
+            $totals['amount'] += (float) $refunds->sum('gross_refund_amount');
             $totals['gross_amount'] += (float) $refunds->sum('gross_refund_amount');
             $totals['customer_refund'] += (float) $refunds->sum('customer_refund_amount');
             $totals['partner_share'] += (float) $refunds->sum('partner_share_amount');
@@ -224,11 +228,19 @@ class RefundListingService
                 ->orWhere('email', 'like', "%{$searchValue}%")
                 ->orWhere('nid', 'like', "%{$searchValue}%")
                 ->orWhere('sales_source', 'like', "%{$searchValue}%")
-                ->orWhere('ticket_fee', 'like', "%{$searchValue}%")
+                ->orWhereRaw('(
+                    SELECT COALESCE(SUM(categories.quantity * categories.unit_price), 0)
+                    FROM categories
+                    WHERE categories.ticket_id = ship_ticket_sales.id
+                ) LIKE ?', ["%{$searchValue}%"])
                 ->orWhereHas('payments', fn (Builder $payments) => $payments->where('payment_method', 'like', "%{$searchValue}%"))
-                ->orWhere('number_of_ticket', 'like', "%{$searchValue}%")
-                ->orWhere('received_amount', 'like', "%{$searchValue}%")
-                ->orWhere('due_amount', 'like', "%{$searchValue}%")
+                ->orWhereRaw('(
+                    SELECT COALESCE(SUM(categories.quantity), 0)
+                    FROM categories
+                    WHERE categories.ticket_id = ship_ticket_sales.id
+                ) LIKE ?', ["%{$searchValue}%"])
+                ->orWhereHas('payments', fn (Builder $payments) => $payments->where('received_amount', 'like', "%{$searchValue}%"))
+                ->orWhereRaw('('.ShipTicketSale::dueAmountSql().') LIKE ?', ["%{$searchValue}%"])
                 ->orWhere('sold_by', 'like', "%{$searchValue}%")
                 ->orWhereHas('categories.package', fn (Builder $packages) => $packages->where('name', 'like', "%{$searchValue}%"))
                 ->orWhere('status', 'like', "%{$searchValue}%")
@@ -246,6 +258,7 @@ class RefundListingService
 
     private function appendPaymentAndCategoryLabels(ShipTicketSale $sale): void
     {
+        $sale->setAttribute('ticket_count', (int) $sale->categories->sum('quantity'));
         $sale->setAttribute('payment_method', $sale->payments->first()->payment_method ?? null);
         $sale->setAttribute('ticket_category', $sale->categories
             ->map(fn ($category) => $category->package?->name)
@@ -258,9 +271,9 @@ class RefundListingService
     {
         $summary = $this->saleFinancials->currentSummary($sale);
 
-        $sale->setAttribute('received_amount', $summary['received_amount']);
+        $sale->setAttribute('received_amount', number_format($summary['received_amount'], 2, '.', ''));
+        $sale->setAttribute('ticket_value', $summary['ticket_value']);
         $sale->setAttribute('total_payable', $summary['total_payable']);
-        $sale->setAttribute('due_amount', $summary['due_amount']);
         $sale->setAttribute('extra_received_amount', $summary['extra_received_amount']);
         $sale->setAttribute('extra_remaining_amount', $summary['extra_remaining_amount']);
     }

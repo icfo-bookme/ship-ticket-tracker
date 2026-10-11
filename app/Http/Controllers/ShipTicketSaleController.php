@@ -17,8 +17,10 @@ use App\Services\Sales\SaleDetailService;
 use App\Services\Sales\SalesDataTableService;
 use App\Services\Sales\SaleStatusWorkflowService;
 use App\Services\Sales\ShipTicketSaleService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class ShipTicketSaleController extends Controller
 {
@@ -42,6 +44,16 @@ class ShipTicketSaleController extends Controller
     public function pendingCS(Request $request, $status)
     {
         return $this->salesDataTable->response($request, $status);
+    }
+
+    public function deletedIndex(): View
+    {
+        return view('ship_ticket_sales.deleted');
+    }
+
+    public function deletedData(Request $request): JsonResponse
+    {
+        return $this->salesDataTable->deletedResponse($request);
     }
 
     public function showPendingSales($status)
@@ -223,6 +235,17 @@ class ShipTicketSaleController extends Controller
         }
     }
 
+    public function restore(int $id)
+    {
+        $sale = $this->shipTicketSales->restore($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sale restored successfully.',
+            'data' => ['id' => $sale->id],
+        ]);
+    }
+
     public function checkDuplicate(CheckDuplicateTicketRequest $request)
     {
         return response()->json($this->shipTicketSales->duplicateMessage(
@@ -241,13 +264,13 @@ class ShipTicketSaleController extends Controller
         );
     }
 
-    public function markBftnReceived(MarkBftnReceivedRequest $request, int $id)
+    public function markPaymentBftnReceived(MarkBftnReceivedRequest $request, int $id)
     {
-        $this->statusWorkflow->markBftnReceived($id, $request->validated('received_at'));
+        $this->statusWorkflow->markPaymentBftnReceived($id, $request->validated('received_at'));
 
         return response()->json([
             'success' => true,
-            'message' => 'BFTN received status updated successfully.',
+            'message' => 'BFTN payment marked as received.',
         ]);
     }
 

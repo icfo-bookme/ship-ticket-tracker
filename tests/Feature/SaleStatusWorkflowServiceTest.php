@@ -7,6 +7,7 @@ use App\Models\Shipment;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use App\Models\VerifyTracker;
+use App\Services\Sales\SaleFinancialService;
 use App\Services\Sales\SaleGroupingService;
 use App\Services\Sales\SaleStatusWorkflowService;
 use App\Services\SteadfastService;
@@ -35,11 +36,11 @@ function workflowSale(Ship $ship, Company $company, array $overrides = []): Ship
         'ship_id' => $ship->id,
         'company_id' => $company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 500,
+        'ticket_value' => 500,
         'received_amount' => 500,
         'due_amount' => 0,
         'issued_date' => '2026-09-23',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'ticket-issued',
     ], $overrides));
 }
@@ -60,7 +61,7 @@ it('marks every sale in a printed ticket group as ticket printed', function () {
         'group_by_id' => $firstSale->id,
     ]);
 
-    $service = new SaleStatusWorkflowService(\Mockery::mock(SteadfastService::class), app(SaleGroupingService::class));
+    $service = new SaleStatusWorkflowService(\Mockery::mock(SteadfastService::class), app(SaleGroupingService::class), app(SaleFinancialService::class));
 
     $result = $service->verify($firstSale->id, 'ticket-printed');
 
@@ -86,7 +87,7 @@ it('syncs a printed group to its furthest existing status', function () {
         'group_by_id' => $parcelCreatedSale->id,
     ]);
 
-    $service = new SaleStatusWorkflowService(Mockery::mock(SteadfastService::class), app(SaleGroupingService::class));
+    $service = new SaleStatusWorkflowService(Mockery::mock(SteadfastService::class), app(SaleGroupingService::class), app(SaleFinancialService::class));
 
     $service->verify($parcelCreatedSale->id, 'ticket-printed');
 
@@ -109,7 +110,7 @@ it('does not rank office collection or refunds as fulfillment progress', functio
         ]);
     }
 
-    $service = new SaleStatusWorkflowService(Mockery::mock(SteadfastService::class), app(SaleGroupingService::class));
+    $service = new SaleStatusWorkflowService(Mockery::mock(SteadfastService::class), app(SaleGroupingService::class), app(SaleFinancialService::class));
     $service->verify($shippedSale->id, 'ticket-printed');
 
     expect($shippedSale->fresh()->status)->toBe('shipped')
@@ -134,7 +135,7 @@ it('attaches a newly grouped sale to the existing parcel after print confirmatio
     ]);
     Shipment::create(['ticket_id' => $mainSale->id, 'shipment_id' => 'SHP-123']);
 
-    $service = new SaleStatusWorkflowService(Mockery::mock(SteadfastService::class), app(SaleGroupingService::class));
+    $service = new SaleStatusWorkflowService(Mockery::mock(SteadfastService::class), app(SaleGroupingService::class), app(SaleFinancialService::class));
     $service->verify($mainSale->id, 'ticket-printed');
 
     expect($mainSale->fresh()->status)->toBe('shipment_id_entered')
@@ -164,7 +165,7 @@ it('returns a failure when steadfast does not provide a consignment id', functio
         ->once()
         ->andReturn(['data' => []]);
 
-    $service = new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class));
+    $service = new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class), app(SaleFinancialService::class));
 
     $result = $service->verify($sale->id, 'shipment_id_entered');
 
@@ -192,7 +193,7 @@ it('does not create a duplicate parcel when the invoice already exists remotely'
         ->andReturn(['http_status' => 200, 'body' => ['status' => 200, 'delivery_status' => 'pending']]);
     $steadfast->shouldNotReceive('createOrder');
 
-    $service = new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class));
+    $service = new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class), app(SaleFinancialService::class));
     $result = $service->verify($sale->id, 'shipment_id_entered');
 
     expect($result['success'])->toBeFalse()
@@ -216,7 +217,7 @@ it('stores the consignment id from a single order response', function () {
         ->once()
         ->andReturn(['status' => 200, 'consignment' => ['consignment_id' => 987654]]);
 
-    $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class)))
+    $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class), app(SaleFinancialService::class)))
         ->verify($sale->id, 'shipment_id_entered');
 
     expect($result['success'])->toBeTrue()
@@ -240,7 +241,7 @@ it('does not save a consignment when the single response marks the order as fail
         ->once()
         ->andReturn(['status' => 400, 'message' => 'Invalid recipient phone']);
 
-    $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class)))
+    $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class), app(SaleFinancialService::class)))
         ->verify($sale->id, 'shipment_id_entered');
 
     expect($result['success'])->toBeFalse()
@@ -269,7 +270,7 @@ it('blocks parcel creation when an existing group contains an office collection 
     $steadfast->shouldNotReceive('statusByInvoice');
     $steadfast->shouldNotReceive('createOrder');
 
-    $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class)))
+    $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class), app(SaleFinancialService::class)))
         ->verify($courierSale->id, 'shipment_id_entered');
 
     expect($result)->toMatchArray([
@@ -305,6 +306,7 @@ it('marks every sale in an office collection group as collected', function () {
     $result = (new SaleStatusWorkflowService(
         Mockery::mock(SteadfastService::class),
         app(SaleGroupingService::class),
+        app(SaleFinancialService::class),
     ))->verify($mainSale->id, 'collect_from_office');
 
     expect($result['success'])->toBeTrue()
@@ -339,7 +341,7 @@ it('creates a courier parcel for same-whatsapp grouped sales with different addr
         ->once()
         ->andReturn(['status' => 200, 'consignment' => ['consignment_id' => 987654]]);
 
-    $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class)))
+    $result = (new SaleStatusWorkflowService($steadfast, app(SaleGroupingService::class), app(SaleFinancialService::class)))
         ->verify($mainSale->id, 'shipment_id_entered');
 
     expect($result['success'])->toBeTrue()

@@ -32,11 +32,7 @@ class RefundService
 
                 if ($sale && ! in_array($sale->status, [SaleStatus::Pending->value, SaleStatus::Refunded->value], true)) {
                     $ticketSelections = $sale->categories->map(function ($category): array {
-                        $singlePrice = (float) ($category->package?->price ?? 0);
-                        $roundTripPrice = (float) ($category->package?->round_trip_price ?? 0);
-                        $unitAmount = $category->type === 'return'
-                            ? ($roundTripPrice > 0 ? $roundTripPrice - $singlePrice : $singlePrice)
-                            : $singlePrice;
+                        $unitAmount = (float) $category->unit_price;
                         $quantity = (int) $category->quantity;
 
                         return [
@@ -47,8 +43,14 @@ class RefundService
                         ];
                     })->all();
                     $ticketCount = array_sum(array_column($ticketSelections, 'quantity'));
-                    $ticketCount = $ticketCount > 0 ? $ticketCount : (int) $sale->number_of_ticket;
-                    $grossAmount = round((float) $sale->ticket_fee, 2);
+
+                    if ($ticketCount === 0) {
+                        throw ValidationException::withMessages([
+                            'sale' => "Sale {$sale->id} has no ticket categories to refund.",
+                        ]);
+                    }
+
+                    $grossAmount = round((float) $sale->ticket_value, 2);
                     $this->ensureRefundableAmount($sale, $ticketCount, $grossAmount);
                     $refundDiscountAmount = min(max((float) $sale->discount_amount, 0), $grossAmount);
                     $customerRefundAmount = $this->customerRefundAmount(
@@ -75,26 +77,15 @@ class RefundService
                         'requested_at' => now(),
                     ]);
 
-                    if ($ticketSelections === []) {
-                        $refund->tickets()->create([
-                            'category_name' => 'All tickets',
-                            'category_type' => 'all',
-                            'purchased_quantity' => $ticketCount,
-                            'refunded_quantity' => $ticketCount,
-                            'unit_amount' => $ticketCount > 0 ? round($grossAmount / $ticketCount, 2) : 0,
-                            'gross_amount' => $grossAmount,
-                        ]);
-                    } else {
-                        $refund->tickets()->createMany(array_map(fn (array $selected): array => [
-                            'category_id' => $selected['category']->id,
-                            'category_name' => $selected['category']->package?->name,
-                            'category_type' => $selected['category']->type,
-                            'purchased_quantity' => $selected['quantity'],
-                            'refunded_quantity' => $selected['quantity'],
-                            'unit_amount' => $selected['unitAmount'],
-                            'gross_amount' => $selected['categoryAmount'],
-                        ], $ticketSelections));
-                    }
+                    $refund->tickets()->createMany(array_map(fn (array $selected): array => [
+                        'category_id' => $selected['category']->id,
+                        'category_name' => $selected['category']->package?->name,
+                        'category_type' => $selected['category']->type,
+                        'purchased_quantity' => $selected['quantity'],
+                        'refunded_quantity' => $selected['quantity'],
+                        'unit_amount' => $selected['unitAmount'],
+                        'gross_amount' => $selected['categoryAmount'],
+                    ], $ticketSelections));
                 }
             }
         });
@@ -118,11 +109,7 @@ class RefundService
                 }
 
                 $quantity = (int) $selection['refunded_quantity'];
-                $singlePrice = (float) ($category->package?->price ?? 0);
-                $roundTripPrice = (float) ($category->package?->round_trip_price ?? 0);
-                $unitAmount = $category->type === 'return'
-                    ? ($roundTripPrice > 0 ? $roundTripPrice - $singlePrice : $singlePrice)
-                    : $singlePrice;
+                $unitAmount = (float) $category->unit_price;
                 $categoryAmount = round($unitAmount * $quantity, 2);
                 $grossAmount += $categoryAmount;
                 $ticketCount += $quantity;
@@ -204,9 +191,6 @@ class RefundService
             $payableRefundAmount = round($customerRefundAmount - $dueAdjustment, 2);
 
             if ($dueAdjustment > 0) {
-                $sale->update([
-                    'due_amount' => round($dueAmount - $dueAdjustment, 2),
-                ]);
                 $refund->update([
                     'customer_refund_amount' => $payableRefundAmount,
                     'due_adjusted_amount' => $dueAdjustment,
@@ -232,10 +216,10 @@ class RefundService
 
     private function proportionalDiscount(ShipTicketSale $sale, float $grossAmount): float
     {
-        $ticketFee = (float) $sale->ticket_fee;
-        $discount = min(max((float) $sale->discount_amount, 0), $ticketFee);
+        $TicketValue = (float) $sale->ticket_value;
+        $discount = min(max((float) $sale->discount_amount, 0), $TicketValue);
 
-        return $ticketFee > 0 ? round($discount * ($grossAmount / $ticketFee), 2) : 0;
+        return $TicketValue > 0 ? round($discount * ($grossAmount / $TicketValue), 2) : 0;
     }
 
     private function customerRefundAmount(
@@ -307,11 +291,7 @@ class RefundService
                     ]);
                 }
 
-                $singlePrice = (float) ($category->package?->price ?? 0);
-                $roundTripPrice = (float) ($category->package?->round_trip_price ?? 0);
-                $unitAmount = $category->type === 'return'
-                    ? ($roundTripPrice > 0 ? $roundTripPrice - $singlePrice : $singlePrice)
-                    : $singlePrice;
+                $unitAmount = (float) $category->unit_price;
                 $categoryAmount = round($unitAmount * $quantity, 2);
                 $grossAmount += $categoryAmount;
                 $ticketCount += $quantity;
@@ -385,18 +365,19 @@ class RefundService
     ): void {
         $refunds = $sale->refunds()
             ->whereNotIn('status', [RefundStatus::Cancelled->value])
+            ->where('refund_type', '!=', 'extra_payment')
             ->when($ignoredRefundId, fn ($query) => $query->where('id', '!=', $ignoredRefundId))
             ->get();
         $refundedTickets = (int) $refunds->sum('refunded_number_of_tickets');
-        $refundedAmount = (float) $refunds->sum('refunded_amount');
+        $refundedAmount = (float) $refunds->sum('gross_refund_amount');
 
-        if ($refundedTickets + $tickets > (int) $sale->number_of_ticket) {
+        if ($refundedTickets + $tickets > (int) $sale->ticket_count) {
             throw ValidationException::withMessages([
                 'refunded_number_of_tickets' => 'Refunded tickets cannot exceed the sale ticket count.',
             ]);
         }
 
-        if ($refundedAmount + $amount > (float) $sale->ticket_fee) {
+        if ($refundedAmount + $amount > (float) $sale->ticket_value) {
             throw ValidationException::withMessages([
                 'refunded_amount' => 'Refunded amount cannot exceed the total ticket price.',
             ]);
@@ -408,10 +389,11 @@ class RefundService
     {
         $refunds = $sale->refunds()
             ->whereNotIn('status', [RefundStatus::Cancelled->value])
+            ->where('refund_type', '!=', 'extra_payment')
             ->when($ignoredRefundId, fn ($query) => $query->where('id', '!=', $ignoredRefundId))
             ->with('tickets')
             ->get();
-        $refundedAmount = (float) $refunds->sum('refunded_amount');
+        $refundedAmount = (float) $refunds->sum('gross_refund_amount');
 
         foreach ($selectedTickets as $selected) {
             $alreadyRefunded = (int) $refunds
@@ -426,7 +408,7 @@ class RefundService
             }
         }
 
-        if ($refundedAmount + $amount > (float) $sale->ticket_fee) {
+        if ($refundedAmount + $amount > (float) $sale->ticket_value) {
             throw ValidationException::withMessages([
                 'refunded_amount' => 'Refunded amount cannot exceed the total ticket price.',
             ]);

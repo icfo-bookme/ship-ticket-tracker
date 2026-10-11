@@ -31,8 +31,8 @@
                 <dl class="grid grid-cols-2 gap-2 text-sm">
                     <dt class="text-gray-500">Ship</dt><dd>{{ $sale->ships?->name ?? 'N/A' }}</dd>
                     <dt class="text-gray-500">Journey Date</dt><dd>{{ $sale->journey_date }}</dd>
-                    <dt class="text-gray-500">Tickets</dt><dd>{{ $sale->number_of_ticket }}</dd>
-                    <dt class="text-gray-500">Ticket Price</dt><dd>{{ number_format((float) $sale->ticket_fee, 2) }}</dd>
+                    <dt class="text-gray-500">Tickets</dt><dd>{{ $sale->ticket_count }}</dd>
+                    <dt class="text-gray-500">Ticket Price</dt><dd>{{ number_format((float) $sale->ticket_value, 2) }}</dd>
                     <dt class="text-gray-500">Other Fee</dt><dd>{{ number_format((float) $sale->other_fee, 2) }}</dd>
                     <dt class="text-gray-500">Current Due</dt><dd>{{ number_format((float) $sale->due_amount, 2) }}</dd>
                 </dl>

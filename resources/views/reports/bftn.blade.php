@@ -55,7 +55,7 @@
                 :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />
 
             <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <x-report-summary-card id="bftnReportTotalCount" label="BFTN Sales" />
+                <x-report-summary-card id="bftnReportTotalCount" label="BFTN Payments" />
                 <x-report-summary-card id="bftnReportTotalAmount" label="BFTN Amount" />
                 <x-report-summary-card id="bftnReportPending" label="Pending Amount" />
                 <x-report-summary-card id="bftnReportReceived" label="Received Amount" />

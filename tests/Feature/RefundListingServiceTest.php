@@ -6,13 +6,40 @@ use App\Models\Refund;
 use App\Models\Ship;
 use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
+use App\Models\User;
 use App\Services\Refunds\RefundListingService;
 use App\Services\Refunds\RefundService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
+
+it('paginates the refund listing endpoint with a bounded page size', function () {
+    $user = User::factory()->create();
+    $user->givePermissionTo(Permission::findOrCreate('refunds.view', 'web'));
+
+    Refund::query()->create([
+        'sales_id' => 101,
+        'status' => 'requested',
+        'refunded_number_of_tickets' => 1,
+        'refunded_amount' => 10,
+    ]);
+    Refund::query()->create([
+        'sales_id' => 102,
+        'status' => 'completed',
+        'refunded_number_of_tickets' => 1,
+        'refunded_amount' => 20,
+    ]);
+
+    $this->actingAs($user)
+        ->getJson('/refunds?per_page=1')
+        ->assertOk()
+        ->assertJsonPath('total', 2)
+        ->assertJsonPath('per_page', 1)
+        ->assertJsonCount(1, 'data');
+});
 
 it('returns bounded empty datatable payloads for refund listings', function () {
     $service = app(RefundListingService::class);
@@ -37,12 +64,20 @@ it('keeps due adjustment nonnegative for legacy negative refund amounts', functi
         'customer_name' => 'Test Customer',
         'customer_mobile' => '01234567890',
         'ship_id' => $ship->id,
-        'ticket_fee' => 100,
+        'ticket_value' => 100,
         'received_amount' => 80,
         'due_amount' => 20,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 2,
+        'ticket_count' => 2,
         'status' => 'ticket-issued',
+    ]);
+    $package = ShipPackage::create(['ship_id' => $ship->id, 'name' => 'Refund test', 'price' => 50]);
+    Category::create([
+        'ticket_id' => $sale->id,
+        'package_id' => $package->id,
+        'quantity' => 2,
+        'type' => 'departure',
+        'unit_price' => 50,
     ]);
     Refund::create([
         'sales_id' => $sale->id,
@@ -69,13 +104,21 @@ it('calculates the current due from recorded payments instead of stale sale tota
         'customer_name' => 'Test Customer',
         'customer_mobile' => '01234567890',
         'ship_id' => $ship->id,
-        'ticket_fee' => 100,
+        'ticket_value' => 100,
         'received_amount' => 100,
         'due_amount' => 0,
         'total_payable' => 100,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 2,
+        'ticket_count' => 2,
         'status' => 'ticket-issued',
+    ]);
+    $package = ShipPackage::create(['ship_id' => $ship->id, 'name' => 'Payment test', 'price' => 50]);
+    Category::create([
+        'ticket_id' => $sale->id,
+        'package_id' => $package->id,
+        'quantity' => 2,
+        'type' => 'departure',
+        'unit_price' => 50,
     ]);
     Payment::create([
         'sales_id' => $sale->id,
@@ -96,15 +139,23 @@ it('accounts for the sale discount when listing due and overpayment amounts', fu
         'customer_name' => 'Test Customer',
         'customer_mobile' => '01234567890',
         'ship_id' => $ship->id,
-        'ticket_fee' => 110,
+        'ticket_value' => 110,
         'discount_amount' => 10,
         'other_fee' => 0,
         'total_payable' => 100,
         'received_amount' => 100,
         'due_amount' => 0,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 2,
+        'ticket_count' => 2,
         'status' => 'ticket-issued',
+    ]);
+    $package = ShipPackage::create(['ship_id' => $ship->id, 'name' => 'Discount test', 'price' => 55]);
+    Category::create([
+        'ticket_id' => $sale->id,
+        'package_id' => $package->id,
+        'quantity' => 2,
+        'type' => 'departure',
+        'unit_price' => 55,
     ]);
     Payment::create([
         'sales_id' => $sale->id,
@@ -134,14 +185,15 @@ it('calculates partial refund totals from selected category quantities and appli
         'customer_name' => 'Test Customer',
         'customer_mobile' => '01234567890',
         'ship_id' => $ship->id,
-        'ticket_fee' => 38,
+        'return_date' => now()->addDays(2)->toDateString(),
+        'ticket_value' => 38,
         'other_fee' => 25.8,
         'discount_amount' => 3.8,
         'total_payable' => 60,
         'received_amount' => 0,
         'due_amount' => 60,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 4,
+        'ticket_count' => 4,
         'status' => 'ticket-issued',
     ]);
     $departure = Category::create([
@@ -149,13 +201,17 @@ it('calculates partial refund totals from selected category quantities and appli
         'package_id' => $departurePackage->id,
         'quantity' => 2,
         'type' => 'departure',
+        'unit_price' => 10,
     ]);
     $return = Category::create([
         'ticket_id' => $sale->id,
         'package_id' => $departurePackage->id,
         'quantity' => 2,
         'type' => 'return',
+        'unit_price' => 9,
     ]);
+
+    $departurePackage->update(['price' => 100, 'round_trip_price' => 190]);
 
     app(RefundService::class)->partialRefund($sale, [
         'ticket_selections' => [
@@ -194,14 +250,15 @@ it('creates a full bulk refund with returned category details and zero charge an
         'customer_name' => 'Weather Cancellation Customer',
         'customer_mobile' => '01234567890',
         'ship_id' => $ship->id,
-        'ticket_fee' => 38,
+        'return_date' => now()->addDays(2)->toDateString(),
+        'ticket_value' => 38,
         'other_fee' => 4,
         'discount_amount' => 3.8,
         'total_payable' => 38.2,
         'received_amount' => 0,
         'due_amount' => 38.2,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 4,
+        'ticket_count' => 4,
         'status' => 'ticket-issued',
     ]);
     Category::create([
@@ -209,12 +266,14 @@ it('creates a full bulk refund with returned category details and zero charge an
         'package_id' => $package->id,
         'quantity' => 2,
         'type' => 'departure',
+        'unit_price' => 10,
     ]);
     Category::create([
         'ticket_id' => $sale->id,
         'package_id' => $package->id,
         'quantity' => 2,
         'type' => 'return',
+        'unit_price' => 9,
     ]);
 
     app(RefundService::class)->fullRefund([$sale->id]);
@@ -262,11 +321,11 @@ it('rejects a partial refund quantity above the purchased category quantity', fu
         'customer_name' => 'Test Customer',
         'customer_mobile' => '01234567890',
         'ship_id' => $ship->id,
-        'ticket_fee' => 20,
+        'ticket_value' => 20,
         'received_amount' => 0,
         'due_amount' => 20,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 2,
+        'ticket_count' => 2,
         'status' => 'ticket-issued',
     ]);
     $category = Category::create([
@@ -274,6 +333,7 @@ it('rejects a partial refund quantity above the purchased category quantity', fu
         'package_id' => $package->id,
         'quantity' => 2,
         'type' => 'departure',
+        'unit_price' => 10,
     ]);
 
     expect(fn () => app(RefundService::class)->partialRefund($sale, [
@@ -299,13 +359,13 @@ it('does not deduct other fee from a partial ticket refund', function () {
         'customer_name' => 'Test Customer',
         'customer_mobile' => '01234567890',
         'ship_id' => $ship->id,
-        'ticket_fee' => 20,
+        'ticket_value' => 20,
         'other_fee' => 2,
         'total_payable' => 22,
         'received_amount' => 22,
         'due_amount' => 0,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 2,
+        'ticket_count' => 2,
         'status' => 'ticket-issued',
     ]);
     $category = Category::create([
@@ -313,6 +373,7 @@ it('does not deduct other fee from a partial ticket refund', function () {
         'package_id' => $package->id,
         'quantity' => 2,
         'type' => 'departure',
+        'unit_price' => 10,
     ]);
 
     app(RefundService::class)->partialRefund($sale, [
@@ -337,12 +398,15 @@ it('blocks completion of a legacy refund with a negative customer refund amount'
         'customer_name' => 'Test Customer',
         'customer_mobile' => '01234567890',
         'ship_id' => $ship->id,
-        'ticket_fee' => 100,
-        'received_amount' => 80,
-        'due_amount' => 20,
+        'total_payable' => 100,
         'issued_date' => now()->toDateString(),
-        'number_of_ticket' => 2,
+        'ticket_count' => 2,
         'status' => 'ticket-issued',
+    ]);
+    Payment::create([
+        'sales_id' => $sale->id,
+        'payment_method' => 'Cash',
+        'received_amount' => 80,
     ]);
     $refund = Refund::create([
         'sales_id' => $sale->id,

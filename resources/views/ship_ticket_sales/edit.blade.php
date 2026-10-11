@@ -280,17 +280,17 @@
 
                                 <div class="bg-green-500 rounded-lg p-4">
                                     <div class="flex items-center justify-between mb-1">
-                                        <label for="number_of_ticket"
+                                        <label for="ticket_count"
                                             class="block text-sm font-semibold text-gray-700">Number of Tickets
                                             *</label>
                                         <button type="button"
                                             class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
-                                            data-field="number_of_ticket" title="Copy Number of Tickets">
+                                            data-field="ticket_count" title="Copy Number of Tickets">
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
-                                    <input type="number" name="number_of_ticket" id="number_of_ticket" required readonly
-                                        min="1" value="{{ old('number_of_ticket', $sale->number_of_ticket) }}"
+                                    <input type="number" id="ticket_count" readonly
+                                        min="1" value="{{ $sale->ticket_count }}"
                                         class="copyable-field bg-green-50 w-full border-gray-300 rounded-lg shadow-sm py-1.5 px-2.5">
                                 </div>
 
@@ -408,22 +408,22 @@
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-                                <!-- Ticket Fee -->
+                                <!-- Package-derived ticket value -->
                                 <div class="bg-white rounded-lg p-3 shadow-sm border border-blue-200">
                                     <div class="flex items-center justify-between mb-1">
-                                        <label for="ticket_fee"
-                                            class="block text-sm font-semibold text-gray-700">Total Ticket Fee
+                                        <label for="ticket_value"
+                                            class="block text-sm font-semibold text-gray-700">Total Ticket Price
                                             *</label>
                                         <button type="button"
                                             class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
-                                            data-field="ticket_fee" title="Copy Ticket Fee">
+                                            data-field="ticket_value" title="Copy Ticket Price">
                                             <i class="fas fa-copy text-xs"></i>
                                         </button>
                                     </div>
                                     <div class="flex items-center">
                                         <span class="text-gray-500 mr-2">৳</span>
-                                        <input type="number" step="0.01" min="0" name="ticket_fee" id="ticket_fee" readonly
-                                            required value="{{ old('ticket_fee', $sale->ticket_fee) }}"
+                                        <input type="number" step="0.01" min="0" id="ticket_value" readonly
+                                            required value="{{ old('ticket_value', $sale->ticket_value) }}"
                                             class="copyable-field w-full border-gray-300 bg-gray-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-gray-800">
                                     </div>
                                 </div>
@@ -509,6 +509,16 @@
                                     </div>
                                 </div>
 
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-amber-200">
+                                    <label for="bftn_pending_amount" class="block text-sm font-semibold text-gray-700">BFTN Pending</label>
+                                    <div class="mt-2 flex items-center">
+                                        <span class="mr-2 text-gray-500">à§³</span>
+                                        <input type="number" step="0.01" id="bftn_pending_amount" readonly
+                                            value="0.00"
+                                            class="w-full border-amber-200 bg-amber-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-amber-700">
+                                    </div>
+                                </div>
+
                                 <!-- Due Amount -->
                                 <div class="bg-white rounded-lg p-3 shadow-sm border border-red-200">
                                     <div class="flex items-center justify-between mb-1">
@@ -522,8 +532,8 @@
                                     </div>
                                     <div class="flex items-center">
                                         <span class="text-gray-500 mr-2">৳</span>
-                                        <input type="number" step="0.01" name="due_amount" id="due_amount"
-                                            readonly value="{{ old('due_amount', $sale->due_amount) }}"
+                                        <input type="number" step="0.01" id="due_amount"
+                                            readonly value="{{ $sale->due_amount }}"
                                             class="copyable-field w-full border-red-200 bg-red-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-red-600">
                                     </div>
                                 </div>
@@ -575,6 +585,9 @@
                                     @foreach ($sale->payments as $index => $payment)
                                         <div
                                             class="payment-item bg-white rounded-lg p-3 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out">
+                                            <input type="hidden" name="payments[{{ $index }}][payment_id]" value="{{ $payment->id }}">
+                                            <input type="hidden" name="payments[{{ $index }}][is_bftn]" value="0">
+                                            <input type="hidden" name="payments[{{ $index }}][settlement_status]" value="{{ $payment->settlement_status }}">
                                             <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
                                                 <!-- Payment Method -->
                                                 <div>
@@ -609,6 +622,18 @@
                                                             {{ $payment->payment_method == 'Card' ? 'selected' : '' }}>
                                                             Card</option>
                                                     </select>
+                                                    <label class="mt-2 flex items-center gap-2 text-xs text-gray-700">
+                                                        <input type="checkbox" name="payments[{{ $index }}][is_bftn]" value="1"
+                                                            {{ $payment->is_bftn ? 'checked' : '' }}
+                                                            {{ $payment->payment_method === 'Bank Transfer' ? '' : 'disabled' }}>
+                                                        This payment is BFTN
+                                                    </label>
+                                                    <div class="payment-bftn-date-wrapper mt-2 {{ $payment->is_bftn ? '' : 'hidden' }}">
+                                                        <label class="mb-1 block text-xs text-gray-600">Tentative deposit date</label>
+                                                        <input type="datetime-local" name="payments[{{ $index }}][bftn_issue_datetime]"
+                                                            value="{{ $payment->bftn_issue_datetime?->format('Y-m-d\TH:i') }}"
+                                                            class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                                    </div>
                                                 </div>
 
                                                 <!-- Amount -->

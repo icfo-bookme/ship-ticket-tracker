@@ -24,13 +24,13 @@ beforeEach(function () {
         'ship_id' => $this->ship->id,
         'company_id' => $this->company->id,
         'journey_date' => '2026-10-01',
-        'ticket_fee' => 300,
+        'ticket_value' => 300,
         'other_fee' => 0,
         'total_payable' => 300,
         'received_amount' => 300,
         'due_amount' => 0,
         'issued_date' => '2026-09-23',
-        'number_of_ticket' => 1,
+        'ticket_count' => 1,
         'status' => 'pending',
     ]);
 

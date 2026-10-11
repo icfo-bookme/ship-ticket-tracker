@@ -28,7 +28,7 @@ if (table) {
         };
     };
     const columns = [
-        { data: 'id', render: (value) => `#${Number(value) || ''}` },
+        { data: 'sale_id', render: (value) => `#${Number(value) || ''}` },
         { data: 'customer_name', render: (value) => escapeHtml(value || 'N/A') },
         { data: 'customer_mobile', render: (value) => escapeHtml(value || 'N/A') },
         { data: 'ship_name', render: (value) => escapeHtml(value || 'N/A') },
@@ -87,7 +87,7 @@ if (table) {
         const receivedAt = document.getElementById('bftnReceivedAt').value;
 
         try {
-            await apiRequest(`/sale/bftn-received/${encodeURIComponent(saleId)}`, {
+            await apiRequest(`/payment/bftn-received/${encodeURIComponent(saleId)}`, {
                 method: 'PUT',
                 body: JSON.stringify({ received_at: receivedAt }),
             });

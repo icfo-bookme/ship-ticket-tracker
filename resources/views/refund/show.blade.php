@@ -65,9 +65,9 @@
                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50"></div>
                     </div>
 
-                    <!-- Ticket Fee -->
+                    <!-- Package-derived ticket value -->
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Ticket Fee</label>
+                        <label class="block text-sm font-medium text-gray-700">Ticket Price</label>
                         <div id="editTicketFee"
                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50"></div>
                     </div>
@@ -160,7 +160,7 @@
             'editJourneyDate': formatDateForDisplay(btn.dataset.journeydate),
             'editReturnDate': formatDateForDisplay(btn.dataset.returndate),
             'editTicketFee': btn.dataset.ticketfee ? `$${parseFloat(btn.dataset.ticketfee).toFixed(2)}` : 'Not specified',
-            'editTicketNumber': btn.dataset.number_of_ticket || 'Not specified',
+            'editTicketNumber': btn.dataset.ticket_count || 'Not specified',
             'editPaymentMethod': btn.dataset.payment_method || 'Not specified',
             'editReceivedAmount': btn.dataset.receivedamount ?
                 `$${parseFloat(btn.dataset.receivedamount).toFixed(2)}` : '$0.00',

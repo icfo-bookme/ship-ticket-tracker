@@ -19,10 +19,5 @@ return new class extends Migration
     /**
      * Reverse the migrations.
      */
-    public function down(): void
-    {
-        Schema::table('co_passengers', function (Blueprint $table) {
-            $table->string('nid')->change();
-        });
-    }
+    public function down(): void {}
 };

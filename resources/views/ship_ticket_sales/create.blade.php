@@ -148,7 +148,7 @@
                             <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Company <span class="text-red-500">*</span>
                             </label>
-                            <select name="company_id"
+                            <select name="company_id" required
                                 class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                                 <option value="">Select a Company</option>
                                 @foreach ($companies as $company)

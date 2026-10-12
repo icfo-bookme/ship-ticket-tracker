@@ -188,7 +188,7 @@ class TicketSalesSystem {
                 nid: "NID",
                 email: "Email",
                 address: "Full Address",
-                sales_source: "Sales Source",
+                sales_source_id: "Sales Source",
                 ship_id: "Ship Name",
                 journey_date: "Departure Date",
                 return_date: "Return Date",
@@ -210,7 +210,7 @@ class TicketSalesSystem {
             REQUIRED_FIELDS: [
                 { name: "customer_name", label: "Customer Name" },
                 { name: "customer_mobile", label: "Mobile Number" },
-                { name: "sales_source", label: "Sales Source" },
+                { name: "sales_source_id", label: "Sales Source" },
                 { name: "ship_id", label: "Ship Name" },
                 { name: "ticket_value", label: "Total Ticket Value" },
                 { name: "company_id", label: "Company Name" },

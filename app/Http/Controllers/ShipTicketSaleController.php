@@ -3,13 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Enums\SaleStatus;
+use App\Http\Requests\Sales\BulkMarkShippedRequest;
+use App\Http\Requests\Sales\BulkPrintShipmentLabelsRequest;
 use App\Http\Requests\Sales\CheckDuplicateTicketRequest;
 use App\Http\Requests\Sales\MarkBftnReceivedRequest;
+use App\Http\Requests\Sales\SelectShippedSalesRequest;
 use App\Http\Requests\Sales\StorePublicShipTicketSaleRequest;
 use App\Http\Requests\Sales\StoreShipTicketSaleRequest;
 use App\Http\Requests\Sales\UpdateShipTicketSaleRequest;
 use App\Http\Requests\UpdateTicketIssueRequest;
 use App\Models\Company;
+use App\Models\SalesSource;
 use App\Models\Ship;
 use App\Models\ShipTicketSale;
 use App\Services\Sales\GoogleDriveTicketService;
@@ -17,6 +21,7 @@ use App\Services\Sales\SaleDetailService;
 use App\Services\Sales\SalesDataTableService;
 use App\Services\Sales\SaleStatusWorkflowService;
 use App\Services\Sales\ShipTicketSaleService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -68,8 +73,13 @@ class ShipTicketSaleController extends Controller
     {
         $ships = Ship::all();
         $companies = Company::all();
+        $salesSources = SalesSource::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
-        return view('ship_ticket_sales.create', compact('ships', 'companies'));
+        return view('ship_ticket_sales.create', compact('ships', 'companies', 'salesSources'));
     }
 
     public function bookingForm(Request $request)
@@ -262,6 +272,48 @@ class ShipTicketSaleController extends Controller
             ['success' => $result['success'], 'message' => $result['message']],
             $result['status'] ?? 200
         );
+    }
+
+    public function bulkMarkShipped(BulkMarkShippedRequest $request): JsonResponse
+    {
+        $result = $this->statusWorkflow->markShippedBulk($request->validated('sale_ids'));
+
+        return response()->json($result, $result['status'] ?? 200);
+    }
+
+    public function bulkPrintShipmentLabels(BulkPrintShipmentLabelsRequest $request): View
+    {
+        $saleIds = $request->validated('sale_ids');
+        $sales = ShipTicketSale::query()
+            ->with('shipment')
+            ->whereIn('id', $saleIds)
+            ->where('status', SaleStatus::ShipmentIdEntered->value)
+            ->whereHas('printedTickets')
+            ->whereHas('shipment', fn (Builder $shipment): Builder => $shipment->whereNotNull('shipment_id'))
+            ->orderBy('id')
+            ->get();
+
+        abort_unless($sales->count() === count($saleIds), 422, 'One or more selected sales are no longer eligible for printing.');
+
+        return view('ship_ticket_sales.bulk-shipment-labels', compact('sales'));
+    }
+
+    public function selectShippedSales(SelectShippedSalesRequest $request): JsonResponse
+    {
+        $selection = $this->salesDataTable->eligibleShippedSaleIds($request);
+
+        if ($selection['exceeds_limit']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'More than 500 eligible sales match. Narrow the filters before selecting them.',
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'sale_ids' => $selection['sale_ids'],
+            'count' => count($selection['sale_ids']),
+        ]);
     }
 
     public function markPaymentBftnReceived(MarkBftnReceivedRequest $request, int $id)

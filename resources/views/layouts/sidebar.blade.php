@@ -139,7 +139,7 @@
                     </div>
                 @endcanany
 
-                @canany(['ships.view', 'ships.create', 'companies.view', 'companies.create'])
+                @canany(['ships.view', 'ships.create', 'companies.view', 'companies.create', 'sales_sources.view', 'sales_sources.create'])
                     <div class="px-2 pt-2">
                         <div id="create-dropdown" class="mb-1 relative">
                             <button
@@ -177,6 +177,13 @@
                                             Company</span>
                                     </a>
                                 @endcan
+                                @canany(['sales_sources.view', 'sales_sources.create'])
+                                    <a href="{{ route('sales-sources.details') }}"
+                                        class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
+                                        <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sales Sources</span>
+                                    </a>
+                                @endcanany
 
                             </div>
                         </div>

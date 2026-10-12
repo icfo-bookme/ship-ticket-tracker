@@ -16,6 +16,9 @@ const config = {
     restoreUrl: configElement?.dataset.restoreUrl || '',
     verifyUrl: configElement?.dataset.verifyUrl || '',
     bftnReceivedUrl: configElement?.dataset.bftnReceivedUrl || '',
+    bulkShippedUrl: configElement?.dataset.bulkShippedUrl || '',
+    bulkPrintShipmentLabelsUrl: configElement?.dataset.bulkPrintShipmentLabelsUrl || '',
+    selectShippedUrl: configElement?.dataset.selectShippedUrl || '',
 };
 
 function escapeHtml(value) {
@@ -36,6 +39,190 @@ const salesTable = document.getElementById('salesTable');
 const refreshSalesTable = () => document.dispatchEvent(new CustomEvent('data-table:refresh', {
     detail: { tableId: 'salesTable' },
 }));
+const selectedShippedSaleIds = new Set();
+const bulkShippedToolbar = document.getElementById('bulkShippedToolbar');
+const bulkShippedSelectionCount = document.getElementById('bulkShippedSelectionCount');
+const bulkMarkShippedButton = document.getElementById('bulkMarkShippedButton');
+const bulkPrintShipmentLabelsButton = document.getElementById('bulkPrintShipmentLabelsButton');
+const clearShippedSelectionButton = document.getElementById('clearShippedSelection');
+let allMatchingShippedSalesSelected = false;
+let shippedSelectionLoading = false;
+
+function isEligibleForBulkShipping(sale) {
+    return sale.status === config.shipmentIdEnteredStatus
+        && sale.printed_tickets?.length > 0
+        && Boolean(sale.shipment?.shipment_id);
+}
+
+function updateBulkShippedSelection() {
+    if (!bulkShippedToolbar) return;
+
+    const selectedCount = selectedShippedSaleIds.size;
+
+    if (bulkShippedSelectionCount) {
+        bulkShippedSelectionCount.textContent = `${selectedCount} selected`;
+    }
+
+    if (bulkMarkShippedButton) {
+        bulkMarkShippedButton.disabled = selectedCount === 0 || shippedSelectionLoading;
+    }
+    if (bulkPrintShipmentLabelsButton) {
+        bulkPrintShipmentLabelsButton.disabled = selectedCount === 0 || shippedSelectionLoading;
+    }
+
+    salesTable.querySelectorAll('.bulk-shipped-sale-checkbox').forEach((checkbox) => {
+        checkbox.checked = selectedShippedSaleIds.has(Number(checkbox.value));
+    });
+
+    document.querySelectorAll('.select-all-shipped-sales').forEach((selectAllCheckbox) => {
+        selectAllCheckbox.checked = allMatchingShippedSalesSelected;
+        selectAllCheckbox.indeterminate = selectedCount > 0 && !allMatchingShippedSalesSelected;
+    });
+}
+
+async function selectAllMatchingShippedSales(checked) {
+    if (!checked) {
+        selectedShippedSaleIds.clear();
+        allMatchingShippedSalesSelected = false;
+        updateBulkShippedSelection();
+
+        return;
+    }
+
+    document.querySelectorAll('.select-all-shipped-sales').forEach((checkbox) => {
+        checkbox.disabled = true;
+    });
+    if (clearShippedSelectionButton) clearShippedSelectionButton.disabled = true;
+    shippedSelectionLoading = true;
+    allMatchingShippedSalesSelected = true;
+    salesTable.querySelectorAll('.bulk-shipped-sale-checkbox').forEach((checkbox) => {
+        checkbox.checked = true;
+        selectedShippedSaleIds.add(Number(checkbox.value));
+    });
+    updateBulkShippedSelection();
+
+    try {
+        const tableApi = window.jQuery?.fn?.dataTable?.isDataTable(salesTable)
+            ? window.jQuery(salesTable).DataTable()
+            : null;
+        const response = await fetch(config.selectShippedUrl, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({
+                ship_id: shipFilter.value,
+                company_id: companyFilter.value,
+                journey_date: journeyDateFilter.value,
+                search: tableApi?.search() || '',
+            }),
+        });
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Unable to select matching sales.');
+        }
+
+        selectedShippedSaleIds.clear();
+        result.sale_ids.forEach((id) => selectedShippedSaleIds.add(Number(id)));
+        allMatchingShippedSalesSelected = result.count > 0;
+        updateBulkShippedSelection();
+
+        if (result.count === 0) {
+            await Swal.fire({ title: 'No matching sales', text: 'No eligible sales with a shipment ID match these filters.', icon: 'info' });
+        }
+    } catch (error) {
+        selectedShippedSaleIds.clear();
+        allMatchingShippedSalesSelected = false;
+        updateBulkShippedSelection();
+        await Swal.fire({ title: 'Error', text: error.message || 'Unable to select matching sales.', icon: 'error' });
+    } finally {
+        shippedSelectionLoading = false;
+        updateBulkShippedSelection();
+        if (clearShippedSelectionButton) clearShippedSelectionButton.disabled = false;
+        document.querySelectorAll('.select-all-shipped-sales').forEach((checkbox) => {
+            checkbox.disabled = false;
+        });
+    }
+}
+
+async function markSelectedSalesAsShipped() {
+    const saleIds = [...selectedShippedSaleIds];
+
+    if (saleIds.length === 0) return;
+
+    const confirmation = await Swal.fire({
+        title: 'Mark selected sales as shipped?',
+        text: `${saleIds.length} selected sale(s) will move to Shipped.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Mark as Shipped',
+        cancelButtonText: 'Cancel',
+    });
+
+    if (!confirmation.isConfirmed) return;
+
+    bulkMarkShippedButton.disabled = true;
+
+    try {
+        const response = await fetch(config.bulkShippedUrl, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ sale_ids: saleIds }),
+        });
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Unable to mark selected sales as shipped.');
+        }
+
+        selectedShippedSaleIds.clear();
+        allMatchingShippedSalesSelected = false;
+        updateBulkShippedSelection();
+        await Swal.fire({ title: 'Updated', text: result.message, icon: 'success' });
+        refreshSalesTable();
+    } catch (error) {
+        await Swal.fire({ title: 'Error', text: error.message || 'Unable to mark selected sales as shipped.', icon: 'error' });
+    } finally {
+        bulkMarkShippedButton.disabled = false;
+    }
+}
+
+function printSelectedShipmentLabels() {
+    const saleIds = [...selectedShippedSaleIds];
+
+    if (saleIds.length === 0) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = config.bulkPrintShipmentLabelsUrl;
+    form.target = '_blank';
+    form.hidden = true;
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = document.querySelector('meta[name="csrf-token"]').content;
+    form.append(csrfInput);
+
+    saleIds.forEach((saleId) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'sale_ids[]';
+        input.value = saleId;
+        form.append(input);
+    });
+
+    document.body.append(form);
+    form.submit();
+    form.remove();
+}
 
 async function deleteSale(button, refresh) {
     const confirmation = await Swal.fire({
@@ -98,6 +285,15 @@ async function deleteSale(button, refresh) {
 }
 
 const columns = [
+    ...(config.status === config.shipmentIdEnteredStatus ? [{
+        data: null,
+        title: '<input type="checkbox" class="select-all-shipped-sales" aria-label="Select all sales matching the current filters" data-permission="sales.mark_shipped">',
+        orderable: false,
+        searchable: false,
+        render: (data, type, sale) => type !== 'display' || !isEligibleForBulkShipping(sale)
+            ? ''
+            : `<input type="checkbox" class="bulk-shipped-sale-checkbox" value="${Number(sale.id)}" aria-label="Select sale ${Number(sale.id)} for shipping" data-permission="sales.mark_shipped">`,
+    }] : []),
     {
         data: "id",
         render: copyCell,
@@ -134,7 +330,7 @@ const columns = [
             render: (row) => escapeHtml(row.company?.name || row.companies?.name || "Not available"),
         },
     ] : []),
-    ...(config.status === config.shipmentIdEnteredStatus ? [
+    ...([config.shipmentIdEnteredStatus, config.shippedStatus].includes(config.status) ? [
         {
             data: "shipment.shipment_id",
             render: (data) => escapeHtml(data ?? "Not available"),
@@ -210,6 +406,49 @@ const filters = () => ({
     journey_date: journeyDateFilter.value,
 });
 initializeDataTable({ table: salesTable, columns, createdRow, filters });
+
+if (config.status === config.shipmentIdEnteredStatus) {
+    bulkMarkShippedButton?.addEventListener('click', markSelectedSalesAsShipped);
+    bulkPrintShipmentLabelsButton?.addEventListener('click', printSelectedShipmentLabels);
+    clearShippedSelectionButton?.addEventListener('click', () => {
+        selectedShippedSaleIds.clear();
+        allMatchingShippedSalesSelected = false;
+        updateBulkShippedSelection();
+    });
+
+    document.addEventListener('change', (event) => {
+        if (event.target.matches('.select-all-shipped-sales')) {
+            selectAllMatchingShippedSales(event.target.checked);
+            return;
+        }
+
+        if (event.target.matches('.bulk-shipped-sale-checkbox')) {
+            allMatchingShippedSalesSelected = false;
+            const saleId = Number(event.target.value);
+
+            if (event.target.checked) {
+                selectedShippedSaleIds.add(saleId);
+            } else {
+                selectedShippedSaleIds.delete(saleId);
+            }
+        } else {
+            return;
+        }
+
+        updateBulkShippedSelection();
+    });
+
+    if (window.jQuery) {
+        jQuery(salesTable).on('draw.dt', () => {
+            updateBulkShippedSelection();
+        });
+        jQuery(salesTable).on('search.dt', () => {
+            selectedShippedSaleIds.clear();
+            allMatchingShippedSalesSelected = false;
+            updateBulkShippedSelection();
+        });
+    }
+}
 
 function copyCell(value) {
     const escaped = escapeHtml(value);
@@ -590,13 +829,21 @@ function bindSalesTableEvents() {
     const table = document.getElementById("salesTable");
 
     [shipFilter, companyFilter, journeyDateFilter].forEach((filter) => {
-        filter?.addEventListener("change", () => refreshSalesTable());
+        filter?.addEventListener("change", () => {
+            selectedShippedSaleIds.clear();
+            allMatchingShippedSalesSelected = false;
+            updateBulkShippedSelection();
+            refreshSalesTable();
+        });
     });
 
     clearFiltersBtn?.addEventListener("click", () => {
         [shipFilter, companyFilter, journeyDateFilter].forEach((filter) => {
             if (filter) filter.value = "";
         });
+        selectedShippedSaleIds.clear();
+        allMatchingShippedSalesSelected = false;
+        updateBulkShippedSelection();
         refreshSalesTable();
     });
 

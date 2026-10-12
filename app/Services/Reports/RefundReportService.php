@@ -61,10 +61,18 @@ class RefundReportService
                 ->where('ship_id', $request->input('ship_id'))))
             ->when($request->filled('company_id'), fn (Builder $query) => $query->whereHas('sale', fn (Builder $sale) => $sale
                 ->where('company_id', $request->input('company_id'))))
-            ->when($request->filled('start_date'), fn (Builder $query) => $query
-                ->whereDate('requested_at', '>=', $request->input('start_date')))
-            ->when($request->filled('end_date'), fn (Builder $query) => $query
-                ->whereDate('requested_at', '<=', $request->input('end_date')));
+            ->when($request->filled('refunded_from'), fn (Builder $query) => $query
+                ->whereRaw('DATE(COALESCE(refunds.customer_refunded_at, refunds.updated_at)) >= ?', [$request->input('refunded_from')]))
+            ->when($request->filled('refunded_to'), fn (Builder $query) => $query
+                ->whereRaw('DATE(COALESCE(refunds.customer_refunded_at, refunds.updated_at)) <= ?', [$request->input('refunded_to')]))
+            ->when($request->filled('departure_from'), fn (Builder $query) => $query->whereHas('sale', fn (Builder $sale) => $sale
+                ->whereDate('journey_date', '>=', $request->input('departure_from'))))
+            ->when($request->filled('departure_to'), fn (Builder $query) => $query->whereHas('sale', fn (Builder $sale) => $sale
+                ->whereDate('journey_date', '<=', $request->input('departure_to'))))
+            ->when($request->filled('return_from'), fn (Builder $query) => $query->whereHas('sale', fn (Builder $sale) => $sale
+                ->whereDate('return_date', '>=', $request->input('return_from'))))
+            ->when($request->filled('return_to'), fn (Builder $query) => $query->whereHas('sale', fn (Builder $sale) => $sale
+                ->whereDate('return_date', '<=', $request->input('return_to'))));
     }
 
     private function applySearch(Builder $query, string $search): void

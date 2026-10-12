@@ -129,6 +129,69 @@ class SaleStatusWorkflowService
         ];
     }
 
+    /**
+     * @param  array<int, int>  $saleIds
+     * @return array{success: bool, message: string, status?: int, updated_count?: int}
+     */
+    public function markShippedBulk(array $saleIds): array
+    {
+        return DB::transaction(function () use ($saleIds): array {
+            $sales = ShipTicketSale::query()
+                ->with(['printedTickets:id,sales_id,filename,group_by_id', 'shipment:id,ticket_id,shipment_id'])
+                ->whereIn('id', $saleIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            if ($sales->count() !== count($saleIds)) {
+                return [
+                    'success' => false,
+                    'message' => 'One or more selected sales are no longer available.',
+                    'status' => 422,
+                ];
+            }
+
+            $ineligibleSales = $sales->filter(fn (ShipTicketSale $sale): bool => $sale->status !== SaleStatus::ShipmentIdEntered->value
+                || $sale->printedTickets->isEmpty()
+                || blank($sale->shipment?->shipment_id)
+            );
+
+            if ($ineligibleSales->isNotEmpty()) {
+                return [
+                    'success' => false,
+                    'message' => 'Only parcel-created sales with a printed ticket and shipment ID can be marked as shipped. Ineligible sale IDs: '.$ineligibleSales->pluck('id')->implode(', '),
+                    'status' => 422,
+                ];
+            }
+
+            foreach ($sales as $sale) {
+                $groupReadinessError = $this->groupReadinessError(
+                    $sale->id,
+                    [SaleStatus::ShipmentIdEntered->value, SaleStatus::Shipped->value],
+                    'shipped'
+                );
+
+                if ($groupReadinessError !== null) {
+                    return [
+                        'success' => false,
+                        'message' => $groupReadinessError,
+                        'status' => 422,
+                    ];
+                }
+            }
+
+            foreach ($sales as $sale) {
+                $this->markGroupedTickets($sale->id, SaleStatus::Shipped->value);
+            }
+
+            return [
+                'success' => true,
+                'message' => $sales->count().' selected sale(s) marked as shipped.',
+                'updated_count' => $sales->count(),
+            ];
+        });
+    }
+
     private function markGroupedTickets(int $groupId, string $status): void
     {
         $tickets = $this->groupedTickets($groupId);

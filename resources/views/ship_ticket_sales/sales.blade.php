@@ -58,48 +58,67 @@
             </button>
         </div>
     </div>
+    @if ($status === $shipmentIdEnteredStatus)
+        <div id="bulkShippedToolbar"
+            class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-blue-200 bg-blue-50 px-4 py-3">
+            <span id="bulkShippedSelectionCount" class="text-sm font-medium text-blue-900">0 selected</span>
+            <div class="flex flex-wrap items-center gap-2">
+                <button id="bulkPrintShipmentLabelsButton" type="button" data-permission="sales.print" disabled
+                    class="rounded-md border border-blue-300 bg-white px-3 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50">
+                    Print Selected
+                </button>
+                <button id="clearShippedSelection" type="button" data-permission="sales.mark_shipped"
+                    class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
+                    Clear selection
+                </button>
+                <button id="bulkMarkShippedButton" type="button" data-permission="sales.mark_shipped" disabled
+                    class="rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">
+                    Mark as Shipped
+                </button>
+            </div>
+        </div>
+    @endif
 
+    <x-data-table id="salesTable" :headings="array_values(
+        array_filter([
+            $status == $shipmentIdEnteredStatus ? 'Select' : null,
+            'ID',
+            'Customer Name',
+            'Mobile',
+            'WhatsApp',
+            'Ship Name',
+            $status == $ticketPrintedStatus ? 'Address' : null,
+            $status == $paymentVerifiedStatus ? 'Company' : null,
+            in_array($status, [$shipmentIdEnteredStatus, $shippedStatus], true) ? 'Shipment Id' : null,
+            $status == $pendingStatus ? 'Total Ticket Value' : null,
+            $status == $pendingStatus ? 'Other Fee' : null,
+            $status == $pendingStatus ? 'Discount Amount' : null,
+            $status == $pendingStatus ? 'Total Payable' : null,
+            $status == $pendingStatus ? 'Received Amount' : null,
+            $status == $pendingStatus ? 'Transaction ID' : null,
+            $status == $pendingStatus ? 'Payment Methods' : null,
+            $status == $pendingStatus ? 'Payment Proof' : null,
+            'Action',
+        ]),
+    )" :url="'/sales/' . $status" :ordering="false" :delegateActions="false"
+        :order="[]" :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />
 
+    <div id="saleStatusConfig" data-status="{{ $status }}" data-ticket-printed-status="{{ $ticketPrintedStatus }}"
+        data-payment-verified-status="{{ $paymentVerifiedStatus }}"
+        data-shipment-id-entered-status="{{ $shipmentIdEnteredStatus }}" data-pending-status="{{ $pendingStatus }}"
+        data-collect-from-office-status="{{ $collectFromOfficeStatus }}"
+        data-ticket-issued-status="{{ $ticketIssuedStatus }}" data-shipped-status="{{ $shippedStatus }}"
+        data-status-labels='@json(config('sales.statuses'))' data-ticket-issue-url="{{ $ticketIssueRouteTemplate }}"
+        data-destroy-url="{{ route('sale.destroy', ['id' => '__ID__']) }}"
+        data-restore-url="{{ route('ship-ticket-sales.restore', ['id' => '__ID__']) }}"
+        data-verify-url="{{ route('sale.verify', ['id' => '__ID__', 'status' => '__STATUS__']) }}"
+        data-bftn-received-url="{{ route('payment.bftn-received', ['id' => '__ID__']) }}"
+        data-bulk-shipped-url="{{ route('sales.bulk-shipped') }}"
+    data-bulk-print-shipment-labels-url="{{ route('sales.bulk-shipment-labels') }}"
+        data-select-shipped-url="{{ route('sales.select-shipped') }}"
+        data-can-collect-due="{{ auth()->user()->can('payments.due.collect') ? 'true' : 'false' }}"></div>
 
-    <x-data-table id="salesTable" :headings="array_values(array_filter([
-        'ID',
-        'Customer Name',
-        'Mobile',
-        'WhatsApp',
-        'Ship Name',
-        $status == $ticketPrintedStatus ? 'Address' : null,
-        $status == $paymentVerifiedStatus ? 'Company' : null,
-        $status == $shipmentIdEnteredStatus ? 'Shipment Id' : null,
-        $status == $pendingStatus ? 'Total Ticket Value' : null,
-        $status == $pendingStatus ? 'Other Fee' : null,
-        $status == $pendingStatus ? 'Discount Amount' : null,
-        $status == $pendingStatus ? 'Total Payable' : null,
-        $status == $pendingStatus ? 'Received Amount' : null,
-        $status == $pendingStatus ? 'Transaction ID' : null,
-        $status == $pendingStatus ? 'Payment Methods' : null,
-        $status == $pendingStatus ? 'Payment Proof' : null,
-        'Action',
-    ]))" :url="'/sales/' . $status" :ordering="false" :delegateActions="false" :order="[]"
-        :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />
-
-<div id="saleStatusConfig"
-    data-status="{{ $status }}"
-    data-ticket-printed-status="{{ $ticketPrintedStatus }}"
-    data-payment-verified-status="{{ $paymentVerifiedStatus }}"
-    data-shipment-id-entered-status="{{ $shipmentIdEnteredStatus }}"
-    data-pending-status="{{ $pendingStatus }}"
-    data-collect-from-office-status="{{ $collectFromOfficeStatus }}"
-    data-ticket-issued-status="{{ $ticketIssuedStatus }}"
-    data-shipped-status="{{ $shippedStatus }}"
-    data-status-labels='@json(config("sales.statuses"))'
-    data-ticket-issue-url="{{ $ticketIssueRouteTemplate }}"
-    data-destroy-url="{{ route('sale.destroy', ['id' => '__ID__']) }}"
-    data-restore-url="{{ route('ship-ticket-sales.restore', ['id' => '__ID__']) }}"
-    data-verify-url="{{ route('sale.verify', ['id' => '__ID__', 'status' => '__STATUS__']) }}"
-    data-bftn-received-url="{{ route('payment.bftn-received', ['id' => '__ID__']) }}"
-    data-can-collect-due="{{ auth()->user()->can('payments.due.collect') ? 'true' : 'false' }}"></div>
-
-@vite(['resources/js/pages/sale-status.js'])
+    @vite(['resources/js/pages/sale-status.js'])
 
     <x-entity-modal id="proofImageModal" title="Payment Proof" maxWidth="2xl" :hideFooter="true">
         <div class="p-4 flex items-center justify-center bg-gray-50 dark:bg-gray-800">
@@ -108,12 +127,14 @@
         </div>
     </x-entity-modal>
 
-    <x-entity-modal id="bftnReceivedModal" title="Confirm BFTN Received" maxWidth="md"
-        formId="bftnReceivedForm" submitText="Save Received Date">
+    <x-entity-modal id="bftnReceivedModal" title="Confirm BFTN Received" maxWidth="md" formId="bftnReceivedForm"
+        submitText="Save Received Date">
         <div class="space-y-4 p-5">
-            <p class="text-sm text-gray-600 dark:text-gray-300">Tentative Date: <span id="bftnTentativeDate" class="font-semibold"></span></p>
+            <p class="text-sm text-gray-600 dark:text-gray-300">Tentative Date: <span id="bftnTentativeDate"
+                    class="font-semibold"></span></p>
             <form id="bftnReceivedForm">
-                <label for="bftnReceivedAt" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Received At</label>
+                <label for="bftnReceivedAt"
+                    class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Received At</label>
                 <input id="bftnReceivedAt" type="datetime-local" required
                     class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
             </form>

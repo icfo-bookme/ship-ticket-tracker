@@ -11,6 +11,30 @@ use Illuminate\Http\Request;
 
 class SalesDataTableService
 {
+    /**
+     * @return array{sale_ids: array<int, int>, exceeds_limit: bool}
+     */
+    public function eligibleShippedSaleIds(Request $request): array
+    {
+        $query = ShipTicketSale::query()
+            ->where('status', SaleStatus::ShipmentIdEntered->value)
+            ->whereHas('printedTickets')
+            ->whereHas('shipment', fn (Builder $shipment): Builder => $shipment->whereNotNull('shipment_id'));
+
+        $this->excludeSalesWithActiveRefunds($query);
+        $this->applyFilters($query, $request);
+        $this->applySearch($query, (string) $request->input('search', ''));
+
+        $saleIds = $query->orderBy('id')->limit(501)->pluck('id')->map(
+            fn ($id): int => (int) $id
+        )->all();
+
+        return [
+            'sale_ids' => array_slice($saleIds, 0, 500),
+            'exceeds_limit' => count($saleIds) > 500,
+        ];
+    }
+
     public function response(Request $request, string $status): JsonResponse
     {
         $query = ShipTicketSale::with([

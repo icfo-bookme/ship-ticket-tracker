@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -19,17 +20,22 @@ class RolePermissionSeeder extends Seeder
     {
         // 1. Create all application permissions (idempotent).
         foreach (config('roles.permissions') as $permission) {
-            Permission::findOrCreate($permission, 'web');
+            Permission::query()->firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'web',
+            ]);
         }
 
         // Status-wise sales list permissions, derived from config/sales.php so a
         // newly configured status never ends up without its permission.
         foreach (array_keys(config('sales.statuses')) as $status) {
-            Permission::firstOrCreate([
+            Permission::query()->firstOrCreate([
                 'name' => "sales.status.{$status}",
                 'guard_name' => 'web',
             ]);
         }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // 2. Create default roles and apply defaults only on first creation.
         foreach (config('roles.default_roles') as $roleName => $permissions) {
@@ -46,6 +52,8 @@ class RolePermissionSeeder extends Seeder
                 );
             }
         }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $this->command?->info('Roles and permissions seeded: '
             .Permission::count().' permissions, '

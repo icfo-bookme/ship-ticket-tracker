@@ -133,28 +133,15 @@
                             <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Sales Source <span class="text-red-500">*</span>
                             </label>
-                            <select name="sales_source"
+                            <select name="sales_source_id" required
                                 class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-2  focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm">
                                 <option value="">Select source</option>
-                                <option value="WhatsApp(019)"
-                                    {{ old('sales_source') == 'WhatsApp(019)' ? 'selected' : '' }}>
-                                    WhatsApp(019)</option>
-                                <option value="WhatsApp(018)"
-                                    {{ old('sales_source') == 'WhatsApp(018)' ? 'selected' : '' }}>
-                                    WhatsApp(018)</option>
-                                <option value="WhatsApp(016)"
-                                    {{ old('sales_source') == 'WhatsApp(016)' ? 'selected' : '' }}>
-                                    WhatsApp(016)</option>
-                                <option value="Facebook" {{ old('sales_source') == 'Facebook' ? 'selected' : '' }}>
-                                    Facebook
-                                </option>
-                                <option value="Messenger" {{ old('sales_source') == 'Messenger' ? 'selected' : '' }}>
-                                    Messenger</option>
-                                <option value="Walk-in" {{ old('sales_source') == 'Walk-in' ? 'selected' : '' }}>
-                                    Walk-in
-                                </option>
-                                <option value="Others" {{ old('sales_source') == 'Others' ? 'selected' : '' }}>Others
-                                </option>
+                                @foreach ($salesSources as $salesSource)
+                                    <option value="{{ $salesSource->id }}"
+                                        {{ old('sales_source_id') == $salesSource->id ? 'selected' : '' }}>
+                                        {{ $salesSource->name }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div>

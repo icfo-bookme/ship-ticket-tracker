@@ -12,6 +12,7 @@ use App\Http\Controllers\RefundController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SaleDraftController;
+use App\Http\Controllers\SalesSourceController;
 use App\Http\Controllers\ShipController;
 use App\Http\Controllers\ShipPackageController;
 use App\Http\Controllers\ShipTicketSaleController;
@@ -119,6 +120,18 @@ Route::middleware('auth')->group(function () {
     Route::put('/sale/verify/{id}/{status}', [ShipTicketSaleController::class, 'verify'])
         ->middleware('sales.transition')
         ->name('sale.verify');
+
+    Route::post('/sales/bulk-shipped', [ShipTicketSaleController::class, 'bulkMarkShipped'])
+        ->middleware('can:sales.mark_shipped')
+        ->name('sales.bulk-shipped');
+
+    Route::post('/sales/bulk-shipment-labels', [ShipTicketSaleController::class, 'bulkPrintShipmentLabels'])
+        ->middleware('can:sales.print')
+        ->name('sales.bulk-shipment-labels');
+
+    Route::post('/sales/select-shipped', [ShipTicketSaleController::class, 'selectShippedSales'])
+        ->middleware('can:sales.mark_shipped')
+        ->name('sales.select-shipped');
 
     Route::put('/payment/bftn-received/{id}', [ShipTicketSaleController::class, 'markPaymentBftnReceived'])
         ->middleware('can:sales.bftn.receive')
@@ -229,6 +242,31 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('can:companies.delete')->group(function () {
         Route::resource('companies', CompanyController::class)->only(['destroy']);
+    });
+
+    // SALES SOURCES
+    Route::get('/sales-sources-details', [SalesSourceController::class, 'showTableList'])
+        ->middleware('permission.any:sales_sources.view,sales_sources.create')
+        ->name('sales-sources.details');
+
+    Route::get('/sales-sources/active', [SalesSourceController::class, 'activeOptions'])
+        ->middleware('can:sales.create')
+        ->name('sales-sources.active');
+
+    Route::middleware('can:sales_sources.view')->group(function () {
+        Route::resource('sales-sources', SalesSourceController::class)->only(['index']);
+    });
+
+    Route::get('sales-sources/{sales_source}', [SalesSourceController::class, 'show'])
+        ->middleware('permission.any:sales_sources.view,sales_sources.edit')
+        ->name('sales-sources.show');
+
+    Route::middleware('can:sales_sources.create')->group(function () {
+        Route::resource('sales-sources', SalesSourceController::class)->only(['create', 'store']);
+    });
+
+    Route::middleware('can:sales_sources.edit')->group(function () {
+        Route::resource('sales-sources', SalesSourceController::class)->only(['edit', 'update']);
     });
 
     // SHIP PACKAGES

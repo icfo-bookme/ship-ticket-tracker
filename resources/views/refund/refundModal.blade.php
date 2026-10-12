@@ -10,7 +10,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700">Selected Ticket Refund Amount (Net)</label>
                 <input type="number" id="refundAmountInput" class="border px-3 py-2 mb-4 w-full rounded bg-gray-50"
-                    placeholder="Calculated after discount" readonly>
+                    placeholder="Calculated after discount" >
                 <p id="refundBreakdownNote" class="-mt-3 text-xs text-gray-500" aria-live="polite">
                     Ticket subtotal 0.00 - discount 0.00 = 0.00
                 </p>

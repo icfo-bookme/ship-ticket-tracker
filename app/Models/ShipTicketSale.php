@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -31,6 +32,7 @@ class ShipTicketSale extends Model
         'whatsapp',
         'whatsapp_username',
         'sales_source',
+        'sales_source_id',
         'ship_id',
         'journey_date',
         'return_date',
@@ -187,6 +189,11 @@ class ShipTicketSale extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class, 'sales_id');
+    }
+
+    public function salesSource(): BelongsTo
+    {
+        return $this->belongsTo(SalesSource::class, 'sales_source_id');
     }
 
     public function categories()

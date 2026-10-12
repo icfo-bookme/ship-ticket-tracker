@@ -15,6 +15,7 @@ export default defineConfig({
                 'resources/js/pages/ship-ticket-sales.js',
                 'resources/js/pages/public-form.js',
                 'resources/js/pages/companies.js',
+                'resources/js/pages/sales-sources.js',
                 'resources/js/pages/ships.js',
                 'resources/js/pages/ship-packages.js',
                 'resources/js/pages/users.js',

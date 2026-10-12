@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Sales;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreShipTicketSaleRequest extends FormRequest
@@ -24,7 +25,10 @@ class StoreShipTicketSaleRequest extends FormRequest
             'whatsapp_username' => 'required_without:whatsapp|nullable|string|max:100',
             'nid' => 'nullable|string|max:50',
             'email' => 'nullable|string|max:100',
-            'sales_source' => 'nullable|string|max:255',
+            'sales_source_id' => [
+                'required',
+                Rule::exists('sales_sources', 'id')->where('is_active', 1),
+            ],
             'ship_id' => 'required|exists:ships,id',
             'collect_from_office' => 'required|boolean',
             'address' => 'required_unless:collect_from_office,1|nullable|string',

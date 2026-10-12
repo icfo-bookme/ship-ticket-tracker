@@ -8,11 +8,23 @@ if (table) {
         'refundReportShip',
         'refundReportCompany',
         'refundReportType',
+        'refundReportRefundedFrom',
+        'refundReportRefundedTo',
+        'refundReportDepartureFrom',
+        'refundReportDepartureTo',
+        'refundReportReturnFrom',
+        'refundReportReturnTo',
     ];
     const filters = () => ({
         ship_id: document.getElementById('refundReportShip').value,
         company_id: document.getElementById('refundReportCompany').value,
         refund_type: document.getElementById('refundReportType').value,
+        refunded_from: document.getElementById('refundReportRefundedFrom').value,
+        refunded_to: document.getElementById('refundReportRefundedTo').value,
+        departure_from: document.getElementById('refundReportDepartureFrom').value,
+        departure_to: document.getElementById('refundReportDepartureTo').value,
+        return_from: document.getElementById('refundReportReturnFrom').value,
+        return_to: document.getElementById('refundReportReturnTo').value,
     });
     const columns = [
         { data: 'id' },
@@ -51,11 +63,26 @@ if (table) {
     });
 
     filterIds.forEach((id) => document.getElementById(id)?.addEventListener('change', () => refreshDataTable(table.id)));
+    const toggleFiltersButton = document.getElementById('toggleRefundReportFilters');
+    const advancedFilters = document.getElementById('advancedRefundReportFilters');
+    toggleFiltersButton?.addEventListener('click', () => {
+        const isExpanded = toggleFiltersButton.getAttribute('aria-expanded') === 'true';
+        toggleFiltersButton.setAttribute('aria-expanded', String(!isExpanded));
+        advancedFilters.classList.toggle('hidden', isExpanded);
+        advancedFilters.classList.toggle('grid', !isExpanded);
+    });
     document.getElementById('clearRefundReportFilters')?.addEventListener('click', () => {
         filterIds.forEach((id) => {
             const element = document.getElementById(id);
-            if (element) element.value = id === 'refundReportType' ? 'all' : '';
+            if (element) {
+                element.value = id === 'refundReportType' ? 'all' : '';
+            }
         });
+        toggleFiltersButton?.setAttribute('aria-expanded', 'false');
+        if (advancedFilters) {
+            advancedFilters.classList.add('hidden');
+            advancedFilters.classList.remove('grid');
+        }
         refreshDataTable(table.id);
     });
 

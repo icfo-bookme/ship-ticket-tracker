@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\Payment;
+use App\Models\PrintedTicket;
+use App\Models\Shipment;
 use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
@@ -72,6 +74,8 @@ class SeedPerformanceSales extends Command
         $receivedAmounts = [];
         $selectedPackageIds = [];
         $ticketCounts = [];
+        $shipmentIds = [];
+        $printedTicketFilenames = [];
 
         for ($index = 0; $index < $count; $index++) {
             $shipId = (int) $ships->random();
@@ -85,6 +89,12 @@ class SeedPerformanceSales extends Command
             $discount = $fake->numberBetween(0, (int) min(floor($ticketValue), 50));
             $totalPayable = max($ticketValue + $otherFee - $discount, 0);
             $receivedAmount = $fake->numberBetween(0, $totalPayable + 20);
+            $shipmentIds[] = in_array($status, ['shipment_id_entered', 'shipped'], true)
+                ? 'PERF-'.$now->format('YmdHis').'-'.$fake->unique()->numerify('######')
+                : null;
+            $printedTicketFilenames[] = in_array($status, ['shipment_id_entered', 'shipped'], true)
+                ? 'PERF-TICKET-'.$now->format('YmdHis').'-'.$fake->unique()->numerify('######').'.pdf'
+                : null;
 
             $rows[] = [
                 'customer_name' => '[PERF] '.$fake->name(),
@@ -108,7 +118,7 @@ class SeedPerformanceSales extends Command
             $receivedAmounts[] = $receivedAmount;
         }
 
-        DB::transaction(function () use ($rows, $count, $startingId, $selectedPackageIds, $ticketCounts, $receivedAmounts, $fake, $now): void {
+        DB::transaction(function () use ($rows, $count, $startingId, $selectedPackageIds, $ticketCounts, $receivedAmounts, $shipmentIds, $printedTicketFilenames, $packagesByShip, $fake, $now): void {
             foreach (array_chunk($rows, 250) as $chunk) {
                 ShipTicketSale::query()->insert($chunk);
             }
@@ -120,6 +130,8 @@ class SeedPerformanceSales extends Command
                 ->get(['id', 'ship_id']);
             $payments = [];
             $categories = [];
+            $shipments = [];
+            $printedTickets = [];
 
             foreach ($sales->values() as $index => $sale) {
                 $packageId = $selectedPackageIds[$index] ?? null;
@@ -131,6 +143,29 @@ class SeedPerformanceSales extends Command
                         'quantity' => $ticketCounts[$index] ?? 1,
                         'type' => 'departure',
                         'unit_price' => (float) $packagesByShip->get($sale->ship_id)->firstWhere('id', $packageId)->price,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+
+                $shipmentId = $shipmentIds[$index] ?? null;
+
+                if ($shipmentId !== null) {
+                    $shipments[] = [
+                        'ticket_id' => $sale->id,
+                        'shipment_id' => $shipmentId,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+
+                $printedTicketFilename = $printedTicketFilenames[$index] ?? null;
+
+                if ($printedTicketFilename !== null) {
+                    $printedTickets[] = [
+                        'sales_id' => $sale->id,
+                        'filename' => $printedTicketFilename,
+                        'group_by_id' => $sale->id,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
@@ -159,6 +194,14 @@ class SeedPerformanceSales extends Command
                 Payment::query()->insert($chunk);
             }
 
+            foreach (array_chunk($shipments, 500) as $chunk) {
+                Shipment::query()->insert($chunk);
+            }
+
+            foreach (array_chunk($printedTickets, 500) as $chunk) {
+                PrintedTicket::query()->insert($chunk);
+            }
+
             if ($sales->count() !== $count) {
                 throw new \RuntimeException('Could not verify the number of generated sales.');
             }
@@ -182,6 +225,8 @@ class SeedPerformanceSales extends Command
 
                 Payment::query()->whereIn('sales_id', $saleIds)->delete();
                 Category::query()->whereIn('ticket_id', $saleIds)->delete();
+                Shipment::query()->whereIn('ticket_id', $saleIds)->delete();
+                PrintedTicket::query()->whereIn('sales_id', $saleIds)->delete();
                 $deleted += ShipTicketSale::query()->whereIn('id', $saleIds)->delete();
             });
 

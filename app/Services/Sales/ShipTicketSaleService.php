@@ -6,6 +6,7 @@ use App\Enums\SaleStatus;
 use App\Models\Category;
 use App\Models\CoPassenger;
 use App\Models\Payment;
+use App\Models\SalesSource;
 use App\Models\Ship;
 use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
@@ -40,6 +41,11 @@ class ShipTicketSaleService
     public function create(array $data, array $input): ShipTicketSale
     {
         $data = $this->normalizeFinancials($data, $input);
+        $salesSource = SalesSource::query()
+            ->whereKey($data['sales_source_id'])
+            ->where('is_active', true)
+            ->firstOrFail();
+        $data['sales_source'] = $salesSource->name;
         $saleAttributes = $data;
         unset($saleAttributes['received_amount']);
         unset($saleAttributes['ticket_value']);
@@ -506,6 +512,7 @@ class ShipTicketSaleService
     private function appendAdminSaleToSheet(ShipTicketSale $ticketSale, array $data, array $input): void
     {
         $ship = Ship::find($input['ship_id'] ?? null);
+        $companyName = $ticketSale->companies()->value('name') ?? '';
         $user = User::find($input['sold_by'] ?? null);
 
         try {
@@ -515,7 +522,8 @@ class ShipTicketSaleService
                 $data['whatsapp'] ?? $data['whatsapp_username'] ?? $data['customer_mobile'],
                 $data['email'] ?? '',
                 $ship?->name ?? '',
-                $input['sales_source'] ?? null,
+                $companyName,
+                $ticketSale->sales_source,
                 $data['ticket_value'],
                 $data['received_amount'],
                 $this->paymentString($input['payment_methods'] ?? []),

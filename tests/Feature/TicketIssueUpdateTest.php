@@ -7,6 +7,7 @@ use App\Models\Shipment;
 use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
+use App\Models\VerifyTracker;
 use App\Services\Sales\SaleGroupingService;
 use App\Services\Sales\SaleStatusWorkflowService;
 use App\Services\SteadfastService;
@@ -65,6 +66,11 @@ it('only saves PDF and grouping data from the ticket issue page', function () {
     expect($sale->fresh()->customer_name)->toBe('Original Customer')
         ->and((float) $sale->fresh()->ticket_value)->toBe(500.0)
         ->and($sale->fresh()->status)->toBe('ticket-issued')
+        ->and(VerifyTracker::query()
+            ->where('ticket_id', $sale->id)
+            ->where('name', 'ticket-issued')
+            ->where('verified_by', $user->id)
+            ->exists())->toBeTrue()
         ->and($sale->printedTickets()->pluck('filename')->all())->toBe(['01712345678-2.pdf']);
 });
 

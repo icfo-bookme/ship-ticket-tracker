@@ -11,6 +11,7 @@ use App\Models\Ship;
 use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
+use App\Models\VerifyTracker;
 use App\Models\WhatsappDetail;
 use App\Services\Finance\PaymentProofStorage;
 use App\Services\GoogleSheetService;
@@ -476,6 +477,11 @@ class ShipTicketSaleService
             }
 
             $sale->update(['status' => SaleStatus::TicketIssued->value]);
+            VerifyTracker::create([
+                'name' => SaleStatus::TicketIssued->value,
+                'ticket_id' => $sale->id,
+                'verified_by' => auth()->id(),
+            ]);
         });
     }
 

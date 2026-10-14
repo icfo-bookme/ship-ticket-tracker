@@ -683,8 +683,13 @@ function createStatusButton(sale) {
     }
 
     if (sale.status === config.shipmentIdEnteredStatus) {
+        const parcelCreatedBy = escapeHtml(
+            sale.verifyby?.find((verification) => verification.name === config.shipmentIdEnteredStatus)
+                ?.verified_by_user?.name || "Unknown",
+        );
+
         return printedFiles.length
-            ? statusButton(sale.id, config.shippedStatus, "Shipped", `shipment_id_entered by: ${verifiedBy}`)
+            ? statusButton(sale.id, config.shippedStatus, "Shipped", `Parcel Created by: ${parcelCreatedBy}`)
             : referenceBy(sale);
     }
 

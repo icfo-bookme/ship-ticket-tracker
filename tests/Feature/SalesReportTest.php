@@ -10,6 +10,7 @@ use App\Models\Ship;
 use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
+use App\Models\VerifyTracker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 
@@ -249,6 +250,37 @@ it('includes every payment record in the sale report details payload', function 
         ->assertJsonCount(2, 'data.0.payments')
         ->assertJsonPath('data.0.payments.0.payment_method', 'Bkash')
         ->assertJsonPath('data.0.payments.1.payment_method', 'Cash');
+});
+
+it('includes verifier and timestamp history in the sale report details payload', function () {
+    $sale = reportSale($this->ship, $this->company, [
+        'created_at' => '2026-10-04 09:00:00',
+    ]);
+    $verifier = User::factory()->create(['name' => 'Ticket Verifier']);
+
+    VerifyTracker::create([
+        'ticket_id' => $sale->id,
+        'name' => 'payment-verified',
+        'verified_by' => $this->admin->id,
+        'created_at' => '2026-10-04 09:12:00',
+        'updated_at' => '2026-10-04 09:12:00',
+    ]);
+    VerifyTracker::create([
+        'ticket_id' => $sale->id,
+        'name' => 'ticket-issued',
+        'verified_by' => $verifier->id,
+        'created_at' => '2026-10-04 09:20:00',
+        'updated_at' => '2026-10-04 09:20:00',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?draw=1&start=0&length=10')
+        ->assertOk()
+        ->assertJsonCount(2, 'data.0.verification_timeline')
+        ->assertJsonPath('data.0.verification_timeline.0.status', 'payment-verified')
+        ->assertJsonPath('data.0.verification_timeline.0.verified_by', $this->admin->name)
+        ->assertJsonPath('data.0.verification_timeline.1.status', 'ticket-issued')
+        ->assertJsonPath('data.0.verification_timeline.1.verified_by', $verifier->name);
 });
 
 it('shows method totals across report filters independently of the selected payment method', function () {

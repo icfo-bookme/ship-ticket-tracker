@@ -31,7 +31,14 @@ class SalesReportService
             : 'asc';
 
         $query = ShipTicketSale::query()
-            ->with(['ships', 'companies', 'refunds.customerPayments', 'payments', 'categories'])
+            ->with([
+                'ships',
+                'companies',
+                'refunds.customerPayments',
+                'payments',
+                'categories',
+                'verifyby.verifiedByUser:id,name',
+            ])
             ->where('status', '!=', SaleStatus::Pending->value);
 
         $this->applyFilters($query, $filters);
@@ -473,6 +480,15 @@ class SalesReportService
                 'remark' => $payment->remark,
             ])->values()->all(),
             'created_at' => $sale->created_at,
+            'verification_timeline' => $sale->verifyby
+                ->sortBy(fn ($verification) => [$verification->created_at?->timestamp ?? 0, $verification->id])
+                ->map(fn ($verification): array => [
+                    'status' => $verification->name,
+                    'verified_by' => $verification->verifiedByUser?->name,
+                    'verified_at' => $verification->created_at?->toIso8601String(),
+                ])
+                ->values()
+                ->all(),
             'refund_status' => $refundStatus,
             'refunded_tickets' => $refundedTickets,
             'refunded_amount' => $refundedAmount,

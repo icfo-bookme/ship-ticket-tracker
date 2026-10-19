@@ -149,6 +149,18 @@ function formatDate(dateString) {
     });
 }
 
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+
+    return new Date(dateString).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
+
 function formatCurrency(amount) {
     const numericAmount = Number(String(amount ?? 0).replaceAll(',', ''));
 
@@ -162,6 +174,24 @@ function formatCurrency(amount) {
 
 function formatDetailValue(value) {
     return value === null || value === undefined || value === '' ? 'N/A' : String(value);
+}
+
+function formatElapsedTime(start, end) {
+    const difference = new Date(end) - new Date(start);
+
+    if (!Number.isFinite(difference)) return 'Time unavailable';
+
+    const elapsedMinutes = Math.max(0, Math.floor(difference / 60000));
+    const days = Math.floor(elapsedMinutes / 1440);
+    const hours = Math.floor((elapsedMinutes % 1440) / 60);
+    const minutes = elapsedMinutes % 60;
+    const parts = [];
+
+    if (days) parts.push(`${days} ${days === 1 ? 'day' : 'days'}`);
+    if (hours) parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`);
+    if (minutes || parts.length === 0) parts.push(`${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`);
+
+    return parts.join(' ');
 }
 
 function showSaleDetails(sale) {
@@ -218,7 +248,27 @@ function showSaleDetails(sale) {
                 </article>`).join('')}</div>` : '<p class="mt-2 text-sm text-gray-500">No payment records.</p>'}
         </section>`;
 
-    details.innerHTML = paymentHistory + fields.map(([label, value]) => `
+    const verificationEntries = Array.isArray(sale.verification_timeline) ? sale.verification_timeline : [];
+    let previousVerificationAt = sale.created_at;
+    const verificationTimeline = `
+        <section class="border-b border-gray-100 pb-3 sm:col-span-2 lg:col-span-3">
+            <h4 class="text-xs font-medium uppercase text-gray-500">Verification Timeline</h4>
+            ${verificationEntries.length ? `<ol class="mt-3 space-y-3">${verificationEntries.map((verification, index) => {
+                const elapsed = formatElapsedTime(previousVerificationAt, verification.verified_at);
+                previousVerificationAt = verification.verified_at;
+
+                return `<li class="flex gap-3">
+                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-gray-900">${escapeHtml(formatDetailValue(verification.status).replaceAll('-', ' '))}</p>
+                        <p class="text-xs text-gray-600">${escapeHtml(formatDetailValue(verification.verified_by))} · ${escapeHtml(formatDateTime(verification.verified_at))}</p>
+                        <p class="text-xs text-gray-500">${index === 0 ? 'After sale creation' : 'After previous step'}: ${escapeHtml(elapsed)}</p>
+                    </div>
+                </li>`;
+            }).join('')}</ol>` : '<p class="mt-2 text-sm text-gray-500">No verification history recorded.</p>'}
+        </section>`;
+
+    details.innerHTML = paymentHistory + verificationTimeline + fields.map(([label, value]) => `
         <div class="border-b border-gray-100 pb-2">
             <dt class="text-xs font-medium uppercase text-gray-500">${escapeHtml(label)}</dt>
             <dd class="mt-1 break-words text-sm font-medium text-gray-900">${escapeHtml(formatDetailValue(value))}</dd>

@@ -99,7 +99,9 @@ class CashCollectionService
     {
         return (float) Refund::query()
             ->where('status', 'completed')
-            ->whereHas('sale', fn ($sales) => $sales->where('status', '!=', SaleStatus::Pending->value))
+            ->whereHas('sale', fn ($sales) => $sales
+                ->whereNull('deleted_at')
+                ->where('status', '!=', SaleStatus::Pending->value))
             ->selectRaw('COALESCE(SUM(customer_refund_amount + partner_share_amount), 0) AS total')
             ->value('total');
     }
@@ -107,7 +109,9 @@ class CashCollectionService
     private function settledPaymentsTotal(): float
     {
         $paymentTotal = (float) Payment::query()
-            ->whereHas('sale', fn ($sales) => $sales->where('status', '!=', SaleStatus::Pending->value))
+            ->whereHas('sale', fn ($sales) => $sales
+                ->whereNull('deleted_at')
+                ->where('status', '!=', SaleStatus::Pending->value))
             ->where(fn ($payments) => $payments->where('is_bftn', false)->orWhere('settlement_status', 'received'))
             ->sum('received_amount');
 

@@ -114,8 +114,14 @@
         ]" url="/reports" :ordering="false" :delegateActions="false" :pageLength="10" :order="[]"
             :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />
 
-        <x-entity-modal id="saleReportDetailModal" title="Sale Details" maxWidth="2xl" :hideFooter="true">
+        <x-entity-modal id="saleReportDetailModal" title="Sale Details" maxWidth="4xl" :hideFooter="true">
             <dl id="saleReportDetails" class="grid grid-cols-1 gap-x-8 gap-y-4 p-5 sm:grid-cols-2 lg:grid-cols-3"></dl>
+            <x-slot:footer>
+                <section class="max-h-[30vh] overflow-y-auto px-4 py-3 sm:px-5">
+                    <h4 class="mb-3 text-xs font-medium uppercase text-gray-500">Verification Timeline</h4>
+                    <div id="saleReportVerificationTimeline" class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
+                </section>
+            </x-slot:footer>
         </x-entity-modal>
 
         <div class="mt-6 grid grid-cols-1 gap-6 max-w-[92%]">

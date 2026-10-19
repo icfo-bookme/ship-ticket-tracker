@@ -16,6 +16,7 @@ $maxWidthClass = [
     'lg' => 'sm:max-w-lg',
     'xl' => 'sm:max-w-xl',
     '2xl' => 'sm:max-w-2xl',
+    '4xl' => 'sm:max-w-4xl',
 ][$maxWidth];
 @endphp
 
@@ -44,19 +45,25 @@ $maxWidthClass = [
                 {{ $slot }}
             </div>
 
-            @unless ($hideFooter)
-                <!-- Footer (fixed at bottom, never scrolls away) -->
-                <div
-                    class="flex justify-end gap-2 px-4 md:px-5 py-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-b shrink-0">
-                    <button type="button" data-close-modal="{{ $id }}" class="{{ $cancelClasses }}">
-                        Cancel
-                    </button>
-                    <button type="submit" {{ $formId ? 'form=' . $formId : '' }} class="{{ $submitClasses }}" data-submit-btn
-                        data-saving-text="{{ $submitText === 'Update' || $submitText === 'Save Changes' ? 'Updating...' : 'Saving...' }}">
-                        <span data-submit-label>{{ $submitText }}</span>
-                    </button>
+            @isset($footer)
+                <div class="shrink-0 border-t border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-700">
+                    {{ $footer }}
                 </div>
-            @endunless
+            @else
+                @unless ($hideFooter)
+                    <!-- Footer (fixed at bottom, never scrolls away) -->
+                    <div
+                        class="flex justify-end gap-2 px-4 md:px-5 py-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-b shrink-0">
+                        <button type="button" data-close-modal="{{ $id }}" class="{{ $cancelClasses }}">
+                            Cancel
+                        </button>
+                        <button type="submit" {{ $formId ? 'form=' . $formId : '' }} class="{{ $submitClasses }}" data-submit-btn
+                            data-saving-text="{{ $submitText === 'Update' || $submitText === 'Save Changes' ? 'Updating...' : 'Saving...' }}">
+                            <span data-submit-label>{{ $submitText }}</span>
+                        </button>
+                    </div>
+                @endunless
+            @endisset
         </div>
     </div>
 </div>

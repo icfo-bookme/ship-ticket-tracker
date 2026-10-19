@@ -197,6 +197,7 @@ function formatElapsedTime(start, end) {
 function showSaleDetails(sale) {
     const modal = document.getElementById('saleReportDetailModal');
     const details = document.getElementById('saleReportDetails');
+    const timeline = document.getElementById('saleReportVerificationTimeline');
     const fields = [
         ['Customer Name', sale.customer_name],
         ['Mobile', sale.customer_mobile],
@@ -250,25 +251,24 @@ function showSaleDetails(sale) {
 
     const verificationEntries = Array.isArray(sale.verification_timeline) ? sale.verification_timeline : [];
     let previousVerificationAt = sale.created_at;
-    const verificationTimeline = `
-        <section class="border-b border-gray-100 pb-3 sm:col-span-2 lg:col-span-3">
-            <h4 class="text-xs font-medium uppercase text-gray-500">Verification Timeline</h4>
-            ${verificationEntries.length ? `<ol class="mt-3 space-y-3">${verificationEntries.map((verification, index) => {
+    timeline.innerHTML = verificationEntries.length
+        ? verificationEntries.map((verification, index) => {
                 const elapsed = formatElapsedTime(previousVerificationAt, verification.verified_at);
                 previousVerificationAt = verification.verified_at;
 
-                return `<li class="flex gap-3">
-                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
-                    <div class="min-w-0">
+                return `<article class="min-w-0 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+                    <div class="flex items-center gap-2">
+                        <span class="h-2 w-2 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
                         <p class="text-sm font-semibold text-gray-900">${escapeHtml(formatDetailValue(verification.status).replaceAll('-', ' '))}</p>
-                        <p class="text-xs text-gray-600">${escapeHtml(formatDetailValue(verification.verified_by))} · ${escapeHtml(formatDateTime(verification.verified_at))}</p>
-                        <p class="text-xs text-gray-500">${index === 0 ? 'After sale creation' : 'After previous step'}: ${escapeHtml(elapsed)}</p>
                     </div>
-                </li>`;
-            }).join('')}</ol>` : '<p class="mt-2 text-sm text-gray-500">No verification history recorded.</p>'}
-        </section>`;
+                    <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">${escapeHtml(formatDetailValue(verification.verified_by))}</p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">${escapeHtml(formatDateTime(verification.verified_at))}</p>
+                    <p class="mt-2 text-xs font-medium text-blue-700 dark:text-blue-300">${index === 0 ? 'After sale creation' : 'After previous step'}: ${escapeHtml(elapsed)}</p>
+                </article>`;
+            }).join('')
+        : '<p class="text-sm text-gray-500">No verification history recorded.</p>';
 
-    details.innerHTML = paymentHistory + verificationTimeline + fields.map(([label, value]) => `
+    details.innerHTML = paymentHistory + fields.map(([label, value]) => `
         <div class="border-b border-gray-100 pb-2">
             <dt class="text-xs font-medium uppercase text-gray-500">${escapeHtml(label)}</dt>
             <dd class="mt-1 break-words text-sm font-medium text-gray-900">${escapeHtml(formatDetailValue(value))}</dd>

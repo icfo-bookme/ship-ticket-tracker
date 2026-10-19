@@ -45,25 +45,19 @@ $maxWidthClass = [
                 {{ $slot }}
             </div>
 
-            @isset($footer)
-                <div class="shrink-0 border-t border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-700">
-                    {{ $footer }}
+            @unless ($hideFooter)
+                <!-- Footer (fixed at bottom, never scrolls away) -->
+                <div
+                    class="flex justify-end gap-2 px-4 md:px-5 py-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-b shrink-0">
+                    <button type="button" data-close-modal="{{ $id }}" class="{{ $cancelClasses }}">
+                        Cancel
+                    </button>
+                    <button type="submit" {{ $formId ? 'form=' . $formId : '' }} class="{{ $submitClasses }}" data-submit-btn
+                        data-saving-text="{{ $submitText === 'Update' || $submitText === 'Save Changes' ? 'Updating...' : 'Saving...' }}">
+                        <span data-submit-label>{{ $submitText }}</span>
+                    </button>
                 </div>
-            @else
-                @unless ($hideFooter)
-                    <!-- Footer (fixed at bottom, never scrolls away) -->
-                    <div
-                        class="flex justify-end gap-2 px-4 md:px-5 py-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-b shrink-0">
-                        <button type="button" data-close-modal="{{ $id }}" class="{{ $cancelClasses }}">
-                            Cancel
-                        </button>
-                        <button type="submit" {{ $formId ? 'form=' . $formId : '' }} class="{{ $submitClasses }}" data-submit-btn
-                            data-saving-text="{{ $submitText === 'Update' || $submitText === 'Save Changes' ? 'Updating...' : 'Saving...' }}">
-                            <span data-submit-label>{{ $submitText }}</span>
-                        </button>
-                    </div>
-                @endunless
-            @endisset
+            @endunless
         </div>
     </div>
 </div>

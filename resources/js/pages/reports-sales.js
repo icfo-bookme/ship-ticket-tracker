@@ -197,6 +197,7 @@ function formatElapsedTime(start, end) {
 function showSaleDetails(sale) {
     const modal = document.getElementById('saleReportDetailModal');
     const details = document.getElementById('saleReportDetails');
+    const paymentHistoryElement = document.getElementById('saleReportPaymentHistory');
     const timeline = document.getElementById('saleReportVerificationTimeline');
     const fields = [
         ['Customer Name', sale.customer_name],
@@ -231,8 +232,8 @@ function showSaleDetails(sale) {
 
     modal.querySelector('h3').textContent = `Sale #${sale.id} Details`;
     const payments = Array.isArray(sale.payments) ? sale.payments : [];
-    const paymentHistory = `
-        <section class="border-b border-gray-100 pb-3 sm:col-span-2 lg:col-span-3">
+    paymentHistoryElement.innerHTML = `
+        <section>
             <h4 class="text-xs font-medium uppercase text-gray-500">Payment History (${payments.length})</h4>
             ${payments.length ? `<div class="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">${payments.map((payment, index) => `
                 <article class="rounded-md border border-gray-200 bg-gray-50 p-3">
@@ -268,7 +269,7 @@ function showSaleDetails(sale) {
             }).join('')
         : '<p class="text-sm text-gray-500">No verification history recorded.</p>';
 
-    details.innerHTML = paymentHistory + fields.map(([label, value]) => `
+    details.innerHTML = fields.map(([label, value]) => `
         <div class="border-b border-gray-100 pb-2">
             <dt class="text-xs font-medium uppercase text-gray-500">${escapeHtml(label)}</dt>
             <dd class="mt-1 break-words text-sm font-medium text-gray-900">${escapeHtml(formatDetailValue(value))}</dd>

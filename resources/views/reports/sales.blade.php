@@ -138,6 +138,11 @@
                     <x-report-summary-card id="totalExtraReceivedAmount" label="Extra Payment Received (Included in Total Received)" />
                     <x-report-summary-card id="totalDueAmount" label="Current Due" />
                     <x-report-summary-card id="netSalesAmount" label="Sales After Ticket Refunds" />
+                    <x-report-summary-card id="averagePaymentVerificationTime" label="Avg. Time to Payment Verification">
+                        <x-slot:description>
+                            <p id="paymentVerificationSampleSize" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Based on 0 sales with verification history</p>
+                        </x-slot:description>
+                    </x-report-summary-card>
                 </div>
             </section>
 

@@ -26,6 +26,7 @@ function totalElements() {
         total_ticket_sales_after_discount: document.getElementById("ticketSalesAfterDiscount"),
         total_payable: document.getElementById("totalSold"),
         net_sales_amount: document.getElementById("netSalesAmount"),
+        average_payment_verification_seconds: document.getElementById("averagePaymentVerificationTime"),
         total_received_amount: document.getElementById("totalReceivedAmount"),
         total_extra_received_amount: document.getElementById("totalExtraReceivedAmount"),
         report_refund_outflow: document.getElementById("reportRefundOutflow"),
@@ -287,8 +288,45 @@ function updateTotals(totals = {}) {
     ]);
 
     Object.entries(totalElements()).forEach(([key, element]) => {
-        if (element) element.textContent = totals[key] ?? (countTotals.has(key) ? '0' : '0.00');
+        if (!element) return;
+
+        if (key === 'average_payment_verification_seconds') {
+            element.textContent = formatElapsedSeconds(totals[key]);
+
+            return;
+        }
+
+        element.textContent = totals[key] ?? (countTotals.has(key) ? '0' : '0.00');
     });
+
+    const sampleSize = Number(totals.payment_verification_sample_size || 0);
+    const sampleLabel = sampleSize === 1 ? 'sale' : 'sales';
+    const sampleElement = document.getElementById('paymentVerificationSampleSize');
+
+    if (sampleElement) {
+        sampleElement.textContent = `Based on ${sampleSize} ${sampleLabel} with verification history`;
+    }
+}
+
+function formatElapsedSeconds(seconds) {
+    if (seconds === null || seconds === undefined || !Number.isFinite(Number(seconds))) {
+        return 'N/A';
+    }
+
+    const totalMinutes = Math.floor(Number(seconds) / 60);
+
+    if (totalMinutes < 1) return '<1 min';
+
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    const parts = [];
+
+    if (days) parts.push(`${days}d`);
+    if (hours) parts.push(`${hours}h`);
+    if (minutes) parts.push(`${minutes}m`);
+
+    return parts.join(' ');
 }
 
 function updatePaymentMethodBreakdown(methodTotals = []) {

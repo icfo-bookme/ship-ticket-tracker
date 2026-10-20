@@ -8,8 +8,10 @@ use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\RefundCustomerPayment;
 use App\Models\ShipTicketSale;
+use App\Models\VerifyTracker;
 use App\Services\Finance\ExtraPaymentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SalesReportService
 {
@@ -95,6 +97,10 @@ class SalesReportService
                         - $totals->total_completed_ticket_refund_amount,
                     2
                 ),
+                'average_payment_verification_seconds' => $totals->average_payment_verification_seconds !== null
+                    ? round((float) $totals->average_payment_verification_seconds)
+                    : null,
+                'payment_verification_sample_size' => (int) $totals->payment_verification_sample_size,
                 'payment_method_totals' => $totals->payment_method_totals,
             ],
         ];
@@ -135,6 +141,8 @@ class SalesReportService
                 'report_refund_outflow' => '0.00',
                 'report_net_before_cashout' => '0.00',
                 'net_sales_amount' => '0.00',
+                'average_payment_verification_seconds' => null,
+                'payment_verification_sample_size' => 0,
                 'payment_method_totals' => [],
             ],
             'error' => 'An error occurred while generating the report.',
@@ -322,6 +330,37 @@ class SalesReportService
             ->values()
             ->all();
 
+        $firstPaymentVerifications = VerifyTracker::query()
+            ->select('ticket_id')
+            ->selectRaw('MIN(created_at) AS first_verified_at')
+            ->where('name', SaleStatus::PaymentVerified->value)
+            ->groupBy('ticket_id');
+
+        $verificationSales = ShipTicketSale::query()
+            ->where('ship_ticket_sales.status', '!=', SaleStatus::Pending->value);
+        $this->applyFilters($verificationSales, $filters, 'ship_ticket_sales.');
+
+        if ($searchValue !== '') {
+            $this->applySearch($verificationSales, $searchValue);
+        }
+
+        $elapsedSecondsExpression = DB::connection()->getDriverName() === 'sqlite'
+            ? '(julianday(first_payment_verifications.first_verified_at) - julianday(ship_ticket_sales.created_at)) * 86400'
+            : 'TIMESTAMPDIFF(SECOND, ship_ticket_sales.created_at, first_payment_verifications.first_verified_at)';
+
+        $verificationStats = $verificationSales
+            ->joinSub(
+                $firstPaymentVerifications,
+                'first_payment_verifications',
+                'first_payment_verifications.ticket_id',
+                '=',
+                'ship_ticket_sales.id'
+            )
+            ->whereRaw('first_payment_verifications.first_verified_at >= ship_ticket_sales.created_at')
+            ->selectRaw("AVG({$elapsedSecondsExpression}) AS average_payment_verification_seconds")
+            ->selectRaw('COUNT(*) AS payment_verification_sample_size')
+            ->first();
+
         $categoryTotals = Category::query()
             ->selectRaw('ticket_id, SUM(quantity) AS ticket_count, SUM(quantity * unit_price) AS ticket_value')
             ->groupBy('ticket_id');
@@ -415,6 +454,8 @@ class SalesReportService
                 SQL)->first();
 
         $totals->payment_method_totals = $paymentMethodTotals;
+        $totals->average_payment_verification_seconds = $verificationStats->average_payment_verification_seconds;
+        $totals->payment_verification_sample_size = $verificationStats->payment_verification_sample_size;
 
         return $totals;
     }

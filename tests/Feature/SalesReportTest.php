@@ -283,6 +283,41 @@ it('includes verifier and timestamp history in the sale report details payload',
         ->assertJsonPath('data.0.verification_timeline.1.verified_by', $verifier->name);
 });
 
+it('reports average time to first payment verification for filtered sales', function () {
+    $firstSale = reportSale($this->ship, $this->company);
+    $secondSale = reportSale($this->ship, $this->company);
+    $unverifiedSale = reportSale($this->ship, $this->company);
+    $firstSale->forceFill(['created_at' => '2026-10-04 09:00:00'])->save();
+    $secondSale->forceFill(['created_at' => '2026-10-05 10:00:00'])->save();
+    $unverifiedSale->forceFill(['created_at' => '2026-10-06 11:00:00'])->save();
+
+    $firstVerification = VerifyTracker::create([
+        'ticket_id' => $firstSale->id,
+        'name' => 'payment-verified',
+        'verified_by' => $this->admin->id,
+    ]);
+    $firstVerification->forceFill(['created_at' => '2026-10-04 09:10:00'])->save();
+
+    $secondVerification = VerifyTracker::create([
+        'ticket_id' => $secondSale->id,
+        'name' => 'payment-verified',
+        'verified_by' => $this->admin->id,
+    ]);
+    $secondVerification->forceFill(['created_at' => '2026-10-05 10:20:00'])->save();
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?draw=1&start=0&length=10')
+        ->assertOk()
+        ->assertJsonPath('totals.average_payment_verification_seconds', 900)
+        ->assertJsonPath('totals.payment_verification_sample_size', 2);
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?draw=1&start=0&length=10&start_create_date=2026-10-05&end_create_date=2026-10-05')
+        ->assertOk()
+        ->assertJsonPath('totals.average_payment_verification_seconds', 1200)
+        ->assertJsonPath('totals.payment_verification_sample_size', 1);
+});
+
 it('shows method totals across report filters independently of the selected payment method', function () {
     $matchingSale = reportSale($this->ship, $this->company, [
         'customer_name' => 'Mixed Method Sale',

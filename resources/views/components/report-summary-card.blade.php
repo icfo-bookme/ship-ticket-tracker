@@ -15,4 +15,7 @@
         'text-emerald-950 dark:text-emerald-100' => $emphasis,
         'text-gray-900 dark:text-gray-100' => ! $emphasis,
     ])>{{ str_contains($id, 'Tickets') || (str_contains($id, 'Bftn') && !str_contains($id, 'Amount')) ? '0' : '0.00' }}</p>
+    @isset($description)
+        {{ $description }}
+    @endisset
 </div>

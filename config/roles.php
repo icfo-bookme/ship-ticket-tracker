@@ -30,6 +30,7 @@ return [
         // Sales module
         'dashboard.view', 'documentation.view',
         'sales.view', 'sales.create', 'sales.edit', 'sales.delete', 'sales.verify', 'sales.issue', 'sales.print',
+        'sales.pending.edit', 'sales.pending.delete',
         'sales.mark_printed', 'sales.create_parcel', 'sales.mark_shipped', 'sales.mark_collected', 'sales.bftn.receive',
 
         // Sales — per status list access, checked by the `sales.status` middleware.

@@ -1,4 +1,5 @@
 import { initializeDataTable } from '../services/data-table.js';
+import { can } from '../services/authorization.js';
 const configElement = document.getElementById('saleStatusConfig');
 const config = {
     status: configElement?.dataset.status || '',
@@ -573,14 +574,14 @@ function createActionButtons(sale) {
             : "";
     }
 
-    {
-        editButton = `<a data-permission="sales.edit" href="/ship-ticket-sales/${sale.id}">
+    if (can('sales.edit') || (sale.status === config.pendingStatus && can('sales.pending.edit'))) {
+        editButton = `<a href="/ship-ticket-sales/${sale.id}">
                         <button class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn" title="Edit"></button>
                     </a>`;
     }
 
-    {
-        deleteButton = `<button data-permission="sales.delete" class="fas fa-trash text-red-500 bg-white px-2 py-1 border border-gray-300 rounded deleteBtn"
+    if (can('sales.delete') || (sale.status === config.pendingStatus && can('sales.pending.delete'))) {
+        deleteButton = `<button class="fas fa-trash text-red-500 bg-white px-2 py-1 border border-gray-300 rounded deleteBtn"
                         data-id="${sale.id}" title="Delete"></button>`;
     }
 

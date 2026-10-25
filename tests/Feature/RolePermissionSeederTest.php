@@ -15,6 +15,8 @@ test('seeding adds default roles without overwriting customized role permissions
 
     expect($customRole->permissions->pluck('name')->all())->toBe(['reports.view'])
         ->and(Permission::where('name', 'sales.mark_collected')->exists())->toBeTrue()
+        ->and(Permission::where('name', 'sales.pending.edit')->exists())->toBeTrue()
+        ->and(Permission::where('name', 'sales.pending.delete')->exists())->toBeTrue()
         ->and(Role::where('name', 'Admin')->exists())->toBeTrue();
 });
 

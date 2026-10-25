@@ -83,7 +83,7 @@ Route::middleware('auth')->group(function () {
             ->middleware('sales.status')
             ->name('ship-ticket-sales.index');
         Route::get('ship-ticket-sales/{ship_ticket_sale}', [ShipTicketSaleController::class, 'show'])
-            ->middleware('can:sales.edit')
+            ->middleware('can:sales.edit-record,ship_ticket_sale')
             ->name('ship-ticket-sales.show');
 
         // Sales listing / status (each status needs its own sales.status.{status} permission)
@@ -112,7 +112,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // SALES — EDIT / UPDATE
-    Route::middleware('can:sales.edit')->group(function () {
+    Route::middleware('can:sales.edit-record,ship_ticket_sale')->group(function () {
         Route::put('ship-ticket-sales/{ship_ticket_sale}', [ShipTicketSaleController::class, 'update'])->name('ship-ticket-sales.update');
     });
 
@@ -145,10 +145,13 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:sales.delete')->group(function () {
         Route::get('admin/deleted-sales', [ShipTicketSaleController::class, 'deletedIndex'])->name('ship-ticket-sales.deleted.index');
         Route::get('admin/deleted-sales/data', [ShipTicketSaleController::class, 'deletedData'])->name('ship-ticket-sales.deleted.data');
-        Route::delete('ship-ticket-sales/{ship_ticket_sale}', [ShipTicketSaleController::class, 'destroy'])->name('ship-ticket-sales.destroy');
         Route::put('ship-ticket-sales/{id}/restore', [ShipTicketSaleController::class, 'restore'])->name('ship-ticket-sales.restore');
-        Route::delete('/sale/delete/{id}', [ShipTicketSaleController::class, 'destroy'])->name('sale.destroy');
     });
+
+    Route::delete('ship-ticket-sales/{ship_ticket_sale}', [ShipTicketSaleController::class, 'destroy'])
+        ->middleware('can:sales.delete-record,ship_ticket_sale')->name('ship-ticket-sales.destroy');
+    Route::delete('/sale/delete/{id}', [ShipTicketSaleController::class, 'destroy'])
+        ->middleware('can:sales.delete-record,id')->name('sale.destroy');
 
     // Refunds module. Register `create` before the `{refund}` wildcard route.
 

@@ -6,6 +6,8 @@ use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -84,6 +86,41 @@ it('keeps sold by unchanged when the sale is updated', function () {
 
     expect($sale->customer_name)->toBe('Customer Updated')
         ->and($sale->sold_by)->toBe($this->seller->id);
+});
+
+it('restricts pending action permissions to pending sales', function (string $action) {
+    $user = User::factory()->create();
+    $user->givePermissionTo(Permission::findOrCreate("sales.pending.{$action}", 'web'));
+
+    expect(Gate::forUser($user)->allows("sales.{$action}-record", $this->sale))->toBeTrue();
+
+    $this->sale->update(['status' => 'payment-verified']);
+
+    expect(Gate::forUser($user)->allows("sales.{$action}-record", $this->sale))->toBeFalse();
+
+    $user->givePermissionTo(Permission::findOrCreate("sales.{$action}", 'web'));
+
+    expect(Gate::forUser($user)->allows("sales.{$action}-record", $this->sale))->toBeTrue();
+})->with(['edit', 'delete']);
+
+it('blocks pending-only users from editing or deleting verified sales through direct requests', function () {
+    $user = User::factory()->create();
+    foreach (['sales.view', 'sales.pending.edit', 'sales.pending.delete'] as $permission) {
+        $user->givePermissionTo(Permission::findOrCreate($permission, 'web'));
+    }
+
+    $this->sale->update(['status' => 'payment-verified']);
+    $url = '/ship-ticket-sales/'.$this->sale->id;
+
+    $this->actingAs($user)->get($url)->assertForbidden();
+    $this->actingAs($user)->putJson($url, [])->assertForbidden();
+    $this->actingAs($user)->deleteJson($url)->assertForbidden();
+    $this->actingAs($user)->deleteJson('/sale/delete/'.$this->sale->id)->assertForbidden();
+
+    $this->sale->update(['status' => 'pending']);
+    $this->actingAs($user)->get($url)->assertOk();
+    $this->actingAs($user)->deleteJson($url)->assertOk();
+    expect($this->sale->fresh()->trashed())->toBeTrue();
 });
 
 it('saves the edited co-passenger mobile number', function () {

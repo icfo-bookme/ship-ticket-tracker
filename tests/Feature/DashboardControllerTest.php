@@ -70,6 +70,7 @@ it('renders the dashboard with metrics from the service', function () {
                 'ticketPrinted' => 0,
                 'parcelsCreated' => 0,
                 'shipped' => 0,
+                'collectFromOffice' => 2,
                 'totalPayable' => 100,
                 'totalReceived' => 50,
                 'totalDue' => 50,
@@ -95,7 +96,26 @@ it('renders the dashboard with metrics from the service', function () {
         ->assertOk()
         ->assertViewIs('dashboard')
         ->assertViewHas('pendingTickets', 1)
+        ->assertViewHas('collectFromOffice', 2)
+        ->assertSee('Collect From Office')
         ->assertSee('Recent Ticket Transactions')
         ->assertSee('Latest activities in the system')
         ->assertDontSee('>Filter<', false);
+});
+
+it('counts office collection sales without including deleted sales', function () {
+    $ship = Ship::query()->create(['name' => 'Office collection ship']);
+    $sale = ShipTicketSale::query()->create([
+        'customer_name' => 'Office customer',
+        'customer_mobile' => '01712345678',
+        'ship_id' => $ship->id,
+        'issued_date' => now()->toDateString(),
+        'status' => 'collect_from_office',
+    ]);
+
+    expect(app(DashboardMetricsService::class)->metrics()['collectFromOffice'])->toBe(1);
+
+    $sale->delete();
+
+    expect(app(DashboardMetricsService::class)->metrics()['collectFromOffice'])->toBe(0);
 });

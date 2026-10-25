@@ -28,6 +28,7 @@ class DashboardMetricsService
             'ticketPrinted' => $statusCounts[SaleStatus::TicketPrinted->value] ?? 0,
             'parcelsCreated' => $statusCounts[SaleStatus::ShipmentIdEntered->value] ?? 0,
             'shipped' => $statusCounts[SaleStatus::Shipped->value] ?? 0,
+            'collectFromOffice' => $statusCounts[SaleStatus::CollectFromOffice->value] ?? 0,
             'totalPayable' => $revenueOverview->total_payable ?? 0,
             'totalReceived' => $revenueOverview->total_received ?? 0,
             'totalDue' => $revenueOverview->total_due ?? 0,

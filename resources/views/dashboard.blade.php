@@ -26,7 +26,7 @@
         <div class=" mx-auto sm:px-6 lg:px-8 space-y-8">
 
             {{-- Status Cards Grid --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-6">
                 @php
                     $statusCards = [
                         ['title' => 'Pending', 'count' => $pendingTickets, 'color' => 'yellow', 'icon' => '⏳'],
@@ -35,6 +35,7 @@
                         ['title' => 'Ticket Printed', 'count' => $ticketPrinted, 'color' => 'purple', 'icon' => '🖨️'],
                         ['title' => 'Parcel Created', 'count' => $parcelsCreated, 'color' => 'green', 'icon' => '📦'],
                         ['title' => 'Shipped', 'count' => $shipped, 'color' => 'emerald', 'icon' => '🚚'],
+                        ['title' => 'Collect From Office', 'count' => $collectFromOffice, 'color' => 'blue', 'icon' => ''],
                     ];
                     $maxStatusCount = max(array_column($statusCards, 'count'));
                 @endphp
@@ -44,7 +45,13 @@
                         class="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
                         <div class="p-5">
                             <div class="flex items-center justify-between mb-4">
-                                <span class="text-2xl">{{ $card['icon'] }}</span>
+                                <span class="text-2xl">
+                                    @if ($card['title'] === 'Collect From Office')
+                                        <i class="fas fa-building" aria-hidden="true"></i>
+                                    @else
+                                        {{ $card['icon'] }}
+                                    @endif
+                                </span>
                                 <span
                                     class="text-xs font-bold px-3 py-1 rounded-full bg-{{ $card['color'] }}-100 text-{{ $card['color'] }}-800 border border-{{ $card['color'] }}-200">
                                     {{ $card['title'] }}

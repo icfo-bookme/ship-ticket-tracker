@@ -77,6 +77,25 @@ it('counts all return quantities independently from departure quantities', funct
     expect($ticketValue)->toBe(970.0);
 });
 
+it('ignores zero-quantity package ids that are not available for the selected ship', function () {
+    $ship = Ship::create(['name' => 'Zero Quantity Ship', 'status' => 1]);
+    $package = ShipPackage::create([
+        'ship_id' => $ship->id,
+        'name' => 'Current package',
+        'price' => 100,
+        'round_trip_price' => 170,
+    ]);
+
+    $ticketValue = app(SaleFinancialService::class)->ticketValueFromPackageQuantities(
+        $ship->id,
+        '2026-10-20',
+        [$package->id => 2, 999999 => 0],
+        [999999 => 0],
+    );
+
+    expect($ticketValue)->toBe(200.0);
+});
+
 it('calculates public cross-package round trips using the return fare', function () {
     $ship = Ship::create(['name' => 'Public Test Ship', 'status' => 1]);
     $departure = ShipPackage::create([

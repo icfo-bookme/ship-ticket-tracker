@@ -92,6 +92,11 @@ class SaleFinancialService
 
             foreach (['departure', 'return'] as $type) {
                 $quantity = (int) ($item[$type] ?? 0);
+
+                if ($quantity === 0) {
+                    continue;
+                }
+
                 $total += $quantity * $this->categoryUnitPrice($package, $type, $returnDate);
             }
         }

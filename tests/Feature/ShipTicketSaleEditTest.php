@@ -86,6 +86,42 @@ it('keeps sold by unchanged when the sale is updated', function () {
         ->and($sale->sold_by)->toBe($this->seller->id);
 });
 
+it('saves the edited co-passenger mobile number', function () {
+    $this->sale->coPassengers()->create([
+        'name' => 'Passenger One',
+        'co_passernger_number' => '01711111111',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->put('/ship-ticket-sales/'.$this->sale->id, [
+            'customer_name' => 'Customer One',
+            'customer_mobile' => '01712345678',
+            'whatsapp' => '01712345678',
+            'email' => null,
+            'nid' => null,
+            'date_of_birth' => null,
+            'collect_from_office' => 1,
+            'ship_id' => $this->ship->id,
+            'company_id' => $this->company->id,
+            'journey_date' => '2026-10-01',
+            'return_date' => '2026-10-05',
+            'sales_source' => 'Direct',
+            'issued_date' => '2026-09-23',
+            'status' => 'pending',
+            'remark1' => null,
+            'remark2' => null,
+            'co_passengers' => [[
+                'name' => 'Passenger One',
+                'co_passernger_number' => '01922222222',
+            ]],
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertSessionMissing('error');
+
+    expect($this->sale->coPassengers()->count())->toBe(1)
+        ->and($this->sale->coPassengers()->first()->co_passernger_number)->toBe('01922222222');
+});
+
 it('recalculates payable from departure and return quantities across packages', function () {
     $departurePackage = ShipPackage::create([
         'ship_id' => $this->ship->id,

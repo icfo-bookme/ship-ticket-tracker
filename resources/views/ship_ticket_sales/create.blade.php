@@ -393,7 +393,7 @@
 
                         <div>
                             <label class="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                BFTN Pending (à§³) <span class="text-red-500">(autofill)</span>
+                                BFTN Pending (&#2547;) <span class="text-red-500">(autofill)</span>
                             </label>
                             <input type="number" id="bftn_pending_amount" name="bftn_pending_amount" readonly
                                 value="{{ old('bftn_pending_amount', 0) }}" step="0.01" min="0"

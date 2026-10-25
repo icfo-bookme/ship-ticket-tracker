@@ -512,7 +512,7 @@
                                 <div class="bg-white rounded-lg p-3 shadow-sm border border-amber-200">
                                     <label for="bftn_pending_amount" class="block text-sm font-semibold text-gray-700">BFTN Pending</label>
                                     <div class="mt-2 flex items-center">
-                                        <span class="mr-2 text-gray-500">à§³</span>
+                                        <span class="mr-2 text-gray-500">&#2547;</span>
                                         <input type="number" step="0.01" id="bftn_pending_amount" readonly
                                             value="0.00"
                                             class="w-full border-amber-200 bg-amber-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-amber-700">

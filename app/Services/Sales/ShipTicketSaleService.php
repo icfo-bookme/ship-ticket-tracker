@@ -431,7 +431,7 @@ class ShipTicketSaleService
                 $sale->coPassengers()->create([
                     'name' => $passenger['name'],
                     'nid' => $passenger['nid'] ?? null,
-                    'co_passenger_number' => $passenger['co_passenger_number'] ?? null,
+                    'co_passernger_number' => $passenger['co_passernger_number'] ?? null,
                     'date_of_birth' => $passenger['date_of_birth'] ?? null,
                 ]);
             }

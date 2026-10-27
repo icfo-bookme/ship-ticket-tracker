@@ -61,7 +61,11 @@ class SalesDataTableService
         $requestedLength = $request->integer('length', 10);
         $length = $requestedLength < 1 ? 10 : min($requestedLength, 100);
 
+        $sortDirection = $request->input('sort') === 'oldest' ? 'asc' : 'desc';
+
         $sales = $query
+            ->orderBy('created_at', $sortDirection)
+            ->orderBy('id', $sortDirection)
             ->skip($start)
             ->take($length)
             ->get();

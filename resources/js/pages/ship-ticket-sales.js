@@ -1488,7 +1488,11 @@ class TicketSalesSystem {
     }
 
     fillReviewContent() {
+        this.calculateTotalTickets();
+        this.calculateDue();
         const formData = new FormData(this.getElement("#ticketForm"));
+        formData.set("due_amount", this.getValue("due_amount"));
+        formData.set("ticket_count", this.getValue("total_tickets"));
         let html = this.generateReviewContent(formData);
         this.getElement(this.selectors.elements.reviewContent).innerHTML = html;
     }
@@ -1519,9 +1523,9 @@ class TicketSalesSystem {
     formatReviewValue(field, value) {
         if (!value) return "Not specified";
 
-        if (field === "ship_id" || field === "company_id") {
+        if (["ship_id", "company_id", "sales_source_id"].includes(field)) {
             const select = this.getElement(`select[name="${field}"]`);
-            return select?.options[select.selectedIndex]?.text || "Not specified";
+            return this.escapeHtml(select?.options[select.selectedIndex]?.text.trim() || "Not specified");
         }
 
         if (field === "sold_by") {

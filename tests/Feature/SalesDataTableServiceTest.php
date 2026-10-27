@@ -31,6 +31,32 @@ it('returns the WhatsApp username for sales without a WhatsApp number', function
         ->and(array_key_exists('total_payable', $response['data'][0]))->toBeTrue();
 });
 
+it('sorts sales by creation date with stable pagination', function (?string $sort, bool $oldestFirst) {
+    $ship = Ship::create(['name' => 'Sort Ship', 'status' => 1]);
+    $company = Company::create(['name' => 'Sort Company', 'status' => 1]);
+    $newer = salesDataTableSale($ship, $company, 'pending');
+    $newer->forceFill(['created_at' => '2026-10-20 12:00:00'])->save();
+    $older = salesDataTableSale($ship, $company, 'pending');
+    $older->forceFill(['created_at' => '2026-10-19 12:00:00'])->save();
+    $tied = salesDataTableSale($ship, $company, 'pending');
+    $tied->forceFill(['created_at' => '2026-10-20 12:00:00'])->save();
+    $expected = $oldestFirst ? [$older->id, $newer->id, $tied->id] : [$tied->id, $newer->id, $older->id];
+
+    foreach ($expected as $offset => $id) {
+        $response = app(SalesDataTableService::class)->response(
+            new Request(['sort' => $sort, 'start' => $offset, 'length' => 1]),
+            'pending'
+        )->getData(true);
+
+        expect(array_column($response['data'], 'id'))->toBe([$id]);
+    }
+})->with([
+    'default latest' => [null, false],
+    'latest' => ['latest', false],
+    'oldest' => ['oldest', true],
+    'invalid falls back to latest' => ['invalid', false],
+]);
+
 it('includes the seller name in the sales table response', function () {
     $ship = Ship::create(['name' => 'Seller Ship', 'status' => 1]);
     $company = Company::create(['name' => 'Seller Company', 'status' => 1]);

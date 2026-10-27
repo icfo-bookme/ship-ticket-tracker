@@ -43,6 +43,29 @@ it('shows the seller name, discount and due amounts in the review modal script',
         ->and($script)->toContain('text-red-600');
 });
 
+it('includes the calculated due amount in the review data even without a named input', function () {
+    $script = file_get_contents(resource_path('js/pages/ship-ticket-sales.js'));
+
+    expect($script)->toContain('this.calculateDue();'."\n".'        const formData = new FormData(this.getElement("#ticketForm"));')
+        ->toContain('formData.set("due_amount", this.getValue("due_amount"));');
+});
+
+it('includes the calculated total ticket count in the review data', function () {
+    $script = file_get_contents(resource_path('js/pages/ship-ticket-sales.js'));
+
+    expect($script)
+        ->toContain('this.calculateTotalTickets();'."\n".'        this.calculateDue();')
+        ->toContain('formData.set("ticket_count", this.getValue("total_tickets"));');
+});
+
+it('uses the selected sales source name in the review modal', function () {
+    $script = file_get_contents(resource_path('js/pages/ship-ticket-sales.js'));
+
+    expect($script)
+        ->toContain('["ship_id", "company_id", "sales_source_id"].includes(field)')
+        ->toContain('this.escapeHtml(select?.options[select.selectedIndex]?.text.trim() || "Not specified")');
+});
+
 it('keeps the ticket creation page white and stacks payment rows on small screens', function () {
     $css = file_get_contents(resource_path('css/app.css'));
 

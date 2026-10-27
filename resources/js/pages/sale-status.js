@@ -34,6 +34,7 @@ function escapeHtml(value) {
 const shipFilter = document.getElementById("shipFilter");
 const companyFilter = document.getElementById("companyFilter");
 const journeyDateFilter = document.getElementById("journeyDateFilter");
+const sortFilter = document.getElementById("sortFilter");
 const clearFiltersBtn = document.getElementById("clearFilters");
 
 const salesTable = document.getElementById('salesTable');
@@ -402,6 +403,7 @@ const createdRow = (row, sale) => {
 };
 
 const filters = () => ({
+    sort: sortFilter.value,
     ship_id: shipFilter.value,
     company_id: companyFilter.value,
     journey_date: journeyDateFilter.value,
@@ -834,7 +836,7 @@ async function markBftnReceived(button, getList) {
 function bindSalesTableEvents() {
     const table = document.getElementById("salesTable");
 
-    [shipFilter, companyFilter, journeyDateFilter].forEach((filter) => {
+    [shipFilter, companyFilter, journeyDateFilter, sortFilter].forEach((filter) => {
         filter?.addEventListener("change", () => {
             selectedShippedSaleIds.clear();
             allMatchingShippedSalesSelected = false;
@@ -844,6 +846,7 @@ function bindSalesTableEvents() {
     });
 
     clearFiltersBtn?.addEventListener("click", () => {
+        if (sortFilter) sortFilter.value = "latest";
         [shipFilter, companyFilter, journeyDateFilter].forEach((filter) => {
             if (filter) filter.value = "";
         });

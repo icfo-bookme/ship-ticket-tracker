@@ -1,8 +1,11 @@
 <?php
 
+use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Payment;
+use App\Models\SalesSource;
 use App\Models\Ship;
+use App\Models\ShipPackage;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,6 +23,8 @@ beforeEach(function () {
 
     $this->ship = Ship::create(['name' => 'MV Proof Ship', 'status' => 1]);
     $this->company = Company::create(['name' => 'Proof Company', 'status' => 1]);
+    SalesSource::create(['name' => 'Direct', 'is_active' => true]);
+    ShipPackage::create(['ship_id' => $this->ship->id, 'name' => 'Proof Deck', 'price' => 500]);
 });
 
 function saleWithProofPayment(Ship $ship, Company $company): ShipTicketSale
@@ -65,7 +70,10 @@ function proofSalePayload(Ship $ship, Company $company, User $user, array $overr
         'sales_source' => 'Direct',
         'ship_id' => $ship->id,
         'address' => 'Dhaka',
-        'journey_date' => '2026-10-01',
+        'sales_source_id' => SalesSource::query()->where('name', 'Direct')->sole()->id,
+        'collect_from_office' => 0,
+        'ticket_categories' => ['departure' => [['package_id' => $ship->packages()->sole()->id, 'quantity' => 1]]],
+        'journey_date' => now()->addDay()->toDateString(),
         'date_of_birth' => null,
         'return_date' => null,
         'ticket_value' => 500,
@@ -121,6 +129,13 @@ it('stores the payment proof uploaded from the create form', function () {
 
     expect($payment->transaction_id)->toBe('TRX-PROOF-1')
         ->and($payment->payment_proof)->not->toBeNull();
+
+    $log = AuditLog::query()->sole();
+    expect($log->event)->toBe('created')
+        ->and($log->user_id)->toBe($this->admin->id)
+        ->and($log->context['sale_id'])->toBe($payment->sales_id)
+        ->and($log->new_values['payments'][0]['received_amount'])->toBe('500.00')
+        ->and($log->new_values['payments'][0])->not->toHaveKey('payment_proof');
 
     Storage::disk('local')->assertExists($payment->payment_proof);
 });
@@ -303,7 +318,7 @@ it('exposes the proof fields on the create, edit and due payment forms', functio
         ->assertSee('enctype="multipart/form-data"', false);
 
     $this->actingAs($this->admin)
-        ->get('/ship-ticket-sales/'.$sale->id.'/edit')
+        ->get(route('ship-ticket-sales.show', $sale->id))
         ->assertOk()
         ->assertSee('payments[0][proof_file]', false)
         ->assertSee('View uploaded proof');

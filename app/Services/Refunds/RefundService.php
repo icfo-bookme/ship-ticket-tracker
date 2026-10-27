@@ -6,20 +6,29 @@ use App\Enums\RefundStatus;
 use App\Enums\SaleStatus;
 use App\Models\Refund;
 use App\Models\ShipTicketSale;
+use App\Services\AuditLogService;
 use App\Services\Sales\SaleFinancialService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class RefundService
 {
-    public function __construct(private readonly SaleFinancialService $saleFinancials) {}
+    public function __construct(
+        private readonly SaleFinancialService $saleFinancials,
+        private readonly AuditLogService $auditLogs,
+    ) {}
 
     public function create(array $data): Refund
     {
-        return Refund::create(array_merge([
-            'status' => RefundStatus::Requested->value,
-            'refund_type' => 'partial',
-        ], $data));
+        return DB::transaction(function () use ($data): Refund {
+            $refund = Refund::create(array_merge([
+                'status' => RefundStatus::Requested->value,
+                'refund_type' => 'partial',
+            ], $data));
+            $this->auditLogs->record($refund, 'created', newValues: $this->auditLogs->snapshot($refund));
+
+            return $refund;
+        });
     }
 
     public function fullRefund(array $saleIds): void
@@ -86,6 +95,7 @@ class RefundService
                         'unit_amount' => $selected['unitAmount'],
                         'gross_amount' => $selected['categoryAmount'],
                     ], $ticketSelections));
+                    $this->auditLogs->record($refund, 'created', newValues: $this->auditLogs->snapshot($refund));
                 }
             }
         });
@@ -135,7 +145,7 @@ class RefundService
                 $refundDiscountAmount,
             );
 
-            Refund::create([
+            $refund = Refund::create([
                 'sales_id' => $sale->id,
                 'refund_type' => 'partial',
                 'status' => RefundStatus::Requested->value,
@@ -152,7 +162,8 @@ class RefundService
                 'company_retained_amount' => round($customerChargeAmount - $partnerShareAmount, 2),
                 'requested_at' => now(),
                 'remark' => $data['remark'] ?? null,
-            ])->tickets()->createMany(array_map(fn (array $selected): array => [
+            ]);
+            $refund->tickets()->createMany(array_map(fn (array $selected): array => [
                 'category_id' => $selected['category']->id,
                 'category_name' => $selected['category']->package?->name,
                 'category_type' => $selected['category']->type,
@@ -161,10 +172,18 @@ class RefundService
                 'unit_amount' => $selected['unitAmount'],
                 'gross_amount' => $selected['categoryAmount'],
             ], $selectedTickets));
+            $this->auditLogs->record($refund, 'created', newValues: $this->auditLogs->snapshot($refund));
         });
     }
 
     public function refundCustomer(Refund $refund, array $data): void
+    {
+        $this->auditLogs->capture($refund, function (Refund $locked) use ($data): void {
+            $this->performRefundCustomer($locked, $data);
+        });
+    }
+
+    private function performRefundCustomer(Refund $refund, array $data): void
     {
         if (in_array($refund->status, [RefundStatus::Completed->value, RefundStatus::Cancelled->value], true)) {
             throw ValidationException::withMessages(['status' => 'This refund has already been completed or cancelled.']);
@@ -243,6 +262,13 @@ class RefundService
 
     public function approve(Refund $refund): void
     {
+        $this->auditLogs->capture($refund, function (Refund $locked): void {
+            $this->performApprove($locked);
+        }, 'status_changed');
+    }
+
+    private function performApprove(Refund $refund): void
+    {
         if ($refund->status !== RefundStatus::Requested->value) {
             throw ValidationException::withMessages([
                 'status' => 'Only requested refunds can be approved.',
@@ -257,6 +283,13 @@ class RefundService
 
     public function addPaymentDetails(Refund $refund, string $details): void
     {
+        $this->auditLogs->capture($refund, function (Refund $locked) use ($details): void {
+            $this->performAddPaymentDetails($locked, $details);
+        });
+    }
+
+    private function performAddPaymentDetails(Refund $refund, string $details): void
+    {
         if ($refund->status !== RefundStatus::PartnerApproved->value) {
             throw ValidationException::withMessages([
                 'status' => 'Payment details can only be added to partner-approved refunds.',
@@ -270,6 +303,13 @@ class RefundService
     }
 
     public function update(Refund $refund, ShipTicketSale $sale, array $data): void
+    {
+        $this->auditLogs->capture($refund, function (Refund $locked) use ($sale, $data): void {
+            $this->performUpdate($locked, $sale, $data);
+        });
+    }
+
+    private function performUpdate(Refund $refund, ShipTicketSale $sale, array $data): void
     {
         if (in_array($refund->status, [RefundStatus::Completed->value, RefundStatus::Cancelled->value], true)) {
             throw ValidationException::withMessages(['status' => 'This refund request can no longer be edited.']);
@@ -345,6 +385,13 @@ class RefundService
 
     public function cancel(Refund $refund): void
     {
+        $this->auditLogs->capture($refund, function (Refund $locked): void {
+            $this->performCancel($locked);
+        }, 'status_changed');
+    }
+
+    private function performCancel(Refund $refund): void
+    {
         if (in_array($refund->status, [RefundStatus::Completed->value, RefundStatus::Cancelled->value], true)) {
             throw ValidationException::withMessages(['status' => 'This refund request cannot be cancelled.']);
         }
@@ -354,7 +401,7 @@ class RefundService
 
     public function delete(Refund $refund): void
     {
-        $refund->delete();
+        $this->auditLogs->capture($refund, fn (Refund $locked): ?bool => $locked->delete(), 'deleted');
     }
 
     private function ensureRefundableAmount(

@@ -13,6 +13,7 @@ use App\Models\ShipTicketSale;
 use App\Models\User;
 use App\Models\VerifyTracker;
 use App\Models\WhatsappDetail;
+use App\Services\AuditLogService;
 use App\Services\Finance\PaymentProofStorage;
 use App\Services\GoogleSheetService;
 use Illuminate\Support\Facades\DB;
@@ -24,19 +25,20 @@ class ShipTicketSaleService
     public function __construct(
         private readonly PaymentProofStorage $paymentProofs,
         private readonly SaleFinancialService $saleFinancials,
+        private readonly AuditLogService $auditLogs,
     ) {}
 
     public function delete(int $saleId): void
     {
-        ShipTicketSale::findOrFail($saleId)->delete();
+        $this->auditLogs->capture(ShipTicketSale::findOrFail($saleId), fn (ShipTicketSale $sale): ?bool => $sale->delete(), 'deleted');
     }
 
     public function restore(int $saleId): ShipTicketSale
     {
         $sale = ShipTicketSale::onlyTrashed()->findOrFail($saleId);
-        $sale->restore();
+        $this->auditLogs->capture($sale, fn (ShipTicketSale $locked): bool => $locked->restore(), 'restored');
 
-        return $sale;
+        return $sale->refresh();
     }
 
     public function create(array $data, array $input): ShipTicketSale
@@ -62,6 +64,8 @@ class ShipTicketSaleService
                 true,
             );
             $this->createTicketCategories($ticketSale, $input['ticket_categories'] ?? []);
+
+            $this->auditLogs->record($ticketSale, 'created', newValues: $this->auditLogs->snapshot($ticketSale));
 
             return $ticketSale;
         });
@@ -93,6 +97,8 @@ class ShipTicketSaleService
             $this->createPayments($ticketSale, $input['payment_methods'] ?? [], false);
             $this->createTicketCategories($ticketSale, $input['ticket_categories'] ?? []);
 
+            $this->auditLogs->record($ticketSale, 'created', newValues: $this->auditLogs->snapshot($ticketSale), system: true);
+
             return $ticketSale;
         });
 
@@ -103,30 +109,34 @@ class ShipTicketSaleService
 
     public function update(ShipTicketSale $sale, array $data, array $input): ShipTicketSale
     {
-        if (array_key_exists('departure_quantity', $input) || array_key_exists('return_quantity', $input)) {
-            $ticketCount = array_sum(array_map('intval', $input['departure_quantity'] ?? []))
-                + array_sum(array_map('intval', $input['return_quantity'] ?? []));
-
-            if ($ticketCount < 1) {
-                throw ValidationException::withMessages([
-                    'departure_quantity' => 'At least one ticket category must have a quantity of 1 or more.',
-                ]);
-            }
-
-            $data['ticket_value'] = $this->saleFinancials->ticketValueFromPackageQuantities(
-                $data['ship_id'] ?? $sale->ship_id,
-                $data['return_date'] ?? $sale->return_date,
-                $input['departure_quantity'] ?? [],
-                $input['return_quantity'] ?? [],
-            );
-        } else {
-            $data['ticket_value'] = $sale->ticket_value;
-        }
-        $data = $this->normalizeFinancials($data, $input);
-
-        DB::beginTransaction();
+        $connection = $sale->getConnection();
+        $connection->beginTransaction();
 
         try {
+            $sale = $sale->newQuery()->lockForUpdate()->findOrFail($sale->getKey());
+            $before = $this->auditLogs->snapshot($sale);
+
+            if (array_key_exists('departure_quantity', $input) || array_key_exists('return_quantity', $input)) {
+                $ticketCount = array_sum(array_map('intval', $input['departure_quantity'] ?? []))
+                    + array_sum(array_map('intval', $input['return_quantity'] ?? []));
+
+                if ($ticketCount < 1) {
+                    throw ValidationException::withMessages([
+                        'departure_quantity' => 'At least one ticket category must have a quantity of 1 or more.',
+                    ]);
+                }
+
+                $data['ticket_value'] = $this->saleFinancials->ticketValueFromPackageQuantities(
+                    $data['ship_id'] ?? $sale->ship_id,
+                    $data['return_date'] ?? $sale->return_date,
+                    $input['departure_quantity'] ?? [],
+                    $input['return_quantity'] ?? [],
+                );
+            } else {
+                $data['ticket_value'] = $sale->ticket_value;
+            }
+            $data = $this->normalizeFinancials($data, $input);
+
             $sale->update([
                 'customer_name' => $data['customer_name'],
                 'customer_mobile' => $data['customer_mobile'],
@@ -172,9 +182,11 @@ class ShipTicketSaleService
                 }
             }
 
-            DB::commit();
+            $this->auditLogs->record($sale, 'updated', $before, $this->auditLogs->snapshot($sale));
+
+            $connection->commit();
         } catch (\Throwable $e) {
-            DB::rollBack();
+            $connection->rollBack();
 
             throw $e;
         }
@@ -183,6 +195,11 @@ class ShipTicketSaleService
     }
 
     public function updateIssue(ShipTicketSale $sale, array $data): ShipTicketSale
+    {
+        return $this->auditLogs->capture($sale, fn (ShipTicketSale $locked): ShipTicketSale => $this->performUpdateIssue($locked, $data));
+    }
+
+    private function performUpdateIssue(ShipTicketSale $sale, array $data): ShipTicketSale
     {
         if (array_key_exists('whatsapp', $data) || array_key_exists('whatsapp_username', $data)) {
             $sale->update([

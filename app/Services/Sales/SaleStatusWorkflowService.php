@@ -9,6 +9,7 @@ use App\Models\PrintStatus;
 use App\Models\Shipment;
 use App\Models\ShipTicketSale;
 use App\Models\VerifyTracker;
+use App\Services\AuditLogService;
 use App\Services\SteadfastService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,13 @@ use Illuminate\Support\Facades\Log;
 class SaleStatusWorkflowService
 {
     public function markPaymentBftnReceived(int $paymentId, string $receivedAt): void
+    {
+        app(AuditLogService::class)->capture(Payment::findOrFail($paymentId), function (Payment $payment) use ($receivedAt): void {
+            $this->performMarkPaymentBftnReceived($payment->id, $receivedAt);
+        });
+    }
+
+    private function performMarkPaymentBftnReceived(int $paymentId, string $receivedAt): void
     {
         $payment = Payment::with('sale')->findOrFail($paymentId);
 
@@ -119,7 +127,7 @@ class SaleStatusWorkflowService
         }
 
         DB::transaction(function () use ($sale, $status, $id): void {
-            $sale->update(['status' => $status]);
+            $this->changeStatus($sale, $status);
             $this->track($status, $id);
         });
 
@@ -222,7 +230,7 @@ class SaleStatusWorkflowService
                     return;
                 }
 
-                $sale->update(['status' => $highestStatus]);
+                $this->changeStatus($sale, $highestStatus);
                 $this->track($highestStatus, $sale->id);
             });
 
@@ -296,7 +304,7 @@ class SaleStatusWorkflowService
                     ['shipment_id' => $consignmentId],
                 );
 
-                $sale->update(['status' => SaleStatus::ShipmentIdEntered->value]);
+                $this->changeStatus($sale, SaleStatus::ShipmentIdEntered->value);
                 $this->track(SaleStatus::ShipmentIdEntered->value, $sale->id);
             });
         });
@@ -341,7 +349,7 @@ class SaleStatusWorkflowService
                     return;
                 }
 
-                $groupSale->update(['status' => SaleStatus::CollectFromOffice->value]);
+                $this->changeStatus($groupSale, SaleStatus::CollectFromOffice->value);
                 $this->track(SaleStatus::CollectFromOffice->value, $groupSale->id);
             });
 
@@ -478,6 +486,14 @@ class SaleStatusWorkflowService
                 'shipment_id' => $shipmentId,
             ]);
         }
+    }
+
+    private function changeStatus(ShipTicketSale $sale, string $status): void
+    {
+        $sale = $sale->newQuery()->lockForUpdate()->findOrFail($sale->id);
+        $before = ['status' => $sale->status];
+        $sale->update(['status' => $status]);
+        app(AuditLogService::class)->record($sale, 'status_changed', $before, ['status' => $sale->status]);
     }
 
     private function track(string $status, int $saleId): void

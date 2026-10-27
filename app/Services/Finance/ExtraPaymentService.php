@@ -5,11 +5,14 @@ namespace App\Services\Finance;
 use App\Enums\RefundStatus;
 use App\Models\Refund;
 use App\Models\ShipTicketSale;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ExtraPaymentService
 {
+    public function __construct(private readonly AuditLogService $auditLogs) {}
+
     /**
      * @return array{draw: mixed, recordsTotal: int, recordsFiltered: int, data: array}
      */
@@ -49,6 +52,11 @@ class ExtraPaymentService
     /** @return array{success: bool, amount: float|null} */
     public function adjustToOtherFee(int $saleId): array
     {
+        return $this->auditLogs->capture(ShipTicketSale::findOrFail($saleId), fn (ShipTicketSale $sale): array => $this->performAdjustToOtherFee($sale->id));
+    }
+
+    private function performAdjustToOtherFee(int $saleId): array
+    {
         return DB::transaction(function () use ($saleId): array {
             $sale = ShipTicketSale::query()->with('refunds')->lockForUpdate()->findOrFail($saleId);
             $extra = $this->remainingAmount($sale);
@@ -81,18 +89,21 @@ class ExtraPaymentService
                 return ['refund' => null, 'message' => 'A refund request already exists for this extra amount.'];
             }
 
+            $refund = Refund::create([
+                'sales_id' => $sale->id,
+                'refund_type' => 'extra_payment',
+                'reason' => 'Extra received amount',
+                'refunded_number_of_tickets' => 0,
+                'refunded_amount' => $extra,
+                'gross_refund_amount' => $extra,
+                'customer_refund_amount' => $extra,
+                'status' => RefundStatus::Requested->value,
+                'requested_at' => now(),
+            ]);
+            $this->auditLogs->record($refund, 'created', newValues: $this->auditLogs->snapshot($refund));
+
             return [
-                'refund' => Refund::create([
-                    'sales_id' => $sale->id,
-                    'refund_type' => 'extra_payment',
-                    'reason' => 'Extra received amount',
-                    'refunded_number_of_tickets' => 0,
-                    'refunded_amount' => $extra,
-                    'gross_refund_amount' => $extra,
-                    'customer_refund_amount' => $extra,
-                    'status' => RefundStatus::Requested->value,
-                    'requested_at' => now(),
-                ]),
+                'refund' => $refund,
                 'message' => null,
             ];
         });

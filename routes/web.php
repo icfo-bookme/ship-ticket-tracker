@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CashCollectionController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\RefundController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SaleDraftController;
+use App\Http\Controllers\Sales\SaleAuditLogController;
 use App\Http\Controllers\SalesSourceController;
 use App\Http\Controllers\ShipController;
 use App\Http\Controllers\ShipPackageController;
@@ -39,6 +41,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('audit-logs', AuditLogController::class)
+        ->middleware(['can:sales.view', 'can:sales.audit.view'])
+        ->name('audit-logs.index');
 
     Route::view('/documentation', 'documentation')
         ->middleware('can:documentation.view')
@@ -78,6 +83,10 @@ Route::middleware('auth')->group(function () {
 
     // SALES — VIEW (listings, details, printing)
     Route::middleware('can:sales.view')->group(function () {
+        Route::get('ship-ticket-sales/{sale}/audit-logs', SaleAuditLogController::class)
+            ->whereNumber('sale')
+            ->middleware('can:sales.audit.view')
+            ->name('ship-ticket-sales.audit-logs');
         // The index route shows the pending list, so it needs the pending status permission.
         Route::get('ship-ticket-sales', [ShipTicketSaleController::class, 'index'])
             ->middleware('sales.status')

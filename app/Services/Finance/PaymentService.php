@@ -4,11 +4,14 @@ namespace App\Services\Finance;
 
 use App\Models\Payment;
 use App\Models\ShipTicketSale;
-use Illuminate\Support\Facades\DB;
+use App\Services\AuditLogService;
 
 class PaymentService
 {
-    public function __construct(private readonly PaymentProofStorage $paymentProofs) {}
+    public function __construct(
+        private readonly PaymentProofStorage $paymentProofs,
+        private readonly AuditLogService $auditLogs,
+    ) {}
 
     /**
      * @param  array{paid_amount: int|float|string, other_fee?: int|float|string|null, discount_amount?: int|float|string|null, transaction_id?: string|null, payment_proof?: \Illuminate\Http\UploadedFile|null, payment_method: string, remark?: string|null}  $data
@@ -16,9 +19,7 @@ class PaymentService
      */
     public function payDue(int|string $saleId, array $data): array
     {
-        return DB::transaction(function () use ($saleId, $data): array {
-            $sale = ShipTicketSale::findOrFail($saleId);
-
+        return $this->auditLogs->capture(ShipTicketSale::findOrFail($saleId), function (ShipTicketSale $sale) use ($saleId, $data): array {
             $payment = Payment::create([
                 'sales_id' => $saleId,
                 'payment_method' => $data['payment_method'],

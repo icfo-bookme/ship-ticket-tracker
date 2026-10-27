@@ -28,6 +28,8 @@ export default defineConfig({
                 'resources/js/pages/ticket-issue.js',
                 'resources/js/pages/verify-sales.js',
                 'resources/js/pages/edit-sale.js',
+                'resources/js/pages/audit-history.js',
+                'resources/js/pages/audit-logs.js',
                 'resources/js/pages/reports-sales.js',
                 'resources/js/pages/refund-report.js',
                 'resources/js/pages/bftn-report.js',

@@ -1095,5 +1095,22 @@
         data-maximum-birth-date="{{ now()->subYears(18)->format('Y-m-d') }}"></div>
 
     @vite(['resources/js/pages/edit-sale.js'])
+    @can('sales.audit.view')
+        <section id="saleAuditHistory" data-url="{{ route('ship-ticket-sales.audit-logs', ['sale' => $sale->id]) }}"
+            class="mx-3 mb-8 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:mx-6 sm:p-6 dark:border-gray-700 dark:bg-gray-800"
+            aria-labelledby="auditHistoryHeading">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-4 dark:border-gray-700">
+                <div>
+                    <h2 id="auditHistoryHeading" class="text-lg font-semibold text-gray-900 dark:text-white">Edit History</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Changes, payments and activity for this sale. Newest first.</p>
+                </div>
+                <button type="button" data-audit-refresh class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">Refresh history</button>
+            </div>
+            <div data-audit-content class="pt-4" aria-live="polite" aria-busy="true">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Loading history…</p>
+            </div>
+        </section>
+        @vite(['resources/js/pages/audit-history.js'])
+    @endcan
 </x-app-layout>
 

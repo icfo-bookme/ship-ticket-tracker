@@ -98,7 +98,6 @@ class TicketSalesSystem {
 
         const validate = (input) => {
             const invalid = input.value !== '' && input.value > maximumDate;
-            input.max = maximumDate;
             input.setCustomValidity(invalid ? 'Passenger must be at least 18 years old.' : '');
             input.classList.toggle('border-red-500', invalid);
 
@@ -118,6 +117,13 @@ class TicketSalesSystem {
         };
 
         form?.addEventListener('input', (event) => {
+            if (event.target.matches(selector)) {
+                event.target.setCustomValidity('');
+                event.target.classList.remove('border-red-500');
+                event.target.parentElement.querySelector('.birth-date-error')?.classList.add('hidden');
+            }
+        });
+        form?.addEventListener('focusout', (event) => {
             if (event.target.matches(selector)) {
                 validate(event.target);
             }
@@ -194,6 +200,7 @@ class TicketSalesSystem {
                 return_date: "Return Date",
                 company_id: "Company Name",
                 ticket_value: "Total Ticket Price",
+                other_fee: "Other Fee",
                 discount_amount: "Discount Amount",
                 total_payable: "Total Payable",
                 received_amount: "Received Amount",
@@ -1511,10 +1518,16 @@ class TicketSalesSystem {
         let content = '';
         for (const [field, label] of Object.entries(this.constants.FIELD_LABELS)) {
             let value = this.formatReviewValue(field, formData.get(field));
+            const isJourneyDate = ["journey_date", "return_date"].includes(field);
+            const containerClasses = isJourneyDate
+                ? 'rounded-lg bg-blue-600 p-3'
+                : 'border-b border-gray-100 dark:border-gray-700 pb-2';
+            const labelClasses = isJourneyDate ? 'text-white' : 'text-gray-500 dark:text-gray-400';
+            const valueClasses = isJourneyDate ? 'text-white' : 'text-gray-900 dark:text-white';
             content += `
-                <div class="border-b border-gray-100 dark:border-gray-700 pb-2">
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">${label}</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white font-medium">${value}</dd>
+                <div class="${containerClasses}">
+                    <dt class="text-sm font-medium ${labelClasses}">${label}</dt>
+                    <dd class="mt-1 text-sm ${valueClasses} font-medium">${value}</dd>
                 </div>`;
         }
         return content;

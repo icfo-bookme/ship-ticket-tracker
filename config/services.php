@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'ticket_booking' => [
+        'api_token' => env('TICKET_BOOKING_API_TOKEN'),
+    ],
 
     /*
     |--------------------------------------------------------------------------

@@ -58,6 +58,22 @@ it('includes the calculated total ticket count in the review data', function () 
         ->toContain('formData.set("ticket_count", this.getValue("total_tickets"));');
 });
 
+it('includes other fee in the review fields and currency formatting', function () {
+    $script = file_get_contents(resource_path('js/pages/ship-ticket-sales.js'));
+
+    expect($script)->toContain('other_fee: "Other Fee"')
+        ->toContain('["ticket_value", "other_fee", "discount_amount"');
+});
+
+it('highlights departure and return dates in blue with white text', function () {
+    $script = file_get_contents(resource_path('js/pages/ship-ticket-sales.js'));
+
+    expect($script)->toContain('["journey_date", "return_date"].includes(field)')
+        ->toContain("? 'rounded-lg bg-blue-600 p-3'")
+        ->toContain("const labelClasses = isJourneyDate ? 'text-white'")
+        ->toContain("const valueClasses = isJourneyDate ? 'text-white'");
+});
+
 it('uses the selected sales source name in the review modal', function () {
     $script = file_get_contents(resource_path('js/pages/ship-ticket-sales.js'));
 

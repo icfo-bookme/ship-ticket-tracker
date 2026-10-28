@@ -38,6 +38,14 @@ return [
     |
     */
 
+    'navbar_statuses' => [
+        SaleStatus::Pending->value => 'clock',
+        SaleStatus::PaymentVerified->value => 'payment',
+        SaleStatus::TicketIssued->value => 'ticket',
+        SaleStatus::TicketPrinted->value => 'printer',
+        SaleStatus::ShipmentIdEntered->value => 'box',
+    ],
+
     'tabs' => [
         SaleStatus::Pending->value,
         SaleStatus::PaymentVerified->value,

@@ -3,7 +3,6 @@
 namespace App\Services\Sales;
 
 use App\Enums\SaleStatus;
-use App\Models\PrintedTicket;
 use App\Models\ShipTicketSale;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -11,6 +10,8 @@ use Illuminate\Http\Request;
 
 class SalesDataTableService
 {
+    public function __construct(private readonly SaleVisibilityService $visibility) {}
+
     /**
      * @return array{sale_ids: array<int, int>, exceeds_limit: bool}
      */
@@ -21,7 +22,7 @@ class SalesDataTableService
             ->whereHas('printedTickets')
             ->whereHas('shipment', fn (Builder $shipment): Builder => $shipment->whereNotNull('shipment_id'));
 
-        $this->excludeSalesWithActiveRefunds($query);
+        $this->visibility->excludeSalesWithActiveRefunds($query);
         $this->applyFilters($query, $request);
         $this->applySearch($query, (string) $request->input('search', ''));
 
@@ -50,8 +51,8 @@ class SalesDataTableService
             'verifyby.verifiedByUser',
         ]);
 
-        $this->applyStatusVisibility($query, $status);
-        $this->excludeSalesWithActiveRefunds($query);
+        $this->visibility->applyStatusVisibility($query, $status);
+        $this->visibility->excludeSalesWithActiveRefunds($query);
 
         $this->applyFilters($query, $request);
         $this->applySearch($query, (string) $request->input('search.value', ''));
@@ -90,8 +91,8 @@ class SalesDataTableService
         });
 
         $recordsTotalQuery = ShipTicketSale::query();
-        $this->applyStatusVisibility($recordsTotalQuery, $status);
-        $this->excludeSalesWithActiveRefunds($recordsTotalQuery);
+        $this->visibility->applyStatusVisibility($recordsTotalQuery, $status);
+        $this->visibility->excludeSalesWithActiveRefunds($recordsTotalQuery);
 
         return response()->json([
             'draw' => $request->input('draw'),
@@ -147,40 +148,6 @@ class SalesDataTableService
         ]);
     }
 
-    private function applyStatusVisibility(Builder $query, string $status): void
-    {
-        $groupStatuses = [
-            SaleStatus::TicketIssued->value,
-            SaleStatus::TicketPrinted->value,
-            SaleStatus::ShipmentIdEntered->value,
-            SaleStatus::Shipped->value,
-            SaleStatus::CollectFromOffice->value,
-        ];
-
-        if (! in_array($status, $groupStatuses, true)) {
-            $query->where('status', $status);
-
-            return;
-        }
-
-        $groupsWithStatusSales = PrintedTicket::query()
-            ->select('group_by_id')
-            ->whereNotNull('group_by_id')
-            ->whereIn('sales_id', ShipTicketSale::query()
-                ->select('id')
-                ->where('status', $status))
-            ->distinct();
-
-        $saleIdsInVisibleGroups = PrintedTicket::query()
-            ->select('sales_id')
-            ->whereIn('group_by_id', $groupsWithStatusSales);
-
-        $query->where(function (Builder $visibleSales) use ($status, $saleIdsInVisibleGroups): void {
-            $visibleSales->where('status', $status)
-                ->orWhereIn('id', $saleIdsInVisibleGroups);
-        });
-    }
-
     private function applyFilters($query, Request $request): void
     {
         if ($request->filled('ship_id')) {
@@ -194,20 +161,6 @@ class SalesDataTableService
         if ($request->filled('journey_date')) {
             $query->whereDate('journey_date', $request->input('journey_date'));
         }
-    }
-
-    private function excludeSalesWithActiveRefunds(Builder $query): void
-    {
-        $query->whereRaw('(
-            SELECT COALESCE(SUM(refunded_number_of_tickets), 0)
-            FROM refunds
-            WHERE refunds.sales_id = ship_ticket_sales.id
-                AND refunds.status != ?
-        ) < (
-            SELECT COALESCE(SUM(categories.quantity), 0)
-            FROM categories
-            WHERE categories.ticket_id = ship_ticket_sales.id
-        )', ['cancelled']);
     }
 
     private function applySearch($query, string $searchValue): void

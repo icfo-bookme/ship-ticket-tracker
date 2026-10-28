@@ -37,6 +37,7 @@ export default defineConfig({
                 'resources/js/pages/deleted-sales.js',
                 'resources/js/layout/sidebar.js',
                 'resources/js/layout/navigation.js',
+                'resources/js/layout/sale-status-counters.js',
             ],
             refresh: true,
         }),

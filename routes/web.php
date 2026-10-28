@@ -14,6 +14,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SaleDraftController;
 use App\Http\Controllers\Sales\SaleAuditLogController;
+use App\Http\Controllers\Sales\SaleStatusCountController;
 use App\Http\Controllers\SalesSourceController;
 use App\Http\Controllers\ShipController;
 use App\Http\Controllers\ShipPackageController;
@@ -41,6 +42,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('sales-status-counts', SaleStatusCountController::class)
+        ->middleware('can:sales.view')
+        ->name('sales.status-counts');
     Route::get('audit-logs', AuditLogController::class)
         ->middleware(['can:sales.view', 'can:sales.audit.view'])
         ->name('audit-logs.index');

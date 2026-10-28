@@ -289,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (result.success) {
+                document.dispatchEvent(new CustomEvent('sales:counts-refresh'));
                 Swal.fire({
                     title: 'Success!',
                     text: currentRefundEditing ? 'Refund request updated.' : 'Refund request sent to partner.',

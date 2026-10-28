@@ -5,7 +5,7 @@
             <!-- Left Side -->
             <div class="flex items-center">
                 <!-- Logo -->
-                <div class="shrink-0 flex items-center">
+                <div class="hidden shrink-0 items-center lg:flex">
                     @can('dashboard.view')
                     <a href="{{ route('dashboard') }}">
                         <x-application-logo class="block h-9 w-auto fill-current text-white" />
@@ -14,13 +14,18 @@
                         <x-application-logo class="block h-9 w-auto fill-current text-white" />
                     @endcan
                 </div>
+                <span class="text-sm font-bold text-white lg:hidden" aria-label="Ticket Tracker">TT</span>
+            </div>
+
+            <div class="flex items-center px-1">
+                <x-sale-status-counters />
             </div>
 
             <!-- Right Side -->
             <div class="hidden sm:flex sm:items-center gap-4">
                 <!-- Documentation Button -->
                 <a data-permission="documentation.view" href="{{ route('documentation') }}"
-                    class="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition">
+                    class="hidden lg:inline-flex text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition">
                     Documentation
                 </a>
 

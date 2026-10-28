@@ -164,7 +164,15 @@ class SalesDataTableService
             $query->where('company_id', $request->input('company_id'));
         }
 
-        if ($request->filled('journey_date')) {
+        if ($request->filled('journey_date_from')) {
+            $query->where('journey_date', '>=', $request->input('journey_date_from'));
+        }
+
+        if ($request->filled('journey_date_to')) {
+            $query->where('journey_date', '<=', $request->input('journey_date_to'));
+        }
+
+        if (! $request->filled('journey_date_from') && ! $request->filled('journey_date_to') && $request->filled('journey_date')) {
             $query->whereDate('journey_date', $request->input('journey_date'));
         }
     }

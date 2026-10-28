@@ -35,7 +35,8 @@ function escapeHtml(value) {
 const shipFilter = document.getElementById("shipFilter");
 const packageFilter = document.getElementById("packageFilter");
 const companyFilter = document.getElementById("companyFilter");
-const journeyDateFilter = document.getElementById("journeyDateFilter");
+const journeyDateFromFilter = document.getElementById("journeyDateFromFilter");
+const journeyDateToFilter = document.getElementById("journeyDateToFilter");
 const sortFilter = document.getElementById("sortFilter");
 const clearFiltersBtn = document.getElementById("clearFilters");
 
@@ -120,7 +121,8 @@ async function selectAllMatchingShippedSales(checked) {
                 ship_id: shipFilter.value,
                 package_id: packageFilter.value,
                 company_id: companyFilter.value,
-                journey_date: journeyDateFilter.value,
+                journey_date_from: journeyDateFromFilter.value,
+                journey_date_to: journeyDateToFilter.value,
                 search: tableApi?.search() || '',
             }),
         });
@@ -289,6 +291,20 @@ async function deleteSale(button, refresh) {
     }
 }
 
+function renderJourney(sale, type) {
+    const departure = sale.journey_date || 'Not specified';
+    const returnDate = sale.return_date || 'Not specified';
+
+    if (type !== 'display') {
+        return `Departure: ${departure}; Return: ${returnDate}`;
+    }
+
+    return `<div class="flex flex-col gap-1 whitespace-nowrap">
+        <span><span class="font-medium">Departure:</span> ${escapeHtml(departure)}</span>
+        <span><span class="font-medium">Return:</span> ${escapeHtml(returnDate)}</span>
+    </div>`;
+}
+
 const columns = [
     ...(config.status === config.shipmentIdEnteredStatus ? [{
         data: null,
@@ -318,6 +334,11 @@ const columns = [
     {
         data: null,
         render: (row) => escapeHtml(row.ship?.name || row.ships?.name || "Not available"),
+    },
+    {
+        data: null,
+        title: "Journey",
+        render: renderJourney,
     },
     ...(config.status === config.ticketPrintedStatus ? [
         {
@@ -410,7 +431,8 @@ const filters = () => ({
     sort: sortFilter.value,
     ship_id: shipFilter.value,
     company_id: companyFilter.value,
-    journey_date: journeyDateFilter.value,
+    journey_date_from: journeyDateFromFilter.value,
+    journey_date_to: journeyDateToFilter.value,
 });
 initializeDataTable({ table: salesTable, columns, createdRow, filters });
 
@@ -851,8 +873,19 @@ function bindSalesTableEvents() {
         onChange: filtersChanged,
     });
 
-    [companyFilter, journeyDateFilter, sortFilter].forEach((filter) => {
+    [companyFilter, journeyDateFromFilter, journeyDateToFilter, sortFilter].forEach((filter) => {
         filter?.addEventListener("change", () => {
+            journeyDateToFilter.min = journeyDateFromFilter.value;
+            const invalidRange = journeyDateFromFilter.value && journeyDateToFilter.value
+                && journeyDateToFilter.value < journeyDateFromFilter.value;
+            journeyDateToFilter.setCustomValidity(invalidRange ? 'To date cannot be before From date.' : '');
+            if (invalidRange) {
+                selectedShippedSaleIds.clear();
+                allMatchingShippedSalesSelected = false;
+                updateBulkShippedSelection();
+                journeyDateToFilter.reportValidity();
+                return;
+            }
             selectedShippedSaleIds.clear();
             allMatchingShippedSalesSelected = false;
             updateBulkShippedSelection();
@@ -862,10 +895,12 @@ function bindSalesTableEvents() {
 
     clearFiltersBtn?.addEventListener("click", () => {
         if (sortFilter) sortFilter.value = "latest";
-        [shipFilter, companyFilter, journeyDateFilter].forEach((filter) => {
+        [shipFilter, companyFilter, journeyDateFromFilter, journeyDateToFilter].forEach((filter) => {
             if (filter) filter.value = "";
         });
         packageControls.reset();
+        journeyDateToFilter.min = '';
+        journeyDateToFilter.setCustomValidity('');
         selectedShippedSaleIds.clear();
         allMatchingShippedSalesSelected = false;
         updateBulkShippedSelection();

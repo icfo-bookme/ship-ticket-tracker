@@ -21,9 +21,9 @@
         </div>
     @endif
 
-    <div class="mt-6 mb-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6">
+    <div class="mt-6 mb-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-7">
         <div>
-            <label for="companyFilter" class="block text-sm font-medium text-gray-700">Filter by Source
+            <label for="companyFilter" class="block text-sm font-medium text-gray-700">Source
                 Company</label>
             <select id="companyFilter"
                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
@@ -34,7 +34,7 @@
             </select>
         </div>
         <div>
-            <label for="shipFilter" class="block text-sm font-medium text-gray-700">Filter by Ship</label>
+            <label for="shipFilter" class="block text-sm font-medium text-gray-700">Ship</label>
             <select id="shipFilter"
                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 <option value="">All Ships</option>
@@ -45,7 +45,7 @@
         </div>
 
         <div>
-            <label for="packageFilter" class="block text-sm font-medium text-gray-700">Filter by Package</label>
+            <label for="packageFilter" class="block text-sm font-medium text-gray-700">Package</label>
             <select id="packageFilter" disabled
                 data-packages-url="{{ route('ship-packages.data', ['id' => '__SHIP_ID__']) }}"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-100 sm:text-sm">
@@ -55,9 +55,14 @@
         </div>
 
         <div class="flex-1">
-            <label for="journeyDateFilter" class="block text-sm font-medium text-gray-700">Filter by Departure
-                Date</label>
-            <input type="date" id="journeyDateFilter"
+            <label for="journeyDateFromFilter" class="block text-sm font-medium text-gray-700">Departure From</label>
+            <input type="date" id="journeyDateFromFilter"
+                class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+
+        <div>
+            <label for="journeyDateToFilter" class="block text-sm font-medium text-gray-700">Departure To</label>
+            <input type="date" id="journeyDateToFilter"
                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
 
@@ -106,6 +111,7 @@
             'Mobile',
             'WhatsApp',
             'Ship Name',
+            'Journey',
             $status == $ticketPrintedStatus ? 'Address' : null,
             $status == $paymentVerifiedStatus ? 'Company' : null,
             in_array($status, [$shipmentIdEnteredStatus, $shippedStatus], true) ? 'Shipment Id' : null,

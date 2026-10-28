@@ -31,6 +31,27 @@ function packageFilteredSale(ShipPackage $package, array $attributes = []): Ship
     return $sale;
 }
 
+it('filters departure dates inclusively and supports open ended ranges', function () {
+    $before = packageFilteredSale($this->package, ['journey_date' => '2026-11-30']);
+    $first = packageFilteredSale($this->package, ['journey_date' => '2026-12-01']);
+    $last = packageFilteredSale($this->package, ['journey_date' => '2026-12-30']);
+    packageFilteredSale($this->package, ['journey_date' => '2026-12-31']);
+    $this->actingAs($this->admin);
+
+    $range = ['status' => 'pending', 'journey_date_from' => '2026-12-01', 'journey_date_to' => '2026-12-30'];
+    $response = $this->getJson(route('sales.data', $range))->assertOk()->assertJsonPath('recordsFiltered', 2);
+    expect(collect($response->json('data'))->pluck('id')->sort()->values()->all())->toBe([$first->id, $last->id]);
+
+    $this->getJson(route('sales.data', ['status' => 'pending', 'journey_date_from' => '2026-12-01']))
+        ->assertOk()->assertJsonPath('recordsFiltered', 3);
+    $this->getJson(route('sales.data', ['status' => 'pending', 'journey_date_to' => '2026-11-30']))
+        ->assertOk()->assertJsonPath('recordsFiltered', 1)->assertJsonPath('data.0.id', $before->id);
+    $this->getJson(route('sales.data', ['status' => 'pending', 'journey_date_from' => '2026-12-30', 'journey_date_to' => '2026-12-01']))
+        ->assertUnprocessable()->assertJsonValidationErrors('journey_date_to');
+    $this->postJson(route('sales.select-shipped'), ['journey_date_from' => '2026-12-30', 'journey_date_to' => '2026-12-01'])
+        ->assertUnprocessable()->assertJsonValidationErrors('journey_date_to');
+});
+
 it('filters by package without duplicating sales with matching departure and return categories', function () {
     $sale = packageFilteredSale($this->package);
     $sale->categories()->create(['package_id' => $this->package->id, 'quantity' => 1, 'type' => 'return', 'unit_price' => 500]);

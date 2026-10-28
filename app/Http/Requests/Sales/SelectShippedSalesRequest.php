@@ -3,10 +3,9 @@
 namespace App\Http\Requests\Sales;
 
 use App\Models\Company;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class SelectShippedSalesRequest extends FormRequest
+class SelectShippedSalesRequest extends FilterShipTicketSalesRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,7 +23,7 @@ class SelectShippedSalesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ship_id' => ['nullable', 'integer', 'exists:ships,id'],
+            ...parent::rules(),
             'company_id' => ['nullable', 'integer', Rule::exists((new Company)->getTable(), 'id')],
             'journey_date' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:100'],

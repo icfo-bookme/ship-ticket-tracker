@@ -6,6 +6,7 @@ use App\Enums\SaleStatus;
 use App\Http\Requests\Sales\BulkMarkShippedRequest;
 use App\Http\Requests\Sales\BulkPrintShipmentLabelsRequest;
 use App\Http\Requests\Sales\CheckDuplicateTicketRequest;
+use App\Http\Requests\Sales\FilterShipTicketSalesRequest;
 use App\Http\Requests\Sales\MarkBftnReceivedRequest;
 use App\Http\Requests\Sales\SelectShippedSalesRequest;
 use App\Http\Requests\Sales\StorePublicShipTicketSaleRequest;
@@ -46,7 +47,7 @@ class ShipTicketSaleController extends Controller
             ->with('status', SaleStatus::Pending->value);
     }
 
-    public function pendingCS(Request $request, $status)
+    public function pendingCS(FilterShipTicketSalesRequest $request, $status)
     {
         return $this->salesDataTable->response($request, $status);
     }

@@ -150,6 +150,12 @@ class SalesDataTableService
 
     private function applyFilters($query, Request $request): void
     {
+        if ($request->filled('package_id')) {
+            $query->whereHas('categories', function (Builder $categories) use ($request): void {
+                $categories->where('package_id', $request->integer('package_id'));
+            });
+        }
+
         if ($request->filled('ship_id')) {
             $query->where('ship_id', $request->input('ship_id'));
         }

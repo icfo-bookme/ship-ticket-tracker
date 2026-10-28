@@ -21,7 +21,7 @@
         </div>
     @endif
 
-    <div class="mt-6 mb-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+    <div class="mt-6 mb-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6">
         <div>
             <label for="companyFilter" class="block text-sm font-medium text-gray-700">Filter by Source
                 Company</label>
@@ -42,6 +42,16 @@
                     <option value="{{ $ship->id }}">{{ $ship->name }}</option>
                 @endforeach
             </select>
+        </div>
+
+        <div>
+            <label for="packageFilter" class="block text-sm font-medium text-gray-700">Filter by Package</label>
+            <select id="packageFilter" disabled
+                data-packages-url="{{ route('ship-packages.data', ['id' => '__SHIP_ID__']) }}"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-100 sm:text-sm">
+                <option value="">Select a ship first</option>
+            </select>
+            <p id="packageFilterMessage" role="status" class="mt-1 text-xs text-gray-500"></p>
         </div>
 
         <div class="flex-1">

@@ -52,7 +52,7 @@ export function initializeDataTable({ table, columns, filters, dataSrc, createdR
             throw error;
         }
         const refresh = event => {
-            if (event.detail?.tableId === element.id) api.ajax.reload(null, false);
+            if (event.detail?.tableId === element.id) api.ajax.reload(null, event.detail.resetPaging === true);
         };
         document.addEventListener('data-table:refresh', refresh);
         $(element).on('destroy.dt', () => {

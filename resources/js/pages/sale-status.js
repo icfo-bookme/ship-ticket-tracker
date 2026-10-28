@@ -1,5 +1,6 @@
 import { initializeDataTable } from '../services/data-table.js';
 import { can } from '../services/authorization.js';
+import { initializeSalePackageFilter } from '../services/sale-package-filter.js';
 const configElement = document.getElementById('saleStatusConfig');
 const config = {
     status: configElement?.dataset.status || '',
@@ -32,14 +33,15 @@ function escapeHtml(value) {
 }
 
 const shipFilter = document.getElementById("shipFilter");
+const packageFilter = document.getElementById("packageFilter");
 const companyFilter = document.getElementById("companyFilter");
 const journeyDateFilter = document.getElementById("journeyDateFilter");
 const sortFilter = document.getElementById("sortFilter");
 const clearFiltersBtn = document.getElementById("clearFilters");
 
 const salesTable = document.getElementById('salesTable');
-const refreshSalesTable = () => document.dispatchEvent(new CustomEvent('data-table:refresh', {
-    detail: { tableId: 'salesTable' },
+const refreshSalesTable = (resetPaging = false) => document.dispatchEvent(new CustomEvent('data-table:refresh', {
+    detail: { tableId: 'salesTable', resetPaging: resetPaging === true },
 }));
 const selectedShippedSaleIds = new Set();
 const bulkShippedToolbar = document.getElementById('bulkShippedToolbar');
@@ -116,6 +118,7 @@ async function selectAllMatchingShippedSales(checked) {
             },
             body: JSON.stringify({
                 ship_id: shipFilter.value,
+                package_id: packageFilter.value,
                 company_id: companyFilter.value,
                 journey_date: journeyDateFilter.value,
                 search: tableApi?.search() || '',
@@ -403,6 +406,7 @@ const createdRow = (row, sale) => {
 };
 
 const filters = () => ({
+    package_id: packageFilter.value,
     sort: sortFilter.value,
     ship_id: shipFilter.value,
     company_id: companyFilter.value,
@@ -835,13 +839,24 @@ async function markBftnReceived(button, getList) {
 
 function bindSalesTableEvents() {
     const table = document.getElementById("salesTable");
+    const filtersChanged = () => {
+        selectedShippedSaleIds.clear();
+        allMatchingShippedSalesSelected = false;
+        updateBulkShippedSelection();
+        refreshSalesTable(true);
+    };
+    const packageControls = initializeSalePackageFilter({
+        shipFilter, packageFilter,
+        message: document.getElementById('packageFilterMessage'),
+        onChange: filtersChanged,
+    });
 
-    [shipFilter, companyFilter, journeyDateFilter, sortFilter].forEach((filter) => {
+    [companyFilter, journeyDateFilter, sortFilter].forEach((filter) => {
         filter?.addEventListener("change", () => {
             selectedShippedSaleIds.clear();
             allMatchingShippedSalesSelected = false;
             updateBulkShippedSelection();
-            refreshSalesTable();
+            refreshSalesTable(true);
         });
     });
 
@@ -850,10 +865,11 @@ function bindSalesTableEvents() {
         [shipFilter, companyFilter, journeyDateFilter].forEach((filter) => {
             if (filter) filter.value = "";
         });
+        packageControls.reset();
         selectedShippedSaleIds.clear();
         allMatchingShippedSalesSelected = false;
         updateBulkShippedSelection();
-        refreshSalesTable();
+        refreshSalesTable(true);
     });
 
     table?.addEventListener("click", (event) => {

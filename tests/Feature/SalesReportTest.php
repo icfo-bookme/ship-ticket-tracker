@@ -318,6 +318,29 @@ it('reports average time to first payment verification for filtered sales', func
         ->assertJsonPath('totals.payment_verification_sample_size', 1);
 });
 
+it('counts ordinary bank transfers while excluding pending BFTN payments', function () {
+    $sale = reportSale($this->ship, $this->company, ['received_amount' => 0]);
+    Payment::create([
+        'sales_id' => $sale->id,
+        'payment_method' => 'Bank Transfer',
+        'received_amount' => 19380,
+        'is_bftn' => false,
+        'settlement_status' => 'received',
+    ]);
+    Payment::create([
+        'sales_id' => $sale->id,
+        'payment_method' => 'Bank Transfer',
+        'received_amount' => 500,
+        'is_bftn' => true,
+        'settlement_status' => 'pending',
+    ]);
+
+    $this->actingAs($this->admin)->getJson('/reports?draw=1&start=0&length=10')
+        ->assertOk()
+        ->assertJsonPath('totals.payment_method_totals.0.payment_method', 'Bank Transfer')
+        ->assertJsonPath('totals.payment_method_totals.0.amount', 19380);
+});
+
 it('shows method totals across report filters independently of the selected payment method', function () {
     $matchingSale = reportSale($this->ship, $this->company, [
         'customer_name' => 'Mixed Method Sale',
@@ -372,7 +395,7 @@ it('shows method totals across report filters independently of the selected paym
         ->assertJsonPath('totals.total_received_amount', '1,100.00')
         ->assertJsonCount(3, 'totals.payment_method_totals')
         ->assertJsonPath('totals.payment_method_totals.0.payment_method', 'Bank Transfer')
-        ->assertJsonPath('totals.payment_method_totals.0.amount', 50)
+        ->assertJsonPath('totals.payment_method_totals.0.amount', 75)
         ->assertJsonPath('totals.payment_method_totals.1.payment_method', 'Bkash')
         ->assertJsonPath('totals.payment_method_totals.1.amount', 1040)
         ->assertJsonPath('totals.payment_method_totals.2.payment_method', 'Cash')

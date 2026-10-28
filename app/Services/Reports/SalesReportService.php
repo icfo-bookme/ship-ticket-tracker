@@ -312,8 +312,7 @@ class SalesReportService
             ->whereIn('sales_id', $paymentMethodSales->select('ship_ticket_sales.id'))
             ->where(function ($query): void {
                 $query->where(function ($payments): void {
-                    $payments->where('is_bftn', false)
-                        ->where('payment_method', '!=', 'Bank Transfer');
+                    $payments->where('is_bftn', false);
                 })->orWhere(function ($payments): void {
                     $payments->where('is_bftn', true)
                         ->where('settlement_status', 'received');

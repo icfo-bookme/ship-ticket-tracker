@@ -114,6 +114,7 @@
             'Journey',
             $status == $ticketPrintedStatus ? 'Address' : null,
             $status == $paymentVerifiedStatus ? 'Company' : null,
+            $status == $paymentVerifiedStatus ? 'Received Amount' : null,
             in_array($status, [$shipmentIdEnteredStatus, $shippedStatus], true) ? 'Shipment Id' : null,
             $status == $pendingStatus ? 'Total Ticket Value' : null,
             $status == $pendingStatus ? 'Other Fee' : null,

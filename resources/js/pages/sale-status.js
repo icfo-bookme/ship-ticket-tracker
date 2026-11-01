@@ -355,6 +355,11 @@ const columns = [
             title: "Company",
             render: (row) => escapeHtml(row.company?.name || row.companies?.name || "Not available"),
         },
+        {
+            data: "received_amount",
+            title: "Received Amount",
+            render: (data) => escapeHtml(Number(data || 0).toFixed(2)),
+        },
     ] : []),
     ...([config.shipmentIdEnteredStatus, config.shippedStatus].includes(config.status) ? [
         {

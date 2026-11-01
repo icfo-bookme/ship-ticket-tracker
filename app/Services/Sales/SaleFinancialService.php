@@ -201,8 +201,9 @@ class SaleFinancialService
 
         if (blank($returnDate)) {
             $total = 0.0;
-            foreach ($quantities as $packageId => $item) {
-                $price = (float) $packages->get($packageId)->price;
+            foreach ($packages as $packageId => $package) {
+                $item = $quantities[$packageId];
+                $price = (float) $package->price;
                 $total += ((int) ($item['departure'] ?? 0) + (int) ($item['return'] ?? 0)) * $price;
             }
 

@@ -321,7 +321,7 @@ const columns = [
     },
     {
         data: "customer_name",
-        render: copyCell,
+        render: renderCustomerName,
     },
     {
         data: "customer_mobile",
@@ -489,6 +489,23 @@ function copyCell(value) {
                         <i class="fas fa-copy"></i>
                     </button>
                 </div>`;
+}
+
+function renderCustomerName(value, type, sale) {
+    if (type !== 'display') {
+        return value ?? '';
+    }
+
+    const name = copyCell(value);
+
+    if (!sale.collect_from_office) {
+        return name;
+    }
+
+    return `<div class="flex flex-col items-center gap-1">
+        ${name}
+        <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900 dark:text-amber-200">Collect from Office</span>
+    </div>`;
 }
 
 function showCopiedMessage() {

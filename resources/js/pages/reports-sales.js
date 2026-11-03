@@ -120,11 +120,10 @@ const columns = [
                 }).join('');
                 const details = `<div class="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400">${entries}</div>`;
 
-                if (payment.payment_count > 1) {
-                    return `<details class="text-xs"><summary class="cursor-pointer font-medium text-gray-700 dark:text-gray-300">${label} · ${Number(payment.payment_count)} payments</summary><div class="pt-1">${details}</div></details>`;
-                }
+                const count = Number(payment.payment_count) || 0;
+                const countLabel = `${count} ${count === 1 ? 'payment' : 'payments'}`;
 
-                return `<div class="flex flex-col gap-1 text-xs"><span class="font-medium text-gray-700 dark:text-gray-300">${label}</span>${details}</div>`;
+                return `<details class="text-xs"><summary class="cursor-pointer font-medium text-gray-700 dark:text-gray-300">${label} &middot; ${countLabel}</summary><div class="pt-1">${details}</div></details>`;
             }).join('');
 
             return `<div class="flex flex-col gap-1 whitespace-nowrap">${breakdown || '<span class="text-xs text-gray-500">No received payments</span>'}</div>`;

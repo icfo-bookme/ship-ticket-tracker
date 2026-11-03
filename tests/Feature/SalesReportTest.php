@@ -97,7 +97,9 @@ it('groups received amounts by payment method and excludes pending BFTN payments
         ->assertJsonPath('data.0.received_amount_by_method.0.payment_count', 2)
         ->assertJsonCount(2, 'data.0.received_amount_by_method.0.payments')
         ->assertJsonPath('data.0.received_amount_by_method.1.amount', 50)
-        ->assertJsonPath('data.0.received_amount_by_method.1.payment_count', 1);
+        ->assertJsonPath('data.0.received_amount_by_method.1.payment_count', 1)
+        ->assertJsonCount(1, 'data.0.received_amount_by_method.1.payments')
+        ->assertJsonPath('data.0.received_amount_by_method.1.payments.0.amount', 50);
 });
 
 it('filters the breakdown by method while retaining all method receipts in the total', function (string $method, array $breakdown) {

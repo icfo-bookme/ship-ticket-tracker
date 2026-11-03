@@ -521,6 +521,7 @@ class SalesReportService
             'ticket_value' => $sale->ticket_value,
             'received_amount' => (float) $receivedPayments->sum('received_amount'),
             'received_amount_by_method' => $receivedPayments
+                ->when(! empty($filters['payment_method']), fn ($payments) => $payments->where('payment_method', $filters['payment_method']))
                 ->groupBy('payment_method')
                 ->map(fn ($payments, string $method): array => [
                     'payment_method' => $method,

@@ -95,18 +95,25 @@ const columns = [
         render: formatCurrency,
     },
     {
+        data: 'received_amount',
+        title: 'Total Received',
+        render: (data, type) => type !== 'display' ? data : `<span class="font-semibold">${formatCurrency(data)}</span>`,
+    },
+    {
         data: null,
-        title: "Received Amount",
+        title: 'Payment Breakdown',
         render: (data, type, row) => {
             if (type !== 'display') {
-                return row.received_amount;
+                return (row.received_amount_by_method || []).map(payment =>
+                    `${payment.payment_method}: ${formatCurrency(payment.amount)}`
+                ).join('; ');
             }
 
             const breakdown = (row.received_amount_by_method || []).map(payment =>
                 `<span class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(payment.payment_method)}: ${formatCurrency(payment.amount)}</span>`
             ).join('');
 
-            return `<div class="flex flex-col gap-1 whitespace-nowrap"><span class="font-semibold">${formatCurrency(row.received_amount)}</span>${breakdown}</div>`;
+            return `<div class="flex flex-col gap-1 whitespace-nowrap">${breakdown || '<span class="text-xs text-gray-500">No received payments</span>'}</div>`;
         },
     },
     {

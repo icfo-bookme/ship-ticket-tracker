@@ -98,6 +98,46 @@ it('groups received amounts by payment method and excludes pending BFTN payments
         ]);
 });
 
+it('filters the breakdown by method while retaining all method receipts in the total', function (string $method, array $breakdown) {
+    $sale = reportSale($this->ship, $this->company, ['received_amount' => 0]);
+
+    foreach ([
+        ['Bank Transfer', 5000, '2026-11-02 10:00:00'],
+        ['Bkash', 1000, '2026-11-02 11:00:00'],
+        ['Bkash', 2000, '2026-11-02 12:00:00'],
+        ['Bkash', 700, '2026-10-28 12:00:00'],
+    ] as [$paymentMethod, $amount, $date]) {
+        Payment::create([
+            'sales_id' => $sale->id,
+            'payment_method' => $paymentMethod,
+            'received_amount' => $amount,
+            'payment_datetime' => $date,
+        ]);
+    }
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?'.http_build_query([
+            'payment_method' => $method,
+            'payment_date_from' => '2026-11-02',
+            'payment_date_to' => '2026-11-02',
+        ]))
+        ->assertOk()
+        ->assertJsonPath('data.0.received_amount', 8000)
+        ->assertJsonPath('data.0.received_amount_by_method', function (array $actual) use ($breakdown): bool {
+            expect($actual)->toEqualCanonicalizing($breakdown);
+
+            return true;
+        })
+        ->assertJsonPath('totals.total_received_amount', '8,000.00');
+})->with([
+    'selected Bkash' => ['Bkash', [['payment_method' => 'Bkash', 'amount' => 3000]]],
+    'selected bank' => ['Bank Transfer', [['payment_method' => 'Bank Transfer', 'amount' => 5000]]],
+    'all methods' => ['', [
+        ['payment_method' => 'Bank Transfer', 'amount' => 5000],
+        ['payment_method' => 'Bkash', 'amount' => 3000],
+    ]],
+]);
+
 it('scopes receipts by payment date while preserving full sale amounts and history', function (?string $from, ?string $to, int $expected) {
     $sale = reportSale($this->ship, $this->company, [
         'received_amount' => 0,
@@ -277,7 +317,8 @@ it('renders the sales report filters and summary targets', function () {
         ->assertSee('data-close-modal="saleReportDetailModal"', false)
         ->assertDontSee('data-modal-hide="saleReportDetailModal"', false)
         ->assertSee('Ticket Price / Other Fee / Discount')
-        ->assertSee('Received Amount')
+        ->assertSee('Total Received')
+        ->assertSee('Payment Breakdown')
         ->assertSee('id="totalSellTickets"', false)
         ->assertSee('id="totalCompletedTicketRefundAmount"', false)
         ->assertSee('Gross Ticket Refund')

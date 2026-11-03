@@ -71,6 +71,110 @@ function reportSale(Ship $ship, Company $company, array $attributes = []): ShipT
     return $sale;
 }
 
+it('groups received amounts by payment method and excludes pending BFTN payments', function () {
+    $sale = reportSale($this->ship, $this->company, ['received_amount' => 0]);
+
+    foreach ([
+        ['Bkash', 100, false, 'received'],
+        ['Bkash', 200, false, 'received'],
+        ['Bank', 50, true, 'received'],
+        ['Bank', 500, true, 'pending'],
+    ] as [$method, $amount, $isBftn, $settlementStatus]) {
+        Payment::create([
+            'sales_id' => $sale->id,
+            'payment_method' => $method,
+            'received_amount' => $amount,
+            'is_bftn' => $isBftn,
+            'settlement_status' => $settlementStatus,
+        ]);
+    }
+
+    $this->actingAs($this->admin)->getJson('/reports?draw=1')
+        ->assertOk()
+        ->assertJsonPath('data.0.received_amount', 350)
+        ->assertJsonPath('data.0.received_amount_by_method', [
+            ['payment_method' => 'Bkash', 'amount' => 300],
+            ['payment_method' => 'Bank', 'amount' => 50],
+        ]);
+});
+
+it('scopes receipts by payment date while preserving full sale amounts and history', function (?string $from, ?string $to, int $expected) {
+    $sale = reportSale($this->ship, $this->company, [
+        'received_amount' => 0,
+    ]);
+    $sale->created_at = '2026-10-01 09:00:00';
+    $sale->save();
+
+    foreach ([
+        ['2026-10-28 00:00:00', 100, false, 'received'],
+        ['2026-11-02 23:59:59', 200, false, 'received'],
+        ['2026-11-02 12:00:00', 500, true, 'pending'],
+        ['2026-11-03 00:00:00', 50, true, 'received'],
+        [null, 25, false, 'received'],
+    ] as [$date, $amount, $isBftn, $status]) {
+        Payment::create([
+            'sales_id' => $sale->id,
+            'payment_method' => 'Bkash',
+            'received_amount' => $amount,
+            'payment_datetime' => $date,
+            'is_bftn' => $isBftn,
+            'settlement_status' => $status,
+        ]);
+    }
+
+    reportSale($this->ship, $this->company);
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?'.http_build_query([
+            'payment_date_from' => $from,
+            'payment_date_to' => $to,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.received_amount', $expected)
+        ->assertJsonPath('data.0.received_amount_by_method.0.amount', $expected)
+        ->assertJsonPath('data.0.total_payable', 300)
+        ->assertJsonCount(5, 'data.0.payments')
+        ->assertJsonPath('totals.total_received_amount', number_format($expected, 2))
+        ->assertJsonPath('totals.payment_method_totals.0.amount', $expected)
+        ->assertJsonPath('totals.total_extra_received_amount', '75.00');
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?'.http_build_query([
+            'payment_date_from' => $from,
+            'payment_date_to' => $to,
+            'start_create_date' => '2026-11-01',
+        ]))
+        ->assertOk()
+        ->assertJsonCount(0, 'data');
+})->with([
+    'one day' => ['2026-11-02', '2026-11-02', 200],
+    'inclusive range' => ['2026-10-28', '2026-11-02', 300],
+    'from only' => ['2026-11-02', null, 250],
+    'to only' => [null, '2026-10-28', 100],
+]);
+
+it('validates the payment date range', function (array $filters, string $field) {
+    $this->actingAs($this->admin)
+        ->getJson('/reports?'.http_build_query($filters))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors($field);
+})->with([
+    'invalid from' => [['payment_date_from' => 'invalid'], 'payment_date_from'],
+    'invalid to' => [['payment_date_to' => '2026-02-30'], 'payment_date_to'],
+    'reversed' => [['payment_date_from' => '2026-11-03', 'payment_date_to' => '2026-11-02'], 'payment_date_to'],
+]);
+
+it('returns no sales when no payments match the date range', function () {
+    reportSale($this->ship, $this->company);
+
+    $this->actingAs($this->admin)
+        ->getJson('/reports?payment_date_from=2099-01-01&payment_date_to=2099-01-01')
+        ->assertOk()
+        ->assertJsonCount(0, 'data')
+        ->assertJsonPath('totals.total_received_amount', '0.00');
+});
+
 it('returns totals for the requested created date range', function () {
     reportSale($this->ship, $this->company);
     reportSale($this->ship, $this->company, ['ticket_count' => 1, 'ticket_value' => 200, 'total_payable' => 200, 'received_amount' => 200]);
@@ -205,10 +309,24 @@ it('renders the sales report filters and summary targets', function () {
         ->assertDontSee('Completed Ticket Refunds')
         ->assertSee('id="toggleAdvancedFilters"', false)
         ->assertSee('id="advancedReportFilters"', false)
+        ->assertSee('id="paymentDateFrom"', false)
+        ->assertSee('id="paymentDateTo"', false)
+        ->assertSee('id="paymentDateFilterNote"', false)
         ->assertSee('More filters')
         ->assertSee('id="payment_method"', false)
         ->assertDontSee('id="bftnFilter"', false)
         ->assertDontSee('id="totalBftnAmount"', false);
+
+    $document = new DOMDocument;
+    @$document->loadHTML($response->getContent());
+    $fieldClasses = [];
+
+    foreach (['shipFilter', 'companyFilter', 'startDate', 'endDate', 'startCreateDate', 'endCreateDate', 'paymentDateFrom', 'paymentDateTo', 'returnDateFilter', 'payment_method'] as $fieldId) {
+        $fieldClasses[] = $document->getElementById($fieldId)->getAttribute('class');
+    }
+
+    expect(array_unique($fieldClasses))->toHaveCount(1)
+        ->and($fieldClasses[0])->toContain('h-10', 'w-full', 'text-[12px]');
 
     expect(strpos($response->getContent(), 'id="salesTable"'))
         ->toBeLessThan(strpos($response->getContent(), 'id="totalSellTickets"'))

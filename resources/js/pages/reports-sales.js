@@ -15,6 +15,9 @@ const startDateFilter = document.getElementById("startDate");
 const endDateFilter = document.getElementById("endDate");
 const startCreateDateFilter = document.getElementById("startCreateDate");
 const endCreateDateFilter = document.getElementById("endCreateDate");
+const paymentDateFromFilter = document.getElementById('paymentDateFrom');
+const paymentDateToFilter = document.getElementById('paymentDateTo');
+const paymentDateFilterNote = document.getElementById('paymentDateFilterNote');
 const paymentMethodBreakdownCards = document.getElementById('paymentMethodBreakdownCards');
 const paymentMethodBreakdownEmpty = document.getElementById('paymentMethodBreakdownEmpty');
 function totalElements() {
@@ -94,7 +97,17 @@ const columns = [
     {
         data: null,
         title: "Received Amount",
-        render: (data, type, row) => type !== 'display' ? row.received_amount : formatCurrency(row.received_amount),
+        render: (data, type, row) => {
+            if (type !== 'display') {
+                return row.received_amount;
+            }
+
+            const breakdown = (row.received_amount_by_method || []).map(payment =>
+                `<span class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(payment.payment_method)}: ${formatCurrency(payment.amount)}</span>`
+            ).join('');
+
+            return `<div class="flex flex-col gap-1 whitespace-nowrap"><span class="font-semibold">${formatCurrency(row.received_amount)}</span>${breakdown}</div>`;
+        },
     },
     {
         data: "bftn_status",
@@ -127,12 +140,15 @@ const filters = () => {
         end_date: endDateFilter?.value || "",
         start_create_date: startCreateDateFilter?.value || "",
         end_create_date: endCreateDateFilter?.value || "",
+        payment_date_from: paymentDateFromFilter?.value || '',
+        payment_date_to: paymentDateToFilter?.value || '',
     };
 
     return Object.fromEntries(Object.entries(filters).filter(([, value]) => value));
 };
 
 const dataSrc = (json) => {
+    paymentDateFilterNote.hidden = !(paymentDateFromFilter.value || paymentDateToFilter.value);
     updateTotals(json.totals);
     updatePaymentMethodBreakdown(json.totals?.payment_method_totals);
 
@@ -380,11 +396,27 @@ function reportFilterElements() {
         endDateFilter,
         startCreateDateFilter,
         endCreateDateFilter,
+        paymentDateFromFilter,
+        paymentDateToFilter,
     ];
 }
 
 function bindReportTableEvents() {
-    reportFilterElements().forEach((filter) => filter?.addEventListener("change", () => refreshDataTable('salesTable')));
+    reportFilterElements().forEach((filter) => filter?.addEventListener('change', () => {
+        if (
+            (filter === paymentDateFromFilter || filter === paymentDateToFilter) &&
+            (paymentDateFromFilter.value || paymentDateToFilter.value)
+        ) {
+            startCreateDateFilter.value = '';
+            endCreateDateFilter.value = '';
+        }
+
+        paymentDateToFilter.min = paymentDateFromFilter.value;
+
+        if (!paymentDateToFilter.reportValidity()) return;
+
+        refreshDataTable('salesTable');
+    }));
 
     toggleAdvancedFiltersBtn?.addEventListener("click", () => {
         const isExpanded = toggleAdvancedFiltersBtn.getAttribute('aria-expanded') === 'true';
@@ -396,6 +428,7 @@ function bindReportTableEvents() {
         reportFilterElements().forEach((filter) => {
             if (filter) filter.value = "";
         });
+        paymentDateToFilter.min = '';
         refreshDataTable('salesTable');
     });
 

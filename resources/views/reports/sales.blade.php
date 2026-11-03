@@ -21,7 +21,7 @@
             <div class="flex flex-col">
                 <label for="shipFilter" class="text-[12px] font-semibold text-gray-700 mb-1">Ship</label>
                 <select id="shipFilter"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-[12px]">
+                    class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">All Ships</option>
                     @foreach ($ships as $ship)
                         <option value="{{ $ship->id }}">{{ $ship->name }}</option>
@@ -33,7 +33,7 @@
                 <label for="companyFilter" class="text-[12px] font-semibold text-gray-700 mb-1">Source
                     Company</label>
                 <select id="companyFilter"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-[12px]">
+                    class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">All Companies</option>
                     @foreach ($companies as $company)
                         <option value="{{ $company->id }}">{{ $company->name }}</option>
@@ -47,12 +47,12 @@
                 <div class="flex-1 flex flex-col">
                     <label for="startDate" class="text-xs text-gray-600 mb-1">From</label>
                     <input type="date" id="startDate"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-[12px]">
+                        class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div class="flex-1 flex flex-col">
                     <label for="endDate" class="text-xs text-gray-600 mb-1">To</label>
                     <input type="date" id="endDate"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-[12px]">
+                        class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 </div>
             </div>
@@ -63,28 +63,38 @@
                 <div class="flex-1 flex flex-col">
                     <label for="startCreateDate" class="text-xs text-gray-600 mb-1">From</label>
                     <input type="date" id="startCreateDate" value="{{ now()->subDays(6)->toDateString() }}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-[12px]">
+                        class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div class="flex-1 flex flex-col">
                     <label for="endCreateDate" class="text-xs text-gray-600 mb-1">To</label>
                     <input type="date" id="endCreateDate" value="{{ now()->toDateString() }}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-[12px]">
+                        class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 </div>
             </div>
         </div>
 
         <div id="advancedReportFilters" hidden class="mb-6 max-w-[92%]">
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 items-end">
+                <div class="flex flex-col">
+                    <label for="paymentDateFrom" class="mb-1 text-[12px] font-semibold text-gray-700">Payment From</label>
+                    <input type="date" id="paymentDateFrom"
+                        class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex flex-col">
+                    <label for="paymentDateTo" class="mb-1 text-[12px] font-semibold text-gray-700">Payment To</label>
+                    <input type="date" id="paymentDateTo"
+                        class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
                 <div class="flex flex-col">
                     <label for="returnDateFilter" class="mb-1 text-[12px] font-semibold text-gray-700">Return Date</label>
                     <input type="date" id="returnDateFilter"
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div class="flex flex-col">
                     <label for="payment_method" class="mb-1 text-[12px] font-semibold text-gray-700">Payment Method</label>
                     <select id="payment_method"
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All Methods</option>
                         <option value="Cash">Cash</option>
                         <option value="Bkash">Bkash</option>
@@ -98,6 +108,7 @@
         
 
         <div id="salesReportConfig" data-can-edit="{{ auth()->user()->can('sales.edit') ? 'true' : 'false' }}"></div>
+        <p id="paymentDateFilterNote" hidden class="mb-3 text-xs text-gray-600">Received amounts follow the payment date range. Ticket value, payable, due, refunds and net cash show the matched sales' full totals.</p>
         <x-data-table id="salesTable" :headings="[
             'ID',
             'Customer Name',

@@ -10,7 +10,9 @@ use App\Models\RefundCustomerPayment;
 use App\Models\ShipTicketSale;
 use App\Models\VerifyTracker;
 use App\Services\Finance\ExtraPaymentService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class SalesReportService
@@ -63,7 +65,7 @@ class SalesReportService
             'draw' => $draw,
             'recordsTotal' => $totalRecords,
             'recordsFiltered' => $filteredRecords,
-            'data' => $sales->map(fn (ShipTicketSale $sale): array => $this->formatSale($sale)),
+            'data' => $sales->map(fn (ShipTicketSale $sale): array => $this->formatSale($sale, $filters)),
             'totals' => [
                 'total_number_of_tickets' => $totals->total_number_of_tickets,
                 'total_ticket_value' => number_format($totals->total_ticket_value, 2),
@@ -90,7 +92,7 @@ class SalesReportService
                 'total_bftn_pending_amount' => number_format($totals->total_bftn_pending_amount, 2),
                 'total_bftn_received_amount' => number_format($totals->total_bftn_received_amount, 2),
                 'report_refund_outflow' => number_format($refundOutflow, 2),
-                'report_net_before_cashout' => number_format($totals->total_received_amount - $refundOutflow, 2),
+                'report_net_before_cashout' => number_format($totals->lifetime_received_amount - $refundOutflow, 2),
                 'net_sales_amount' => number_format(
                     $totals->total_ticket_value
                         - $totals->total_discount_amount
@@ -163,11 +165,19 @@ class SalesReportService
             'created_date' => $request->input('created_date'),
             'start_create_date' => $request->input('start_create_date'),
             'end_create_date' => $request->input('end_create_date'),
+            'payment_date_from' => $request->input('payment_date_from'),
+            'payment_date_to' => $request->input('payment_date_to'),
         ];
     }
 
     private function applyFilters($query, array $filters, string $prefix = ''): void
     {
+        if (! empty($filters['payment_date_from']) || ! empty($filters['payment_date_to'])) {
+            $query->whereHas('payments', function ($payments) use ($filters): void {
+                $this->applyPaymentDateFilters($payments, $filters);
+            });
+        }
+
         $column = fn (string $name): string => $prefix.$name;
 
         foreach (
@@ -318,6 +328,7 @@ class SalesReportService
                         ->where('settlement_status', 'received');
                 });
             })
+            ->tap(fn ($payments) => $this->applyPaymentDateFilters($payments, $filters))
             ->selectRaw('payment_method, COALESCE(SUM(received_amount), 0) AS amount')
             ->groupBy('payment_method')
             ->orderBy('payment_method')
@@ -377,6 +388,13 @@ class SalesReportService
                 SQL)
             ->groupBy('sales_id');
 
+        $receivedPaymentTotals = Payment::query()
+            ->select('sales_id')
+            ->selectRaw('SUM(received_amount) AS received_amount')
+            ->where(fn ($payments) => $payments->where('is_bftn', false)->orWhere('settlement_status', 'received'))
+            ->groupBy('sales_id');
+        $this->applyPaymentDateFilters($receivedPaymentTotals, $filters);
+
         $completedRefunds = Refund::query()
             ->where(fn ($refunds) => $refunds
                 ->where('refund_type', '!=', 'extra_payment')
@@ -423,6 +441,7 @@ class SalesReportService
         $totals = $query
             ->leftJoinSub($categoryTotals, 'category_totals', 'category_totals.ticket_id', '=', 'ship_ticket_sales.id')
             ->leftJoinSub($paymentTotals, 'payment_totals', 'payment_totals.sales_id', '=', 'ship_ticket_sales.id')
+            ->leftJoinSub($receivedPaymentTotals, 'received_payment_totals', 'received_payment_totals.sales_id', '=', 'ship_ticket_sales.id')
             ->leftJoinSub($refundTotals, 'refund_totals', 'refund_totals.sales_id', '=', 'ship_ticket_sales.id')
             ->leftJoinSub($customerRefundTotals, 'customer_refund_totals', 'customer_refund_totals.sales_id', '=', 'ship_ticket_sales.id')
             ->leftJoinSub($extraRefundTotals, 'extra_refund_totals', 'extra_refund_totals.sales_id', '=', 'ship_ticket_sales.id')
@@ -432,7 +451,8 @@ class SalesReportService
                 COALESCE(SUM(ship_ticket_sales.other_fee), 0) AS total_other_fee,
                 COALESCE(SUM(ship_ticket_sales.discount_amount), 0) AS total_discount_amount,
                 COALESCE(SUM(ship_ticket_sales.total_payable), 0) AS total_payable,
-                COALESCE(SUM(payment_totals.settled_amount), 0) AS total_received_amount,
+                COALESCE(SUM(received_payment_totals.received_amount), 0) AS total_received_amount,
+                COALESCE(SUM(payment_totals.settled_amount), 0) AS lifetime_received_amount,
                 COALESCE(SUM(CASE WHEN payment_totals.settled_amount > ship_ticket_sales.total_payable THEN payment_totals.settled_amount - ship_ticket_sales.total_payable ELSE 0 END), 0) AS total_extra_received_amount,
                 COALESCE(SUM(extra_refund_totals.extra_refund_paid), 0) AS total_extra_refunded_amount,
                 COALESCE(SUM(CASE WHEN ship_ticket_sales.total_payable - COALESCE(payment_totals.settled_amount, 0) - COALESCE(payment_totals.bftn_pending_amount, 0) - COALESCE(refund_totals.due_adjusted_amount, 0) > 0 THEN ship_ticket_sales.total_payable - COALESCE(payment_totals.settled_amount, 0) - COALESCE(payment_totals.bftn_pending_amount, 0) - COALESCE(refund_totals.due_adjusted_amount, 0) ELSE 0 END), 0) AS total_due_amount,
@@ -459,8 +479,9 @@ class SalesReportService
         return $totals;
     }
 
-    private function formatSale(ShipTicketSale $sale): array
+    private function formatSale(ShipTicketSale $sale, array $filters): array
     {
+        $receivedPayments = $this->receivedPayments($sale, $filters);
         $extraPaymentSummary = $this->extraPaymentService->summary($sale);
         $completedRefunds = $sale->refunds->filter(
             fn ($refund): bool => $refund->status === 'completed' || $refund->customer_refunded_at !== null
@@ -498,7 +519,15 @@ class SalesReportService
             'return_date' => $sale->return_date,
             'ticket_count' => $sale->ticket_count,
             'ticket_value' => $sale->ticket_value,
-            'received_amount' => $this->settledAmount($sale),
+            'received_amount' => (float) $receivedPayments->sum('received_amount'),
+            'received_amount_by_method' => $receivedPayments
+                ->groupBy('payment_method')
+                ->map(fn ($payments, string $method): array => [
+                    'payment_method' => $method,
+                    'amount' => (float) $payments->sum('received_amount'),
+                ])
+                ->values()
+                ->all(),
             ...$extraPaymentSummary,
             'other_fee' => $sale->other_fee,
             'discount_amount' => $sale->discount_amount,
@@ -551,6 +580,39 @@ class SalesReportService
                 - $extraRefundPaid
                 - (float) $ticketRefunds->sum('partner_share_amount'),
         ];
+    }
+
+    private function applyPaymentDateFilters($query, array $filters): void
+    {
+        if (! empty($filters['payment_date_from'])) {
+            $query->where('payment_datetime', '>=', CarbonImmutable::parse($filters['payment_date_from'])->startOfDay());
+        }
+
+        if (! empty($filters['payment_date_to'])) {
+            $query->where('payment_datetime', '<', CarbonImmutable::parse($filters['payment_date_to'])->addDay()->startOfDay());
+        }
+    }
+
+    private function receivedPayments(ShipTicketSale $sale, array $filters): Collection
+    {
+        return $sale->payments
+            ->reject(fn (Payment $payment): bool => $payment->is_bftn && $payment->settlement_status !== 'received')
+            ->filter(function (Payment $payment) use ($filters): bool {
+                $from = $filters['payment_date_from'] ?? null;
+                $to = $filters['payment_date_to'] ?? null;
+
+                if (! $from && ! $to) {
+                    return true;
+                }
+
+                if (empty($payment->payment_datetime)) {
+                    return false;
+                }
+
+                $date = CarbonImmutable::parse($payment->payment_datetime)->toDateString();
+
+                return (! $from || $date >= $from) && (! $to || $date <= $to);
+            });
     }
 
     private function settledAmount(ShipTicketSale $sale): float

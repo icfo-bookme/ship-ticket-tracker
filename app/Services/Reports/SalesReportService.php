@@ -526,6 +526,11 @@ class SalesReportService
                 ->map(fn ($payments, string $method): array => [
                     'payment_method' => $method,
                     'amount' => (float) $payments->sum('received_amount'),
+                    'payment_count' => $payments->count(),
+                    'payments' => $payments->sortBy('payment_datetime')->map(fn (Payment $payment): array => [
+                        'amount' => (float) $payment->received_amount,
+                        'payment_datetime' => $payment->payment_datetime,
+                    ])->values()->all(),
                 ])
                 ->values()
                 ->all(),

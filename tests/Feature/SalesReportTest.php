@@ -92,10 +92,12 @@ it('groups received amounts by payment method and excludes pending BFTN payments
     $this->actingAs($this->admin)->getJson('/reports?draw=1')
         ->assertOk()
         ->assertJsonPath('data.0.received_amount', 350)
-        ->assertJsonPath('data.0.received_amount_by_method', [
-            ['payment_method' => 'Bkash', 'amount' => 300],
-            ['payment_method' => 'Bank', 'amount' => 50],
-        ]);
+        ->assertJsonPath('data.0.received_amount_by_method.0.payment_method', 'Bkash')
+        ->assertJsonPath('data.0.received_amount_by_method.0.amount', 300)
+        ->assertJsonPath('data.0.received_amount_by_method.0.payment_count', 2)
+        ->assertJsonCount(2, 'data.0.received_amount_by_method.0.payments')
+        ->assertJsonPath('data.0.received_amount_by_method.1.amount', 50)
+        ->assertJsonPath('data.0.received_amount_by_method.1.payment_count', 1);
 });
 
 it('filters the breakdown by method while retaining all method receipts in the total', function (string $method, array $breakdown) {
@@ -124,7 +126,19 @@ it('filters the breakdown by method while retaining all method receipts in the t
         ->assertOk()
         ->assertJsonPath('data.0.received_amount', 8000)
         ->assertJsonPath('data.0.received_amount_by_method', function (array $actual) use ($breakdown): bool {
-            expect($actual)->toEqualCanonicalizing($breakdown);
+            foreach ($actual as $group) {
+                expect($group['payment_count'])->toBe(count($group['payments']))
+                    ->and(array_sum(array_column($group['payments'], 'amount')))->toEqual($group['amount']);
+
+                foreach ($group['payments'] as $payment) {
+                    expect(substr($payment['payment_datetime'], 0, 10))->toBe('2026-11-02');
+                }
+            }
+
+            expect(array_map(fn (array $group): array => [
+                'payment_method' => $group['payment_method'],
+                'amount' => $group['amount'],
+            ], $actual))->toEqualCanonicalizing($breakdown);
 
             return true;
         })

@@ -109,9 +109,23 @@ const columns = [
                 ).join('; ');
             }
 
-            const breakdown = (row.received_amount_by_method || []).map(payment =>
-                `<span class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(payment.payment_method)}: ${formatCurrency(payment.amount)}</span>`
-            ).join('');
+            const breakdown = (row.received_amount_by_method || []).map(payment => {
+                const label = `${escapeHtml(payment.payment_method)}: ${formatCurrency(payment.amount)}`;
+                const entries = (payment.payments || []).map(entry => {
+                    const date = entry.payment_datetime
+                        ? escapeHtml(formatDate(entry.payment_datetime))
+                        : 'Date unavailable';
+
+                    return `<span>${date} — ${formatCurrency(entry.amount)}</span>`;
+                }).join('');
+                const details = `<div class="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400">${entries}</div>`;
+
+                if (payment.payment_count > 1) {
+                    return `<details class="text-xs"><summary class="cursor-pointer font-medium text-gray-700 dark:text-gray-300">${label} · ${Number(payment.payment_count)} payments</summary><div class="pt-1">${details}</div></details>`;
+                }
+
+                return `<div class="flex flex-col gap-1 text-xs"><span class="font-medium text-gray-700 dark:text-gray-300">${label}</span>${details}</div>`;
+            }).join('');
 
             return `<div class="flex flex-col gap-1 whitespace-nowrap">${breakdown || '<span class="text-xs text-gray-500">No received payments</span>'}</div>`;
         },

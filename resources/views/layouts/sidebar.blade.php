@@ -256,6 +256,11 @@
                                         <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sales
                                             Reports</span>
                                     </a>
+                                    <a href="{{ route('ticket-issued-reports.index') }}"
+                                        class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
+                                        <span class="w-1.5 h-1.5 flex-shrink-0 rounded-full bg-emerald-500"></span>
+                                        <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Ticket Issued Report</span>
+                                    </a>
                                     <a href="{{ route('refund-reports.index') }}"
                                         class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                         <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-3"></span>

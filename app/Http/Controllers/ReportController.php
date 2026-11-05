@@ -3,15 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SalesReportRequest;
+use App\Http\Requests\TicketIssuedReportRequest;
 use App\Models\Company;
 use App\Models\Ship;
 use App\Services\Finance\ExtraPaymentService;
 use App\Services\Reports\BftnReportService;
 use App\Services\Reports\RefundReportService;
 use App\Services\Reports\SalesReportService;
+use App\Services\Reports\TicketIssuedReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class ReportController extends Controller
 {
@@ -20,6 +23,7 @@ class ReportController extends Controller
         private readonly ExtraPaymentService $extraPayments,
         private readonly RefundReportService $refundReports,
         private readonly BftnReportService $bftnReports,
+        private readonly TicketIssuedReportService $ticketIssuedReports,
     ) {}
 
     public function index()
@@ -40,6 +44,19 @@ class ReportController extends Controller
 
             return response()->json($this->salesReports->emptyResponse($request), 500);
         }
+    }
+
+    public function ticketIssued(): View
+    {
+        return view('reports.ticket-issued', [
+            'ships' => Ship::query()->orderBy('name')->get(['id', 'name']),
+            'today' => now('Asia/Dhaka')->toDateString(),
+        ]);
+    }
+
+    public function ticketIssuedReports(TicketIssuedReportRequest $request): JsonResponse
+    {
+        return response()->json($this->ticketIssuedReports->dataTable($request->validated()));
     }
 
     public function refunds()

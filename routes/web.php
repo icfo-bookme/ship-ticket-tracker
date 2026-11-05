@@ -312,6 +312,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:reports.view')->group(function () {
         Route::get('/admin/sales-reports', [ReportController::class, 'index'])->name('sales.reports');
         Route::get('/reports', [ReportController::class, 'reports'])->name('reports.data');
+        Route::get('/admin/ticket-issued-reports', [ReportController::class, 'ticketIssued'])->name('ticket-issued-reports.index');
+        Route::get('/ticket-issued-reports/data', [ReportController::class, 'ticketIssuedReports'])->name('ticket-issued-reports.data');
         Route::get('/admin/refund-reports', [ReportController::class, 'refunds'])->name('refund-reports.index');
         Route::get('/refund-reports/data', [ReportController::class, 'refundReports'])->name('refund-reports.data');
         Route::get('/admin/bftn-reports', [ReportController::class, 'bftn'])->name('bftn-reports.index');

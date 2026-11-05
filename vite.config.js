@@ -31,6 +31,7 @@ export default defineConfig({
                 'resources/js/pages/audit-history.js',
                 'resources/js/pages/audit-logs.js',
                 'resources/js/pages/reports-sales.js',
+                'resources/js/pages/ticket-issued-report.js',
                 'resources/js/pages/refund-report.js',
                 'resources/js/pages/bftn-report.js',
                 'resources/js/pages/sale-status.js',

@@ -23,6 +23,14 @@
                 </div>
                 <x-searchable-multi-select id="ticketIssuedShips" name="ship_ids[]" label="Ships" :options="$ships"
                     help="Select multiple ships. No selection means All Ships." />
+                <div class="flex flex-col gap-2">
+                    <label for="ticketIssuedDateOrder" class="text-sm font-medium text-gray-700">Issued Date Order</label>
+                    <select id="ticketIssuedDateOrder" name="issued_date_order"
+                        class="w-full rounded-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="desc">Newest First (DESC)</option>
+                        <option value="asc">Oldest First (ASC)</option>
+                    </select>
+                </div>
             </div>
 
             <p class="text-xs text-gray-500">Issue dates follow ticket issue history in Bangladesh time. Financial amounts show each sale's current amounts.</p>

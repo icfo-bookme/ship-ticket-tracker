@@ -32,9 +32,13 @@ class TicketIssuedReportService
             ->select('verify_tracker.id')
             ->whereColumn('verify_tracker.ticket_id', 'ship_ticket_sales.id');
         $this->applyIssueHistoryFilters($matchingHistory, $filters);
+        $matchingIssueDate = (clone $matchingHistory)->select('verify_tracker.created_at')
+            ->orderBy('created_at')->orderBy('id')->limit(1);
+        $direction = ($filters['issued_date_order'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
         $sales = $query->select('ship_ticket_sales.*')
             ->selectSub($matchingHistory->orderBy('created_at')->orderBy('id')->limit(1), 'matching_issue_id')
+            ->selectSub($matchingIssueDate, 'matching_issue_date')
             ->with([
                 'ships',
                 'companies',
@@ -44,7 +48,8 @@ class TicketIssuedReportService
                 'verifyby' => fn (HasMany $history): HasMany => $history->orderBy('created_at')->orderBy('id'),
                 'verifyby.verifiedByUser:id,name',
             ])
-            ->orderByDesc('ship_ticket_sales.id')
+            ->orderBy('matching_issue_date', $direction)
+            ->orderBy('ship_ticket_sales.id', $direction)
             ->skip(max(0, (int) ($filters['start'] ?? 0)))
             ->take(min(100, max(1, (int) ($filters['length'] ?? 10))))
             ->get();

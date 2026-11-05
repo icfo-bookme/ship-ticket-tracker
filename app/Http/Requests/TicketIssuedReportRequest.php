@@ -30,6 +30,7 @@ class TicketIssuedReportRequest extends FormRequest
                 ...($this->filled('ticket_issued_from') ? ['after_or_equal:ticket_issued_from'] : []),
             ],
             'ship_ids' => ['nullable', 'array', 'list'],
+            'issued_date_order' => ['sometimes', 'string', 'in:asc,desc'],
             'ship_ids.*' => ['bail', 'required', 'integer', 'distinct', 'exists:ships,id'],
             'search' => ['sometimes', 'array'],
             'search.value' => ['nullable', 'string', 'max:255'],
@@ -45,6 +46,8 @@ class TicketIssuedReportRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'issued_date_order.in' => 'Select Oldest First or Newest First for issued date order.',
+            'issued_date_order.string' => 'Select a valid issued date order.',
             'ticket_issued_from.date_format' => 'Enter a valid Issued From date in YYYY-MM-DD format.',
             'ticket_issued_to.date_format' => 'Enter a valid Issued To date in YYYY-MM-DD format.',
             'ticket_issued_to.after_or_equal' => 'Issued To must be on or after Issued From.',

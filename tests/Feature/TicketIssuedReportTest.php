@@ -155,6 +155,29 @@ it('rejects invalid report filters', function (array $filters, string $field) {
     'too many rows' => [['length' => 101], 'length'],
 ]);
 
+it('orders by the matching issue timestamp before applying pagination', function (string $direction) {
+    $newer = issuedReportSale($this->ship);
+    $older = issuedReportSale($this->ship);
+    $tie = issuedReportSale($this->ship);
+    issuedReportHistory($newer, $this->viewer, '2026-11-05 04:00:00');
+    issuedReportHistory($older, $this->viewer, '2026-11-05 02:00:00');
+    issuedReportHistory($tie, $this->viewer, '2026-11-05 02:00:00');
+    issuedReportHistory($older, $this->viewer, '2026-11-05 06:00:00');
+    $expected = $direction === 'asc' ? [$older->id, $tie->id, $newer->id] : [$newer->id, $tie->id, $older->id];
+    $filters = $direction === 'default' ? [] : ['issued_date_order' => $direction];
+    $response = $this->getJson(route('ticket-issued-reports.data', $filters))
+        ->assertOk()->assertJsonPath('totals.total_sales', 3);
+    expect(collect($response->json('data'))->pluck('id')->all())->toBe($expected);
+    $this->getJson(route('ticket-issued-reports.data', [...$filters, 'start' => 1, 'length' => 1]))
+        ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $expected[1])
+        ->assertJsonPath('totals.total_sales', 3);
+})->with(['asc', 'desc', 'default']);
+
+it('rejects an unsupported issue date order', function () {
+    $this->getJson(route('ticket-issued-reports.data', ['issued_date_order' => 'invalid']))
+        ->assertUnprocessable()->assertJsonValidationErrors('issued_date_order');
+});
+
 it('installs the history lookup index', function () {
     expect(Schema::hasIndex('verify_tracker', 'verify_tracker_ticket_issue_history_index'))->toBeTrue();
 });

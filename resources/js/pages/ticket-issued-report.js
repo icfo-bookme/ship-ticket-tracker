@@ -5,6 +5,7 @@ import { escapeHtml } from '../utils/escape-html.js';
 const filterContainer = document.getElementById('ticketIssuedReportFilters');
 const issuedFromFilter = document.getElementById('ticketIssuedFrom');
 const issuedToFilter = document.getElementById('ticketIssuedTo');
+const issuedDateOrderFilter = document.getElementById('ticketIssuedDateOrder');
 const clearFiltersButton = document.getElementById('clearTicketIssuedFilters');
 const table = document.getElementById('ticketIssuedTable');
 
@@ -78,6 +79,7 @@ function bindReportFilterEvents() {
         ticket_issued_from: issuedFromFilter.value,
         ticket_issued_to: issuedToFilter.value,
         ship_ids: ships.values(),
+        issued_date_order: issuedDateOrderFilter.value,
     });
 
     if (table) {
@@ -129,7 +131,7 @@ function bindReportFilterEvents() {
         }));
     }
 
-    [issuedFromFilter, issuedToFilter].forEach(filter => {
+    [issuedFromFilter, issuedToFilter, issuedDateOrderFilter].forEach(filter => {
         filter.addEventListener('change', notifyFiltersChanged);
     });
     filterContainer.addEventListener('multi-select:change', notifyFiltersChanged);
@@ -138,6 +140,7 @@ function bindReportFilterEvents() {
             filter.value = '';
         });
         ships.clear({ notify: false });
+        issuedDateOrderFilter.value = 'desc';
         if (window.jQuery?.fn?.dataTable?.isDataTable(table)) {
             window.jQuery(table).DataTable().search('');
         }

@@ -34,10 +34,13 @@
             </div>
 
             <p class="text-xs text-gray-500">Issue dates follow ticket issue history in Bangladesh time. Financial amounts show each sale's current amounts.</p>
+            <div id="ticketIssuedReportConfig"
+                data-can-edit="{{ auth()->user()->can('sales.edit') ? 'true' : 'false' }}"
+                data-edit-url="{{ route('ship-ticket-sales.show', ['ship_ticket_sale' => '__ID__']) }}"></div>
             <x-data-table id="ticketIssuedTable" :headings="[
                 'Sale ID', 'Customer', 'Mobile', 'Ship', 'Source Company', 'Journey Date',
                 'Tickets', 'Issued At', 'Issued By', 'Current Status', 'Ticket Value',
-                'Total Payable', 'Total Received', 'Current Due',
+                'Total Payable', 'Total Received', 'Current Due', 'Action',
             ]" :url="route('ticket-issued-reports.data')" :ordering="false" :delegateActions="false" :order="[]"
                 :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />
 

@@ -8,6 +8,17 @@ const issuedToFilter = document.getElementById('ticketIssuedTo');
 const issuedDateOrderFilter = document.getElementById('ticketIssuedDateOrder');
 const clearFiltersButton = document.getElementById('clearTicketIssuedFilters');
 const table = document.getElementById('ticketIssuedTable');
+const config = document.getElementById('ticketIssuedReportConfig');
+
+function createActionButtons(row) {
+    if (!row?.id || config?.dataset.canEdit !== 'true') return '';
+
+    const editUrl = config.dataset.editUrl.replace('__ID__', String(Number(row.id)));
+    return `<div class="flex gap-2 items-center justify-center">
+        <a data-permission="sales.edit" href="${escapeHtml(editUrl)}" title="Edit" aria-label="Edit sale #${Number(row.id)}"
+            class="fas fa-edit text-blue-950 px-2 py-1 rounded editBtn"></a>
+    </div>`;
+}
 
 function updateTotals(totals = {}) {
     const elements = {
@@ -103,6 +114,12 @@ function bindReportFilterEvents() {
                 ...['ticket_value', 'total_payable', 'received_amount', 'due_amount'].map(data => ({
                     data, render: formatCurrency,
                 })),
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    render: (data, type, row) => type === 'display' ? createActionButtons(row) : '',
+                },
             ],
         });
         table.addEventListener('click', event => {

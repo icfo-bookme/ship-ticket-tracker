@@ -51,6 +51,18 @@ it('renders the report with Bangladesh today and shared components', function ()
         ->assertDontSee('ticketIssuedLoading');
 });
 
+it('exposes edit actions only to users with sales edit permission', function () {
+    $this->get(route('ticket-issued-reports.index'))->assertOk()
+        ->assertSee('data-can-edit="false"', false);
+
+    $this->viewer->givePermissionTo(Permission::findOrCreate('sales.edit', 'web'));
+
+    $this->get(route('ticket-issued-reports.index'))->assertOk()
+        ->assertSee('data-can-edit="true"', false)
+        ->assertSee('data-edit-url="'.route('ship-ticket-sales.show', ['ship_ticket_sale' => '__ID__']).'"', false)
+        ->assertSee('Action');
+});
+
 it('protects both report endpoints', function () {
     $this->actingAs(User::factory()->create());
     $this->get(route('ticket-issued-reports.index'))->assertForbidden();

@@ -65,7 +65,7 @@ class SalesDataTableService
         $sortDirection = $request->input('sort') === 'oldest' ? 'asc' : 'desc';
 
         $sales = $query
-            ->orderBy('created_at', $sortDirection)
+            ->orderBy('updated_at', $sortDirection)
             ->orderBy('id', $sortDirection)
             ->skip($start)
             ->take($length)

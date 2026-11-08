@@ -67,9 +67,9 @@ it('filters by package without duplicating sales with matching departure and ret
 it('keeps company date sorting and pagination working alongside package selection', function () {
     $company = Company::create(['name' => 'Filter Company', 'status' => 1]);
     $old = packageFilteredSale($this->package, ['company_id' => $company->id]);
-    $old->forceFill(['created_at' => '2026-10-27 00:00:00'])->save();
+    $old->forceFill(['created_at' => '2026-10-27 00:00:00', 'updated_at' => '2026-10-27 00:00:00'])->save();
     $new = packageFilteredSale($this->package, ['company_id' => $company->id]);
-    $new->forceFill(['created_at' => '2026-10-28 00:00:00'])->save();
+    $new->forceFill(['created_at' => '2026-10-28 00:00:00', 'updated_at' => '2026-10-28 00:00:00'])->save();
     packageFilteredSale($this->package, ['journey_date' => '2026-11-02']);
     packageFilteredSale($this->otherPackage, ['company_id' => $company->id]);
     $filters = ['status' => 'pending', 'ship_id' => $this->ship->id, 'package_id' => $this->package->id,

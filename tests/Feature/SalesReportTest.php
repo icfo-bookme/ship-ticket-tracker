@@ -16,6 +16,37 @@ use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
+it('renders refund credit as a separate non-cash payment breakdown card', function () {
+    $script = <<<'JS'
+        import fs from 'node:fs';
+        import vm from 'node:vm';
+        import assert from 'node:assert/strict';
+        const source = fs.readFileSync('resources/js/pages/reports-sales.js', 'utf8');
+        const renderer = source.slice(source.indexOf('function updatePaymentMethodBreakdown('), source.indexOf('function createActionButtons('));
+        const cards = { children: [], replaceChildren() { this.children = []; }, append(card) { this.children.push(card); } };
+        const empty = { classList: { toggle(name, value) { empty.hidden = value; } } };
+        const document = { createElement: () => ({ children: [], append(...children) { this.children.push(...children); } }) };
+        const context = vm.createContext({ paymentMethodBreakdownCards: cards, paymentMethodBreakdownEmpty: empty, document, formatCurrency: value => Number(value).toFixed(2) });
+        vm.runInContext(renderer, context);
+        context.updatePaymentMethodBreakdown([{ payment_method: 'Cash', amount: 200 }, { payment_method: 'Refund Adjusted', amount: 800 }]);
+        assert.equal(cards.children.length, 5);
+        const credit = cards.children.find(card => card.children[0].textContent === 'Refund Adjusted (Non-cash)');
+        assert.equal(credit.children[1].textContent, '800.00');
+        assert.equal(cards.children.reduce((total, card) => total + Number(card.children[1].textContent), 0), 1000);
+        context.updatePaymentMethodBreakdown([{ payment_method: 'Refund Adjusted', amount: 500 }]);
+        assert.equal(cards.children.length, 5);
+        assert.equal(empty.hidden, true);
+        context.updatePaymentMethodBreakdown([]);
+        assert.equal(empty.hidden, false);
+        assert.equal(cards.children.at(-1).children[1].textContent, '0.00');
+        console.log('Refund breakdown card passed');
+        JS;
+    $process = new \Symfony\Component\Process\Process(['node', '--input-type=module', '-e', $script], base_path());
+    $process->mustRun();
+
+    expect($process->getOutput())->toContain('Refund breakdown card passed');
+});
+
 beforeEach(function () {
     $this->admin = User::factory()->create();
     $this->admin->assignRole(Role::findOrCreate('Admin', 'web'));

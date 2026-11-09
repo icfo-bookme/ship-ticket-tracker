@@ -371,7 +371,7 @@ function updatePaymentMethodBreakdown(methodTotals = []) {
 
     paymentMethodBreakdownCards.replaceChildren();
     const amountsByMethod = new Map(methodTotals.map(({ payment_method, amount }) => [payment_method, amount]));
-    const methods = ['Bkash', 'Cash', 'Bank Transfer', 'Nagad'];
+    const methods = ['Bkash', 'Cash', 'Bank Transfer', 'Nagad', 'Refund Adjusted'];
     const hasPayments = methods.some((method) => Number(amountsByMethod.get(method) || 0) > 0);
     paymentMethodBreakdownEmpty.classList.toggle('hidden', hasPayments);
 
@@ -381,7 +381,7 @@ function updatePaymentMethodBreakdown(methodTotals = []) {
 
         const label = document.createElement('p');
         label.className = 'text-sm font-medium text-gray-500 dark:text-gray-400';
-        label.textContent = method || 'Not specified';
+        label.textContent = method === 'Refund Adjusted' ? 'Refund Adjusted (Non-cash)' : method;
 
         const value = document.createElement('p');
         value.className = 'mt-1 text-xl font-semibold text-gray-900 dark:text-gray-100';

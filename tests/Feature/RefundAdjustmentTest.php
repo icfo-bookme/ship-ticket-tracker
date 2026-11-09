@@ -144,6 +144,8 @@ it('reports transfers separately from cash and keeps the remaining refund balanc
         ->and(app(CashCollectionService::class)->summary()['totalReceivedAmount'])->toBe(1200.0);
     $salesReport = app(SalesReportService::class)->dataTable(Request::create('/'));
     expect($salesReport['totals']['total_received_amount'])->toBe('1,500.00')
+        ->and(collect($salesReport['totals']['payment_method_totals'])->where('payment_method', 'Refund Adjusted')->sum('amount'))->toBe(300.0)
+        ->and(collect($salesReport['totals']['payment_method_totals'])->sum('amount'))->toBe(1500.0)
         ->and($salesReport['totals']['total_refund_adjusted_amount'])->toBe('300.00')
         ->and($salesReport['totals']['report_refund_outflow'])->toBe('0.00')
         ->and($salesReport['totals']['report_net_before_cashout'])->toBe('1,200.00');

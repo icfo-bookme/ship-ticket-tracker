@@ -144,6 +144,8 @@ it('reports transfers separately from cash and keeps the remaining refund balanc
         ->and(app(CashCollectionService::class)->summary()['totalReceivedAmount'])->toBe(1200.0);
     $salesReport = app(SalesReportService::class)->dataTable(Request::create('/'));
     expect($salesReport['totals']['total_received_amount'])->toBe('1,500.00')
+        ->and($salesReport['totals']['total_refund_adjusted_amount'])->toBe('300.00')
+        ->and($salesReport['totals']['report_refund_outflow'])->toBe('0.00')
         ->and($salesReport['totals']['report_net_before_cashout'])->toBe('1,200.00');
 });
 
@@ -154,6 +156,24 @@ it('does not pay adjusted money twice when completing a fully transferred refund
     expect($this->refund->customerPayments()->count())->toBe(0);
     ShipTicketSale::latest('id')->first()->update(['status' => 'ticket-issued']);
     expect(app(CashCollectionService::class)->summary()['availableCashAmount'])->toBe(1200.0);
+});
+
+it('shows refund transfers on the source sale without counting them as cash outflow', function () {
+    $this->postJson(route('ship-ticket-sales.store'), $this->payload)->assertRedirect();
+    $newSale = ShipTicketSale::latest('id')->first();
+    $report = app(SalesReportService::class)->dataTable(Request::create('/', 'GET', ['length' => 1]));
+    expect($report['totals']['total_refund_adjusted_amount'])->toBe('800.00')
+        ->and($report['totals']['report_refund_outflow'])->toBe('0.00')
+        ->and($report['totals']['report_net_before_cashout'])->toBe('1,000.00');
+
+    $newSale->update(['status' => 'ticket-issued', 'customer_name' => 'Replacement destination']);
+    $this->sale->update(['customer_name' => 'Original refund source']);
+    $source = app(SalesReportService::class)->dataTable(Request::create('/', 'GET', ['search' => ['value' => 'Original refund source']]));
+    $destination = app(SalesReportService::class)->dataTable(Request::create('/', 'GET', ['search' => ['value' => 'Replacement destination']]));
+    expect($source['totals']['total_refund_adjusted_amount'])->toBe('800.00')
+        ->and($destination['totals']['total_refund_adjusted_amount'])->toBe('0.00');
+    $empty = app(SalesReportService::class)->emptyResponse(Request::create('/'));
+    expect($empty['totals']['total_refund_adjusted_amount'])->toBe('0.00');
 });
 
 it('lists a fully adjusted refund under completed refunds with its new sale reference', function () {
@@ -401,6 +421,8 @@ it('reconciles refund adjustments across every financial report', function (arra
         ->and($sales['totals']['report_net_before_cashout'])->toBe(number_format($actualCash, 2))
         ->and((float) $sales['data']->sum('net_cash'))->toBe((float) $actualCash)
         ->and($sales['totals']['total_due_amount'])->toBe('0.00')
+        ->and($sales['totals']['total_refund_adjusted_amount'])->toBe(number_format($adjusted, 2))
+        ->and($sales['totals']['report_refund_outflow'])->toBe(number_format($cashRefund + $partnerShare, 2))
         ->and($refunds['totals']['refund_adjusted_amount'])->toBe(number_format($adjusted, 2, '.', ''))
         ->and($refunds['totals']['customer_refund_paid'])->toBe(number_format($cashRefund, 2, '.', ''))
         ->and($refunds['totals']['remaining_refund_amount'])->toBe(number_format($remaining, 2, '.', ''))

@@ -328,6 +328,8 @@ it('renders the sales report filters and summary targets', function () {
         ->get('/admin/sales-reports')
         ->assertOk()
         ->assertSee('id="salesTable"', false)
+        ->assertSee('id="totalRefundAdjustedAmount"', false)
+        ->assertSee('Transferred to another sale; no cash payout.')
         ->assertSee('&quot;pageLength&quot;:10', false)
         ->assertSee('id="saleReportDetailModal"', false)
         ->assertSee('data-close-modal="saleReportDetailModal"', false)

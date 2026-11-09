@@ -166,6 +166,11 @@
                     <x-report-summary-card id="totalRefundDiscountAmount" label="Refund Discount" />
                     <x-report-summary-card id="totalCompletedTicketRefundAmount" label="Net Ticket Refund" />
                     <x-report-summary-card id="totalCustomerRefundPaid" label="Customer Refund Paid" />
+                    <x-report-summary-card id="totalRefundAdjustedAmount" label="Refund Adjusted">
+                        <x-slot:description>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Transferred to another sale; no cash payout.</p>
+                        </x-slot:description>
+                    </x-report-summary-card>
                     <x-report-summary-card id="totalPartnerShareAmount" label="Partner Share" />
                     <x-report-summary-card id="totalCompanyRetainedAmount" label="Company Retained" />
                     <x-report-summary-card id="totalDueAdjustedAmount" label="Due Adjusted (Non-cash)" />

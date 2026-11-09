@@ -39,6 +39,7 @@ function totalElements() {
         total_gross_ticket_refund_amount: document.getElementById("totalGrossTicketRefundAmount"),
         total_refund_discount_amount: document.getElementById("totalRefundDiscountAmount"),
         total_customer_refund_paid: document.getElementById("totalCustomerRefundPaid"),
+        total_refund_adjusted_amount: document.getElementById('totalRefundAdjustedAmount'),
         total_partner_share_amount: document.getElementById("totalPartnerShareAmount"),
         total_extra_refunded_amount: document.getElementById("totalExtraRefundedAmount"),
         total_due_adjusted_amount: document.getElementById("totalDueAdjustedAmount"),

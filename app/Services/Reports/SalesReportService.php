@@ -83,6 +83,7 @@ class SalesReportService
                 'total_gross_ticket_refund_amount' => number_format($totals->total_gross_ticket_refund_amount, 2),
                 'total_refund_discount_amount' => number_format($totals->total_refund_discount_amount, 2),
                 'total_customer_refund_paid' => number_format($totals->total_customer_refund_paid, 2),
+                'total_refund_adjusted_amount' => number_format($totals->total_refund_adjusted_amount, 2),
                 'total_due_adjusted_amount' => number_format($totals->total_due_adjusted_amount, 2),
                 'total_partner_share_amount' => number_format($totals->total_partner_share_amount, 2),
                 'total_company_retained_amount' => number_format($totals->total_company_retained_amount, 2),
@@ -132,6 +133,7 @@ class SalesReportService
                 'total_gross_ticket_refund_amount' => '0.00',
                 'total_refund_discount_amount' => '0.00',
                 'total_customer_refund_paid' => '0.00',
+                'total_refund_adjusted_amount' => '0.00',
                 'total_due_adjusted_amount' => '0.00',
                 'total_partner_share_amount' => '0.00',
                 'total_company_retained_amount' => '0.00',
@@ -440,6 +442,12 @@ class SalesReportService
             ->selectRaw('refunds.sales_id, SUM(refund_customer_payments.amount) AS extra_refund_paid')
             ->groupBy('refunds.sales_id');
 
+        $refundAdjustmentTotals = Payment::query()
+            ->join('refunds', 'refunds.id', '=', 'payments.refund_id')
+            ->where('refunds.status', '!=', 'cancelled')
+            ->selectRaw('refunds.sales_id, SUM(payments.received_amount) AS adjusted_amount')
+            ->groupBy('refunds.sales_id');
+
         $totals = $query
             ->leftJoinSub($categoryTotals, 'category_totals', 'category_totals.ticket_id', '=', 'ship_ticket_sales.id')
             ->leftJoinSub($paymentTotals, 'payment_totals', 'payment_totals.sales_id', '=', 'ship_ticket_sales.id')
@@ -447,6 +455,7 @@ class SalesReportService
             ->leftJoinSub($refundTotals, 'refund_totals', 'refund_totals.sales_id', '=', 'ship_ticket_sales.id')
             ->leftJoinSub($customerRefundTotals, 'customer_refund_totals', 'customer_refund_totals.sales_id', '=', 'ship_ticket_sales.id')
             ->leftJoinSub($extraRefundTotals, 'extra_refund_totals', 'extra_refund_totals.sales_id', '=', 'ship_ticket_sales.id')
+            ->leftJoinSub($refundAdjustmentTotals, 'refund_adjustment_totals', 'refund_adjustment_totals.sales_id', '=', 'ship_ticket_sales.id')
             ->selectRaw(<<<'SQL'
                 COALESCE(SUM(category_totals.ticket_count), 0) AS total_number_of_tickets,
                 COALESCE(SUM(category_totals.ticket_value), 0) AS total_ticket_value,
@@ -457,6 +466,7 @@ class SalesReportService
                 COALESCE(SUM(payment_totals.settled_amount - payment_totals.refund_adjusted_amount), 0) AS lifetime_received_amount,
                 COALESCE(SUM(CASE WHEN payment_totals.settled_amount > ship_ticket_sales.total_payable THEN payment_totals.settled_amount - ship_ticket_sales.total_payable ELSE 0 END), 0) AS total_extra_received_amount,
                 COALESCE(SUM(extra_refund_totals.extra_refund_paid), 0) AS total_extra_refunded_amount,
+                COALESCE(SUM(refund_adjustment_totals.adjusted_amount), 0) AS total_refund_adjusted_amount,
                 COALESCE(SUM(CASE WHEN ship_ticket_sales.total_payable - COALESCE(payment_totals.settled_amount, 0) - COALESCE(payment_totals.bftn_pending_amount, 0) - COALESCE(refund_totals.due_adjusted_amount, 0) > 0 THEN ship_ticket_sales.total_payable - COALESCE(payment_totals.settled_amount, 0) - COALESCE(payment_totals.bftn_pending_amount, 0) - COALESCE(refund_totals.due_adjusted_amount, 0) ELSE 0 END), 0) AS total_due_amount,
                 COALESCE(SUM(payment_totals.bftn_count), 0) AS total_bftn,
                 COALESCE(SUM(payment_totals.bftn_pending_count), 0) AS total_bftn_pending,

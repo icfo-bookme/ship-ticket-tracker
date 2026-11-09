@@ -81,7 +81,7 @@ class DashboardMetricsService
         $refundTotals = Refund::query()
             ->where(fn ($refunds) => $refunds
                 ->where('status', 'completed')
-                ->orWhereNotNull('customer_refunded_at'))
+                ->orWhereNotNull('customer_refunded_at')->orWhereNotNull('adjustment_started_at'))
             ->selectRaw('sales_id, SUM(due_adjusted_amount) AS due_adjusted_amount')
             ->groupBy('sales_id');
 

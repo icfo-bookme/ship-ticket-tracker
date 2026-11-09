@@ -45,6 +45,8 @@ class UpdateShipTicketSaleRequest extends FormRequest
             'departure_quantity.*' => 'nullable|integer|min:0',
             'return_quantity.*' => 'nullable|integer|min:0',
             'payments' => 'nullable|array',
+            'refund_id' => 'nullable|integer|exists:refunds,id|required_with:refund_adjustment_amount',
+            'refund_adjustment_amount' => 'nullable|numeric|min:0.01|required_with:refund_id',
             'payments.*.payment_method' => 'required|string',
             'payments.*.payment_id' => 'nullable|integer',
             'payments.*.is_bftn' => 'nullable|boolean',
@@ -70,6 +72,8 @@ class UpdateShipTicketSaleRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'refund_adjustment_amount.required_with' => 'Enter the refund adjustment amount.',
+            'refund_id.required_with' => 'Select a refund to adjust.',
             'whatsapp.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',
             'whatsapp_username.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',
         ];

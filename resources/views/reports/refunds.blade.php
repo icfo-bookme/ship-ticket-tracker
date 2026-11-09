@@ -82,7 +82,7 @@
             <x-data-table id="refundReportTable" :headings="[
                 'Refund ID', 'Sale ID', 'Customer', 'Ship', 'Refunded At', 'Type', 'Tickets',
                 'Gross Refund', 'Discount', 'Customer Charge', 'Partner Share',
-                'Company Retained', 'Due Adjusted', 'Final Customer Refund', 'Customer Paid', 'Status', 'Details',
+                'Company Retained', 'Due Adjusted', 'Final Customer Refund', 'Customer Paid', 'Adjusted to Sales', 'Remaining Balance', 'Status', 'Details',
             ]" url="{{ route('refund-reports.data') }}" :ordering="false" :delegateActions="false" :order="[]"
                 :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />
 
@@ -93,6 +93,8 @@
                 <x-report-summary-card id="refundReportDueAdjusted" label="Due Adjusted (Completed)" />
                 <x-report-summary-card id="refundReportCompanyRetained" label="Company Retained" />
                 <x-report-summary-card id="refundReportPaid" label="Customer Refund Paid" />
+                <x-report-summary-card id="refundReportAdjusted" label="Adjusted to New Sales" />
+                <x-report-summary-card id="refundReportRemaining" label="Remaining Refund Balance" />
                 <x-report-summary-card id="refundReportExtraPaid" label="Extra Payment Refund Paid" />
                 <x-report-summary-card id="refundReportOutflow" label="Refund Outflow (Customer + Partner + Extra Refunds)" />
             </div>

@@ -3,6 +3,7 @@
 namespace App\Services\Reports;
 
 use App\Enums\RefundStatus;
+use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\RefundCustomerPayment;
 use App\Services\Sales\SaleFinancialService;
@@ -27,9 +28,11 @@ class RefundReportService
             'sale.ships',
             'sale.companies',
             'sale.payments',
+            'sale.categories',
             'sale.refunds',
             'tickets',
             'customerPayments',
+            'adjustments',
         ])
             ->orderByDesc('requested_at')
             ->orderByDesc('id')
@@ -53,7 +56,7 @@ class RefundReportService
             ->where('status', '!=', RefundStatus::Cancelled->value)
             ->where(function (Builder $query): void {
                 $query->where('status', RefundStatus::Completed->value)
-                    ->orWhereNotNull('customer_refunded_at');
+                    ->orWhereNotNull('customer_refunded_at')->orWhereNotNull('adjustment_started_at');
             })
             ->when($request->filled('refund_type') && $request->input('refund_type') !== 'all', fn (Builder $query) => $query
                 ->where('refund_type', $request->input('refund_type')))
@@ -118,9 +121,15 @@ class RefundReportService
             ->whereHas('refund', fn (Builder $refund): Builder => $refund->where('refund_type', '!=', 'extra_payment'))
             ->sum('amount');
         $extraPaymentRefundPaid = $this->extraPaymentRefundPaid(clone $settledQuery);
+        $refundAdjusted = (float) Payment::query()->whereIn('refund_id', (clone $settledQuery)->select('refunds.id'))->sum('received_amount');
+        $customerBalance = (float) (clone $settledQuery)->sum('customer_refund_amount');
+        $allCustomerPaid = (float) RefundCustomerPayment::query()->where('status', 'paid')
+            ->whereIn('refund_id', (clone $settledQuery)->select('refunds.id'))->sum('amount');
 
         return [
             'refunded_count' => (int) $summary->refunded_count,
+            'refund_adjusted_amount' => number_format($refundAdjusted, 2, '.', ''),
+            'remaining_refund_amount' => number_format(max($customerBalance - $refundAdjusted - $allCustomerPaid, 0), 2, '.', ''),
             'refund_amount' => number_format((float) $summary->refund_amount, 2, '.', ''),
             'discount_amount' => number_format((float) $summary->discount_amount, 2, '.', ''),
             'due_adjusted_amount' => number_format((float) $summary->due_adjusted_amount, 2, '.', ''),
@@ -153,7 +162,7 @@ class RefundReportService
     private function formatRefund(Refund $refund): array
     {
         $sale = $refund->sale;
-        $isCompleted = $refund->status === RefundStatus::Completed->value || $refund->customer_refunded_at !== null;
+        $isCompleted = $refund->status === RefundStatus::Completed->value || $refund->customer_refunded_at !== null || $refund->adjustment_started_at !== null;
         $isCancelled = $refund->status === RefundStatus::Cancelled->value;
         $customerRefundAmount = (float) $refund->customer_refund_amount
             + ($isCompleted ? (float) $refund->due_adjusted_amount : 0);
@@ -180,7 +189,8 @@ class RefundReportService
             'requested_at' => $refund->requested_at?->toDateTimeString(),
             'refunded_at' => ($refund->customer_refunded_at ?? $refund->updated_at)?->toDateTimeString(),
             'refund_type' => $refund->refund_type,
-            'status' => $isCompleted ? RefundStatus::Completed->value : $refund->status,
+            'status' => $refund->customer_refunded_at !== null ? RefundStatus::Completed->value : $refund->status,
+            'settlement_label' => $refund->settlementSummary()['settlement_label'],
             'refunded_number_of_tickets' => (int) $refund->refunded_number_of_tickets,
             'gross_refund_amount' => number_format((float) $refund->gross_refund_amount, 2, '.', ''),
             'refund_discount_amount' => number_format((float) $refund->refund_discount_amount, 2, '.', ''),
@@ -191,6 +201,13 @@ class RefundReportService
             'customer_refund_amount' => number_format($customerRefundAmount, 2, '.', ''),
             'final_customer_refund' => number_format($finalCustomerRefund, 2, '.', ''),
             'customer_refund_paid' => number_format($customerRefundPaid, 2, '.', ''),
+            'refund_adjusted_amount' => number_format((float) $refund->adjustments->sum('received_amount'), 2, '.', ''),
+            'remaining_refund_amount' => number_format(max($finalCustomerRefund - $customerRefundPaid - (float) $refund->adjustments->sum('received_amount'), 0), 2, '.', ''),
+            'adjustments' => $refund->adjustments->map(fn (Payment $payment): array => [
+                'sale_id' => $payment->sales_id,
+                'amount' => $payment->received_amount,
+                'adjusted_at' => $payment->created_at?->toDateTimeString(),
+            ])->values(),
             'refund_payment_details' => $refund->refund_payment_details,
             'remark' => $refund->remark,
             'tickets' => $refund->tickets->map(fn ($ticket): array => [

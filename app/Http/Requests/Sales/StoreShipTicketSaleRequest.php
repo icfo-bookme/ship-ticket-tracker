@@ -8,6 +8,15 @@ use Illuminate\Validation\Validator;
 
 class StoreShipTicketSaleRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('refund_id') && is_array($this->input('payment_methods'))) {
+            $payments = array_filter($this->input('payment_methods'), fn (mixed $payment): bool => ! is_array($payment)
+                || ! empty($payment['method']) || (float) ($payment['amount'] ?? 0) !== 0.0);
+            $this->merge(['payment_methods' => $payments === [] ? null : array_values($payments)]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -43,8 +52,11 @@ class StoreShipTicketSaleRequest extends FormRequest
             'other_fee' => 'nullable|numeric',
             'discount_amount' => 'nullable|numeric|min:0',
             'total_payable' => 'nullable|numeric|min:0',
-            'payment_methods' => 'required|array|min:1',
-            'payment_methods.*.method' => 'required_with:payment_methods|string|max:100',
+            'refund_id' => 'nullable|integer|exists:refunds,id|required_with:refund_adjustment_amount',
+            'refund_adjustment_amount' => 'nullable|numeric|min:0.01|required_with:refund_id',
+            'payment_methods' => 'nullable|required_without:refund_id|array|min:1',
+            'payment_methods.*.method' => 'required_with:payment_methods|string|max:100|not_in:Refund Adjusted',
+            'payment_methods.*.refund_id' => 'prohibited',
             'payment_methods.*.amount' => 'required_with:payment_methods|numeric|min:0.01',
             'payment_methods.*.is_bftn' => 'nullable|boolean',
             'payment_methods.*.bftn_issue_datetime' => 'nullable|date',
@@ -67,6 +79,8 @@ class StoreShipTicketSaleRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'refund_adjustment_amount.required_with' => 'Enter the refund adjustment amount.',
+            'payment_methods.*.method.not_in' => 'Use the refund selector to create a Refund Adjusted payment.',
             'whatsapp.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',
             'whatsapp_username.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',
         ];

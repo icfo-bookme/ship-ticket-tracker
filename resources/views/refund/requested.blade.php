@@ -36,7 +36,7 @@
                     'ID', 'Customer Name', 'Mobile', 'Ship Name', 'Journey Date',
                     'Purchase Num Of Tickets', 'Refunded Num Of Tickets', 'Gross Amount',
                     'Customer Refund', 'Partner Share', 'Company Retained', 'Due Adjusted',
-                    'Final Customer Refund', 'Status', 'Action',
+                    'Final Customer Refund', 'Settlement / New Sale', 'Status', 'Action',
                 ] : [
                     'Request ID', 'Sale ID', 'Customer', 'Journey Date', 'Type',
                     'Total Purchase Tickets', 'Total Refund Tickets', 'Gross Amount',

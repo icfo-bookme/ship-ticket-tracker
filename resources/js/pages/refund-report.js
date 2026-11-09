@@ -42,7 +42,9 @@ if (table) {
         { data: 'due_adjusted_amount', render: formatMoney },
         { data: 'final_customer_refund', render: formatMoney },
         { data: 'customer_refund_paid', render: formatMoney },
-        { data: 'status', render: (data) => escapeHtml(String(data || 'N/A').replaceAll('_', ' ')) },
+        { data: 'refund_adjusted_amount', render: formatMoney },
+        { data: 'remaining_refund_amount', render: formatMoney },
+        { data: 'status', render: (data, type, row) => type !== 'display' ? data : `${escapeHtml(String(data || 'N/A').replaceAll('_', ' '))}<div class="text-xs font-semibold text-blue-700">${escapeHtml(row.settlement_label || '')}</div>` },
         {
             data: null,
             orderable: false,
@@ -113,6 +115,8 @@ function updateSummary(totals) {
         due_adjusted_amount: 'refundReportDueAdjusted',
         company_retained_amount: 'refundReportCompanyRetained',
         customer_refund_paid: 'refundReportPaid',
+        refund_adjusted_amount: 'refundReportAdjusted',
+        remaining_refund_amount: 'refundReportRemaining',
         extra_payment_refund_paid: 'refundReportExtraPaid',
         refund_outflow_amount: 'refundReportOutflow',
     };
@@ -137,6 +141,7 @@ function showRefundDetails(refund) {
         ['Requested At', refund.requested_at],
         ['Refunded At', refund.refunded_at],
         ['Refund Type / Status', `${refund.refund_type} / ${refund.status}`],
+        ['Settlement', refund.settlement_label],
         ['Gross Refund', formatMoney(refund.gross_refund_amount)],
         ['Refund Discount', formatMoney(refund.refund_discount_amount)],
         ['Customer Charge', formatMoney(refund.customer_charge_amount)],
@@ -145,6 +150,9 @@ function showRefundDetails(refund) {
         ['Due Adjusted', formatMoney(refund.due_adjusted_amount)],
         ['Final Customer Refund', formatMoney(refund.final_customer_refund)],
         ['Customer Refund Paid', formatMoney(refund.customer_refund_paid)],
+        ['Adjusted to New Sales', formatMoney(refund.refund_adjusted_amount)],
+        ['Remaining Refund Balance', formatMoney(refund.remaining_refund_amount)],
+        ['Adjustment References', (refund.adjustments || []).map(adjustment => `Sale #${adjustment.sale_id}: ${formatMoney(adjustment.amount)}`).join(', ') || 'N/A'],
         ['Partner Payment Details', refund.refund_payment_details || 'N/A'],
         ['Remark', refund.remark || 'N/A'],
     ];

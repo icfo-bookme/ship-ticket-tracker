@@ -79,6 +79,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('sale-drafts/{sale_draft}', [SaleDraftController::class, 'destroy'])->name('sale-drafts.destroy');
     });
 
+    Route::get('ship-ticket-sales/refund-adjustments', [ShipTicketSaleController::class, 'refundableAdjustments'])
+        ->middleware('permission.any:sales.create,sales.edit,sales.pending.edit')
+        ->name('ship-ticket-sales.refund-adjustments');
+
     Route::middleware('can:sales.create')->group(function () {
         Route::get('ship-ticket-sales/create', [ShipTicketSaleController::class, 'create'])->name('ship-ticket-sales.create');
         Route::post('ship-ticket-sales', [ShipTicketSaleController::class, 'store'])->name('ship-ticket-sales.store');

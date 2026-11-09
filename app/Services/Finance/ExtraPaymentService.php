@@ -117,7 +117,7 @@ class ExtraPaymentService
     /** @return array{extra_received_amount: float, extra_refunded_amount: float, extra_refund_pending_amount: float, extra_available_amount: float} */
     public function summary(ShipTicketSale $sale): array
     {
-        $sale->loadMissing('refunds.customerPayments');
+        $sale->loadMissing(['refunds.customerPayments', 'refunds.adjustments']);
 
         $extraReceived = max($this->settledAmount($sale) - (float) $sale->total_payable, 0);
         $extraRefunds = $sale->refunds
@@ -130,10 +130,11 @@ class ExtraPaymentService
             $paidAmount = (float) $refund->customerPayments
                 ->where('status', 'paid')
                 ->sum('amount');
+            $paidAmount += (float) $refund->adjustments->sum('received_amount');
             $isSettled = $refund->status === RefundStatus::Completed->value
                 || $refund->customer_refunded_at !== null;
 
-            if ($paidAmount === 0.0 && $isSettled) {
+            if ($paidAmount === 0.0 && $isSettled && ! $refund->adjustment_started_at) {
                 $paidAmount = (float) $refund->customer_refund_amount;
             }
 

@@ -282,6 +282,7 @@
                         <p class="text-gray-600 dark:text-gray-400 text-[12px] mt-1">Add payment methods and amounts</p>
                     </div>
 
+                    <x-refund-adjustment />
                     <div id="paymentInfoWrapper" class="space-y-4">
                         <!-- Add button -->
                         <button type="button" id="addPaymentInfo"

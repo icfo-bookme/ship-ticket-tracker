@@ -63,6 +63,16 @@
                 <thead><tr class="border-b text-gray-500"><th class="p-2">ID</th><th class="p-2">Tickets</th><th class="p-2">Gross</th><th class="p-2">Due Adjusted</th><th class="p-2">Final Refund</th><th class="p-2">Payment Details</th><th class="p-2">Completed</th></tr></thead>
                 <tbody>
                     @foreach ($completedRefunds as $refund)
+                        @php($settlement = $refund->settlementSummary())
+                        <tr class="border-b bg-blue-50 dark:bg-blue-900/20">
+                            <td colspan="7" class="p-3">
+                                <span class="font-semibold text-blue-800 dark:text-blue-200">{{ $settlement['settlement_label'] }}</span>
+                                <span class="ml-2 text-sm">Paid: {{ number_format($settlement['customer_refund_paid'], 2) }} · Adjusted: {{ number_format($settlement['refund_adjusted_amount'], 2) }}</span>
+                                @foreach ($settlement['adjustment_references'] as $reference)
+                                    <p class="mt-1 text-sm">Refund #{{ $refund->id }} → Sale #{{ $reference['sale_id'] }}: {{ number_format($reference['amount'], 2) }}</p>
+                                @endforeach
+                            </td>
+                        </tr>
                         <tr class="border-b"><td class="p-2">{{ $refund->id }}</td><td class="p-2">{{ $refund->refunded_number_of_tickets }}</td><td class="p-2">{{ number_format((float) $refund->gross_refund_amount, 2) }}</td><td class="p-2">{{ number_format((float) $refund->due_adjusted_amount, 2) }}</td><td class="bg-red-100 p-2 font-semibold text-red-700">{{ number_format((float) $refund->customer_refund_amount, 2) }}</td><td class="max-w-xs whitespace-pre-wrap p-2">{{ $refund->refund_payment_details ?? 'N/A' }}</td><td class="p-2">{{ $refund->customer_refunded_at?->format('Y-m-d H:i') ?? 'N/A' }}</td></tr>
                     @endforeach
                 </tbody>

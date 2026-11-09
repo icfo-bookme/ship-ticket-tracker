@@ -10,9 +10,13 @@ class Payment extends Model
 {
     use HasFactory;
 
+    public const REFUND_ADJUSTED = 'Refund Adjusted';
+
     protected $table = 'payments';
 
     protected $fillable = [
+        'refund_id',
+        'adjusted_by',
         'sales_id',
         'payment_method',
         'is_bftn',
@@ -41,5 +45,10 @@ class Payment extends Model
     public function sale(): BelongsTo
     {
         return $this->belongsTo(ShipTicketSale::class, 'sales_id')->withTrashed();
+    }
+
+    public function refund(): BelongsTo
+    {
+        return $this->belongsTo(Refund::class);
     }
 }

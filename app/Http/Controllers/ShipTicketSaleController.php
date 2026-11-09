@@ -8,6 +8,7 @@ use App\Http\Requests\Sales\BulkPrintShipmentLabelsRequest;
 use App\Http\Requests\Sales\CheckDuplicateTicketRequest;
 use App\Http\Requests\Sales\FilterShipTicketSalesRequest;
 use App\Http\Requests\Sales\MarkBftnReceivedRequest;
+use App\Http\Requests\Sales\SearchRefundAdjustmentsRequest;
 use App\Http\Requests\Sales\SelectShippedSalesRequest;
 use App\Http\Requests\Sales\StorePublicShipTicketSaleRequest;
 use App\Http\Requests\Sales\StoreShipTicketSaleRequest;
@@ -17,6 +18,7 @@ use App\Models\Company;
 use App\Models\SalesSource;
 use App\Models\Ship;
 use App\Models\ShipTicketSale;
+use App\Services\Refunds\RefundAdjustmentService;
 use App\Services\Sales\GoogleDriveTicketService;
 use App\Services\Sales\SaleDetailService;
 use App\Services\Sales\SalesDataTableService;
@@ -26,6 +28,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ShipTicketSaleController extends Controller
@@ -81,6 +84,11 @@ class ShipTicketSaleController extends Controller
             ->get(['id', 'name']);
 
         return view('ship_ticket_sales.create', compact('ships', 'companies', 'salesSources'));
+    }
+
+    public function refundableAdjustments(SearchRefundAdjustmentsRequest $request, RefundAdjustmentService $adjustments): JsonResponse
+    {
+        return response()->json(['data' => $adjustments->search($request->validated())]);
     }
 
     public function bookingForm(Request $request)
@@ -206,6 +214,8 @@ class ShipTicketSaleController extends Controller
 
             return redirect()->back()
                 ->with('success', 'Ship ticket sale updated successfully!');
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->with('error', 'Failed to update ship ticket sale: '.$e->getMessage())
                 ->withInput();
@@ -240,6 +250,8 @@ class ShipTicketSaleController extends Controller
 
             // Return success response
             return response()->json(['success' => true, 'message' => 'Sale deleted successfully']);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             // Handle the error if any, e.g., sale not found
             return response()->json(['success' => false, 'message' => 'Sale not found'], 404);

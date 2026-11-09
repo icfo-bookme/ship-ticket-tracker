@@ -154,7 +154,7 @@ class SaleFinancialService
         );
         $summary['total_payable'] = round((float) $sale->total_payable, 2);
         $dueAdjustments = (float) $sale->refunds
-            ->filter(fn ($refund): bool => $refund->status === RefundStatus::Completed->value || $refund->customer_refunded_at !== null)
+            ->filter(fn ($refund): bool => $refund->status === RefundStatus::Completed->value || $refund->customer_refunded_at !== null || $refund->adjustment_started_at !== null)
             ->sum('due_adjusted_amount');
         $summary['due_amount'] = round(max(
             (float) $sale->total_payable - $receivedAmount - $pendingBftnAmount - $dueAdjustments,

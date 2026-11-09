@@ -102,7 +102,7 @@ class ShipTicketSale extends Model
         $totalPayable = 'COALESCE(ship_ticket_sales.total_payable, 0)';
         $settledPayments = '(SELECT COALESCE(SUM(CASE WHEN payments.is_bftn = 0 OR payments.settlement_status = "received" THEN payments.received_amount ELSE 0 END), 0) FROM payments WHERE payments.sales_id = ship_ticket_sales.id)';
         $pendingBftnPayments = '(SELECT COALESCE(SUM(received_amount), 0) FROM payments WHERE payments.sales_id = ship_ticket_sales.id AND payments.is_bftn = 1 AND payments.settlement_status = "pending")';
-        $refundDueAdjustments = '(SELECT COALESCE(SUM(due_adjusted_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL))';
+        $refundDueAdjustments = '(SELECT COALESCE(SUM(due_adjusted_amount), 0) FROM refunds WHERE refunds.sales_id = ship_ticket_sales.id AND (refunds.status = "completed" OR refunds.customer_refunded_at IS NOT NULL OR refunds.adjustment_started_at IS NOT NULL))';
         $dueAmount = "{$totalPayable} - {$settledPayments} - {$pendingBftnPayments} - {$refundDueAdjustments}";
 
         return "CASE WHEN {$dueAmount} > 0 THEN {$dueAmount} ELSE 0 END";

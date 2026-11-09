@@ -1,3 +1,5 @@
+import { initializeRefundAdjustment } from '../components/refund-adjustment.js';
+
 const configElement = document.getElementById('editSaleConfig');
 const config = {
     passengerCount: Number(configElement?.dataset.passengerCount || 0),
@@ -14,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let additionalPdfIndex = 0;
     let nextPdfNumber = config.nextPdfNumber;
     let selectedShipId = document.getElementById('ship_id')?.value;
+    let refundAdjustment = null;
 
     document.getElementById('add-additional-pdf')?.addEventListener('click', function () {
         const container = document.getElementById('additional-pdf-fields');
@@ -341,6 +344,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
+        totalReceived += refundAdjustment?.amount() || 0;
+
         // Update received amount field
         const receivedAmountInput = document.getElementById('received_amount');
         receivedAmountInput.value = totalReceived.toFixed(2);
@@ -356,6 +361,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Calculate total payable (ticket value + other fee - discount).
         const totalPayable = Math.max(0, TicketValue + otherFee - discountAmount);
         document.getElementById('total_payable').value = totalPayable.toFixed(2);
+        refundAdjustment?.updateConstraints();
 
         const extraReceivedAmount = Math.max(0, totalReceived - totalPayable);
         document.getElementById('extra_received_amount').value = extraReceivedAmount.toFixed(2);
@@ -594,6 +600,12 @@ document.addEventListener('DOMContentLoaded', function () {
     calculateCategoryFinancials();
     calculateFinancials();
     syncBftnPaymentControls();
+
+    refundAdjustment = initializeRefundAdjustment({
+        onChange: calculateFinancials,
+        remainingDue: () => Math.max(Number(document.getElementById('total_payable').value) -
+            [...document.querySelectorAll('.payment-amount')].reduce((total, input) => total + (Number(input.value) || 0), 0), 0),
+    });
 
 });
 

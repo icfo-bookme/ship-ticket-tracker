@@ -16,7 +16,9 @@ class TicketSalesSystem {
             window.ticketSaleSaved = document.getElementById('ticketForm')?.dataset.ticketSaleSaved === '1';
             this.clearDraftAfterSuccessfulSubmit();
             this.setupEventListeners();
+            this.setupRefundAdjustment();
             await this.restoreDraft();
+            await this.restoreRefundAdjustment();
             this.setupPageValidations();
             this.calculateAll();
             this.toggleReturnJourneySection();
@@ -35,6 +37,107 @@ class TicketSalesSystem {
         this.setupReturnDateValidation();
         this.setupDiscountValidation();
         this.setupBirthDateValidation();
+    }
+
+    setupRefundAdjustment() {
+        const container = document.getElementById('refundAdjustment');
+        if (!container) return;
+        this.refundOptions = new Map();
+        const checkbox = document.getElementById('adjustFromRefund');
+        const select = document.getElementById('refund_id');
+        const amount = document.getElementById('refund_adjustment_amount');
+        checkbox.addEventListener('change', () => {
+            this.toggleRefundAdjustment(checkbox.checked);
+            if (checkbox.checked) this.loadRefundAdjustments();
+        });
+        select.addEventListener('change', () => {
+            const refund = this.refundOptions.get(select.value);
+            amount.value = refund ? Math.min(Number(refund.available_amount), Number(this.getValue('total_payable')) || 0).toFixed(2) : '';
+            amount.max = refund ? String(refund.available_amount) : '';
+            document.getElementById('refundAdjustmentBalance').textContent = refund
+                ? `Available balance: ${Number(refund.available_amount).toFixed(2)} (after deductions and old sale due)`
+                : 'Select an approved refund.';
+            this.updateRefundAdjustmentPayment();
+        });
+        amount.addEventListener('input', () => this.updateRefundAdjustmentPayment());
+    }
+
+    toggleRefundAdjustment(enabled) {
+        document.getElementById('adjustFromRefund').checked = enabled;
+        document.getElementById('refundAdjustmentFields').classList.toggle('hidden', !enabled);
+        ['refund_id', 'refund_adjustment_amount'].forEach(id => {
+            const field = document.getElementById(id);
+            field.disabled = !enabled;
+            field.required = enabled;
+            if (!enabled) field.value = '';
+        });
+        this.updateRefundAdjustmentPayment();
+    }
+
+    async loadRefundAdjustments(refundId = '') {
+        const container = document.getElementById('refundAdjustment');
+        const select = document.getElementById('refund_id');
+        const status = document.getElementById('refundAdjustmentBalance');
+        const requestId = (this.refundSearchRequestId || 0) + 1;
+        this.refundSearchRequestId = requestId;
+        status.textContent = 'Loading refunds...';
+        const url = new URL(container.dataset.url, window.location.origin);
+        try {
+            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+            if (!response.ok) throw new Error('Unable to load refunds.');
+            const payload = await response.json();
+            if (requestId !== this.refundSearchRequestId) return;
+            const previous = select.value;
+            this.refundOptions = new Map(payload.data.map(refund => [String(refund.id), refund]));
+            select.replaceChildren(new Option('Select a refund', ''));
+            payload.data.forEach(refund => {
+                const option = new Option(`#${refund.id} / Sale #${refund.sales_id} - ${refund.customer_name} (${refund.customer_mobile}) - ${Number(refund.available_amount).toFixed(2)}${refund.can_adjust ? '' : ' - Awaiting approval'}`, String(refund.id));
+                option.disabled = !refund.can_adjust;
+                select.add(option);
+            });
+            const selected = this.refundOptions.get(String(refundId || previous));
+            select.value = selected?.can_adjust ? String(selected.id) : '';
+            select.dispatchEvent(new Event('change'));
+            if (!payload.data.length) status.textContent = 'No refunds with an available balance found.';
+        } catch (error) {
+            if (requestId !== this.refundSearchRequestId) return;
+            select.replaceChildren(new Option('Select a refund', ''));
+            select.dispatchEvent(new Event('change'));
+            status.textContent = 'Unable to load refunds. Uncheck and check Adjust from refund to retry.';
+        }
+    }
+
+    async restoreRefundAdjustment() {
+        const container = document.getElementById('refundAdjustment');
+        if (!container) return;
+        let fields = {};
+        try { fields = JSON.parse(this.getStoredDraft() || '{}').fields || {}; } catch {}
+        const refundId = container.dataset.refundId || fields.refund_id;
+        const amount = container.dataset.amount || fields.refund_adjustment_amount;
+        if (refundId) {
+            this.isRestoringDraft = true;
+            this.toggleRefundAdjustment(true);
+            await this.loadRefundAdjustments(refundId);
+            if (document.getElementById('refund_id').value && amount) {
+                document.getElementById('refund_adjustment_amount').value = amount;
+            }
+            this.updateRefundAdjustmentPayment();
+            this.isRestoringDraft = false;
+        }
+    }
+
+    refundAdjustmentAmount() {
+        const select = document.getElementById('refund_id');
+        return select && !select.disabled && select.value
+            ? Math.max(Number(document.getElementById('refund_adjustment_amount').value) || 0, 0) : 0;
+    }
+
+    updateRefundAdjustmentPayment() {
+        const preview = document.getElementById('refundAdjustmentPayment');
+        if (preview) preview.textContent = this.refundAdjustmentAmount() > 0
+            ? `Refund Adjusted: ${this.refundAdjustmentAmount().toFixed(2)}` : '';
+        this.calculatePaymentTotals();
+        this.saveDraftSoon();
     }
 
     setupReturnDateValidation() {
@@ -477,6 +580,7 @@ class TicketSalesSystem {
 
         this.removeDraft();
         form.reset();
+        if (document.getElementById('refundAdjustment')) this.toggleRefundAdjustment(false);
         this.resetDynamicState();
         this.clearAllErrors();
         this.calculateAll();
@@ -1040,7 +1144,14 @@ class TicketSalesSystem {
 
     validatePaymentMethods() {
         const paymentEntries = this.getElements(this.selectors.classes.paymentEntry);
-        let hasValidPayment = false;
+        let hasValidPayment = this.refundAdjustmentAmount() > 0;
+
+        const refundAmount = document.getElementById('refund_adjustment_amount');
+        if (document.getElementById('adjustFromRefund')?.checked &&
+            (!this.refundAdjustmentAmount() || !refundAmount.reportValidity() || this.refundAdjustmentAmount() > Number(this.getValue('total_payable')))) {
+            this.showTopError('Select an approved refund and enter an amount within the available balance and sale payable.');
+            return { isValid: false, firstErrorField: refundAmount };
+        }
 
         paymentEntries.forEach(entry => {
             const method = entry.querySelector(this.selectors.classes.paymentMethodSelect).value;
@@ -1447,7 +1558,7 @@ class TicketSalesSystem {
     }
 
     calculatePaymentTotals() {
-        let totalReceived = 0;
+        let totalReceived = this.refundAdjustmentAmount();
         let pendingBftnAmount = 0;
 
         this.getElements(this.selectors.classes.paymentEntry).forEach(entry => {
@@ -1509,6 +1620,9 @@ class TicketSalesSystem {
         html += this.generateBasicInfo(formData);
         html += '</div>';
         html += this.generatePaymentMethods();
+        if (this.refundAdjustmentAmount() > 0) {
+            html += `<div class="rounded-lg bg-blue-50 p-3 text-blue-900">Refund Adjusted: ${this.refundAdjustmentAmount().toFixed(2)} from refund #${Number(document.getElementById('refund_id').value)}</div>`;
+        }
         html += this.generateTicketCategories();
         html += this.generateCoPassengerInfo();
         return html;

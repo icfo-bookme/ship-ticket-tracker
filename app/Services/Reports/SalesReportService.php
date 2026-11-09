@@ -39,6 +39,7 @@ class SalesReportService
                 'ships',
                 'companies',
                 'refunds.customerPayments',
+                'refunds.adjustments',
                 'payments',
                 'categories',
                 'verifyby.verifiedByUser:id,name',
@@ -379,6 +380,7 @@ class SalesReportService
             ->selectRaw(<<<'SQL'
                 sales_id,
                 SUM(CASE WHEN is_bftn = 0 OR settlement_status = "received" THEN received_amount ELSE 0 END) AS settled_amount,
+                SUM(CASE WHEN refund_id IS NOT NULL THEN received_amount ELSE 0 END) AS refund_adjusted_amount,
                 SUM(CASE WHEN is_bftn = 1 THEN 1 ELSE 0 END) AS bftn_count,
                 SUM(CASE WHEN is_bftn = 1 AND settlement_status = "pending" THEN 1 ELSE 0 END) AS bftn_pending_count,
                 SUM(CASE WHEN is_bftn = 1 AND settlement_status = "received" THEN 1 ELSE 0 END) AS bftn_received_count,
@@ -401,7 +403,7 @@ class SalesReportService
                 ->orWhereNull('refund_type'))
             ->where(fn ($refunds) => $refunds
                 ->where('status', 'completed')
-                ->orWhereNotNull('customer_refunded_at'));
+                ->orWhereNotNull('customer_refunded_at')->orWhereNotNull('adjustment_started_at'));
 
         $refundTotals = (clone $completedRefunds)
             ->selectRaw(<<<'SQL'
@@ -424,7 +426,7 @@ class SalesReportService
                 ->orWhereNull('refunds.refund_type'))
             ->where(fn ($refunds) => $refunds
                 ->where('refunds.status', 'completed')
-                ->orWhereNotNull('refunds.customer_refunded_at'))
+                ->orWhereNotNull('refunds.customer_refunded_at')->orWhereNotNull('refunds.adjustment_started_at'))
             ->selectRaw('refunds.sales_id, SUM(refund_customer_payments.amount) AS customer_refund_paid')
             ->groupBy('refunds.sales_id');
 
@@ -434,7 +436,7 @@ class SalesReportService
             ->where('refunds.refund_type', 'extra_payment')
             ->where(fn ($refunds) => $refunds
                 ->where('refunds.status', 'completed')
-                ->orWhereNotNull('refunds.customer_refunded_at'))
+                ->orWhereNotNull('refunds.customer_refunded_at')->orWhereNotNull('refunds.adjustment_started_at'))
             ->selectRaw('refunds.sales_id, SUM(refund_customer_payments.amount) AS extra_refund_paid')
             ->groupBy('refunds.sales_id');
 
@@ -452,7 +454,7 @@ class SalesReportService
                 COALESCE(SUM(ship_ticket_sales.discount_amount), 0) AS total_discount_amount,
                 COALESCE(SUM(ship_ticket_sales.total_payable), 0) AS total_payable,
                 COALESCE(SUM(received_payment_totals.received_amount), 0) AS total_received_amount,
-                COALESCE(SUM(payment_totals.settled_amount), 0) AS lifetime_received_amount,
+                COALESCE(SUM(payment_totals.settled_amount - payment_totals.refund_adjusted_amount), 0) AS lifetime_received_amount,
                 COALESCE(SUM(CASE WHEN payment_totals.settled_amount > ship_ticket_sales.total_payable THEN payment_totals.settled_amount - ship_ticket_sales.total_payable ELSE 0 END), 0) AS total_extra_received_amount,
                 COALESCE(SUM(extra_refund_totals.extra_refund_paid), 0) AS total_extra_refunded_amount,
                 COALESCE(SUM(CASE WHEN ship_ticket_sales.total_payable - COALESCE(payment_totals.settled_amount, 0) - COALESCE(payment_totals.bftn_pending_amount, 0) - COALESCE(refund_totals.due_adjusted_amount, 0) > 0 THEN ship_ticket_sales.total_payable - COALESCE(payment_totals.settled_amount, 0) - COALESCE(payment_totals.bftn_pending_amount, 0) - COALESCE(refund_totals.due_adjusted_amount, 0) ELSE 0 END), 0) AS total_due_amount,
@@ -484,7 +486,7 @@ class SalesReportService
         $receivedPayments = $this->receivedPayments($sale, $filters);
         $extraPaymentSummary = $this->extraPaymentService->summary($sale);
         $completedRefunds = $sale->refunds->filter(
-            fn ($refund): bool => $refund->status === 'completed' || $refund->customer_refunded_at !== null
+            fn ($refund): bool => $refund->status === 'completed' || $refund->customer_refunded_at !== null || $refund->adjustment_started_at !== null
         );
         $ticketRefunds = $completedRefunds->where('refund_type', '!=', 'extra_payment');
         $extraRefunds = $completedRefunds->where('refund_type', 'extra_payment');
@@ -582,6 +584,7 @@ class SalesReportService
             'bftn_received_at' => $sale->payments->where('is_bftn', true)->max('received_at')?->format('Y-m-d'),
             'bftn_amount' => (float) $sale->payments->where('is_bftn', true)->sum('received_amount'),
             'net_cash' => $this->settledAmount($sale)
+                - (float) $sale->payments->whereNotNull('refund_id')->sum('received_amount')
                 - $customerRefundPaid
                 - $extraRefundPaid
                 - (float) $ticketRefunds->sum('partner_share_amount'),

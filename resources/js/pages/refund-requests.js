@@ -32,6 +32,16 @@ const completedColumns = [
     { data: 'company_retained_amount' },
     { data: 'due_adjusted_amount', render: (data) => Number(data || 0).toFixed(2) },
     { data: 'customer_refund_after_due_adjustment', render: (data) => `<div class="bg-red-100 px-2 py-1 font-semibold text-red-700">${Number(data || 0).toFixed(2)}</div>` },
+    {
+        data: 'settlement_label',
+        render: (data, type, row) => {
+            if (type !== 'display') return data;
+            const references = (row.adjustment_references || []).map(reference =>
+                `<div class="mt-1 text-xs text-blue-700">Sale #${Number(reference.sale_id)}: ${Number(reference.amount).toFixed(2)}</div>`
+            ).join('');
+            return `<span class="rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-800">${escapeHtml(data || 'Refunded')}</span><div class="mt-1 text-xs text-gray-600">Paid: ${Number(row.customer_refund_paid || 0).toFixed(2)} · Adjusted: ${Number(row.refund_adjusted_amount || 0).toFixed(2)}</div>${references}`;
+        },
+    },
     { data: 'status' },
     {
         data: null,
@@ -56,7 +66,7 @@ const columns = isCompleted ? completedColumns : [
     { data: 'due_adjusted_amount', render: (data) => Number(data || 0).toFixed(2) },
     {
         data: 'customer_refund_after_due_adjustment',
-        render: (data) => `<div class="bg-red-100 px-2 py-1 font-semibold text-red-700">${Number(data || 0).toFixed(2)}</div>`,
+        render: (data, type, row) => `<div class="bg-red-100 px-2 py-1 font-semibold text-red-700">${Number(data || 0).toFixed(2)}</div>${Number(row.refund_adjusted_amount || 0) > 0 ? `<div class="text-xs text-blue-700">Adjusted to new sales: ${Number(row.refund_adjusted_amount).toFixed(2)}</div>` : ''}`,
     },
     isPaymentDetailsAdded ? { data: 'refund_payment_details', render: (data) => escapeHtml(data || 'N/A') } : null,
     { data: 'status' },

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Refund extends Model
 {
@@ -12,6 +13,7 @@ class Refund extends Model
     protected $table = 'refunds';
 
     protected $fillable = [
+        'adjustment_started_at',
         'sales_id',
         'status',
         'batch_uuid',
@@ -37,6 +39,7 @@ class Refund extends Model
     ];
 
     protected $casts = [
+        'adjustment_started_at' => 'datetime',
         'gross_refund_amount' => 'decimal:2',
         'refund_discount_amount' => 'decimal:2',
         'other_fee_deduction' => 'decimal:2',
@@ -73,4 +76,36 @@ class Refund extends Model
     }
 
     public $timestamps = true;
+
+    public function adjustments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'refund_id');
+    }
+
+    /** @return array{settlement_label: string, refund_adjusted_amount: float, customer_refund_paid: float, remaining_refund_amount: float, adjustment_references: array<int, array{sale_id: int, amount: float}>} */
+    public function settlementSummary(): array
+    {
+        $this->loadMissing(['adjustments', 'customerPayments']);
+        $adjusted = round((float) $this->adjustments->sum('received_amount'), 2);
+        $paid = round((float) $this->customerPayments->where('status', 'paid')->sum('amount'), 2);
+        $label = match (true) {
+            $adjusted > 0 && $paid > 0 => 'Partly Refunded & Adjusted',
+            $adjusted > 0 => 'Refund Adjusted',
+            $paid > 0 => 'Refunded',
+            (float) $this->customer_refund_amount <= 0 && (float) $this->due_adjusted_amount > 0 => 'Due Adjusted',
+            $this->status === 'completed' => 'Refunded',
+            default => 'Pending',
+        };
+
+        return [
+            'settlement_label' => $label,
+            'refund_adjusted_amount' => $adjusted,
+            'customer_refund_paid' => $paid,
+            'remaining_refund_amount' => round(max((float) $this->customer_refund_amount - $adjusted - $paid, 0), 2),
+            'adjustment_references' => $this->adjustments->map(fn (Payment $payment): array => [
+                'sale_id' => (int) $payment->sales_id,
+                'amount' => round((float) $payment->received_amount, 2),
+            ])->values()->all(),
+        ];
+    }
 }

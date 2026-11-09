@@ -47,6 +47,7 @@ return [
             'type' => 'string', 'unit_price' => 'decimal',
         ],
         Payment::class => [
+            'refund_id' => 'integer', 'adjusted_by' => 'integer',
             'sales_id' => 'integer', 'payment_method' => 'string',
             'is_bftn' => 'boolean', 'settlement_status' => 'string',
             'received_amount' => 'decimal', 'remark' => 'string',
@@ -55,6 +56,8 @@ return [
             'received_at' => 'datetime',
         ],
         Refund::class => [
+            'adjustment_started_at' => 'datetime',
+            'adjustments' => 'collection:'.Payment::class,
             'sales_id' => 'integer', 'status' => 'string', 'refund_type' => 'string',
             'reason' => 'string', 'refunded_number_of_tickets' => 'integer',
             'refunded_amount' => 'decimal', 'gross_refund_amount' => 'decimal',
@@ -89,6 +92,7 @@ return [
 
     'collections' => [
         Refund::class => [
+            'adjustments' => 'adjustments',
             'tickets' => 'tickets', 'customer_payments' => 'customerPayments', 'partner_payments' => 'partnerPayments',
         ],
         ShipTicketSale::class => [

@@ -206,15 +206,17 @@ class RefundService
             }
 
             $dueAmount = $currentSummary['due_amount'];
-            $dueAdjustment = min($dueAmount, max($customerRefundAmount, 0));
-            $payableRefundAmount = round($customerRefundAmount - $dueAdjustment, 2);
+            $dueAdjustment = $refund->adjustment_started_at ? 0 : min($dueAmount, max($customerRefundAmount, 0));
+            $adjustedAmount = (float) $refund->adjustments()->sum('received_amount');
+            $alreadyPaid = (float) $refund->customerPayments()->where('status', 'paid')->sum('amount');
+            $payableRefundAmount = round(max($customerRefundAmount - $dueAdjustment - $adjustedAmount - $alreadyPaid, 0), 2);
 
             if ($dueAdjustment > 0) {
                 $refund->update([
                     'customer_refund_amount' => $payableRefundAmount,
                     'due_adjusted_amount' => $dueAdjustment,
                 ]);
-            } else {
+            } elseif (! $refund->adjustment_started_at) {
                 $refund->update(['due_adjusted_amount' => 0]);
             }
 
@@ -311,6 +313,7 @@ class RefundService
 
     private function performUpdate(Refund $refund, ShipTicketSale $sale, array $data): void
     {
+        $this->ensureNotAdjusted($refund);
         if (in_array($refund->status, [RefundStatus::Completed->value, RefundStatus::Cancelled->value], true)) {
             throw ValidationException::withMessages(['status' => 'This refund request can no longer be edited.']);
         }
@@ -392,6 +395,7 @@ class RefundService
 
     private function performCancel(Refund $refund): void
     {
+        $this->ensureNotAdjusted($refund);
         if (in_array($refund->status, [RefundStatus::Completed->value, RefundStatus::Cancelled->value], true)) {
             throw ValidationException::withMessages(['status' => 'This refund request cannot be cancelled.']);
         }
@@ -401,7 +405,18 @@ class RefundService
 
     public function delete(Refund $refund): void
     {
-        $this->auditLogs->capture($refund, fn (Refund $locked): ?bool => $locked->delete(), 'deleted');
+        $this->auditLogs->capture($refund, function (Refund $locked): ?bool {
+            $this->ensureNotAdjusted($locked);
+
+            return $locked->delete();
+        }, 'deleted');
+    }
+
+    private function ensureNotAdjusted(Refund $refund): void
+    {
+        if ($refund->adjustment_started_at || $refund->adjustments()->exists()) {
+            throw ValidationException::withMessages(['refund' => 'This refund is linked to a new sale and cannot be edited, cancelled or deleted.']);
+        }
     }
 
     private function ensureRefundableAmount(

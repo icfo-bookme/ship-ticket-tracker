@@ -100,6 +100,7 @@
                         <option value="Bkash">Bkash</option>
                         <option value="Nagad">Nagad</option>
                         <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Refund Adjusted">Refund Adjusted</option>
                     </select>
                 </div>
             </div>

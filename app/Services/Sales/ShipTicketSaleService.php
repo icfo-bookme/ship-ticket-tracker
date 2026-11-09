@@ -16,6 +16,7 @@ use App\Models\WhatsappDetail;
 use App\Services\AuditLogService;
 use App\Services\Finance\PaymentProofStorage;
 use App\Services\GoogleSheetService;
+use App\Services\Refunds\RefundAdjustmentService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -26,11 +27,18 @@ class ShipTicketSaleService
         private readonly PaymentProofStorage $paymentProofs,
         private readonly SaleFinancialService $saleFinancials,
         private readonly AuditLogService $auditLogs,
+        private readonly RefundAdjustmentService $refundAdjustments,
     ) {}
 
     public function delete(int $saleId): void
     {
-        $this->auditLogs->capture(ShipTicketSale::findOrFail($saleId), fn (ShipTicketSale $sale): ?bool => $sale->delete(), 'deleted');
+        $this->auditLogs->capture(ShipTicketSale::findOrFail($saleId), function (ShipTicketSale $sale): ?bool {
+            if ($sale->payments()->whereNotNull('refund_id')->exists() || $sale->refunds()->whereHas('adjustments')->exists()) {
+                throw ValidationException::withMessages(['sale' => 'A sale linked to a refund adjustment cannot be deleted.']);
+            }
+
+            return $sale->delete();
+        }, 'deleted');
     }
 
     public function restore(int $saleId): ShipTicketSale
@@ -53,8 +61,9 @@ class ShipTicketSaleService
         unset($saleAttributes['received_amount']);
         unset($saleAttributes['ticket_value']);
         unset($saleAttributes['due_amount']);
+        unset($saleAttributes['refund_id'], $saleAttributes['refund_adjustment_amount']);
 
-        $ticketSale = DB::transaction(function () use ($saleAttributes, $input): ShipTicketSale {
+        $ticketSale = DB::transaction(function () use ($saleAttributes, $input, $data): ShipTicketSale {
             $ticketSale = ShipTicketSale::create($saleAttributes);
 
             $this->createCoPassengers($ticketSale, $input['co_passengers'] ?? [], true);
@@ -65,12 +74,22 @@ class ShipTicketSaleService
             );
             $this->createTicketCategories($ticketSale, $input['ticket_categories'] ?? []);
 
+            if (! empty($data['refund_id'])) {
+                $this->refundAdjustments->apply($ticketSale, (int) $data['refund_id'], (float) $data['refund_adjustment_amount']);
+            }
+
             $this->auditLogs->record($ticketSale, 'created', newValues: $this->auditLogs->snapshot($ticketSale));
 
             return $ticketSale;
         });
 
-        $this->appendAdminSaleToSheet($ticketSale, $data, $input);
+        $sheetData = $data;
+        $sheetData['received_amount'] += (float) ($data['refund_adjustment_amount'] ?? 0);
+        $sheetInput = $input;
+        if (! empty($data['refund_id'])) {
+            $sheetInput['payment_methods'][] = ['method' => Payment::REFUND_ADJUSTED, 'amount' => $data['refund_adjustment_amount']];
+        }
+        $this->appendAdminSaleToSheet($ticketSale, $sheetData, $sheetInput);
 
         return $ticketSale;
     }
@@ -115,6 +134,10 @@ class ShipTicketSaleService
         try {
             $sale = $sale->newQuery()->lockForUpdate()->findOrFail($sale->getKey());
             $before = $this->auditLogs->snapshot($sale);
+
+            if ($sale->refunds()->whereNotNull('adjustment_started_at')->exists()) {
+                throw ValidationException::withMessages(['sale' => 'The original sale is locked because its refund has been used on another sale.']);
+            }
 
             if (array_key_exists('departure_quantity', $input) || array_key_exists('return_quantity', $input)) {
                 $ticketCount = array_sum(array_map('intval', $input['departure_quantity'] ?? []))
@@ -169,6 +192,10 @@ class ShipTicketSaleService
 
             $this->updatePayments($sale, $data['payments'] ?? []);
             $sale->refresh();
+            if (! empty($data['refund_id'])) {
+                $this->refundAdjustments->apply($sale, (int) $data['refund_id'], (float) $data['refund_adjustment_amount'], limitToDue: true);
+                $sale->refresh();
+            }
             $this->updateCoPassengers($sale, $data['co_passengers'] ?? []);
             $this->addPrintedTickets($sale, $input['additional_pdf'] ?? []);
 
@@ -269,6 +296,9 @@ class ShipTicketSaleService
         bool $withExtraFields,
     ): void {
         foreach ($paymentMethods as $paymentMethod) {
+            if (($paymentMethod['method'] ?? null) === Payment::REFUND_ADJUSTED || ! empty($paymentMethod['refund_id'])) {
+                throw ValidationException::withMessages(['payment_methods' => 'Use the refund selector for refund adjustments.']);
+            }
             if (! empty($paymentMethod['method']) && ! empty($paymentMethod['amount'])) {
                 $isBftn = $paymentMethod['method'] === 'Bank Transfer'
                     && (bool) ($paymentMethod['is_bftn'] ?? false);
@@ -287,7 +317,7 @@ class ShipTicketSaleService
                         'payment_datetime' => $paymentMethod['payment_datetime'] ?? null,
                         'payment_proof' => $this->paymentProofs->store($paymentMethod['proof_file'] ?? null),
                     ] : []),
-                    'paid_date' => $paymentMethod['paid_date'],
+                    'paid_date' => $paymentMethod['paid_date'] ?? now()->toDateString(),
                     ...($withExtraFields ? ['remark' => $paymentMethod['remark'] ?? null] : []),
                 ]);
             }
@@ -386,12 +416,28 @@ class ShipTicketSaleService
         $retainedProofs = [];
         $updatedIds = [];
 
+        foreach ($existingPayments as $existing) {
+            if ($existing->refund_id) {
+                $updatedIds[] = $existing->id;
+            }
+        }
+
         foreach ($payments as $payment) {
             if (empty($payment['payment_method']) || empty($payment['received_amount'])) {
                 continue;
             }
 
             $existing = $existingPayments->get((int) ($payment['payment_id'] ?? 0));
+            if ($existing?->refund_id) {
+                if ($payment['payment_method'] !== Payment::REFUND_ADJUSTED || round((float) $payment['received_amount'], 2) !== round((float) $existing->received_amount, 2)) {
+                    throw ValidationException::withMessages(['payments' => 'Refund adjustment payments cannot be changed.']);
+                }
+
+                continue;
+            }
+            if ($payment['payment_method'] === Payment::REFUND_ADJUSTED) {
+                throw ValidationException::withMessages(['payments' => 'Refund adjustment payments must be created using the refund selector.']);
+            }
             $isBftn = $payment['payment_method'] === 'Bank Transfer'
                 && (array_key_exists('is_bftn', $payment) ? (bool) $payment['is_bftn'] : (bool) $existing?->is_bftn);
             $proof = $this->paymentProofs->store($payment['proof_file'] ?? null)

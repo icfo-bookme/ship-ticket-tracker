@@ -581,8 +581,19 @@
                                     </div>
                                 </div>
 
+                                <x-refund-adjustment :sale-id="$sale->id" />
                                 <div id="payments-container" class="space-y-3">
                                     @foreach ($sale->payments as $index => $payment)
+                                        @if ($payment->refund_id)
+                                            <div class="payment-item rounded-lg border border-blue-200 bg-blue-50 p-3">
+                                                <p class="font-semibold text-blue-900">Refund Adjusted — Refund #{{ $payment->refund_id }}</p>
+                                                <input type="hidden" name="payments[{{ $index }}][payment_id]" value="{{ $payment->id }}">
+                                                <input type="hidden" name="payments[{{ $index }}][payment_method]" value="Refund Adjusted">
+                                                <input type="number" readonly class="payment-amount mt-2 rounded-lg border-gray-300 bg-gray-100" name="payments[{{ $index }}][received_amount]" value="{{ $payment->received_amount }}">
+                                                <p class="mt-1 text-xs text-gray-600">{{ $payment->remark }}</p>
+                                            </div>
+                                            @continue
+                                        @endif
                                         <div
                                             class="payment-item bg-white rounded-lg p-3 shadow-sm border border-blue-200 hover:shadow-md transition duration-200 ease-in-out">
                                             <input type="hidden" name="payments[{{ $index }}][payment_id]" value="{{ $payment->id }}">
@@ -606,6 +617,9 @@
                                                         required
                                                         class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">
                                                         <option value="">Select Method</option>
+                                                        @if ($payment->refund_id)
+                                                            <option value="Refund Adjusted" selected>Refund Adjusted (#{{ $payment->refund_id }})</option>
+                                                        @endif
                                                         <option value="Cash"
                                                             {{ $payment->payment_method == 'Cash' ? 'selected' : '' }}>
                                                             Cash</option>

@@ -43,7 +43,7 @@ beforeEach(function () {
 
 it('shows the sold by user name in a locked field and hides the customer id field', function () {
     $this->actingAs($this->admin)
-        ->get('/ship-ticket-sales/'.$this->sale->id.'/edit')
+        ->get(route('ship-ticket-sales.show', $this->sale))
         ->assertOk()
         ->assertSee('value="Seller Rahim" disabled', false)
         ->assertSee('<input type="hidden" name="sold_by" id="sold_by" value="'.$this->seller->id.'">', false)
@@ -62,6 +62,7 @@ it('keeps sold by unchanged when the sale is updated', function () {
             'nid' => null,
             'date_of_birth' => null,
             'address' => 'Dhaka',
+            'collect_from_office' => 0,
             'ship_id' => $this->ship->id,
             'company_id' => $this->company->id,
             'journey_date' => '2026-10-01',

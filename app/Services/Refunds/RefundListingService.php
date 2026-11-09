@@ -106,7 +106,7 @@ class RefundListingService
     public function refundedSale(int $saleId): ShipTicketSale
     {
         $sale = ShipTicketSale::withTrashed()->with([
-            'ships', 'companies', 'payments', 'refunds.tickets', 'refunds.customerPayments',
+            'ships', 'companies', 'payments', 'refunds.tickets', 'refunds.customerPayments', 'refunds.adjustments',
         ])->findOrFail($saleId);
 
         abort_unless($sale->refunds->contains(
@@ -128,7 +128,7 @@ class RefundListingService
         ], true), 404);
 
         $query = Refund::with([
-            'sale.ships', 'sale.companies', 'sale.categories.package', 'sale.payments', 'sale.refunds', 'tickets',
+            'sale.ships', 'sale.companies', 'sale.categories.package', 'sale.payments', 'sale.refunds', 'tickets', 'adjustments', 'customerPayments',
         ])
             ->whereNotNull('requested_at')
             ->whereHas('sale', fn (Builder $sale) => $sale->whereNull('deleted_at'))
@@ -159,6 +159,9 @@ class RefundListingService
 
     private function appendRefundRequestSummary(Refund $refund): void
     {
+        foreach ($refund->settlementSummary() as $key => $value) {
+            $refund->setAttribute($key, $value);
+        }
         if ($refund->sale) {
             $refund->sale->setAttribute('ticket_count', (int) $refund->sale->categories->sum('quantity'));
             $this->appendCurrentFinancials($refund->sale);
@@ -167,7 +170,7 @@ class RefundListingService
         $requestedQuantities = $refund->tickets->keyBy('category_id');
         $categories = $refund->sale?->categories ?? collect();
         $customerRefundAmount = (float) $refund->customer_refund_amount;
-        $dueAdjustment = round(min(
+        $dueAdjustment = $refund->adjustment_started_at ? 0 : round(min(
             max((float) ($refund->sale?->due_amount ?? 0), 0),
             max($customerRefundAmount, 0),
         ), 2);
@@ -177,6 +180,11 @@ class RefundListingService
         $refund->setAttribute('refund_calculation_valid', $customerRefundAmount >= 0);
         $refund->setAttribute('due_adjusted_amount', $dueAdjustment);
         $refund->setAttribute('customer_refund_after_due_adjustment', round(max($customerRefundAmount - $dueAdjustment, 0), 2));
+        if ($refund->adjustment_started_at) {
+            $refund->setAttribute('due_adjusted_amount', (float) $refund->getRawOriginal('due_adjusted_amount'));
+            $refund->setAttribute('refund_adjusted_amount', (float) $refund->adjustments->sum('received_amount'));
+            $refund->setAttribute('customer_refund_after_due_adjustment', round(max($customerRefundAmount - (float) $refund->adjustments->sum('received_amount'), 0), 2));
+        }
         $refund->setAttribute('customer_refund_before_discount', round($customerRefundAmount + (float) $refund->refund_discount_amount, 2));
         $refund->setAttribute('edit_categories', $categories->map(fn ($category): array => [
             'id' => $category->id,

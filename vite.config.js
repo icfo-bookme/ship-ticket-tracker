@@ -33,6 +33,7 @@ export default defineConfig({
                 'resources/js/pages/reports-sales.js',
                 'resources/js/pages/ticket-issued-report.js',
                 'resources/js/pages/refund-report.js',
+                'resources/js/pages/company-loss-report.js',
                 'resources/js/pages/bftn-report.js',
                 'resources/js/pages/sale-status.js',
                 'resources/js/pages/deleted-sales.js',

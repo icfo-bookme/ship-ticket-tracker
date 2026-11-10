@@ -40,6 +40,7 @@ class SalesReportService
                 'companies',
                 'refunds.customerPayments',
                 'refunds.adjustments',
+                'refunds.companyErrorRefund',
                 'payments',
                 'categories',
                 'verifyby.verifiedByUser:id,name',
@@ -60,7 +61,7 @@ class SalesReportService
         $totals = $this->totals($filters, $searchValue);
         $refundOutflow = $totals->total_customer_refund_paid
             + $totals->total_extra_refunded_amount
-            + $totals->total_partner_share_amount;
+            + $totals->total_partner_outflow_amount;
 
         return [
             'draw' => $draw,
@@ -407,8 +408,9 @@ class SalesReportService
                 ->where('status', 'completed')
                 ->orWhereNotNull('customer_refunded_at')->orWhereNotNull('adjustment_started_at'));
 
+        $partnerOutflow = Refund::partnerOutflowSql();
         $refundTotals = (clone $completedRefunds)
-            ->selectRaw(<<<'SQL'
+            ->selectRaw(<<<SQL
                 sales_id,
                 SUM(refunded_number_of_tickets) AS refunded_tickets,
                 SUM(gross_refund_amount) AS gross_ticket_refund_amount,
@@ -416,6 +418,7 @@ class SalesReportService
                 SUM(refund_discount_amount) AS refund_discount_amount,
                 SUM(due_adjusted_amount) AS due_adjusted_amount,
                 SUM(partner_share_amount) AS partner_share_amount,
+                SUM({$partnerOutflow}) AS partner_outflow_amount,
                 SUM(company_retained_amount) AS company_retained_amount
                 SQL)
             ->groupBy('sales_id');
@@ -480,6 +483,7 @@ class SalesReportService
                 COALESCE(SUM(refund_totals.refund_discount_amount), 0) AS total_refund_discount_amount,
                 COALESCE(SUM(refund_totals.due_adjusted_amount), 0) AS total_due_adjusted_amount,
                 COALESCE(SUM(refund_totals.partner_share_amount), 0) AS total_partner_share_amount,
+                COALESCE(SUM(refund_totals.partner_outflow_amount), 0) AS total_partner_outflow_amount,
                 COALESCE(SUM(refund_totals.company_retained_amount), 0) AS total_company_retained_amount,
                 COALESCE(SUM(customer_refund_totals.customer_refund_paid), 0) AS total_customer_refund_paid
                 SQL)->first();
@@ -597,7 +601,7 @@ class SalesReportService
                 - (float) $sale->payments->whereNotNull('refund_id')->sum('received_amount')
                 - $customerRefundPaid
                 - $extraRefundPaid
-                - (float) $ticketRefunds->sum('partner_share_amount'),
+                - (float) $ticketRefunds->sum(fn (Refund $refund): float => $refund->partnerOutflowAmount()),
         ];
     }
 

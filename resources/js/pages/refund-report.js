@@ -5,7 +5,7 @@ import { escapeHtml } from '../utils/escape-html.js';
 const table = document.getElementById('refundReportTable');
 if (table) {
     const filterIds = [
-        'refundReportShip',
+        'refundReportCompanyError', 'refundReportShip',
         'refundReportCompany',
         'refundReportType',
         'refundReportRefundedFrom',
@@ -16,6 +16,7 @@ if (table) {
         'refundReportReturnTo',
     ];
     const filters = () => ({
+        company_error_only: document.getElementById('refundReportCompanyError').value,
         ship_id: document.getElementById('refundReportShip').value,
         company_id: document.getElementById('refundReportCompany').value,
         refund_type: document.getElementById('refundReportType').value,
@@ -44,7 +45,7 @@ if (table) {
         { data: 'customer_refund_paid', render: formatMoney },
         { data: 'refund_adjusted_amount', render: formatMoney },
         { data: 'remaining_refund_amount', render: formatMoney },
-        { data: 'status', render: (data, type, row) => type !== 'display' ? data : `${escapeHtml(String(data || 'N/A').replaceAll('_', ' '))}<div class="text-xs font-semibold text-blue-700">${escapeHtml(row.settlement_label || '')}</div>` },
+        { data: 'status', render: (data, type, row) => type !== 'display' ? data : `${escapeHtml(String(data || 'N/A').replaceAll('_', ' '))}<div class="text-xs font-semibold text-blue-700">${escapeHtml(row.settlement_label || '')}</div>${row.company_error ? '<span class="rounded bg-red-100 px-2 py-1 text-xs text-red-700">Company Error</span>' : ''}` },
         {
             data: null,
             orderable: false,
@@ -156,6 +157,14 @@ function showRefundDetails(refund) {
         ['Partner Payment Details', refund.refund_payment_details || 'N/A'],
         ['Remark', refund.remark || 'N/A'],
     ];
+    if (refund.company_error) {
+        fields.push(
+            ['Company Loss Type', refund.company_error.loss_type === 'partner_share' ? 'Partner Share Loss' : 'Custom Loss'],
+            ['Company Loss %', refund.company_error.loss_percent],
+            ['Company Loss Amount', formatMoney(refund.company_error.loss_amount)],
+            ['Company Error Reason', refund.company_error.reason],
+        );
+    }
     const fieldMarkup = fields.map(([label, value]) => `
         <div class="border-b border-gray-100 pb-2 dark:border-gray-600">
             <dt class="text-xs font-medium uppercase text-gray-500">${escapeHtml(label)}</dt>

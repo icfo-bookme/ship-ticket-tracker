@@ -132,7 +132,7 @@ class RefundService
             $customerChargePercent = (float) $data['customer_charge_percent'];
             $partnerSharePercent = (float) $data['partner_share_percent'];
 
-            if ($partnerSharePercent > $customerChargePercent) {
+            if ($partnerSharePercent > $customerChargePercent && ! ($data['is_company_error'] ?? false)) {
                 throw ValidationException::withMessages([
                     'partner_share_percent' => 'Partner share cannot exceed customer charge.',
                 ]);
@@ -159,7 +159,7 @@ class RefundService
                 'refund_discount_amount' => $refundDiscountAmount,
                 'other_fee_deduction' => 0,
                 'customer_refund_amount' => $customerRefundAmount,
-                'company_retained_amount' => round($customerChargeAmount - $partnerShareAmount, 2),
+                'company_retained_amount' => round(max($customerChargeAmount - $partnerShareAmount, 0), 2),
                 'requested_at' => now(),
                 'remark' => $data['remark'] ?? null,
             ]);
@@ -172,6 +172,7 @@ class RefundService
                 'unit_amount' => $selected['unitAmount'],
                 'gross_amount' => $selected['categoryAmount'],
             ], $selectedTickets));
+            $this->saveCompanyError($refund, $data);
             $this->auditLogs->record($refund, 'created', newValues: $this->auditLogs->snapshot($refund));
         });
     }
@@ -346,7 +347,7 @@ class RefundService
             $customerChargePercent = (float) $data['customer_charge_percent'];
             $partnerSharePercent = (float) $data['partner_share_percent'];
 
-            if ($partnerSharePercent > $customerChargePercent) {
+            if ($partnerSharePercent > $customerChargePercent && ! ($data['is_company_error'] ?? false)) {
                 throw ValidationException::withMessages([
                     'partner_share_percent' => 'Partner share cannot exceed customer charge.',
                 ]);
@@ -370,7 +371,7 @@ class RefundService
                 'refund_discount_amount' => $refundDiscountAmount,
                 'other_fee_deduction' => 0,
                 'customer_refund_amount' => $customerRefundAmount,
-                'company_retained_amount' => round($customerChargeAmount - $partnerShareAmount, 2),
+                'company_retained_amount' => round(max($customerChargeAmount - $partnerShareAmount, 0), 2),
                 'remark' => $data['remark'] ?? null,
             ]);
             $refund->tickets()->delete();
@@ -383,6 +384,7 @@ class RefundService
                 'unit_amount' => $selected['unitAmount'],
                 'gross_amount' => $selected['categoryAmount'],
             ], $selectedTickets));
+            $this->saveCompanyError($refund, $data);
         });
     }
 
@@ -400,6 +402,7 @@ class RefundService
             throw ValidationException::withMessages(['status' => 'This refund request cannot be cancelled.']);
         }
 
+        $refund->companyErrorRefund()->delete();
         $refund->update(['status' => RefundStatus::Cancelled->value]);
     }
 
@@ -408,8 +411,44 @@ class RefundService
         $this->auditLogs->capture($refund, function (Refund $locked): ?bool {
             $this->ensureNotAdjusted($locked);
 
+            $locked->companyErrorRefund()->delete();
+
             return $locked->delete();
         }, 'deleted');
+    }
+
+    /** @param array<string, mixed> $data */
+    private function saveCompanyError(Refund $refund, array $data): void
+    {
+        if (! ($data['is_company_error'] ?? false)) {
+            $refund->companyErrorRefund()->delete();
+
+            return;
+        }
+
+        $lossType = $data['company_loss_type'];
+        $lossPercent = $lossType === 'partner_share'
+            ? (float) $refund->partner_share_percent
+            : (float) $data['company_loss_percent'];
+        $lossAmount = $lossType === 'partner_share'
+            ? (float) $refund->partner_share_amount
+            : round((float) $refund->gross_refund_amount * $lossPercent / 100, 2);
+        $uncoveredPartnerShare = round(max((float) $refund->partner_share_amount - (float) $refund->customer_charge_amount, 0), 2);
+
+        if ($lossAmount < $uncoveredPartnerShare) {
+            throw ValidationException::withMessages([
+                'company_loss_percent' => 'Company loss must cover the partner share not covered by the customer charge.',
+            ]);
+        }
+
+        $existing = $refund->companyErrorRefund()->first();
+        $refund->companyErrorRefund()->updateOrCreate([], [
+            'loss_type' => $lossType,
+            'loss_percent' => $lossPercent,
+            'loss_amount' => $lossAmount,
+            'reason' => $data['company_error_reason'],
+            'created_by' => $existing ? $existing->created_by : auth()->id(),
+        ]);
     }
 
     private function ensureNotAdjusted(Refund $refund): void

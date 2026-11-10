@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Refund extends Model
 {
@@ -54,6 +55,27 @@ class Refund extends Model
         'partner_received_at' => 'datetime',
         'customer_refunded_at' => 'datetime',
     ];
+
+    public static function partnerOutflowSql(): string
+    {
+        return '(CASE WHEN EXISTS (SELECT 1 FROM company_error_refunds WHERE company_error_refunds.refund_id = refunds.id)
+            AND refunds.partner_share_amount > refunds.customer_charge_amount
+            THEN refunds.customer_charge_amount ELSE refunds.partner_share_amount END)';
+    }
+
+    public function partnerOutflowAmount(): float
+    {
+        $partnerShare = (float) $this->partner_share_amount;
+
+        return $this->companyErrorRefund
+            ? min($partnerShare, (float) $this->customer_charge_amount)
+            : $partnerShare;
+    }
+
+    public function companyErrorRefund(): HasOne
+    {
+        return $this->hasOne(CompanyErrorRefund::class);
+    }
 
     public function sale()
     {

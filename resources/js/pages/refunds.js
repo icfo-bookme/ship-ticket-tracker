@@ -1,3 +1,4 @@
+import { initializeCompanyErrorRefund } from '../components/company-error-refund.js';
 import { initializeDataTable } from '../services/data-table.js';
 import { apiRequest, refreshDataTable } from '../services/api.js';
 
@@ -165,6 +166,7 @@ if (document.getElementById('salesTable')) {
     document.addEventListener("DOMContentLoaded", bindRefundTableEvents);
 }
 
+let companyErrorRefund = null;
 let currentRefundSaleId = null;
 let currentRefundRequestId = null;
 let currentRefundEditing = false;
@@ -195,9 +197,11 @@ function updateRefundPreview() {
     const dueAdjustment = roundRefundMoney(Math.min(currentRefundDueAmount, refundAfterAdjustments));
     const finalRefund = roundRefundMoney(refundAfterAdjustments - dueAdjustment);
 
+    companyErrorRefund?.updatePreview(grossAmount, partnerShare, customerCharge);
+
     document.getElementById('partnerSharePreview').textContent = partnerShare.toFixed(2);
     document.getElementById('customerChargePreview').textContent = customerCharge.toFixed(2);
-    document.getElementById('companyRetainedPreview').textContent = roundRefundMoney(customerCharge - partnerShare).toFixed(2);
+    document.getElementById('companyRetainedPreview').textContent = roundRefundMoney(Math.max(customerCharge - partnerShare, 0)).toFixed(2);
     document.getElementById('refundBreakdownNote').textContent =
         `Ticket subtotal ${grossAmount.toFixed(2)} - discount ${refundDiscount.toFixed(2)} = ${amountAfterDiscount.toFixed(2)}`;
     document.getElementById('refundDueAmountPreview').textContent = currentRefundDueAmount.toFixed(2);
@@ -210,6 +214,7 @@ function updateRefundPreview() {
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('refundModal');
     if (!modal) return;
+    companyErrorRefund = initializeCompanyErrorRefund(updateRefundPreview);
     const customerChargeInput = document.getElementById('customerChargePercentInput');
     const partnerShareInput = document.getElementById('partnerSharePercentInput');
 
@@ -234,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const invalidQuantity = Array.from(document.querySelectorAll('.refundCategoryQuantity'))
             .find((input) => !input.reportValidity());
 
-        if (invalidQuantity) return;
+        if (invalidQuantity || !companyErrorRefund.valid()) return;
 
         if (currentRefundSelectedGrossAmount <= 0 || !refundTickets || !ticketSelections.length) {
             Swal.fire({
@@ -276,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     customer_charge_percent: customerChargePercent,
                     partner_share_percent: partnerSharePercent,
                     remark: remark,
+                    ...companyErrorRefund.payload(),
                 }),
             });
 
@@ -340,7 +346,9 @@ function openRefundModal(btn, editing = false) {
     document.getElementById('partnerSharePercentInput').value = editing ? (btn.dataset.partnerShare || 0) : 0;
     document.getElementById('refundAmountInput').value = editing ? (btn.dataset.grossAmount || 0) : 0;
     document.getElementById('selectedTicketCountInput').value = 0;
-    document.getElementById('remark').value = '';
+    document.getElementById('remark').value = editing ? decodeURIComponent(btn.dataset.remark || '') : '';
+    currentRefundSelectedGrossAmount = 0;
+    companyErrorRefund?.reset(editing ? JSON.parse(decodeURIComponent(btn.dataset.companyError || 'null')) : null);
     const categories = JSON.parse(decodeURIComponent(btn.dataset.categories || '[]'));
     document.getElementById('refundCategoryRows').innerHTML = categories.map((category) => {
         const unitPrice = Number(category.unit_price);

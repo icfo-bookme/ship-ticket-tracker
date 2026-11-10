@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CompanyLossReportRequest;
 use App\Http\Requests\SalesReportRequest;
 use App\Http\Requests\TicketIssuedReportRequest;
 use App\Models\Company;
 use App\Models\Ship;
 use App\Services\Finance\ExtraPaymentService;
 use App\Services\Reports\BftnReportService;
+use App\Services\Reports\CompanyLossReportService;
 use App\Services\Reports\RefundReportService;
 use App\Services\Reports\SalesReportService;
 use App\Services\Reports\TicketIssuedReportService;
@@ -70,6 +72,19 @@ class ReportController extends Controller
     public function refundReports(Request $request): JsonResponse
     {
         return response()->json($this->refundReports->dataTable($request));
+    }
+
+    public function companyLoss(): View
+    {
+        return view('reports.company-loss', [
+            'ships' => Ship::query()->orderBy('name')->get(['id', 'name']),
+            'companies' => Company::query()->orderBy('name')->get(['id', 'name']),
+        ]);
+    }
+
+    public function companyLossReports(CompanyLossReportRequest $request, CompanyLossReportService $report): JsonResponse
+    {
+        return response()->json($report->dataTable($request->validated()));
     }
 
     public function bftn()

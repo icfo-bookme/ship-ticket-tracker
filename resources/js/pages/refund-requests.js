@@ -42,7 +42,7 @@ const completedColumns = [
             return `<span class="rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-800">${escapeHtml(data || 'Refunded')}</span><div class="mt-1 text-xs text-gray-600">Paid: ${Number(row.customer_refund_paid || 0).toFixed(2)} · Adjusted: ${Number(row.refund_adjusted_amount || 0).toFixed(2)}</div>${references}`;
         },
     },
-    { data: 'status' },
+    { data: 'status', render: renderRefundStatus },
     {
         data: null,
         orderable: false,
@@ -69,7 +69,7 @@ const columns = isCompleted ? completedColumns : [
         render: (data, type, row) => `<div class="bg-red-100 px-2 py-1 font-semibold text-red-700">${Number(data || 0).toFixed(2)}</div>${Number(row.refund_adjusted_amount || 0) > 0 ? `<div class="text-xs text-blue-700">Adjusted to new sales: ${Number(row.refund_adjusted_amount).toFixed(2)}</div>` : ''}`,
     },
     isPaymentDetailsAdded ? { data: 'refund_payment_details', render: (data) => escapeHtml(data || 'N/A') } : null,
-    { data: 'status' },
+    { data: 'status', render: renderRefundStatus },
     {
         data: null,
         orderable: false,
@@ -96,6 +96,8 @@ const columns = isCompleted ? completedColumns : [
                                 data-ticket-count="${row.refunded_number_of_tickets}"
                                 data-customer-charge="${row.customer_charge_percent ?? 0}"
                                 data-partner-share="${row.partner_share_percent ?? 0}"
+                                data-company-error="${encodeURIComponent(JSON.stringify(row.company_error_refund || null))}"
+                                data-remark="${encodeURIComponent(row.remark || '')}"
                                 title="Edit request"></button>
                             <button data-permission="refunds.cancel" class="bg-yellow-600 text-white px-2 py-1 rounded cancelRefundBtn"
                                 data-id="${row.id}" title="Cancel refund request">Cancel</button>
@@ -270,3 +272,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 import { escapeHtml } from '../utils/escape-html';
+
+function renderRefundStatus(value, type, row) {
+    if (type !== 'display') return value;
+    const loss = row.company_error_refund;
+    return `${escapeHtml(value || '')}${loss ? `<div class="mt-1 rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-200">Company Error: ${Number(loss.loss_amount).toFixed(2)}</div>` : ''}`;
+}

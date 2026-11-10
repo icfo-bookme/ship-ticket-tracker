@@ -2,6 +2,7 @@
 
 use App\Models\Category;
 use App\Models\Company;
+use App\Models\CompanyErrorRefund;
 use App\Models\CoPassenger;
 use App\Models\Payment;
 use App\Models\PrintedTicket;
@@ -55,7 +56,13 @@ return [
             'payment_datetime' => 'datetime', 'bftn_issue_datetime' => 'datetime',
             'received_at' => 'datetime',
         ],
+        CompanyErrorRefund::class => [
+            'refund_id' => 'integer', 'loss_type' => 'string',
+            'loss_percent' => 'decimal', 'loss_amount' => 'decimal',
+            'reason' => 'string', 'created_by' => 'integer',
+        ],
         Refund::class => [
+            'company_error' => 'collection:'.CompanyErrorRefund::class,
             'adjustment_started_at' => 'datetime',
             'adjustments' => 'collection:'.Payment::class,
             'sales_id' => 'integer', 'status' => 'string', 'refund_type' => 'string',
@@ -92,6 +99,7 @@ return [
 
     'collections' => [
         Refund::class => [
+            'company_error' => 'companyErrorRefund',
             'adjustments' => 'adjustments',
             'tickets' => 'tickets', 'customer_payments' => 'customerPayments', 'partner_payments' => 'partnerPayments',
         ],

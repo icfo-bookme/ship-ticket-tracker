@@ -125,3 +125,54 @@ it('loads the edit dropdown and limits new credit to due without changing existi
 
     expect($process->getOutput())->toContain('Edit refund dropdown passed');
 });
+
+it('previews company loss and resets hidden fields between refund requests', function () {
+    $script = <<<'JS'
+        import assert from 'node:assert/strict';
+        import { calculateCompanyLoss, initializeCompanyErrorRefund } from './resources/js/components/company-error-refund.js';
+        const elements = new Map();
+        for (const id of ['companyErrorInput', 'companyErrorFields', 'companyLossTypeInput', 'companyLossPercentInput', 'companyLossPercentField', 'companyErrorReasonInput', 'companyLossAmountPreview']) {
+            elements.set(id, {
+                value: '', checked: false, disabled: false, required: false, textContent: '', validity: '',
+                classes: new Set(), listeners: {},
+                classList: { toggle(name, enabled) { enabled ? elements.get(id).classes.add(name) : elements.get(id).classes.delete(name); } },
+                addEventListener(event, callback) { this.listeners[event] = callback; },
+                setCustomValidity(message) { this.validity = message; },
+                reportValidity() { return !this.validity && (!this.required || this.value !== ''); },
+            });
+        }
+        globalThis.document = { getElementById: id => elements.get(id) };
+        let form;
+        form = initializeCompanyErrorRefund(() => form?.updatePreview(1000, 200, 0));
+        form.reset();
+        assert.deepEqual(form.payload(), { is_company_error: false });
+        assert.equal(elements.get('companyErrorReasonInput').disabled, true);
+        assert.equal(elements.get('companyErrorFields').classes.has('hidden'), true);
+        form.reset({ loss_type: 'partner_share', loss_percent: 20, reason: 'Wrong booking' });
+        assert.equal(elements.get('companyLossAmountPreview').textContent, '200.00');
+        assert.equal(elements.get('companyLossPercentInput').disabled, true);
+        assert.equal(form.valid(), true);
+        assert.equal(form.payload().company_loss_type, 'partner_share');
+        form.reset({ loss_type: 'custom', loss_percent: 100, reason: 'Full company loss' });
+        assert.equal(elements.get('companyLossAmountPreview').textContent, '1000.00');
+        assert.equal(elements.get('companyLossPercentInput').required, true);
+        assert.equal(form.payload().company_loss_percent, 100);
+        elements.get('companyLossPercentInput').value = 10;
+        form.updatePreview(1000, 200, 0);
+        assert.equal(form.valid(), false);
+        elements.get('companyLossPercentInput').value = 20;
+        form.updatePreview(500, 100, 0);
+        assert.equal(elements.get('companyLossAmountPreview').textContent, '100.00');
+        assert.equal(form.valid(), true);
+        form.reset();
+        assert.equal(elements.get('companyErrorReasonInput').value, '');
+        assert.equal(elements.get('companyLossPercentInput').value, '');
+        assert.equal(elements.get('companyLossAmountPreview').textContent, '0.00');
+        assert.equal(calculateCompanyLoss({ enabled: true, lossType: 'custom', grossAmount: 333.33, customPercent: 20 }), 66.67);
+        console.log('Company error refund form passed');
+        JS;
+    $process = new Process(['node', '--input-type=module', '-e', $script], base_path());
+    $process->mustRun();
+
+    expect($process->getOutput())->toContain('Company error refund form passed');
+});

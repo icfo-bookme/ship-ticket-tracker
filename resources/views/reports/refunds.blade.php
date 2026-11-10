@@ -62,6 +62,13 @@
 
             <div id="advancedRefundReportFilters" class="hidden grid-cols-1 items-end gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <div>
+                    <label for="refundReportCompanyError" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Company Error</label>
+                    <select id="refundReportCompanyError" class="w-full rounded-md border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="">All refunds</option>
+                        <option value="1">Company error refunds only</option>
+                    </select>
+                </div>
+                <div>
                     <label for="refundReportRefundedFrom" class="mb-1 block text-sm font-medium text-gray-700">Refunded Date From</label>
                     <input id="refundReportRefundedFrom" type="date" class="w-full rounded-md border-gray-300 text-sm">
                 </div>

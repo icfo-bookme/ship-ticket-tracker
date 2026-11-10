@@ -33,6 +33,7 @@ class RefundReportService
             'tickets',
             'customerPayments',
             'adjustments',
+            'companyErrorRefund',
         ])
             ->orderByDesc('requested_at')
             ->orderByDesc('id')
@@ -52,6 +53,7 @@ class RefundReportService
     private function filteredQuery(Request $request): Builder
     {
         return Refund::query()
+            ->when($request->boolean('company_error_only'), fn (Builder $query): Builder => $query->whereHas('companyErrorRefund'))
             ->whereNotNull('requested_at')
             ->where('status', '!=', RefundStatus::Cancelled->value)
             ->where(function (Builder $query): void {
@@ -102,14 +104,16 @@ class RefundReportService
     private function totals(Builder $query): array
     {
         $settledQuery = clone $query;
-        $summary = (clone $settledQuery)->selectRaw('
+        $partnerOutflow = Refund::partnerOutflowSql();
+        $summary = (clone $settledQuery)->selectRaw("
+            COALESCE(SUM(CASE WHEN refund_type != 'extra_payment' THEN {$partnerOutflow} ELSE 0 END), 0) AS partner_outflow_amount,
             COUNT(*) AS refunded_count,
             COALESCE(SUM(gross_refund_amount), 0) AS refund_amount,
             COALESCE(SUM(CASE WHEN refund_type != ? THEN refund_discount_amount ELSE 0 END), 0) AS discount_amount,
             COALESCE(SUM(due_adjusted_amount), 0) AS due_adjusted_amount,
             COALESCE(SUM(CASE WHEN refund_type != ? THEN partner_share_amount ELSE 0 END), 0) AS partner_share_amount,
             COALESCE(SUM(CASE WHEN refund_type != ? THEN company_retained_amount ELSE 0 END), 0) AS company_retained_amount
-        ', [
+        ", [
             'extra_payment',
             'extra_payment',
             'extra_payment',
@@ -139,7 +143,7 @@ class RefundReportService
             'extra_payment_refund_paid' => number_format($extraPaymentRefundPaid, 2, '.', ''),
             'refund_outflow_amount' => number_format(
                 (float) $paidCustomerRefund
-                    + (float) $summary->partner_share_amount
+                    + (float) $summary->partner_outflow_amount
                     + $extraPaymentRefundPaid,
                 2,
                 '.',
@@ -179,6 +183,7 @@ class RefundReportService
             ->sum('amount');
 
         return [
+            'company_error' => $refund->companyErrorRefund?->only(['loss_type', 'loss_percent', 'loss_amount', 'reason']),
             'id' => $refund->id,
             'sales_id' => $refund->sales_id,
             'customer_name' => $sale?->customer_name ?? 'N/A',

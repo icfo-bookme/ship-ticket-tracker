@@ -318,6 +318,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports', [ReportController::class, 'reports'])->name('reports.data');
         Route::get('/admin/ticket-issued-reports', [ReportController::class, 'ticketIssued'])->name('ticket-issued-reports.index');
         Route::get('/ticket-issued-reports/data', [ReportController::class, 'ticketIssuedReports'])->name('ticket-issued-reports.data');
+        Route::get('/admin/company-loss-reports', [ReportController::class, 'companyLoss'])->name('company-loss-reports.index');
+        Route::get('/company-loss-reports/data', [ReportController::class, 'companyLossReports'])->name('company-loss-reports.data');
         Route::get('/admin/refund-reports', [ReportController::class, 'refunds'])->name('refund-reports.index');
         Route::get('/refund-reports/data', [ReportController::class, 'refundReports'])->name('refund-reports.data');
         Route::get('/admin/bftn-reports', [ReportController::class, 'bftn'])->name('bftn-reports.index');

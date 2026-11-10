@@ -106,7 +106,7 @@ class RefundListingService
     public function refundedSale(int $saleId): ShipTicketSale
     {
         $sale = ShipTicketSale::withTrashed()->with([
-            'ships', 'companies', 'payments', 'refunds.tickets', 'refunds.customerPayments', 'refunds.adjustments',
+            'ships', 'companies', 'payments', 'refunds.tickets', 'refunds.customerPayments', 'refunds.adjustments', 'refunds.companyErrorRefund.creator',
         ])->findOrFail($saleId);
 
         abort_unless($sale->refunds->contains(
@@ -128,7 +128,7 @@ class RefundListingService
         ], true), 404);
 
         $query = Refund::with([
-            'sale.ships', 'sale.companies', 'sale.categories.package', 'sale.payments', 'sale.refunds', 'tickets', 'adjustments', 'customerPayments',
+            'sale.ships', 'sale.companies', 'sale.categories.package', 'sale.payments', 'sale.refunds', 'tickets', 'adjustments', 'customerPayments', 'companyErrorRefund',
         ])
             ->whereNotNull('requested_at')
             ->whereHas('sale', fn (Builder $sale) => $sale->whereNull('deleted_at'))

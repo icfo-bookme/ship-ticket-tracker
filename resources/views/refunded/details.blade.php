@@ -64,6 +64,16 @@
                 <tbody>
                     @foreach ($completedRefunds as $refund)
                         @php($settlement = $refund->settlementSummary())
+                        @if ($refund->companyErrorRefund)
+                            <tr class="border-b bg-red-50 dark:bg-red-900/20">
+                                <td colspan="7" class="p-3 text-red-800 dark:text-red-200">
+                                    <strong>Company Error ? {{ $refund->companyErrorRefund->loss_type === 'partner_share' ? 'Partner Share Loss' : 'Custom Loss' }}</strong>
+                                    <p>{{ $refund->companyErrorRefund->loss_percent }}% ? Company loss: {{ number_format((float) $refund->companyErrorRefund->loss_amount, 2) }}</p>
+                                    <p class="whitespace-pre-wrap">{{ $refund->companyErrorRefund->reason }}</p>
+                                    <p class="text-xs">Recorded by {{ $refund->companyErrorRefund->creator?->name ?? 'System' }}</p>
+                                </td>
+                            </tr>
+                        @endif
                         <tr class="border-b bg-blue-50 dark:bg-blue-900/20">
                             <td colspan="7" class="p-3">
                                 <span class="font-semibold text-blue-800 dark:text-blue-200">{{ $settlement['settlement_label'] }}</span>

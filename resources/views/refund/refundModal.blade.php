@@ -38,6 +38,32 @@
             <span>Company retains: <strong id="companyRetainedPreview">0.00</strong></span>
         </div>
 
+        <section class="mt-4 flex flex-col gap-4 rounded-lg border border-gray-200 p-4 dark:border-gray-600">
+            <label for="companyErrorInput" class="flex items-center gap-2 text-sm font-medium text-gray-800 dark:text-gray-100">
+                <input id="companyErrorInput" type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                Company Error / Company Loss
+            </label>
+            <div id="companyErrorFields" class="hidden flex-col gap-4">
+                <div>
+                    <label for="companyLossTypeInput" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Loss Type</label>
+                    <select id="companyLossTypeInput" disabled class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="partner_share">Partner Share Loss</option>
+                        <option value="custom">Custom Loss</option>
+                    </select>
+                </div>
+                <div id="companyLossPercentField" class="hidden">
+                    <label for="companyLossPercentInput" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Company Loss (%)</label>
+                    <input id="companyLossPercentInput" type="number" min="0" max="100" step="0.01" disabled class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <p class="text-sm text-gray-700 dark:text-gray-200">Company loss: <strong id="companyLossAmountPreview" aria-live="polite">0.00</strong></p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">This loss is included in the refund value and does not reduce the customer refund. Custom loss is based on the selected ticket subtotal before discount.</p>
+                <div>
+                    <label for="companyErrorReasonInput" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Company Error Reason</label>
+                    <textarea id="companyErrorReasonInput" rows="3" maxlength="2000" disabled class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"></textarea>
+                </div>
+            </div>
+        </section>
+
         <div class="mt-4 grid grid-cols-1 gap-5 rounded bg-amber-50 p-3 text-sm sm:grid-cols-3">
             <span>Current Due: <strong id="refundDueAmountPreview">0.00</strong></span>
             <span>Due Adjusted: <strong id="dueAdjustmentPreview">0.00</strong></span>

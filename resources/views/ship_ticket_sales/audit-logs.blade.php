@@ -2,7 +2,7 @@
     <div class="mx-auto flex flex-col gap-5 px-3 py-6 sm:px-6 lg:px-8">
         <div>
             <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Audit Log</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Who created or updated each sale. Newest first.</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Sale creation and edits, plus refund activity and status changes. Newest first.</p>
         </div>
         <div class="rounded-xl border border-gray-200  p-4 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <x-data-table id="auditLogsTable"

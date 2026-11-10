@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AuditLog;
+use App\Models\Refund;
 use App\Models\ShipTicketSale;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
@@ -169,4 +170,70 @@ it('bounds audit pagination for invalid lengths and ignores client ordering', fu
     ]))->assertOk()->assertJsonCount(10, 'data');
     $this->getJson(route('audit-logs.index', ['length' => 1000, 'search' => ['value' => null]]))
         ->assertOk()->assertJsonCount(12, 'data');
+});
+
+it('shows historical refund status changes even when stored as ordinary updates', function (string $event, string $before, string $after) {
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::findOrCreate('Admin', 'web'));
+    AuditLog::factory()->create([
+        'auditable_type' => (new Refund)->getMorphClass(), 'auditable_id' => 123,
+        'sale_id' => 77, 'user_name' => 'Refund Operator', 'event' => $event,
+        'old_values' => ['status' => $before],
+        'new_values' => ['status' => $after, 'refund_payment_details' => 'Private bank details'],
+    ]);
+
+    $response = $this->actingAs($admin)->getJson(route('audit-logs.index'))->assertOk()
+        ->assertJsonPath('recordsTotal', 1)->assertJsonPath('data.0.sale_id', 77)
+        ->assertJsonPath('data.0.user_name', 'Refund Operator')
+        ->assertJsonPath('data.0.summary', 'Refund #123: '.Str::headline($before).' -> '.Str::headline($after));
+
+    expect($response->getContent())->not->toContain('Private bank details', 'old_values', 'new_values');
+})->with([
+    ['status_changed', 'requested', 'partner_approved'],
+    ['updated', 'partner_approved', 'payment_details_added'],
+    ['updated', 'payment_details_added', 'completed'],
+    ['status_changed', 'requested', 'cancelled'],
+]);
+
+it('shows refund creation edits and deletion alongside sale activities', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::findOrCreate('Admin', 'web'));
+    foreach (['created', 'updated', 'deleted'] as $event) {
+        AuditLog::factory()->create([
+            'auditable_type' => (new Refund)->getMorphClass(), 'auditable_id' => 123,
+            'sale_id' => 77, 'event' => $event,
+            'old_values' => ['company_error' => []], 'new_values' => ['company_error' => []],
+        ]);
+    }
+    AuditLog::factory()->state($this->saleLogAttributes)->create();
+    AuditLog::factory()->create(['event' => 'status_changed']);
+
+    $response = $this->actingAs($admin)->getJson(route('audit-logs.index'))->assertOk()
+        ->assertJsonPath('recordsTotal', 4)->assertJsonCount(4, 'data');
+    expect(array_column($response->json('data'), 'summary'))->toContain(
+        'Refund #123 created', 'Refund #123 updated: Company Error', 'Refund #123 deleted',
+    );
+});
+
+it('searches refund references statuses and company error changes without exposing snapshot values', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::findOrCreate('Admin', 'web'));
+    AuditLog::factory()->create([
+        'auditable_type' => (new Refund)->getMorphClass(), 'auditable_id' => 123,
+        'sale_id' => 77, 'event' => 'status_changed', 'user_name' => 'Refund Operator',
+        'old_values' => ['status' => 'requested'],
+        'new_values' => ['status' => 'partner_approved', 'company_error' => [['reason' => 'Private refund reason']]],
+    ]);
+    AuditLog::factory()->state($this->saleLogAttributes)->create(['event' => 'created', 'user_name' => 'Sale Operator']);
+    AuditLog::factory()->create(['event' => 'status_changed', 'new_values' => ['status' => 'partner_approved']]);
+
+    foreach (['Refund', 'Refund #123', 'Partner Approved', 'Company Error', 'Refund Operator'] as $search) {
+        $this->actingAs($admin)->getJson(route('audit-logs.index', ['search' => ['value' => $search]]))
+            ->assertOk()->assertJsonPath('recordsTotal', 2)->assertJsonPath('recordsFiltered', 1)
+            ->assertJsonPath('data.0.user_name', 'Refund Operator');
+    }
+    $this->getJson(route('audit-logs.index', ['search' => ['value' => 'Sale created']]))
+        ->assertOk()->assertJsonPath('recordsFiltered', 1)->assertJsonPath('data.0.summary', 'Sale created');
+    $this->getJson(route('audit-logs.index', ['search' => ['value' => 'Private refund reason']]))
+        ->assertOk()->assertJsonPath('recordsFiltered', 0);
 });

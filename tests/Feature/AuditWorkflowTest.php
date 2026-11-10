@@ -14,6 +14,7 @@ use App\Services\Finance\PaymentService;
 use App\Services\Refunds\RefundService;
 use App\Services\Sales\SaleStatusWorkflowService;
 use App\Services\Sales\ShipTicketSaleService;
+use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
     $this->actor = User::factory()->create();
@@ -29,6 +30,31 @@ beforeEach(function () {
     $this->category = $this->sale->categories()->create([
         'package_id' => $package->id, 'quantity' => 1, 'unit_price' => 500, 'type' => 'departure',
     ]);
+});
+
+it('displays the real refund approval payment-details and completion history on the audit page', function () {
+    foreach (['sales.view', 'sales.audit.view'] as $permission) {
+        $this->actor->givePermissionTo(Permission::findOrCreate($permission, 'web'));
+    }
+    $this->sale->payments()->create(['payment_method' => 'Cash', 'received_amount' => 500]);
+    $service = app(RefundService::class);
+    $service->partialRefund($this->sale, [
+        'ticket_selections' => [['category_id' => $this->category->id, 'refunded_quantity' => 1]],
+        'customer_charge_percent' => 0, 'partner_share_percent' => 0,
+    ]);
+    $refund = Refund::query()->sole();
+    $service->approve($refund);
+    $service->addPaymentDetails($refund->fresh(), 'Private payment reference');
+    $service->refundCustomer($refund->fresh(), ['payment_method' => 'Cash']);
+
+    $response = $this->getJson(route('audit-logs.index'))->assertOk()
+        ->assertJsonPath('recordsTotal', 4)->assertJsonCount(4, 'data');
+    expect(array_column($response->json('data'), 'summary'))->toContain(
+        'Refund #'.$refund->id.' created',
+        'Refund #'.$refund->id.': Requested -> Partner Approved',
+        'Refund #'.$refund->id.': Partner Approved -> Payment Details Added',
+        'Refund #'.$refund->id.': Payment Details Added -> Completed',
+    )->and($response->getContent())->not->toContain('Private payment reference');
 });
 
 it('logs sale deletion and restoration without removing history', function () {

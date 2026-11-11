@@ -124,6 +124,7 @@
             $status == $pendingStatus ? 'Transaction ID' : null,
             $status == $pendingStatus ? 'Payment Methods' : null,
             $status == $pendingStatus ? 'Payment Proof' : null,
+            'Created At',
             'Action',
         ]),
     )" :url="'/sales/' . $status" :ordering="false" :delegateActions="false"

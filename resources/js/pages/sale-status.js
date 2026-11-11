@@ -291,6 +291,40 @@ async function deleteSale(button, refresh) {
     }
 }
 
+function renderCreatedAt(value, type) {
+    if (!value) {
+        return '-';
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return '-';
+    }
+
+    const formattedDate = date.toLocaleDateString('en-GB', {
+        timeZone: 'Asia/Dhaka',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    });
+    const formattedTime = date.toLocaleTimeString('en-GB', {
+        timeZone: 'Asia/Dhaka',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+    });
+
+    if (type !== 'display') {
+        return `${formattedDate} ${formattedTime}`;
+    }
+
+    return `<div class="flex flex-col gap-1 whitespace-nowrap">
+        <span>${escapeHtml(formattedDate)}</span>
+        <span>${escapeHtml(formattedTime)}</span>
+    </div>`;
+}
+
 function renderJourney(sale, type) {
     const departure = sale.journey_date || 'Not specified';
     const returnDate = sale.return_date || 'Not specified';
@@ -415,6 +449,11 @@ const columns = [
             render: renderPaymentProofs,
         },
     ] : []),
+    {
+        data: "created_at",
+        title: "Created At",
+        render: renderCreatedAt,
+    },
     {
         data: null,
         orderable: false,

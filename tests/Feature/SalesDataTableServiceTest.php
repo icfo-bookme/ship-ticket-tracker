@@ -28,6 +28,7 @@ it('returns the WhatsApp username for sales without a WhatsApp number', function
     expect($response['data'][0]['whatsapp'])->toBeNull()
         ->and($response['data'][0]['whatsapp_username'])->toBe('@ticket_customer')
         ->and($response['data'][0]['whatsapp_display'])->toBe('@ticket_customer')
+        ->and($response['data'][0]['created_at'])->toBe($sale->created_at->toJSON())
         ->and(array_key_exists('total_payable', $response['data'][0]))->toBeTrue();
 });
 

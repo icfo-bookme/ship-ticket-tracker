@@ -76,6 +76,18 @@
 
         <div id="advancedReportFilters" hidden class="mb-6 max-w-[92%]">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 items-end">
+            <div class="flex flex-col">
+                <label for="statusFilter" class="text-[12px] font-semibold text-gray-700 mb-1">Status</label>
+                <select id="statusFilter"
+                    class="h-10 min-w-0 w-full rounded-md border border-gray-300 px-3 py-2 text-[12px] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Statuses</option>
+                    @foreach (\App\Enums\SaleStatus::cases() as $status)
+                        @if ($status !== \App\Enums\SaleStatus::Pending)
+                            <option value="{{ $status->value }}">{{ $status->label() }}</option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
                 <div class="flex flex-col">
                     <label for="paymentDateFrom" class="mb-1 text-[12px] font-semibold text-gray-700">Payment From</label>
                     <input type="date" id="paymentDateFrom"

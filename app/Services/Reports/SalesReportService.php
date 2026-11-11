@@ -159,6 +159,7 @@ class SalesReportService
     {
         return [
             'ship_id' => $request->input('ship_id'),
+            'status' => $request->input('status'),
             'company_id' => $request->input('company_id'),
             'journey_date' => $request->input('journey_date'),
             'return_date' => $request->input('return_date'),
@@ -187,6 +188,7 @@ class SalesReportService
         foreach (
             [
                 'ship_id' => 'ship_id',
+                'status' => 'status',
                 'company_id' => 'company_id',
             ] as $filter => $columnName
         ) {

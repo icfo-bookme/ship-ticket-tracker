@@ -102,6 +102,34 @@ function reportSale(Ship $ship, Company $company, array $attributes = []): ShipT
     return $sale;
 }
 
+it('filters sales report rows and totals by status', function () {
+    $sale = reportSale($this->ship, $this->company, ['status' => 'shipped', 'received_amount' => 100]);
+    reportSale($this->ship, $this->company, ['status' => 'ticket-issued', 'received_amount' => 200]);
+
+    $this->actingAs($this->admin)->getJson('/reports?draw=1&status=shipped')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('recordsFiltered', 1)
+        ->assertJsonPath('data.0.id', $sale->id)
+        ->assertJsonPath('totals.total_received_amount', '100.00');
+
+    $this->getJson('/reports?draw=1')
+        ->assertOk()
+        ->assertJsonCount(2, 'data')
+        ->assertJsonPath('totals.total_received_amount', '300.00');
+
+    $this->getJson('/reports?draw=1&status=refunded')
+        ->assertOk()
+        ->assertJsonCount(0, 'data')
+        ->assertJsonPath('totals.total_received_amount', '0.00');
+});
+
+it('rejects invalid sales report statuses', function () {
+    $this->actingAs($this->admin)->getJson('/reports?status=unknown')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('status');
+});
+
 it('groups received amounts by payment method and excludes pending BFTN payments', function () {
     $sale = reportSale($this->ship, $this->company, ['received_amount' => 0]);
 
@@ -358,6 +386,8 @@ it('renders the sales report filters and summary targets', function () {
     $response = $this->actingAs($this->admin)
         ->get('/admin/sales-reports')
         ->assertOk()
+        ->assertSee('id="statusFilter"', false)
+        ->assertSee('All Statuses')
         ->assertSee('id="salesTable"', false)
         ->assertSee('id="totalRefundAdjustedAmount"', false)
         ->assertSee('Transferred to another sale; no cash payout.')
@@ -409,6 +439,10 @@ it('renders the sales report filters and summary targets', function () {
 
     $document = new DOMDocument;
     @$document->loadHTML($response->getContent());
+    $xpath = new DOMXPath($document);
+
+    expect($xpath->query('//*[@id="advancedReportFilters"]//*[@id="statusFilter"]')->length)->toBe(1);
+
     $fieldClasses = [];
 
     foreach (['shipFilter', 'companyFilter', 'startDate', 'endDate', 'startCreateDate', 'endCreateDate', 'paymentDateFrom', 'paymentDateTo', 'returnDateFilter', 'payment_method'] as $fieldId) {

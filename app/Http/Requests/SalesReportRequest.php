@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\SaleStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SalesReportRequest extends FormRequest
 {
@@ -22,6 +24,7 @@ class SalesReportRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'status' => ['nullable', Rule::enum(SaleStatus::class)],
             'payment_date_from' => ['nullable', 'date_format:Y-m-d'],
             'payment_date_to' => [
                 'nullable',
@@ -34,6 +37,7 @@ class SalesReportRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'status.enum' => 'Select a valid sale status.',
             'payment_date_from.date_format' => 'Enter a valid Payment From date.',
             'payment_date_to.date_format' => 'Enter a valid Payment To date.',
             'payment_date_to.after_or_equal' => 'Payment To must be on or after Payment From.',

@@ -6,6 +6,7 @@ const configElement = document.getElementById('salesReportConfig');
 const config = { canEdit: configElement?.dataset.canEdit === 'true' };
 const shipFilter = document.getElementById("shipFilter");
 const companyFilter = document.getElementById("companyFilter");
+const statusFilter = document.getElementById('statusFilter');
 const returnDateFilter = document.getElementById("returnDateFilter");
 const clearFiltersBtn = document.getElementById("clearFilters");
 const toggleAdvancedFiltersBtn = document.getElementById("toggleAdvancedFilters");
@@ -153,6 +154,7 @@ const columns = [
 
 const filters = () => {
     const filters = {
+        status: statusFilter?.value || '',
         ship_id: shipFilter?.value || "",
         company_id: companyFilter?.value || "",
         return_date: returnDateFilter?.value || "",
@@ -411,6 +413,7 @@ function reportFilterElements() {
     return [
         shipFilter,
         companyFilter,
+        statusFilter,
         returnDateFilter,
         paymentMethodFilter,
         startDateFilter,

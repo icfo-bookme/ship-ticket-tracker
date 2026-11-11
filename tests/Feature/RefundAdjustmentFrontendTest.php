@@ -2,6 +2,46 @@
 
 use Symfony\Component\Process\Process;
 
+it('keeps refund phone numbers under customer names without separate mobile columns', function () {
+    foreach (['refunds.js', 'refund-requests.js'] as $page) {
+        $source = file_get_contents(resource_path('js/pages/'.$page));
+
+        expect($source)->toContain('renderRefundCustomer(data, type, row')
+            ->not->toMatch('/data:\s*[\'"](?:sale\.)?customer_mobile[\'"]/');
+    }
+
+    foreach (['index', 'requested'] as $view) {
+        expect(file_get_contents(resource_path('views/refund/'.$view.'.blade.php')))
+            ->not->toContain("'Mobile'");
+    }
+});
+
+it('shows escaped customer contacts below the name in refund tables', function () {
+    $script = <<<'JS'
+        import assert from 'node:assert/strict';
+        import { renderRefundCustomer } from './resources/js/utils/refund-customer.js';
+        const sale = { customer_mobile: '01712345678', whatsapp: '+8801812345678', whatsapp_username: '<customer>' };
+        const html = renderRefundCustomer('Customer <name>', 'display', sale);
+        assert.ok(html.indexOf('Customer &lt;name&gt;') < html.indexOf('Phone: 01712345678'));
+        assert.ok(html.includes('WhatsApp: +8801812345678'));
+        assert.ok(html.includes('WhatsApp username: &lt;customer&gt;'));
+        assert.ok(!html.includes('<customer>'));
+        assert.equal(renderRefundCustomer('Customer', 'sort', sale), 'Customer');
+        const missing = renderRefundCustomer(null, 'display', null);
+        assert.ok(missing.includes('N/A'));
+        assert.ok(!missing.includes('Phone:'));
+        assert.ok(!missing.includes('WhatsApp'));
+        const usernameOnly = renderRefundCustomer('Customer', 'display', { whatsapp_username: '@customer', whatsapp: ' ' });
+        assert.ok(usernameOnly.includes('WhatsApp username: @customer'));
+        assert.ok(!usernameOnly.includes('WhatsApp:'));
+        JS;
+
+    $process = new Process(['node', '--input-type=module', '-e', $script], base_path());
+    $process->mustRun();
+
+    expect($process->isSuccessful())->toBeTrue();
+});
+
 it('includes refund credit in received and due and removes it when the checkbox is cleared', function () {
     $script = <<<'JS'
         import fs from 'node:fs';

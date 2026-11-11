@@ -20,11 +20,7 @@ if (document.getElementById('salesTable')) {
         { data: "id" },
         {
             data: "customer_name",
-            render: (data, type) => type !== 'display' ? data : escapeHtml(data),
-        },
-        {
-            data: "customer_mobile",
-            render: (data, type) => type !== 'display' ? data : escapeHtml(data),
+            render: (data, type, row) => renderRefundCustomer(data, type, row),
         },
         {
             data: null,
@@ -397,3 +393,4 @@ document.addEventListener('refund:open', (event) => {
 });
 
 import { escapeHtml } from '../utils/escape-html';
+import { renderRefundCustomer } from '../utils/refund-customer.js';

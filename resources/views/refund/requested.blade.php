@@ -33,7 +33,7 @@
 
             @php
                 $tableHeadings = $refundStatus === 'completed' ? [
-                    'ID', 'Customer Name', 'Mobile', 'Ship Name', 'Journey Date',
+                    'ID', 'Customer Name', 'Ship Name', 'Journey Date',
                     'Purchase Num Of Tickets', 'Refunded Num Of Tickets', 'Gross Amount',
                     'Customer Refund', 'Partner Share', 'Company Retained', 'Due Adjusted',
                     'Final Customer Refund', 'Settlement / New Sale', 'Status', 'Action',

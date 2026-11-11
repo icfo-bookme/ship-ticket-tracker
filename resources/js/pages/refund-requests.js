@@ -1,5 +1,6 @@
 import { initializeDataTable } from '../services/data-table.js';
 import { apiRequest, refreshDataTable } from '../services/api.js';
+import { renderRefundCustomer } from '../utils/refund-customer.js';
 
 const refundRequestPage = document.getElementById('refundRequestPage');
 const refundStatus = refundRequestPage?.dataset.status || '';
@@ -20,8 +21,7 @@ const formatCustomerRefund = (amount, type, row) => {
 
 const completedColumns = [
     { data: 'sale.id', render: (data) => data || 'N/A' },
-    { data: 'sale.customer_name', render: (data) => escapeHtml(data || 'N/A') },
-    { data: 'sale.customer_mobile', render: (data) => escapeHtml(data || 'N/A') },
+    { data: 'sale.customer_name', render: (data, type, row) => renderRefundCustomer(data, type, row.sale) },
     { data: null, render: (data, type, row) => escapeHtml(row.sale?.ships?.name || 'N/A') },
     { data: 'sale.journey_date', render: formatRequestedDate },
     { data: 'sale.ticket_count' },
@@ -54,7 +54,7 @@ const completedColumns = [
 const columns = isCompleted ? completedColumns : [
     { data: 'id' },
     { data: 'sale.id', render: (data) => data || 'N/A' },
-    { data: 'sale.customer_name', render: (data) => escapeHtml(data || 'N/A') },
+    { data: 'sale.customer_name', render: (data, type, row) => renderRefundCustomer(data, type, row.sale) },
     { data: 'sale.journey_date', render: formatRequestedDate },
     { data: 'refund_type' },
     { data: 'total_purchase_tickets' },

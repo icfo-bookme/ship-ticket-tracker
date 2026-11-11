@@ -53,7 +53,6 @@
             '',
             'ID',
             'Customer Name',
-            'Mobile',
             'Ship Name',
             'Journey Date',
             'Number Of Ticket',

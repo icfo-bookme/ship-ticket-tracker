@@ -53,7 +53,7 @@ return [
         'packages.view', 'packages.create', 'packages.edit', 'packages.delete',
 
         // Accounting modules
-        'reports.view', 'extra_received.view', 'extra_received.adjust', 'extra_received.refund',
+        'reports.sales.view', 'reports.ticket_issued.view', 'reports.refund.view', 'reports.company_loss.view', 'reports.bftn.view', 'extra_received.view', 'extra_received.adjust', 'extra_received.refund',
         'cash_collections.view', 'cash_collections.create', 'cash_collections.edit', 'cash_collections.delete',
 
         // Admin modules
@@ -94,7 +94,7 @@ return [
             'companies.view', 'companies.create', 'companies.edit', 'companies.delete',
             'sales_sources.view', 'sales_sources.create', 'sales_sources.edit',
             'packages.view', 'packages.create', 'packages.edit', 'packages.delete',
-            'reports.view', 'extra_received.view', 'extra_received.adjust', 'extra_received.refund',
+            'reports.sales.view', 'reports.ticket_issued.view', 'reports.refund.view', 'reports.company_loss.view', 'reports.bftn.view', 'extra_received.view', 'extra_received.adjust', 'extra_received.refund',
             'cash_collections.view', 'cash_collections.create', 'cash_collections.edit', 'cash_collections.delete',
             'whatsapp.view', 'whatsapp.create', 'whatsapp.edit', 'whatsapp.delete',
             'excel.view', 'excel.create', 'excel.edit', 'excel.delete',
@@ -108,7 +108,7 @@ return [
         'Viewer' => [
             'dashboard.view', 'documentation.view', 'sales.view', 'sales.status.pending',
             'sale_drafts.view', 'payments.proof.view', 'notifications.view', 'refunds.view',
-            'ships.view', 'companies.view', 'packages.view', 'reports.view', 'extra_received.view',
+            'ships.view', 'companies.view', 'packages.view', 'reports.sales.view', 'reports.ticket_issued.view', 'reports.refund.view', 'reports.company_loss.view', 'reports.bftn.view', 'extra_received.view',
             'sales_sources.view',
             'cash_collections.view', 'users.view', 'roles.view', 'permissions.view',
             'whatsapp.view', 'excel.view',

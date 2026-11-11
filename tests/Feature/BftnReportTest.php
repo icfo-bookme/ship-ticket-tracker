@@ -58,7 +58,7 @@ function bftnReportSale(Ship $ship, Company $company, array $attributes = []): S
 
 it('shows a separate BFTN report to report viewers', function () {
     $user = User::factory()->create();
-    $user->givePermissionTo(Permission::findOrCreate('reports.view', 'web'));
+    $user->givePermissionTo(Permission::findOrCreate('reports.bftn.view', 'web'));
 
     $response = $this->actingAs($user)
         ->get(route('bftn-reports.index'))

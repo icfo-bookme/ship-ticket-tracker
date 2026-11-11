@@ -18,7 +18,7 @@ uses(RefreshDatabase::class);
 
 it('serves the separate refund report page and data endpoint to report viewers', function () {
     $user = User::factory()->create();
-    $user->givePermissionTo(Permission::findOrCreate('reports.view', 'web'));
+    $user->givePermissionTo(Permission::findOrCreate('reports.refund.view', 'web'));
 
     $response = $this->actingAs($user)
         ->get(route('refund-reports.index'))

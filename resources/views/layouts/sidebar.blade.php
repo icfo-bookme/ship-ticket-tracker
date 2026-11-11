@@ -225,7 +225,7 @@
                 <!--</div>-->
 
                 <!-- Reports Section -->
-                @canany(['reports.view', 'extra_received.view', 'cash_collections.view'])
+                @canany(['reports.sales.view', 'reports.ticket_issued.view', 'reports.refund.view', 'reports.company_loss.view', 'reports.bftn.view', 'extra_received.view', 'cash_collections.view'])
                     <div class="px-2 pt-2">
                         <div id="reports-dropdown" class="mb-1 relative">
                             <button
@@ -249,28 +249,36 @@
                                 </svg>
                             </button>
                             <div id="reports-dropdown-list" class="mt-1 space-y-1 pl-8 hidden">
-                                @can('reports.view')
-                                    <a href="/admin/sales-reports"
+                                @can('reports.sales.view')
+                                    <a href="{{ route('sales.reports') }}"
                                         class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                         <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-3"></span>
                                         <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Sales
                                             Reports</span>
                                     </a>
+                                @endcan
+                                @can('reports.ticket_issued.view')
                                     <a href="{{ route('ticket-issued-reports.index') }}"
                                         class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                         <span class="w-1.5 h-1.5 flex-shrink-0 rounded-full bg-emerald-500"></span>
                                         <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Ticket Issued Report</span>
                                     </a>
+                                @endcan
+                                @can('reports.refund.view')
                                     <a href="{{ route('refund-reports.index') }}"
                                         class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                         <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-3"></span>
                                         <span class="whitespace-nowrap transition-all duration-300 sidebar-text truncate">Refunded Report</span>
                                     </a>
+                                @endcan
+                                @can('reports.company_loss.view')
                                     <a href="{{ route('company-loss-reports.index') }}"
                                         class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-blue-50">
                                         <span class="h-1.5 w-1.5 rounded-full bg-orange-500"></span>
                                         <span class="sidebar-text truncate whitespace-nowrap transition-all duration-300">Company Loss Report</span>
                                     </a>
+                                @endcan
+                                @can('reports.bftn.view')
                                     <a href="{{ route('bftn-reports.index') }}"
                                         class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-blue-50 group transition">
                                         <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-3"></span>

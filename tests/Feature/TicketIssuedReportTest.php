@@ -10,7 +10,7 @@ use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
     $this->viewer = User::factory()->create();
-    $this->viewer->givePermissionTo(Permission::findOrCreate('reports.view', 'web'));
+    $this->viewer->givePermissionTo(Permission::findOrCreate('reports.ticket_issued.view', 'web'));
     $this->ship = Ship::create(['name' => 'Issued Ship', 'status' => 1]);
     $this->actingAs($this->viewer);
 });

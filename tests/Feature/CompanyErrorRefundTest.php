@@ -67,7 +67,7 @@ it('renders the reusable payment details modal and enforces its permission', fun
 
 beforeEach(function () {
     $this->user = User::factory()->create();
-    foreach (['refunds.create', 'refunds.edit', 'refunds.cancel', 'refunds.view', 'refunds.approve', 'refunds.payment_details', 'refunds.customer_payment', 'reports.view', 'sales.view', 'sales.audit.view'] as $permission) {
+    foreach (['refunds.create', 'refunds.edit', 'refunds.cancel', 'refunds.view', 'refunds.approve', 'refunds.payment_details', 'refunds.customer_payment', 'reports.company_loss.view', 'reports.refund.view', 'reports.sales.view', 'sales.view', 'sales.audit.view'] as $permission) {
         $this->user->givePermissionTo(Permission::findOrCreate($permission, 'web'));
     }
     $this->actingAs($this->user);

@@ -278,7 +278,7 @@ it('renders the refund selector and the separate refund report columns', functio
         ->assertSee('id="refund_id"', false)
         ->assertDontSee('id="refundAdjustmentSearch"', false)
         ->assertDontSee('id="searchRefundAdjustments"', false);
-    $this->user->givePermissionTo(Permission::findOrCreate('reports.view', 'web'));
+    $this->user->givePermissionTo(Permission::findOrCreate('reports.refund.view', 'web'));
     $this->get(route('refund-reports.index'))->assertOk()->assertSee('Adjusted to Sales')->assertSee('Remaining Balance');
 });
 

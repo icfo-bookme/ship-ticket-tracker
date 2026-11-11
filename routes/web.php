@@ -313,15 +313,27 @@ Route::middleware('auth')->group(function () {
     // Accounting modules
 
     // REPORTS
-    Route::middleware('can:reports.view')->group(function () {
+    Route::middleware('can:reports.sales.view')->group(function () {
         Route::get('/admin/sales-reports', [ReportController::class, 'index'])->name('sales.reports');
         Route::get('/reports', [ReportController::class, 'reports'])->name('reports.data');
+    });
+
+    Route::middleware('can:reports.ticket_issued.view')->group(function () {
         Route::get('/admin/ticket-issued-reports', [ReportController::class, 'ticketIssued'])->name('ticket-issued-reports.index');
         Route::get('/ticket-issued-reports/data', [ReportController::class, 'ticketIssuedReports'])->name('ticket-issued-reports.data');
+    });
+
+    Route::middleware('can:reports.company_loss.view')->group(function () {
         Route::get('/admin/company-loss-reports', [ReportController::class, 'companyLoss'])->name('company-loss-reports.index');
         Route::get('/company-loss-reports/data', [ReportController::class, 'companyLossReports'])->name('company-loss-reports.data');
+    });
+
+    Route::middleware('can:reports.refund.view')->group(function () {
         Route::get('/admin/refund-reports', [ReportController::class, 'refunds'])->name('refund-reports.index');
         Route::get('/refund-reports/data', [ReportController::class, 'refundReports'])->name('refund-reports.data');
+    });
+
+    Route::middleware('can:reports.bftn.view')->group(function () {
         Route::get('/admin/bftn-reports', [ReportController::class, 'bftn'])->name('bftn-reports.index');
         Route::get('/bftn-reports/data', [ReportController::class, 'bftnReports'])->name('bftn-reports.data');
     });

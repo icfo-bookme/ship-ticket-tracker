@@ -152,6 +152,7 @@ $maxWidthClass = [
                 delete label.dataset.originalText;
             }
         }
+        modal._resetSubmitLoading = resetSubmitLoading;
         const observer = new MutationObserver(function () {
             if (modal.classList.contains('hidden')) {
                 resetSubmitLoading();

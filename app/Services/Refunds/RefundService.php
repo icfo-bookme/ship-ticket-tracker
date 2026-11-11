@@ -293,9 +293,10 @@ class RefundService
 
     private function performAddPaymentDetails(Refund $refund, string $details): void
     {
-        if ($refund->status !== RefundStatus::PartnerApproved->value) {
+        if (! in_array($refund->status, [RefundStatus::PartnerApproved->value, RefundStatus::PaymentDetailsAdded->value], true)
+            || $refund->customer_refunded_at !== null) {
             throw ValidationException::withMessages([
-                'status' => 'Payment details can only be added to partner-approved refunds.',
+                'status' => 'Payment details can only be changed before the customer refund is completed.',
             ]);
         }
 

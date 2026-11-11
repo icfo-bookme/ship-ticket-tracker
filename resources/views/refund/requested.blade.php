@@ -56,6 +56,15 @@
         </div>
     </div>
     @include('refund.refundModal')
+    <x-entity-modal id="refundPaymentDetailsModal" title="Refund Payment Details" formId="refundPaymentDetailsForm" submitText="Save Details">
+        <form id="refundPaymentDetailsForm" class="flex flex-col gap-3 p-4">
+            <label for="refundPaymentDetailsInput" class="text-sm font-medium text-gray-700 dark:text-gray-200">Payment Details</label>
+            <textarea id="refundPaymentDetailsInput" name="refund_payment_details" required maxlength="5000" rows="5"
+                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                placeholder="Write payment method, reference, date, or other details..."></textarea>
+            <p id="refundPaymentDetailsError" role="alert" class="text-sm text-red-600 dark:text-red-400" hidden></p>
+        </form>
+    </x-entity-modal>
 </x-app-layout>
 
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\RefundStatus;
 use App\Http\Requests\Refunds\FullRefundRequest;
 use App\Http\Requests\Refunds\PartialRefundRequest;
+use App\Http\Requests\Refunds\SaveRefundPaymentDetailsRequest;
 use App\Http\Requests\Refunds\StoreRefundRequest;
 use App\Http\Requests\Refunds\UpdateRefundRequest;
 use App\Models\Company;
@@ -167,17 +168,15 @@ class RefundController extends Controller
         ]);
     }
 
-    public function addPaymentDetails(Request $request, int $id)
+    public function addPaymentDetails(SaveRefundPaymentDetailsRequest $request, int $id)
     {
-        $details = $request->validate([
-            'refund_payment_details' => 'required|string|max:5000',
-        ])['refund_payment_details'];
+        $details = $request->validated('refund_payment_details');
 
         $this->refunds->addPaymentDetails(Refund::findOrFail($id), $details);
 
         return response()->json([
             'success' => true,
-            'message' => 'Refund payment details added successfully.',
+            'message' => 'Refund payment details saved successfully.',
         ]);
     }
 

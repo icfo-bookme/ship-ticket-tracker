@@ -13,6 +13,58 @@ use App\Services\Refunds\RefundService;
 use Database\Seeders\CompanyErrorRefundSeeder;
 use Spatie\Permission\Models\Permission;
 
+it('updates saved refund payment details without changing refund amounts', function () {
+    $refund = Refund::query()->create([
+        'sales_id' => $this->sale->id, 'status' => 'payment_details_added',
+        'refunded_number_of_tickets' => 1, 'refunded_amount' => 500,
+        'refund_payment_details' => 'Old details', 'customer_refund_amount' => 400,
+    ]);
+
+    $this->postJson(route('refunds.payment-details', $refund), ['refund_payment_details' => 'Updated bank account'])
+        ->assertOk();
+
+    expect($refund->refresh()->refund_payment_details)->toBe('Updated bank account')
+        ->and($refund->status)->toBe('payment_details_added')
+        ->and((float) $refund->customer_refund_amount)->toBe(400.0);
+});
+
+it('blocks payment detail edits after payment or in an ineligible status', function (string $status, bool $paid) {
+    $refund = Refund::query()->create([
+        'sales_id' => $this->sale->id, 'status' => $status,
+        'refunded_number_of_tickets' => 1, 'refunded_amount' => 500,
+        'refund_payment_details' => 'Original', 'customer_refunded_at' => $paid ? now() : null,
+    ]);
+
+    $this->postJson(route('refunds.payment-details', $refund), ['refund_payment_details' => 'Changed'])
+        ->assertUnprocessable()->assertJsonValidationErrors('status');
+
+    expect($refund->refresh()->refund_payment_details)->toBe('Original');
+})->with([['completed', true], ['cancelled', false], ['requested', false], ['payment_details_added', true]]);
+
+it('validates refund payment details', function (string $details) {
+    $refund = Refund::query()->create([
+        'sales_id' => $this->sale->id, 'status' => 'payment_details_added',
+        'refunded_number_of_tickets' => 1, 'refunded_amount' => 500,
+    ]);
+
+    $this->postJson(route('refunds.payment-details', $refund), ['refund_payment_details' => $details])
+        ->assertUnprocessable()->assertJsonValidationErrors('refund_payment_details');
+})->with(['', '   ', str_repeat('a', 5001)]);
+
+it('renders the reusable payment details modal and enforces its permission', function () {
+    $this->get(route('refunds.payment-details-added'))->assertOk()
+        ->assertSee('id="refundPaymentDetailsModal"', false)
+        ->assertSee('form=refundPaymentDetailsForm', false);
+
+    $user = User::factory()->create();
+    $refund = Refund::query()->create([
+        'sales_id' => $this->sale->id, 'status' => 'payment_details_added',
+        'refunded_number_of_tickets' => 1, 'refunded_amount' => 500,
+    ]);
+    $this->actingAs($user)->postJson(route('refunds.payment-details', $refund), ['refund_payment_details' => 'Changed'])
+        ->assertForbidden();
+});
+
 beforeEach(function () {
     $this->user = User::factory()->create();
     foreach (['refunds.create', 'refunds.edit', 'refunds.cancel', 'refunds.view', 'refunds.approve', 'refunds.payment_details', 'refunds.customer_payment', 'reports.view', 'sales.view', 'sales.audit.view'] as $permission) {

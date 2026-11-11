@@ -103,8 +103,8 @@ const columns = isCompleted ? completedColumns : [
                                 data-id="${row.id}" title="Cancel refund request">Cancel</button>
                             ${isRequested ? `<button data-permission="refunds.approve" class="bg-green-700 text-white px-2 py-1 rounded approveRefundBtn"
                                 data-id="${row.id}" title="Approve refund request">Approve</button>` : ''}
-                            ${isPartnerApproved ? `<button data-permission="refunds.payment_details" class="bg-blue-700 text-white px-2 py-1 rounded addPaymentDetailsBtn"
-                                data-id="${row.id}" title="Add refund payment details">Add Payment Details</button>` : ''}
+                            ${isPartnerApproved || isPaymentDetailsAdded ? `<button data-permission="refunds.payment_details" class="bg-blue-700 text-white px-2 py-1 rounded addPaymentDetailsBtn"
+                                data-id="${row.id}" data-details="${escapeHtml(row.refund_payment_details || '')}" title="${isPaymentDetailsAdded ? 'Edit' : 'Add'} refund payment details">${isPaymentDetailsAdded ? 'Edit' : 'Add'} Payment Details</button>` : ''}
                             ${isPaymentDetailsAdded ? `<button data-permission="refunds.customer_payment" class="bg-green-700 text-white px-2 py-1 rounded refundCustomerBtn"
                                 data-id="${row.id}" title="Refund customer">Refund</button>` : ''}
                             </div>`;
@@ -182,40 +182,55 @@ async function cancelRefund(button) {
     if (result.success) refreshDataTable('requestedRefundsTable');
 }
 
-async function addPaymentDetails(button) {
-    const result = await Swal.fire({
-        title: 'Add Refund Payment Details',
-        input: 'textarea',
-        inputLabel: 'Refund Payment Details',
-        inputPlaceholder: 'Write payment method, reference, date, or other details...',
-        showCancelButton: true,
-        confirmButtonText: 'Save Details',
-        cancelButtonText: 'Cancel',
-        inputValidator: (value) => !value?.trim() ? 'Payment details are required.' : undefined,
-    });
-
-    if (!result.isConfirmed) return;
-
-    const response = await fetch(routeTemplate('paymentDetailsUrl').replace('__ID__', button.dataset.id), {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-        },
-        body: JSON.stringify({ refund_payment_details: result.value.trim() }),
-    });
-    const responseData = await response.json();
-
-    await Swal.fire({
-        title: responseData.success ? 'Saved' : 'Error',
-        text: responseData.message || responseData.errors?.refund_payment_details?.[0] || 'Could not save payment details.',
-        icon: responseData.success ? 'success' : 'error',
-    });
-
-    if (responseData.success) refreshDataTable('requestedRefundsTable');
+function addPaymentDetails(button) {
+    const modal = document.getElementById('refundPaymentDetailsModal');
+    modal.dataset.refundId = button.dataset.id;
+    modal.querySelector('h3').textContent = isPaymentDetailsAdded ? 'Edit Refund Payment Details' : 'Add Refund Payment Details';
+    document.getElementById('refundPaymentDetailsInput').value = button.dataset.details || '';
+    document.getElementById('refundPaymentDetailsError').hidden = true;
+    modal._openModal();
 }
 
+async function savePaymentDetails(event) {
+    event.preventDefault();
+    const modal = document.getElementById('refundPaymentDetailsModal');
+    const input = document.getElementById('refundPaymentDetailsInput');
+    const error = document.getElementById('refundPaymentDetailsError');
+    const submit = modal.querySelector('button[type="submit"]');
+    if (modal.dataset.saving === '1') return;
+    if (!input.value.trim()) {
+        error.textContent = 'Payment details are required.';
+        error.hidden = false;
+        modal._resetSubmitLoading();
+        return;
+    }
+    submit.disabled = true;
+    modal.dataset.saving = '1';
+    error.hidden = true;
+    try {
+        const response = await fetch(routeTemplate('paymentDetailsUrl').replace('__ID__', modal.dataset.refundId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            },
+            body: JSON.stringify({ refund_payment_details: input.value.trim() }),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.errors?.refund_payment_details?.[0] || result.errors?.status?.[0] || result.message || 'Could not save payment details.');
+        }
+        modal._closeModal();
+        refreshDataTable('requestedRefundsTable');
+    } catch (exception) {
+        error.textContent = exception.message || 'Could not save payment details. Please try again.';
+        error.hidden = false;
+    } finally {
+        modal.dataset.saving = '0';
+        modal._resetSubmitLoading();
+    }
+}
 async function refundCustomer(button) {
     const confirmation = await Swal.fire({
         title: 'Complete customer refund?',
@@ -247,6 +262,7 @@ async function refundCustomer(button) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('refundPaymentDetailsForm')?.addEventListener('submit', savePaymentDetails);
     ['requestedShip', 'requestedCompany', 'requestedJourneyDate'].forEach((id) => {
         document.getElementById(id)?.addEventListener('change', () => refreshDataTable('requestedRefundsTable'));
     });

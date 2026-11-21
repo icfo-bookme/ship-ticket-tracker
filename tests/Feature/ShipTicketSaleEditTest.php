@@ -253,3 +253,45 @@ it('includes the increased return quantity without changing departure quantity',
         ->and((float) $sale->ticket_value)->toBe(970.0)
         ->and((float) $sale->total_payable)->toBe(970.0);
 });
+
+it('shows the original due and effective refund due adjustments separately on edit', function (float $adjustedAmount, bool $isEffective) {
+    $package = ShipPackage::create(['ship_id' => $this->ship->id, 'name' => 'Due adjustment deck', 'price' => 500]);
+    $this->sale->categories()->create(['package_id' => $package->id, 'quantity' => 1, 'unit_price' => 500, 'type' => 'departure']);
+    $this->sale->payments()->create(['payment_method' => 'Cash', 'received_amount' => 200, 'is_bftn' => false, 'settlement_status' => 'received']);
+    $this->sale->refunds()->create([
+        'refund_type' => 'partial',
+        'status' => $isEffective ? 'completed' : 'partner_approved',
+        'refunded_number_of_tickets' => 1,
+        'refunded_amount' => 300,
+        'due_adjusted_amount' => $adjustedAmount,
+    ]);
+    $effectiveAdjustment = $isEffective ? $adjustedAmount : 0.0;
+
+    $response = $this->actingAs($this->admin)->get(route('ship-ticket-sales.show', $this->sale));
+    $response->assertOk()
+        ->assertViewHas('dueBeforeAdjustment', 300.0)
+        ->assertViewHas('dueAdjustedAmount', $effectiveAdjustment)
+        ->assertSee('Due Adjusted Amount');
+    expect($response->getContent())->toMatch('/id="due_amount"\s+readonly value="300\.00"/')
+        ->toMatch('/id="due_adjusted_amount" readonly\s+value="'.preg_quote(number_format($effectiveAdjustment, 2, '.', ''), '/').'"/')
+        ->and((float) $this->sale->fresh()->due_amount)->toBe(300.0 - $effectiveAdjustment);
+})->with([
+    'no adjustment' => [0.0, true],
+    'partial adjustment' => [100.0, true],
+    'fully adjusted' => [300.0, true],
+    'not yet effective' => [100.0, false],
+]);
+
+it('adds effective refund adjustments and keeps pending BFTN out of the original due', function () {
+    $this->sale->payments()->create(['payment_method' => 'Bank', 'received_amount' => 100, 'is_bftn' => true, 'settlement_status' => 'pending']);
+    foreach ([['adjustment_started_at' => now()], ['customer_refunded_at' => now()]] as $state) {
+        $this->sale->refunds()->create(array_merge([
+            'refund_type' => 'partial', 'status' => 'partner_approved',
+            'refunded_number_of_tickets' => 1, 'refunded_amount' => 50, 'due_adjusted_amount' => 50,
+        ], $state));
+    }
+
+    $this->actingAs($this->admin)->get(route('ship-ticket-sales.show', $this->sale))->assertOk()
+        ->assertViewHas('dueBeforeAdjustment', 400.0)
+        ->assertViewHas('dueAdjustedAmount', 100.0);
+});

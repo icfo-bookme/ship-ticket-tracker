@@ -543,8 +543,18 @@
                                     <div class="flex items-center">
                                         <span class="text-gray-500 mr-2">৳</span>
                                         <input type="number" step="0.01" id="due_amount"
-                                            readonly value="{{ $sale->due_amount }}"
+                                            readonly value="{{ number_format($dueBeforeAdjustment, 2, '.', '') }}"
                                             class="copyable-field w-full border-red-200 bg-red-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-red-600">
+                                    </div>
+                                </div>
+
+                                <div class="bg-white rounded-lg p-3 shadow-sm border border-green-200">
+                                    <label for="due_adjusted_amount" class="block text-sm font-semibold text-gray-700">Due Adjusted Amount</label>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gray-500">৳</span>
+                                        <input type="number" step="0.01" id="due_adjusted_amount" readonly
+                                            value="{{ number_format($dueAdjustedAmount, 2, '.', '') }}"
+                                            class="w-full border-green-200 bg-green-50 rounded-lg shadow-sm py-1.5 px-2.5 text-sm font-bold text-green-700">
                                     </div>
                                 </div>
 

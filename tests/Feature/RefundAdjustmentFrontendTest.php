@@ -216,3 +216,55 @@ it('previews company loss and resets hidden fields between refund requests', fun
 
     expect($process->getOutput())->toContain('Company error refund form passed');
 });
+
+it('preserves live refund searches while using URL search only as the initial value', function () {
+    $script = <<<'JS'
+        import fs from 'node:fs';
+        import vm from 'node:vm';
+        import assert from 'node:assert/strict';
+        const source = fs.readFileSync('resources/js/pages/refund-requests.js', 'utf8');
+        const pageSetup = source.slice(source.indexOf('const filters ='), source.indexOf('function formatRequestedDate'));
+        const service = fs.readFileSync('resources/js/services/data-table.js', 'utf8').replace('export function', 'function');
+        for (const locationSearch of ['', '?search=Rahim']) {
+            let configuration;
+            const table = {
+                id: 'requestedRefundsTable',
+                dataset: { tableOptions: JSON.stringify({ pageLength: 10 }), ajaxUrl: '/refund-requests/data?status=partner_approved' },
+                classList: { remove() {} }, before() {},
+            };
+            const jquery = () => ({
+                on() {},
+                DataTable(options) { configuration = options; return { ajax: { reload() {} } }; },
+            });
+            jquery.fn = { dataTable: { isDataTable: () => false } };
+            const document = {
+                readyState: 'complete', addEventListener() {}, removeEventListener() {},
+                getElementById(id) {
+                    if (id === table.id) return table;
+                    if (id.endsWith('-page-loader')) return null;
+                    return { value: { requestedShip: '12', requestedCompany: '7', requestedJourneyDate: '2026-11-21' }[id] || '' };
+                },
+                createElement: () => ({ setAttribute() {}, classList: { add() {}, remove() {} } }),
+            };
+            vm.runInNewContext(`${service}\n${pageSetup}`, {
+                document, window: { location: { search: locationSearch }, jQuery: jquery }, URLSearchParams, columns: [],
+            });
+            assert.equal(configuration.search?.search || '', locationSearch ? 'Rahim' : '');
+            assert.equal(configuration.pageLength, 10);
+            for (const term of ['Karim', '01712345678', '']) {
+                const request = { search: { value: term, regex: false } };
+                configuration.ajax.data(request);
+                assert.equal(request.search.value, term);
+                assert.equal(request.search.regex, false);
+                assert.equal(request.ship_id, '12');
+                assert.equal(request.company_id, '7');
+                assert.equal(request.journey_date, '2026-11-21');
+            }
+        }
+        JS;
+
+    $process = new Process(['node', '--input-type=module', '-e', $script], base_path());
+    $process->mustRun();
+
+    expect($process->isSuccessful())->toBeTrue();
+});

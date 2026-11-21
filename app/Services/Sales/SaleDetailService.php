@@ -2,6 +2,7 @@
 
 namespace App\Services\Sales;
 
+use App\Enums\RefundStatus;
 use App\Enums\SaleStatus;
 use App\Models\PrintedTicket;
 use App\Models\ShipTicketSale;
@@ -17,7 +18,7 @@ class SaleDetailService
     ) {}
 
     /**
-     * @return array{pdfFilenamePrefix: string, nextPdfNumber: int}
+     * @return array{pdfFilenamePrefix: string, nextPdfNumber: int, dueBeforeAdjustment: float, dueAdjustedAmount: float}
      */
     public function editContext(ShipTicketSale $sale): array
     {
@@ -26,6 +27,17 @@ class SaleDetailService
         return [
             'pdfFilenamePrefix' => $this->pdfFilenamePrefix($sale),
             'nextPdfNumber' => $sale->printedTickets()->count() + 1,
+            'dueBeforeAdjustment' => round(max(
+                (float) $sale->total_payable - (float) $sale->received_amount - (float) $sale->payments
+                    ->where('is_bftn', true)
+                    ->where('settlement_status', 'pending')
+                    ->sum('received_amount'),
+                0,
+            ), 2),
+            'dueAdjustedAmount' => (float) $sale->refunds
+                ->filter(fn ($refund): bool => $refund->status === RefundStatus::Completed->value
+                    || $refund->customer_refunded_at !== null || $refund->adjustment_started_at !== null)
+                ->sum('due_adjusted_amount'),
         ];
     }
 

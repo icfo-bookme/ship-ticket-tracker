@@ -116,11 +116,14 @@ const filters = () => ({
     ship_id: document.getElementById('requestedShip').value,
     company_id: document.getElementById('requestedCompany').value,
     journey_date: document.getElementById('requestedJourneyDate').value,
-    search: new URLSearchParams(window.location.search).get('search')
-        ? { value: new URLSearchParams(window.location.search).get('search') }
-        : undefined,
 });
-initializeDataTable({ table: document.getElementById('requestedRefundsTable'), columns, filters });
+const table = document.getElementById('requestedRefundsTable');
+const initialSearch = new URLSearchParams(window.location.search).get('search');
+if (table && initialSearch) {
+    const options = JSON.parse(table.dataset.tableOptions);
+    table.dataset.tableOptions = JSON.stringify({ ...options, search: { search: initialSearch } });
+}
+initializeDataTable({ table, columns, filters });
 
 function formatRequestedDate(value) {
     return value ? new Date(value).toLocaleDateString() : 'N/A';

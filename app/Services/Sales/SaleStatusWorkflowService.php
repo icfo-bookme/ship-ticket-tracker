@@ -88,7 +88,7 @@ class SaleStatusWorkflowService
         $sale = ShipTicketSale::findOrFail($id);
 
         if ($status === SaleStatus::CollectFromOffice->value) {
-            if (! $sale->collect_from_office || $sale->status !== SaleStatus::TicketPrinted->value) {
+            if (! $sale->isOfficeCollection() || $sale->status !== SaleStatus::TicketPrinted->value) {
                 return [
                     'success' => false,
                     'message' => 'This sale is not ready for office collection.',
@@ -250,7 +250,7 @@ class SaleStatusWorkflowService
         $saleIds = $tickets->pluck('sales_id')->push($groupId)->unique();
         $groupSales = ShipTicketSale::query()
             ->whereIn('id', $saleIds)
-            ->get(['id', 'status', 'collect_from_office', 'whatsapp', 'whatsapp_username', 'address']);
+            ->get(['id', 'status', 'collect_from_office', 'collect_from_coxsbazar', 'whatsapp', 'whatsapp_username', 'address']);
         $groupReadinessError = $this->groupReadinessError(
             $groupId,
             [SaleStatus::TicketPrinted->value, SaleStatus::ShipmentIdEntered->value],
@@ -322,13 +322,14 @@ class SaleStatusWorkflowService
     {
         $tickets = $this->groupedTickets($sale->id);
         $saleIds = $tickets->pluck('sales_id')->push($sale->id)->unique();
-        $blockedSales = DB::transaction(function () use ($saleIds): ?array {
+        $blockedSales = DB::transaction(function () use ($saleIds, $sale): ?array {
             $sales = ShipTicketSale::query()
                 ->whereIn('id', $saleIds)
                 ->lockForUpdate()
                 ->get();
 
-            $blockedSales = $sales->filter(fn (ShipTicketSale $groupSale): bool => ! $groupSale->collect_from_office
+            $blockedSales = $sales->filter(fn (ShipTicketSale $groupSale): bool => ! $groupSale->isOfficeCollection()
+                || (bool) $groupSale->collect_from_coxsbazar !== (bool) $sale->collect_from_coxsbazar
                 || ! in_array($groupSale->status, [
                     SaleStatus::TicketPrinted->value,
                     SaleStatus::CollectFromOffice->value,
@@ -336,7 +337,7 @@ class SaleStatusWorkflowService
                     return [
                         'id' => $groupSale->id,
                         'status' => SaleStatus::tryFrom((string) $groupSale->status)?->label() ?? (string) $groupSale->status,
-                        'office_collection' => $groupSale->collect_from_office ? 'Yes' : 'No',
+                        'office_collection' => $groupSale->isOfficeCollection() ? 'Yes' : 'No',
                     ];
                 })->values()->all();
 
@@ -450,10 +451,10 @@ class SaleStatusWorkflowService
             ->unique();
         $sales = ShipTicketSale::query()
             ->whereIn('id', $saleIds)
-            ->get(['id', 'status', 'collect_from_office']);
+            ->get(['id', 'status', 'collect_from_office', 'collect_from_coxsbazar']);
 
         foreach ($sales as $sale) {
-            if ($sale->collect_from_office) {
+            if ($sale->isOfficeCollection()) {
                 return "Sale ID {$sale->id} is marked as Collect from Office. Please separate it before creating the parcel.";
             }
 

@@ -11,7 +11,7 @@ class SaleGroupingService
 {
     public function isOfficeCollection(ShipTicketSale $sale): bool
     {
-        return $sale->collect_from_office
+        return $sale->isOfficeCollection()
             || $sale->status === SaleStatus::CollectFromOffice->value;
     }
 
@@ -65,7 +65,7 @@ class SaleGroupingService
 
         return ShipTicketSale::query()
             ->whereIn('id', $saleIds)
-            ->get(['id', 'status', 'collect_from_office', 'whatsapp', 'whatsapp_username', 'address']);
+            ->get(['id', 'status', 'collect_from_office', 'collect_from_coxsbazar', 'whatsapp', 'whatsapp_username', 'address']);
     }
 
     public function courierParcelGroupFailureMessage(Collection $sales): ?string
@@ -117,7 +117,7 @@ class SaleGroupingService
         }
 
         if ($this->isOfficeCollection($sale)) {
-            return true;
+            return (bool) $sale->collect_from_coxsbazar === (bool) $groupSale->collect_from_coxsbazar;
         }
 
         return ! empty(trim((string) $sale->address))
@@ -132,6 +132,10 @@ class SaleGroupingService
 
         if ($this->isOfficeCollection($sale) !== $this->isOfficeCollection($otherSale)) {
             return 'এই WhatsApp নম্বর দিয়ে ইতোমধ্যে সেল রেকর্ড তৈরি করা আছে। তবে ডেলিভারি পদ্ধতি ভিন্ন হওয়ায়, অর্থাৎ একটি “Collect from Office” এবং অন্যটি “Courier Delivery”, এগুলো একসাথে গ্রুপ করা যাবে না।';
+        }
+
+        if ((bool) $sale->collect_from_coxsbazar !== (bool) $otherSale->collect_from_coxsbazar) {
+            return 'Sales collected from different offices cannot be grouped together.';
         }
 
         if (! $this->isOfficeCollection($sale)

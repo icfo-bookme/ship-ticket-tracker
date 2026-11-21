@@ -40,7 +40,8 @@ class StoreShipTicketSaleRequest extends FormRequest
             ],
             'ship_id' => 'required|exists:ships,id',
             'collect_from_office' => 'required|boolean',
-            'address' => 'required_unless:collect_from_office,1|nullable|string',
+            'collect_from_coxsbazar' => ['sometimes', 'boolean', Rule::when($this->boolean('collect_from_office'), 'declined')],
+            'address' => [Rule::requiredIf(! $this->boolean('collect_from_office') && ! $this->boolean('collect_from_coxsbazar')), 'nullable', 'string'],
             'journey_date' => 'nullable|date|after_or_equal:today',
             'date_of_birth' => 'nullable|date|before_or_equal:'.now()->subYears(18)->toDateString(),
             'return_date' => 'nullable|date|after_or_equal:journey_date',
@@ -79,6 +80,9 @@ class StoreShipTicketSaleRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'collect_from_coxsbazar.declined' => 'Select only one collection office.',
+            'collect_from_coxsbazar.boolean' => 'Choose a valid Cox’s Bazar office collection option.',
+            'address.required' => 'Enter a delivery address or select a collection office.',
             'refund_adjustment_amount.required_with' => 'Enter the refund adjustment amount.',
             'payment_methods.*.method.not_in' => 'Use the refund selector to create a Refund Adjusted payment.',
             'whatsapp.required_without' => 'Please provide either a WhatsApp number or a WhatsApp username.',

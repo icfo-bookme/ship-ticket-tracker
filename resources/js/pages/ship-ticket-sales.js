@@ -360,26 +360,27 @@ class TicketSalesSystem {
     }
 
     setupOfficeCollectionToggle() {
-        const checkbox = document.getElementById('collect_from_office');
+        const checkboxes = ['collect_from_office', 'collect_from_coxsbazar']
+            .map(id => document.getElementById(id)).filter(Boolean);
         const addressWrapper = document.getElementById('addressFieldWrapper');
         const address = document.getElementById('address');
 
-        if (!checkbox || !addressWrapper || !address) {
-            return;
-        }
+        if (!checkboxes.length || !addressWrapper || !address) return;
 
-        const updateAddressVisibility = (clearAddress = false) => {
-            addressWrapper.classList.toggle('hidden', checkbox.checked);
-            address.required = !checkbox.checked;
-
-            if (checkbox.checked && clearAddress) {
-                address.value = '';
-                this.clearFieldError(address);
-            }
+        this.updateCollectionAddress = () => {
+            const officeCollection = checkboxes.some(checkbox => checkbox.checked);
+            addressWrapper.classList.toggle('hidden', officeCollection);
+            address.required = !officeCollection;
+            if (officeCollection) this.clearFieldError(address);
         };
 
-        checkbox.addEventListener('change', () => updateAddressVisibility(true));
-        updateAddressVisibility();
+        checkboxes.forEach(checkbox => checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                checkboxes.filter(other => other !== checkbox).forEach(other => { other.checked = false; });
+            }
+            this.updateCollectionAddress();
+        }));
+        this.updateCollectionAddress();
     }
 
     setupMainActionListeners() {
@@ -466,6 +467,7 @@ class TicketSalesSystem {
         try {
             const fields = draft.fields || {};
             this.restoreSimpleFields(fields);
+            this.updateCollectionAddress?.();
 
             const sameAsMobileCheckbox = this.getElement(this.selectors.elements.sameAsMobileCheckbox);
             if (sameAsMobileCheckbox) {
@@ -501,6 +503,12 @@ class TicketSalesSystem {
                 name.startsWith('payment_methods[') ||
                 name.startsWith('co_passengers[')
             ) {
+                return;
+            }
+
+            if (['collect_from_office', 'collect_from_coxsbazar'].includes(name)) {
+                const checkbox = document.getElementById(name);
+                if (checkbox) checkbox.checked = value === '1';
                 return;
             }
 
@@ -622,6 +630,7 @@ class TicketSalesSystem {
         this.setValue('received_amount', '0.00');
         this.setValue('bftn_pending_amount', '0.00');
         this.setValue('due_amount', '0.00');
+        this.updateCollectionAddress?.();
     }
 
     removeDynamicRows(wrapper, selector) {
@@ -1046,7 +1055,7 @@ class TicketSalesSystem {
         let isValid = true;
         let firstErrorField = null;
 
-        const collectFromOffice = this.getElement('#collect_from_office')?.checked ?? false;
+        const collectFromOffice = Boolean(this.getElement('#collect_from_office')?.checked || this.getElement('#collect_from_coxsbazar')?.checked);
 
         this.constants.REQUIRED_FIELDS.forEach(({ name, label }) => {
             const field = this.getElement(`[name="${name}"]`)
@@ -1644,6 +1653,10 @@ class TicketSalesSystem {
                     <dd class="mt-1 text-sm ${valueClasses} font-medium">${value}</dd>
                 </div>`;
         }
+        const office = this.getElement('#collect_from_coxsbazar')?.checked
+            ? 'Collect from Cox’s Bazar office'
+            : this.getElement('#collect_from_office')?.checked ? 'Collect from office' : 'Courier delivery';
+        content += `<div><dt class="text-sm text-gray-500 dark:text-gray-400">Collection method</dt><dd class="text-sm dark:text-white">${office}</dd></div>`;
         return content;
     }
 

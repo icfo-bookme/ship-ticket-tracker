@@ -48,6 +48,7 @@ class ShipTicketSale extends Model
         'total_payable',
         'address',
         'collect_from_office',
+        'collect_from_coxsbazar',
         'remark1',
         'remark2',
     ];
@@ -61,11 +62,17 @@ class ShipTicketSale extends Model
 
         'discount_amount' => 'decimal:2',
         'collect_from_office' => 'boolean',
+        'collect_from_coxsbazar' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
 
     protected $appends = ['due_amount'];
+
+    public function isOfficeCollection(): bool
+    {
+        return $this->collect_from_office || $this->collect_from_coxsbazar;
+    }
 
     public function getTicketCountAttribute(): int
     {

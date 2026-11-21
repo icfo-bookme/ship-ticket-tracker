@@ -79,6 +79,17 @@
                         @csrf
                         @method('PUT')
 
+                        <div class="rounded-lg bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-900 dark:text-blue-100">
+                            <span class="font-semibold">Collection method:</span>
+                            @if ($sale->collect_from_coxsbazar)
+                                Collect from Cox’s Bazar office
+                            @elseif ($sale->collect_from_office)
+                                Collect from office
+                            @else
+                                Courier delivery: {{ $sale->address }}
+                            @endif
+                        </div>
+
                         <!-- Customer Information -->
                         <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
                             <div class="flex items-center justify-between  ">

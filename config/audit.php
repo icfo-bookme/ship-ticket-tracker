@@ -30,7 +30,7 @@ return [
             'company_id' => Company::class, 'journey_date' => 'date',
             'return_date' => 'date', 'issued_date' => 'date', 'date_of_birth' => 'date',
             'other_fee' => 'decimal', 'discount_amount' => 'decimal',
-            'total_payable' => 'decimal', 'collect_from_office' => 'boolean',
+            'total_payable' => 'decimal', 'collect_from_office' => 'boolean', 'collect_from_coxsbazar' => 'boolean',
             'status' => 'string', 'remark1' => 'string', 'remark2' => 'string',
             'ticket_categories' => 'collection:'.Category::class,
             'co_passengers' => 'collection:'.CoPassenger::class,

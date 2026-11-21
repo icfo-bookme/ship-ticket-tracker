@@ -178,6 +178,16 @@
                                     </label>
                                 </div>
 
+                                <div class="md:col-span-3 flex items-center gap-2">
+                                    <input type="hidden" name="collect_from_coxsbazar" value="0">
+                                    <input type="checkbox" id="collect_from_coxsbazar" name="collect_from_coxsbazar" value="1"
+                                        @checked(old('collect_from_coxsbazar', $sale->collect_from_coxsbazar))
+                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
+                                    <label for="collect_from_coxsbazar" class="text-sm font-semibold text-gray-700">
+                                        Collect from Cox’s Bazar office
+                                    </label>
+                                </div>
+
                                 <div class="md:col-span-3" id="addressFieldWrapper">
                                     <div class="flex items-center justify-between mb-1">
                                         <label for="address"

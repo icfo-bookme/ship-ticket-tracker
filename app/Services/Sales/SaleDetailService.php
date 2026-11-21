@@ -136,7 +136,7 @@ class SaleDetailService
             ->whereHas('sale', function ($query) use ($contactField, $normalizedContact): void {
                 $query->whereRaw('LOWER(TRIM('.$contactField.')) = ?', [$normalizedContact]);
             })
-            ->with('sale:id,status,collect_from_office,whatsapp,whatsapp_username')
+            ->with('sale:id,status,collect_from_office,collect_from_coxsbazar,whatsapp,whatsapp_username')
             ->get()
             ->sortByDesc(fn (PrintedTicket $ticket): int => (int) Str::afterLast($ticket->filename, '-'));
 
@@ -168,7 +168,7 @@ class SaleDetailService
             ->unique();
         $relatedSales = ShipTicketSale::query()
             ->whereIn('id', $groupSaleIds)
-            ->get(['id', 'status', 'collect_from_office', 'whatsapp', 'whatsapp_username', 'address']);
+            ->get(['id', 'status', 'collect_from_office', 'collect_from_coxsbazar', 'whatsapp', 'whatsapp_username', 'address']);
         $eligibleTicket = $groupCandidates->first(function (PrintedTicket $ticket) use ($sale): bool {
             $groupById = (int) ($ticket->group_by_id ?? $ticket->sales_id);
 

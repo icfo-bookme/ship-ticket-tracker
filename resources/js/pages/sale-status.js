@@ -378,8 +378,9 @@ const columns = [
         {
             data: null,
             title: "Address",
-            render: (row) => row.collect_from_office
-                ? "Collect from Office"
+            render: (row) => row.collect_from_coxsbazar
+                ? "Collect from Cox’s Bazar office"
+                : row.collect_from_office ? "Collect from Office"
                 : escapeHtml(row.address || "Not available"),
         },
     ] : []),
@@ -542,13 +543,13 @@ function renderCustomerName(value, type, sale) {
 
     const name = copyCell(value);
 
-    if (!sale.collect_from_office) {
+    if (!sale.collect_from_office && !sale.collect_from_coxsbazar) {
         return name;
     }
 
     return `<div class="flex flex-col items-center gap-1">
         ${name}
-        <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900 dark:text-amber-200">Collect from Office</span>
+        <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900 dark:text-amber-200">${sale.collect_from_coxsbazar ? 'Collect from Cox’s Bazar office' : 'Collect from Office'}</span>
     </div>`;
 }
 
@@ -750,7 +751,7 @@ function createStatusButton(sale) {
     }
 
     if (sale.status === config.ticketPrintedStatus) {
-        if (sale.collect_from_office) {
+        if (sale.collect_from_office || sale.collect_from_coxsbazar) {
             return printedFiles.length
                 ? statusButton(
                     sale.id,

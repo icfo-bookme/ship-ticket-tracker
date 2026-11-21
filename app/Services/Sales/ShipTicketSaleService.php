@@ -170,6 +170,7 @@ class ShipTicketSaleService
                 'date_of_birth' => $data['date_of_birth'],
                 'address' => $data['address'] ?? null,
                 'collect_from_office' => $data['collect_from_office'],
+                'collect_from_coxsbazar' => $data['collect_from_coxsbazar'] ?? false,
                 'ship_id' => $data['ship_id'],
                 'company_id' => $data['company_id'],
                 'journey_date' => $data['journey_date'],

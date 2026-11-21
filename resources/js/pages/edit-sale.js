@@ -610,16 +610,23 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    const collectFromOffice = document.getElementById('collect_from_office');
+    const checkboxes = ['collect_from_office', 'collect_from_coxsbazar']
+        .map(id => document.getElementById(id)).filter(Boolean);
     const addressWrapper = document.getElementById('addressFieldWrapper');
     const address = document.getElementById('address');
 
     const updateAddressVisibility = () => {
-        addressWrapper.classList.toggle('hidden', collectFromOffice.checked);
-        address.required = !collectFromOffice.checked;
+        const officeCollection = checkboxes.some(checkbox => checkbox.checked);
+        addressWrapper.classList.toggle('hidden', officeCollection);
+        address.required = !officeCollection;
     };
 
-    collectFromOffice.addEventListener('change', updateAddressVisibility);
+    checkboxes.forEach(checkbox => checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+            checkboxes.filter(other => other !== checkbox).forEach(other => { other.checked = false; });
+        }
+        updateAddressVisibility();
+    }));
     updateAddressVisibility();
 });
 

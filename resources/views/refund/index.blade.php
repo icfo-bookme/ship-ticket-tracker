@@ -89,6 +89,7 @@
         </div>
     </div>
 </div>
+    <x-sale-details-modal />
 </x-app-layout>
 
 

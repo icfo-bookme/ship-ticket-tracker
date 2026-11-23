@@ -424,3 +424,40 @@ it('blocks completion of a legacy refund with a negative customer refund amount'
     expect($sale->fresh()->due_amount)->toBe('20.00')
         ->and($refund->fresh()->status)->toBe('payment_details_added');
 });
+
+it('provides the shared sale modal and report formatted details to refund users without report access', function () {
+    $user = User::factory()->create(['name' => 'Refund Verifier']);
+    $user->givePermissionTo([
+        Permission::findOrCreate('refunds.create', 'web'),
+        Permission::findOrCreate('refunds.view', 'web'),
+    ]);
+    $ship = Ship::create(['name' => 'Modal Ship']);
+    $package = ShipPackage::create(['ship_id' => $ship->id, 'name' => 'Deck', 'price' => 500]);
+    $sale = ShipTicketSale::create([
+        'customer_name' => 'Modal Customer', 'customer_mobile' => '01712345678',
+        'ship_id' => $ship->id, 'total_payable' => 500, 'issued_date' => now()->toDateString(),
+        'journey_date' => '2026-12-01', 'return_date' => '2026-12-03', 'status' => 'ticket-issued',
+    ]);
+    $sale->categories()->create(['package_id' => $package->id, 'type' => 'departure', 'quantity' => 1, 'unit_price' => 500]);
+    $sale->payments()->create(['payment_method' => 'Cash', 'received_amount' => 200, 'is_bftn' => false, 'settlement_status' => 'received', 'transaction_id' => 'MODAL-1']);
+    $sale->payments()->create(['payment_method' => 'Bank', 'received_amount' => 100, 'is_bftn' => true, 'settlement_status' => 'pending']);
+    $sale->verifyby()->create(['name' => 'payment-verified', 'verified_by' => $user->id]);
+
+    $this->actingAs($user)->get(route('refunds.create'))->assertOk()
+        ->assertSee('id="saleReportDetailModal"', false)
+        ->assertSee('id="saleReportPaymentHistory"', false)
+        ->assertSee('id="saleReportVerificationTimeline"', false);
+    $this->getJson(route('refunds.refundable'))->assertOk()
+        ->assertJsonPath('data.0.sale_details.id', $sale->id)
+        ->assertJsonPath('data.0.sale_details.ship_name', 'Modal Ship')
+        ->assertJsonPath('data.0.sale_details.customer_name', 'Modal Customer')
+        ->assertJsonPath('data.0.sale_details.received_amount', 200)
+        ->assertJsonPath('data.0.sale_details.due_amount', '200.00')
+        ->assertJsonPath('data.0.sale_details.bftn_status', 'yes')
+        ->assertJsonPath('data.0.sale_details.bftn_received', false)
+        ->assertJsonCount(2, 'data.0.sale_details.payments')
+        ->assertJsonPath('data.0.sale_details.payments.0.transaction_id', 'MODAL-1')
+        ->assertJsonPath('data.0.sale_details.verification_timeline.0.verified_by', 'Refund Verifier');
+    $this->getJson(route('reports.data'))->assertForbidden();
+    $this->actingAs(User::factory()->create())->getJson(route('refunds.refundable'))->assertForbidden();
+});

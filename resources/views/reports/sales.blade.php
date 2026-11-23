@@ -139,16 +139,7 @@
         ]" url="/reports" :ordering="false" :delegateActions="false" :pageLength="10" :order="[]"
             :lengthMenu="[[10, 25, 50, 100], [10, 25, 50, 100]]" />
 
-        <x-entity-modal id="saleReportDetailModal" title="Sale Details" maxWidth="4xl" :hideFooter="true">
-            <div class="space-y-5 p-5">
-                <div id="saleReportPaymentHistory"></div>
-                <section>
-                    <h4 class="mb-3 text-xs font-medium uppercase text-gray-500">Verification Timeline</h4>
-                    <div id="saleReportVerificationTimeline" class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
-                </section>
-                <dl id="saleReportDetails" class="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3"></dl>
-            </div>
-        </x-entity-modal>
+        <x-sale-details-modal />
 
         <div class="mt-6 grid grid-cols-1 gap-6 max-w-[92%]">
             <section>

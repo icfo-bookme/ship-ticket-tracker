@@ -6,6 +6,7 @@ use App\Enums\RefundStatus;
 use App\Enums\SaleStatus;
 use App\Models\Refund;
 use App\Models\ShipTicketSale;
+use App\Services\Reports\SalesReportService;
 use App\Services\Sales\SaleFinancialService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -13,12 +14,15 @@ use Illuminate\Support\Collection;
 
 class RefundListingService
 {
-    public function __construct(private readonly SaleFinancialService $saleFinancials) {}
+    public function __construct(
+        private readonly SaleFinancialService $saleFinancials,
+        private readonly SalesReportService $salesReports,
+    ) {}
 
     /** @return array<string, mixed> */
     public function refundableSales(Request $request): array
     {
-        $query = ShipTicketSale::with(['ships', 'companies', 'payments', 'refunds', 'categories.package'])
+        $query = ShipTicketSale::with(['ships', 'companies', 'payments', 'refunds.customerPayments', 'refunds.adjustments', 'refunds.companyErrorRefund', 'categories.package', 'verifyby.verifiedByUser:id,name'])
             ->whereDoesntHave('refunds', fn (Builder $refunds) => $refunds->whereNotIn('status', [RefundStatus::Cancelled->value]))
             ->whereNotIn('status', [SaleStatus::Pending->value, SaleStatus::Refunded->value, SaleStatus::PartialRefunded->value]);
 
@@ -37,6 +41,7 @@ class RefundListingService
         $sales->each(function (ShipTicketSale $sale): void {
             $this->appendPaymentAndCategoryLabels($sale);
             $this->appendCurrentFinancials($sale);
+            $sale->setAttribute('sale_details', $this->salesReports->saleDetails($sale));
         });
 
         return [

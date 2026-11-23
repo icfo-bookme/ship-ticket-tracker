@@ -1,3 +1,4 @@
+import { initializeSaleDetailsModal } from '../components/sale-details-modal.js';
 import { initializeCompanyErrorRefund } from '../components/company-error-refund.js';
 import { initializeSalePackageFilter } from '../services/sale-package-filter.js';
 import { initializeDataTable } from '../services/data-table.js';
@@ -62,7 +63,11 @@ if (document.getElementById('salesTable')) {
             render: (data, type, row) => type !== 'display' ? '' :
                 `<input type="checkbox" data-permission="refunds.create" class="selectSale" data-id="${row.id}" />`,
         },
-        { data: "id" },
+        {
+            data: "id",
+            render: (data, type) => type !== 'display' ? data :
+                `<button type="button" class="sale-report-detail-trigger font-semibold text-blue-700 underline decoration-dotted underline-offset-2 hover:text-blue-900" data-modal-target="saleReportDetailModal" data-sale-id="${Number(data) || 0}">#${Number(data) || 'N/A'}</button>`,
+        },
         {
             data: "customer_name",
             render: (data, type, row) => renderRefundCustomer(data, type, row),
@@ -160,6 +165,7 @@ if (document.getElementById('salesTable')) {
 
     function bindRefundTableEvents() {
         const table = document.getElementById("salesTable");
+        initializeSaleDetailsModal(table, sale => sale.sale_details);
         const refundSelectedBtn = document.getElementById("refundSelectedBtn");
         const selectAllHeader = table?.querySelector("thead th:first-child");
         if (selectAllHeader) {

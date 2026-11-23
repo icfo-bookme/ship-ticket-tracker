@@ -337,3 +337,54 @@ it('shows departure and return together in the refundable sales journey column',
 
     expect($process->isSuccessful())->toBeTrue();
 });
+
+it('opens the same sale details modal from report and refund rows and clears stale details', function () {
+    $script = <<<'JS'
+        import assert from 'node:assert/strict';
+        import { initializeSaleDetailsModal } from './resources/js/components/sale-details-modal.js';
+        const elements = new Map();
+        const title = { textContent: '' };
+        let opened = 0, closed = 0;
+        const modal = { querySelector: () => title, _openModal() { opened++; }, _closeModal() { closed++; } };
+        elements.set('saleReportDetailModal', modal);
+        for (const id of ['saleReportDetails', 'saleReportPaymentHistory', 'saleReportVerificationTimeline']) elements.set(id, { innerHTML: '' });
+        const events = {};
+        globalThis.document = { getElementById: id => elements.get(id), addEventListener: (name, handler) => { events[name] = handler; } };
+        let row;
+        const jquery = () => ({ DataTable: () => ({ row: () => ({ data: () => row }) }) });
+        jquery.fn = { DataTable: { isDataTable: () => true } };
+        globalThis.window = { jQuery: jquery };
+        const sale = { id: 42, customer_name: '<Customer>', ship_name: 'Test Ship', total_payable: 500, received_amount: 200, due_amount: 300,
+            created_at: '2026-11-01T00:00:00Z', payments: [{ payment_method: '<Cash>', amount: 200, transaction_id: 'TRX-1' }],
+            verification_timeline: [{ status: 'payment-verified', verified_by: '<Verifier>', verified_at: '2026-11-01T01:00:00Z' }] };
+        for (const isRefund of [false, true]) {
+            const tableEvents = {};
+            const table = { addEventListener: (name, handler) => { tableEvents[name] = handler; } };
+            initializeSaleDetailsModal(table, isRefund ? row => row.sale_details : row => row);
+            const trigger = { closest: () => ({}) };
+            const click = () => tableEvents.click({ target: { closest: () => trigger } });
+            row = isRefund ? { sale_details: sale } : sale;
+            click();
+            assert.equal(title.textContent, 'Sale #42 Details');
+            assert.ok(elements.get('saleReportDetails').innerHTML.includes('&lt;Customer&gt;'));
+            assert.ok(elements.get('saleReportDetails').innerHTML.includes('300.00'));
+            assert.ok(elements.get('saleReportPaymentHistory').innerHTML.includes('&lt;Cash&gt;'));
+            assert.ok(elements.get('saleReportPaymentHistory').innerHTML.includes('200.00'));
+            assert.ok(elements.get('saleReportVerificationTimeline').innerHTML.includes('&lt;Verifier&gt;'));
+            const empty = { id: 43, payments: [], verification_timeline: [] };
+            row = isRefund ? { sale_details: empty } : empty;
+            click();
+            assert.equal(title.textContent, 'Sale #43 Details');
+            assert.ok(elements.get('saleReportPaymentHistory').innerHTML.includes('No payment records.'));
+            assert.ok(!elements.get('saleReportPaymentHistory').innerHTML.includes('TRX-1'));
+            assert.ok(elements.get('saleReportVerificationTimeline').innerHTML.includes('No verification history recorded.'));
+            events.keydown({ key: 'Escape' });
+        }
+        assert.equal(opened, 4);
+        assert.equal(closed, 2);
+        JS;
+    $process = new Process(['node', '--input-type=module', '-e', $script], base_path());
+    $process->mustRun();
+
+    expect($process->isSuccessful())->toBeTrue();
+});

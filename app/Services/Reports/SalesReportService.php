@@ -497,6 +497,12 @@ class SalesReportService
         return $totals;
     }
 
+    /** @return array<string, mixed> */
+    public function saleDetails(ShipTicketSale $sale): array
+    {
+        return $this->formatSale($sale, []);
+    }
+
     private function formatSale(ShipTicketSale $sale, array $filters): array
     {
         $receivedPayments = $this->receivedPayments($sale, $filters);

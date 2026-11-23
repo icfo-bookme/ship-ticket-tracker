@@ -8,6 +8,7 @@ use App\Http\Requests\Refunds\PartialRefundRequest;
 use App\Http\Requests\Refunds\SaveRefundPaymentDetailsRequest;
 use App\Http\Requests\Refunds\StoreRefundRequest;
 use App\Http\Requests\Refunds\UpdateRefundRequest;
+use App\Http\Requests\Sales\FilterShipTicketSalesRequest;
 use App\Models\Company;
 use App\Models\Refund;
 use App\Models\Ship;
@@ -43,7 +44,7 @@ class RefundController extends Controller
         return response()->json($refunds);
     }
 
-    public function refundableCS(Request $request)
+    public function refundableCS(FilterShipTicketSalesRequest $request)
     {
         return response()->json($this->refundListings->refundableSales($request));
     }

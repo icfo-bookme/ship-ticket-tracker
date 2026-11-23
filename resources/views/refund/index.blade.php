@@ -10,7 +10,7 @@
             Refundable Sales
         </h2>
 
-        <div class="mt-6 mb-4 grid grid-cols-3 gap-10 max-w-[92%]">
+        <div class="mt-6 mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="companyFilter" class="block text-sm font-medium text-gray-700">Filter by Source
                     Company</label>
@@ -32,10 +32,25 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label for="packageFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Ticket Category</label>
+                <select id="packageFilter" disabled
+                    data-packages-url="{{ route('ship-packages.data', ['id' => '__SHIP_ID__']) }}"
+                    class="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-100 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    <option value="">Select a ship first</option>
+                </select>
+                <p id="packageFilterMessage" role="status" class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
+            </div>
             <div class="flex-1">
                 <label for="journeyDateFilter" class="block text-sm font-medium text-gray-700">Filter by Journey
                     Date</label>
                 <input type="date" id="journeyDateFilter"
+                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div class="flex-1">
+                <label for="returnDateFilter" class="block text-sm font-medium text-gray-700">Filter by Return
+                    Date</label>
+                <input type="date" id="returnDateFilter"
                     class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
             </div>
 

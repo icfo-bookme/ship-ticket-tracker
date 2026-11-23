@@ -1,12 +1,15 @@
 import { initializeCompanyErrorRefund } from '../components/company-error-refund.js';
+import { initializeSalePackageFilter } from '../services/sale-package-filter.js';
 import { initializeDataTable } from '../services/data-table.js';
 import { apiRequest, refreshDataTable } from '../services/api.js';
 
 // Refundable sales table and refund workflow UI.
 if (document.getElementById('salesTable')) {
     const shipFilter = document.getElementById("shipFilter");
+    const packageFilter = document.getElementById("packageFilter");
     const companyFilter = document.getElementById("companyFilter");
     const journeyDateFilter = document.getElementById("journeyDateFilter");
+    const returnDateFilter = document.getElementById("returnDateFilter");
     const clearFiltersBtn = document.getElementById("clearFilters");
 
     const columns = [
@@ -47,8 +50,10 @@ if (document.getElementById('salesTable')) {
 
     const filters = () => ({
         ship_id: shipFilter.value,
+        package_id: packageFilter.value,
         company_id: companyFilter.value,
         journey_date: journeyDateFilter.value,
+        return_date: returnDateFilter.value,
     });
     initializeDataTable({ table: document.getElementById('salesTable'), columns, filters });
 
@@ -128,15 +133,25 @@ if (document.getElementById('salesTable')) {
             selectAllHeader.innerHTML = '<input type="checkbox" class="form-checkbox selectAllSales">';
         }
 
-        [shipFilter, companyFilter, journeyDateFilter].forEach((filter) => {
-            filter?.addEventListener("change", () => refreshDataTable('salesTable'));
+        const refreshFilteredSales = () => document.dispatchEvent(new CustomEvent('data-table:refresh', {
+            detail: { tableId: 'salesTable', resetPaging: true },
+        }));
+        const packageControls = initializeSalePackageFilter({
+            shipFilter, packageFilter,
+            message: document.getElementById('packageFilterMessage'),
+            onChange: refreshFilteredSales,
+        });
+
+        [companyFilter, journeyDateFilter, returnDateFilter].forEach((filter) => {
+            filter?.addEventListener("change", refreshFilteredSales);
         });
 
         clearFiltersBtn?.addEventListener("click", () => {
-            [shipFilter, companyFilter, journeyDateFilter].forEach((filter) => {
+            [shipFilter, companyFilter, journeyDateFilter, returnDateFilter].forEach((filter) => {
                 if (filter) filter.value = "";
             });
-            refreshDataTable('salesTable');
+            packageControls.reset();
+            refreshFilteredSales();
         });
 
         document.addEventListener("change", (event) => {

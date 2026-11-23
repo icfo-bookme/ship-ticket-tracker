@@ -117,3 +117,61 @@ it('renders the dependent dropdown disabled and requires permission to read filt
     $this->actingAs(User::factory()->create())->getJson(route('sales.data', ['status' => 'pending', 'ship_id' => $this->ship->id]))
         ->assertForbidden();
 });
+
+it('provides the ship dependent category filter on refundable sales', function () {
+    $this->actingAs($this->admin)->get(route('refunds.create'))->assertOk()
+        ->assertSee('id="shipFilter"', false)
+        ->assertSee('id="packageFilter" disabled', false)
+        ->assertSee('Ticket Category')
+        ->assertSee('id="packageFilterMessage"', false);
+});
+
+it('filters refundable sales by ship and category without duplicating matching sales', function () {
+    $matching = packageFilteredSale($this->package, ['status' => 'ticket-issued']);
+    $matching->categories()->create(['package_id' => $this->package->id, 'quantity' => 1, 'type' => 'return', 'unit_price' => 500]);
+    packageFilteredSale($this->otherPackage, ['status' => 'ticket-issued']);
+    packageFilteredSale($this->foreignPackage, ['status' => 'ticket-issued']);
+    packageFilteredSale($this->package, ['status' => 'pending']);
+    $alreadyRequested = packageFilteredSale($this->package, ['status' => 'ticket-issued']);
+    $alreadyRequested->refunds()->create(['status' => 'requested', 'refunded_number_of_tickets' => 1, 'refunded_amount' => 500]);
+    $this->actingAs($this->admin);
+
+    $this->getJson(route('refunds.refundable'))->assertOk()->assertJsonPath('recordsFiltered', 3);
+    $this->getJson(route('refunds.refundable', ['ship_id' => $this->ship->id]))->assertOk()->assertJsonPath('recordsFiltered', 2);
+    $this->getJson(route('refunds.refundable', ['ship_id' => $this->ship->id, 'package_id' => $this->package->id]))
+        ->assertOk()->assertJsonPath('recordsTotal', 1)->assertJsonPath('recordsFiltered', 1)
+        ->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $matching->id);
+    $this->getJson(route('refunds.refundable', ['ship_id' => $this->ship->id, 'package_id' => $this->package->id, 'search' => ['value' => 'no matching customer']]))
+        ->assertOk()->assertJsonPath('recordsTotal', 1)->assertJsonPath('recordsFiltered', 0);
+});
+
+it('rejects invalid ship and category combinations for refundable sales', function (string $scenario) {
+    $filters = match ($scenario) {
+        'no ship' => ['package_id' => $this->package->id],
+        'other ship' => ['ship_id' => $this->ship->id, 'package_id' => $this->foreignPackage->id],
+        'invalid category' => ['ship_id' => $this->ship->id, 'package_id' => 'invalid'],
+    };
+    $this->actingAs($this->admin)->getJson(route('refunds.refundable', $filters))
+        ->assertUnprocessable()->assertJsonValidationErrors($scenario === 'no ship' ? 'ship_id' : 'package_id');
+})->with(['no ship', 'other ship', 'invalid category']);
+
+it('filters refundable sales by return date alongside ship category and journey date', function () {
+    $matching = packageFilteredSale($this->package, ['status' => 'ticket-issued', 'return_date' => '2026-11-05']);
+    packageFilteredSale($this->package, ['status' => 'ticket-issued', 'return_date' => '2026-11-06']);
+    packageFilteredSale($this->package, ['status' => 'ticket-issued', 'return_date' => null]);
+    packageFilteredSale($this->otherPackage, ['status' => 'ticket-issued', 'return_date' => '2026-11-05']);
+    $this->actingAs($this->admin);
+    $this->get(route('refunds.create'))->assertOk()->assertSee('id="returnDateFilter"', false);
+    $this->getJson(route('refunds.refundable', ['return_date' => '2026-11-05']))
+        ->assertOk()->assertJsonPath('recordsFiltered', 2);
+    $this->getJson(route('refunds.refundable', [
+        'return_date' => '2026-11-05', 'journey_date' => '2026-11-01',
+        'ship_id' => $this->ship->id, 'package_id' => $this->package->id,
+    ]))->assertOk()->assertJsonPath('recordsFiltered', 1)->assertJsonPath('data.0.id', $matching->id);
+    $this->getJson(route('refunds.refundable', ['return_date' => '2026-12-01']))
+        ->assertOk()->assertJsonPath('recordsFiltered', 0);
+    $this->getJson(route('refunds.refundable', ['return_date' => '']))
+        ->assertOk()->assertJsonPath('recordsFiltered', 4);
+    $this->getJson(route('refunds.refundable', ['return_date' => 'invalid']))
+        ->assertUnprocessable()->assertJsonValidationErrors('return_date');
+});

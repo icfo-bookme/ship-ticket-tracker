@@ -24,6 +24,7 @@ class FilterShipTicketSalesRequest extends FormRequest
     {
         return [
             'journey_date' => ['nullable', 'date_format:Y-m-d'],
+            'return_date' => ['nullable', 'date_format:Y-m-d'],
             'journey_date_from' => ['nullable', 'date_format:Y-m-d'],
             'journey_date_to' => ['nullable', 'date_format:Y-m-d', Rule::when($this->filled('journey_date_from'), ['after_or_equal:journey_date_from'])],
             'ship_id' => ['nullable', 'required_with:package_id', 'integer', 'exists:ships,id'],
@@ -38,6 +39,7 @@ class FilterShipTicketSalesRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'return_date.date_format' => 'Return date must use YYYY-MM-DD format.',
             'journey_date_from.date_format' => 'Departure From date must use YYYY-MM-DD format.',
             'journey_date_to.date_format' => 'Departure To date must use YYYY-MM-DD format.',
             'journey_date_to.after_or_equal' => 'Departure To date cannot be before the From date.',

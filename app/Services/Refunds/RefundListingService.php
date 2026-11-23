@@ -23,6 +23,8 @@ class RefundListingService
             ->whereNotIn('status', [SaleStatus::Pending->value, SaleStatus::Refunded->value, SaleStatus::PartialRefunded->value]);
 
         $this->applySaleFilters($query, $request);
+        $query->when($request->filled('package_id'), fn (Builder $query) => $query
+            ->whereHas('categories', fn (Builder $categories) => $categories->where('package_id', $request->integer('package_id'))));
         $total = (clone $query)->count();
         $this->applySaleSearch($query, $request->input('search.value'));
         $filtered = (clone $query)->count();
@@ -221,7 +223,8 @@ class RefundListingService
     {
         $query->when($request->filled('ship_id'), fn (Builder $query) => $query->where('ship_id', $request->input('ship_id')))
             ->when($request->filled('company_id'), fn (Builder $query) => $query->where('company_id', $request->input('company_id')))
-            ->when($request->filled('journey_date'), fn (Builder $query) => $query->whereDate('journey_date', $request->input('journey_date')));
+            ->when($request->filled('journey_date'), fn (Builder $query) => $query->whereDate('journey_date', $request->input('journey_date')))
+            ->when($request->filled('return_date'), fn (Builder $query) => $query->whereDate('return_date', $request->input('return_date')));
     }
 
     private function applySaleSearch(Builder $query, mixed $searchValue): void

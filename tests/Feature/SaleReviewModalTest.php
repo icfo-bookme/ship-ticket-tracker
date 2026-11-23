@@ -90,3 +90,25 @@ it('keeps the ticket creation page white and stacks payment rows on small screen
         ->toContain('.ship-ticket-create-page #paymentInfoWrapper .payment-entry > div')
         ->toContain('grid-column: 1 / -1;');
 });
+
+it('renders only shipment id values in large bold text while keeping exports plain', function () {
+    $script = <<<'JS'
+        const fs = require('node:fs');
+        const vm = require('node:vm');
+        const assert = require('node:assert/strict');
+        const source = fs.readFileSync('resources/js/pages/sale-status.js', 'utf8');
+        const start = source.indexOf('            data: "shipment.shipment_id",');
+        const definition = source.slice(start, source.indexOf('        },', start));
+        const escapeHtml = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+        const column = vm.runInNewContext(`({${definition}})`, { escapeHtml });
+        assert.equal(column.render('123456', 'display'), '<span class="text-lg font-bold">123456</span>');
+        assert.equal(column.render('123456', 'export'), '123456');
+        assert.equal(column.render('123456', 'sort'), '123456');
+        assert.ok(column.render('<script>', 'display').includes('&lt;script&gt;'));
+        assert.ok(column.render(null, 'display').includes('Not available'));
+        JS;
+    $process = new \Symfony\Component\Process\Process(['node', '-e', $script], base_path());
+    $process->mustRun();
+
+    expect($process->isSuccessful())->toBeTrue();
+});

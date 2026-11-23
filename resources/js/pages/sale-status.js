@@ -399,7 +399,9 @@ const columns = [
     ...([config.shipmentIdEnteredStatus, config.shippedStatus].includes(config.status) ? [
         {
             data: "shipment.shipment_id",
-            render: (data) => escapeHtml(data ?? "Not available"),
+            render: (data, type) => type === 'display'
+                ? `<span class="text-lg font-bold">${escapeHtml(data ?? "Not available")}</span>`
+                : (data ?? "Not available"),
         },
     ] : []),
     ...(config.status === config.pendingStatus ? [

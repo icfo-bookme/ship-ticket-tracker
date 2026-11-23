@@ -79,16 +79,16 @@
                         @csrf
                         @method('PUT')
 
-                        <div class="rounded-lg bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-900 dark:text-blue-100">
-                            <span class="font-semibold">Collection method:</span>
-                            @if ($sale->collect_from_coxsbazar)
-                                Collect from Cox’s Bazar office
-                            @elseif ($sale->collect_from_office)
-                                Collect from office
-                            @else
-                                Courier delivery: {{ $sale->address }}
-                            @endif
-                        </div>
+                        @if (filled($sale->remark1) || filled($sale->remark2))
+                            <div id="ticketIssueRemarks" class="flex flex-col gap-2 rounded-lg bg-red-50 p-3 dark:bg-red-900">
+                                @if (filled($sale->remark1))
+                                    <p class="whitespace-pre-line font-bold text-red-600 dark:text-red-400">Remark 1: {{ $sale->remark1 }}</p>
+                                @endif
+                                @if (filled($sale->remark2))
+                                    <p class="whitespace-pre-line font-bold text-red-600 dark:text-red-400">Remark 2: {{ $sale->remark2 }}</p>
+                                @endif
+                            </div>
+                        @endif
 
                         <!-- Customer Information -->
                         <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
@@ -826,52 +826,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        @if (filled($sale->remark1) || filled($sale->remark2))
-                        <!-- Remarks -->
-                        <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">
-                            <div class="flex items-center mb-2">
-                                <div class="bg-blue-600 p-2 rounded-lg mr-3">
-                                    <i class="fas fa-sticky-note text-white text-sm"></i>
-                                </div>
-                                <h3 class="text-base font-bold text-gray-800">Remarks</h3>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                @if (filled($sale->remark1))
-                                <div>
-                                    <div class="flex items-center justify-between mb-1">
-                                        <label for="remark1" class="block text-sm font-semibold text-gray-700">Remark
-                                            1</label>
-                                        <button type="button"
-                                            class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
-                                            data-field="remark1" title="Copy Remark 1">
-                                            <i class="fas fa-copy text-xs"></i>
-                                        </button>
-                                    </div>
-                                    <textarea name="remark1" id="remark1" rows="3"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">{{ old('remark1', $sale->remark1) }}</textarea>
-                                </div>
-                                @endif
-
-                                @if (filled($sale->remark2))
-                                <div>
-                                    <div class="flex items-center justify-between mb-1">
-                                        <label for="remark2" class="block text-sm font-semibold text-gray-700">Remark
-                                            2</label>
-                                        <button type="button"
-                                            class="copy-field-btn text-blue-600 hover:text-blue-800 transition duration-200"
-                                            data-field="remark2" title="Copy Remark 2">
-                                            <i class="fas fa-copy text-xs"></i>
-                                        </button>
-                                    </div>
-                                    <textarea name="remark2" id="remark2" rows="3"
-                                        class="copyable-field w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 ease-in-out py-1.5 px-2.5">{{ old('remark2', $sale->remark2) }}</textarea>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-                        @endif
 
                         <!-- Co-Passengers -->
                         <div class="bg-blue-50 rounded-lg p-3 shadow-sm border border-blue-100">

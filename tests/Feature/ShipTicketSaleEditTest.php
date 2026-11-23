@@ -295,3 +295,36 @@ it('adds effective refund adjustments and keeps pending BFTN out of the original
         ->assertViewHas('dueBeforeAdjustment', 400.0)
         ->assertViewHas('dueAdjustedAmount', 100.0);
 });
+
+it('shows only filled remarks in red bold text at the top of the ticket issue page', function (?string $remark1, ?string $remark2) {
+    $this->sale->update(['remark1' => $remark1, 'remark2' => $remark2]);
+    $response = $this->actingAs($this->admin)->get(route('ship-ticket-issue.show', $this->sale));
+    $response->assertOk()->assertDontSee('Collection method:')
+        ->assertDontSee('name="remark1"', false)->assertDontSee('name="remark2"', false);
+    $html = $response->getContent();
+    foreach (['Remark 1: ' => $remark1, 'Remark 2: ' => $remark2] as $label => $value) {
+        if (filled($value)) {
+            $response->assertSee($label.$value);
+            expect(substr_count($html, e($label.$value)))->toBe(1);
+        } else {
+            $response->assertDontSee($label);
+        }
+    }
+    if (filled($remark1) || filled($remark2)) {
+        $response->assertSee('id="ticketIssueRemarks"', false)
+            ->assertSee('whitespace-pre-line font-bold text-red-600', false);
+        expect(strpos($html, 'id="ticketIssueRemarks"'))->toBeLessThan(strpos($html, 'Customer Information'));
+    } else {
+        $response->assertDontSee('id="ticketIssueRemarks"', false);
+    }
+    expect($this->sale->fresh()->remark1)->toBe($remark1)
+        ->and($this->sale->fresh()->remark2)->toBe($remark2);
+})->with([
+    'both remarks' => ['Collect early', 'Call before boarding'],
+    'first only' => ['Collect early', null],
+    'second only' => [null, 'Call before boarding'],
+    'both null' => [null, null],
+    'empty remarks' => ['', ''],
+    'whitespace remarks' => ['   ', "\n\t"],
+    'escaped and multiline text' => ["<script>alert('test')</script>\nNext line", 'Use <VIP> gate'],
+]);

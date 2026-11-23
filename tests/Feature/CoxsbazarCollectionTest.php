@@ -113,7 +113,7 @@ it('shows both collection options on create and the saved choice on edit', funct
     $this->get('/ship-ticket-sales/'.$sale->id)->assertOk()
         ->assertSee('id="collect_from_coxsbazar"', false)
         ->assertSee('Collect from Cox', false);
-    $this->get('/ship-ticket-issue/'.$sale->id)->assertOk()->assertSee('Collection method:')->assertSee('Collect from Cox');
+    $this->get('/ship-ticket-issue/'.$sale->id)->assertOk()->assertDontSee('Collection method:');
 });
 
 it('only groups sales using the same collection office', function () {

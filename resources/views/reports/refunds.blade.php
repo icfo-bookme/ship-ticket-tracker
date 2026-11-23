@@ -69,6 +69,22 @@
                     </select>
                 </div>
                 <div>
+                    <label for="refundReportRequestedFrom" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Request Date From</label>
+                    <input id="refundReportRequestedFrom" type="date" class="w-full rounded-md border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                    <label for="refundReportRequestedTo" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Request Date To</label>
+                    <input id="refundReportRequestedTo" type="date" class="w-full rounded-md border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                    <label for="refundReportPartnerReceivedFrom" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Partner Received Date From</label>
+                    <input id="refundReportPartnerReceivedFrom" type="date" class="w-full rounded-md border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                    <label for="refundReportPartnerReceivedTo" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Partner Received Date To</label>
+                    <input id="refundReportPartnerReceivedTo" type="date" class="w-full rounded-md border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
                     <label for="refundReportRefundedFrom" class="mb-1 block text-sm font-medium text-gray-700">Refunded Date From</label>
                     <input id="refundReportRefundedFrom" type="date" class="w-full rounded-md border-gray-300 text-sm">
                 </div>

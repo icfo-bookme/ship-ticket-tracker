@@ -38,7 +38,10 @@ it('serves the separate refund report page and data endpoint to report viewers',
         ->assertSee('shrink-0', false)
         ->assertDontSee('refundReportStartDate')
         ->assertDontSee('refundReportEndDate')
-        ->assertDontSee('Requested from');
+        ->assertSee('Request Date From')
+        ->assertSee('Partner Received Date From')
+        ->assertSee('id="refundReportRequestedTo"', false)
+        ->assertSee('id="refundReportPartnerReceivedTo"', false);
 
     expect(strpos($response->getContent(), 'id="refundReportTable"'))
         ->toBeLessThan(strpos($response->getContent(), 'id="refundReportCount"'));
@@ -314,3 +317,40 @@ it('does not count a completed extra refund as paid without a payment record', f
     expect($result['totals']['extra_payment_refund_paid'])->toBe('0.00')
         ->and($result['data'][0]['customer_refund_paid'])->toBe('0.00');
 });
+
+it('filters refund reports by request and partner received date ranges', function (array $filters, array $expectedRows) {
+    $ship = Ship::create(['name' => 'Date Filter Ship']);
+    $sale = ShipTicketSale::create([
+        'customer_name' => 'Date Filter Customer', 'customer_mobile' => '01700000001',
+        'ship_id' => $ship->id, 'total_payable' => 100, 'issued_date' => '2026-11-01', 'status' => 'refunded',
+    ]);
+    $refunds = collect([
+        ['2026-11-10 00:00:00', '2026-11-15 00:00:00'],
+        ['2026-11-10 23:59:59', '2026-11-16 23:59:59'],
+        ['2026-11-11 12:00:00', '2026-11-17 12:00:00'],
+        ['2026-11-09 12:00:00', null],
+    ])->map(fn (array $dates): Refund => Refund::create([
+        'sales_id' => $sale->id, 'refund_type' => 'partial', 'status' => 'completed',
+        'refunded_number_of_tickets' => 1, 'refunded_amount' => 100, 'gross_refund_amount' => 100,
+        'customer_refund_amount' => 100, 'requested_at' => $dates[0], 'partner_received_at' => $dates[1],
+        'customer_refunded_at' => '2026-11-20 12:00:00',
+    ]));
+    $result = app(RefundReportService::class)->dataTable(new Request($filters));
+    $expectedIds = collect($expectedRows)->map(fn (int $index): int => $refunds[$index]->id)->all();
+    expect($result['data']->pluck('id')->all())->toEqualCanonicalizing($expectedIds)
+        ->and($result['recordsTotal'])->toBe(count($expectedRows))
+        ->and($result['recordsFiltered'])->toBe(count($expectedRows))
+        ->and($result['totals']['refunded_count'])->toBe(count($expectedRows))
+        ->and($result['totals']['refund_amount'])->toBe(number_format(count($expectedRows) * 100, 2, '.', ''));
+})->with([
+    'same request day includes all times' => [['requested_from' => '2026-11-10', 'requested_to' => '2026-11-10'], [0, 1]],
+    'request from only' => [['requested_from' => '2026-11-11'], [2]],
+    'request to only' => [['requested_to' => '2026-11-09'], [3]],
+    'partner range includes boundaries and excludes null' => [['partner_received_from' => '2026-11-15', 'partner_received_to' => '2026-11-16'], [0, 1]],
+    'partner from only' => [['partner_received_from' => '2026-11-17'], [2]],
+    'partner to only excludes null' => [['partner_received_to' => '2026-11-15'], [0]],
+    'both ranges intersect' => [['requested_from' => '2026-11-10', 'requested_to' => '2026-11-10', 'partner_received_from' => '2026-11-16', 'partner_received_to' => '2026-11-16'], [1]],
+    'existing refunded filter still applies' => [['requested_from' => '2026-11-10', 'refunded_to' => '2026-11-19'], []],
+    'no matching dates' => [['requested_from' => '2026-12-01'], []],
+    'empty date filters do not restrict records' => [['requested_from' => '', 'requested_to' => '', 'partner_received_from' => '', 'partner_received_to' => ''], [0, 1, 2, 3]],
+]);

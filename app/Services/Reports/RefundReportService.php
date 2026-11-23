@@ -66,6 +66,14 @@ class RefundReportService
                 ->where('ship_id', $request->input('ship_id'))))
             ->when($request->filled('company_id'), fn (Builder $query) => $query->whereHas('sale', fn (Builder $sale) => $sale
                 ->where('company_id', $request->input('company_id'))))
+            ->when($request->filled('requested_from'), fn (Builder $query) => $query
+                ->whereDate('refunds.requested_at', '>=', $request->input('requested_from')))
+            ->when($request->filled('requested_to'), fn (Builder $query) => $query
+                ->whereDate('refunds.requested_at', '<=', $request->input('requested_to')))
+            ->when($request->filled('partner_received_from'), fn (Builder $query) => $query
+                ->whereDate('refunds.partner_received_at', '>=', $request->input('partner_received_from')))
+            ->when($request->filled('partner_received_to'), fn (Builder $query) => $query
+                ->whereDate('refunds.partner_received_at', '<=', $request->input('partner_received_to')))
             ->when($request->filled('refunded_from'), fn (Builder $query) => $query
                 ->whereRaw('DATE(COALESCE(refunds.customer_refunded_at, refunds.updated_at)) >= ?', [$request->input('refunded_from')]))
             ->when($request->filled('refunded_to'), fn (Builder $query) => $query

@@ -3,6 +3,48 @@ import { initializeSalePackageFilter } from '../services/sale-package-filter.js'
 import { initializeDataTable } from '../services/data-table.js';
 import { apiRequest, refreshDataTable } from '../services/api.js';
 
+function renderRefundShip(data, type, sale) {
+    const shipName = sale.ship?.name || sale.ships?.name || 'Not available';
+    const groups = [
+        { label: 'Departure', categories: [] },
+        { label: 'Return', categories: [] },
+        { label: 'Not specified', categories: [] },
+    ];
+    (sale.categories || []).forEach(category => {
+        const name = category.package?.name || 'Ticket';
+        const quantity = Number(category.quantity) || 0;
+        const group = category.type === 'departure' ? groups[0]
+            : category.type === 'return' ? groups[1] : groups[2];
+        group.categories.push(`${name} - ${quantity} ${quantity === 1 ? 'ticket' : 'tickets'}`);
+    });
+    const populatedGroups = groups.filter(group => group.categories.length > 0);
+    if (type !== 'display') {
+        return [shipName, ...populatedGroups.map(group => `${group.label}: ${group.categories.join(', ')}`)].join(' | ');
+    }
+
+    return `<div class="flex flex-col gap-2 text-left">
+        <span>${escapeHtml(shipName)}</span>
+        ${populatedGroups.map(group => `<div class="flex flex-col gap-1 text-xs text-gray-600 dark:text-gray-300">
+            <span class="font-semibold text-gray-800 dark:text-gray-100">${group.label}</span>
+            ${group.categories.map(category => `<span>${escapeHtml(category)}</span>`).join('')}
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderRefundJourney(sale, type) {
+    const departure = sale.journey_date || 'Not specified';
+    const returnDate = sale.return_date || 'Not specified';
+
+    if (type !== 'display') {
+        return `Departure: ${departure}; Return: ${returnDate}`;
+    }
+
+    return `<div class="flex flex-col gap-1 whitespace-nowrap">
+        <span><span class="font-medium">Departure:</span> ${escapeHtml(departure)}</span>
+        <span><span class="font-medium">Return:</span> ${escapeHtml(returnDate)}</span>
+    </div>`;
+}
+
 // Refundable sales table and refund workflow UI.
 if (document.getElementById('salesTable')) {
     const shipFilter = document.getElementById("shipFilter");
@@ -27,11 +69,12 @@ if (document.getElementById('salesTable')) {
         },
         {
             data: null,
-            render: (row) => escapeHtml(row.ship?.name || row.ships?.name || "Not available"),
+            render: renderRefundShip,
         },
         {
-            data: "journey_date",
-            render: formatDate,
+            data: null,
+            title: "Journey",
+            render: renderRefundJourney,
         },
         { data: "ticket_count" },
         { data: "ticket_value" },
@@ -56,16 +99,6 @@ if (document.getElementById('salesTable')) {
         return_date: returnDateFilter.value,
     });
     initializeDataTable({ table: document.getElementById('salesTable'), columns, filters });
-
-    function formatDate(dateString) {
-        if (!dateString) return "N/A";
-
-        return new Date(dateString).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        });
-    }
 
     function createActionButtons(sale) {
         if (document.getElementById('refundPage')?.dataset.canManage !== '1') {

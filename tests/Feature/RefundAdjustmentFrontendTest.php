@@ -268,3 +268,72 @@ it('preserves live refund searches while using URL search only as the initial va
 
     expect($process->isSuccessful())->toBeTrue();
 });
+
+it('groups all sale categories under departure and return headings below the ship safely', function () {
+    $script = <<<'JS'
+        import fs from 'node:fs';
+        import vm from 'node:vm';
+        import assert from 'node:assert/strict';
+        import { escapeHtml } from './resources/js/utils/escape-html.js';
+        const source = fs.readFileSync('resources/js/pages/refunds.js', 'utf8');
+        const helper = source.slice(source.indexOf('function renderRefundShip('), source.indexOf('// Refundable sales table'));
+        const render = vm.runInNewContext(helper + '; renderRefundShip;', { escapeHtml });
+        const sale = { ships: { name: 'Ship <One>' }, categories: [
+            { package: { name: 'Deck' }, quantity: 2, type: 'departure' },
+            { package: { name: 'Cabin <VIP>' }, quantity: 1, type: 'departure' },
+            { package: { name: 'Deck' }, quantity: 3, type: 'return' },
+            { package: { name: 'Cabin' }, quantity: 0, type: 'return' },
+        ] };
+        const html = render(null, 'display', sale);
+        assert.ok(html.includes('Ship &lt;One&gt;'));
+        const departure = html.slice(html.indexOf('>Departure</span>'), html.indexOf('>Return</span>'));
+        const returning = html.slice(html.indexOf('>Return</span>'));
+        assert.ok(departure.includes('Deck - 2 tickets'));
+        assert.ok(departure.includes('Cabin &lt;VIP&gt; - 1 ticket'));
+        assert.ok(!departure.includes('Deck - 3 tickets'));
+        assert.ok(returning.includes('Deck - 3 tickets'));
+        assert.ok(returning.includes('Cabin - 0 tickets'));
+        assert.ok(!returning.includes('Deck - 2 tickets'));
+        assert.equal((html.match(/>Departure<\/span>/g) || []).length, 1);
+        assert.equal((html.match(/>Return<\/span>/g) || []).length, 1);
+        assert.ok(html.indexOf('Ship &lt;One&gt;') < html.indexOf('>Departure</span>'));
+        assert.ok(!html.includes('<VIP>'));
+        assert.equal(render(null, 'export', sale), 'Ship <One> | Departure: Deck - 2 tickets, Cabin <VIP> - 1 ticket | Return: Deck - 3 tickets, Cabin - 0 tickets');
+        assert.ok(render(null, 'display', {}).includes('Not available'));
+        assert.ok(!render(null, 'display', { ship: { name: 'Ship Two' } }).includes('>Departure</span>'));
+        const oneWay = render(null, 'display', { categories: [sale.categories[0]] });
+        assert.ok(oneWay.includes('>Departure</span>'));
+        assert.ok(!oneWay.includes('>Return</span>'));
+        const unknown = render(null, 'display', { categories: [{ quantity: 1, type: 'unknown' }] });
+        assert.ok(unknown.includes('Not specified'));
+        assert.ok(unknown.includes('Ticket - 1 ticket'));
+        JS;
+    $process = new Process(['node', '--input-type=module', '-e', $script], base_path());
+    $process->mustRun();
+
+    expect($process->isSuccessful())->toBeTrue();
+});
+
+it('shows departure and return together in the refundable sales journey column', function () {
+    $script = <<<'JS'
+        import fs from 'node:fs';
+        import vm from 'node:vm';
+        import assert from 'node:assert/strict';
+        import { escapeHtml } from './resources/js/utils/escape-html.js';
+        const source = fs.readFileSync('resources/js/pages/refunds.js', 'utf8');
+        const helper = source.slice(source.indexOf('function renderRefundJourney('), source.indexOf('// Refundable sales table'));
+        const render = vm.runInNewContext(helper + '; renderRefundJourney;', { escapeHtml });
+        const html = render({ journey_date: '2026-11-25', return_date: '2026-11-28' }, 'display');
+        assert.ok(html.includes('Departure:</span> 2026-11-25'));
+        assert.ok(html.includes('Return:</span> 2026-11-28'));
+        assert.ok(html.indexOf('Departure:') < html.indexOf('Return:'));
+        assert.ok(render({ journey_date: '2026-11-25' }, 'display').includes('Return:</span> Not specified'));
+        assert.ok(render({ return_date: '<script>' }, 'display').includes('&lt;script&gt;'));
+        assert.equal(render({ journey_date: '2026-11-25', return_date: '2026-11-28' }, 'export'), 'Departure: 2026-11-25; Return: 2026-11-28');
+        assert.ok(source.includes('render: renderRefundJourney'));
+        JS;
+    $process = new Process(['node', '--input-type=module', '-e', $script], base_path());
+    $process->mustRun();
+
+    expect($process->isSuccessful())->toBeTrue();
+});

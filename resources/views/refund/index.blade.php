@@ -69,7 +69,7 @@
             'ID',
             'Customer Name',
             'Ship Name',
-            'Journey Date',
+            'Journey',
             'Number Of Ticket',
             'Total Ticket Price',
             'Other Fee',

@@ -1,6 +1,7 @@
 import { initializeDataTable } from '../services/data-table.js';
 import { apiRequest, refreshDataTable } from '../services/api.js';
 import { renderRefundCustomer } from '../utils/refund-customer.js';
+import { renderRemainingRefundButton } from '../components/refund-remaining.js';
 
 const refundRequestPage = document.getElementById('refundRequestPage');
 const refundStatus = refundRequestPage?.dataset.status || '';
@@ -47,7 +48,7 @@ const completedColumns = [
         data: null,
         orderable: false,
         searchable: false,
-        render: (data, type, row) => type !== 'display' ? '' : `<a href="/refunded/${row.sale?.id}/details" class="rounded bg-blue-700 px-2 py-1 text-white" title="View refund details">Details</a>`,
+        render: (data, type, row) => type !== 'display' ? '' : `<div class="flex flex-wrap gap-2"><a href="/refunded/${row.sale?.id}/details" class="rounded bg-blue-700 px-2 py-1 text-white" title="View refund details">Details</a>${row.can_refund_remaining && refundRequestPage.dataset.canRefund === '1' ? renderRemainingRefundButton(row.sale, row.refundable_categories, row) : ''}</div>`,
     },
 ];
 
@@ -88,6 +89,8 @@ const columns = isCompleted ? completedColumns : [
                                 data-received_total_amount="${row.sale.ticket_value}"
                                 data-due-amount="${row.sale?.due_amount ?? 0}"
                                 data-discount-amount="${row.sale?.discount_amount ?? 0}"
+                                data-refund-discount-available="${row.edit_refund_discount_available}"
+                                data-refund-gross-remaining="${row.edit_refund_gross_remaining}"
                                 data-other-fee="${row.sale?.other_fee ?? 0}"
                                 data-extra-received="${row.sale?.extra_received_amount ?? 0}"
                                 data-extra-remaining="${row.sale?.extra_remaining_amount ?? 0}"
@@ -270,6 +273,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(id)?.addEventListener('change', () => refreshDataTable('requestedRefundsTable'));
     });
     document.getElementById('requestedRefundsTable')?.addEventListener('click', (event) => {
+        const remainingButton = event.target.closest('.remainingRefundBtn');
+        if (remainingButton) {
+            document.dispatchEvent(new CustomEvent('refund:open', { detail: { button: remainingButton, editing: false } }));
+            return;
+        }
         const button = event.target.closest('.requestedEditBtn');
         if (button) {
             document.dispatchEvent(new CustomEvent('refund:open', { detail: { button, editing: true } }));

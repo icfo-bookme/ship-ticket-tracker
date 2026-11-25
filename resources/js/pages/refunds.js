@@ -1,4 +1,5 @@
 import { initializeSaleDetailsModal } from '../components/sale-details-modal.js';
+import { renderRefundCategoryRows, refundDiscountForSelection } from '../components/refund-remaining.js';
 import { initializeCompanyErrorRefund } from '../components/company-error-refund.js';
 import { initializeSalePackageFilter } from '../services/sale-package-filter.js';
 import { initializeDataTable } from '../services/data-table.js';
@@ -61,7 +62,7 @@ if (document.getElementById('salesTable')) {
             orderable: false,
             searchable: false,
             render: (data, type, row) => type !== 'display' ? '' :
-                `<input type="checkbox" data-permission="refunds.create" class="selectSale" data-id="${row.id}" />`,
+                `<input type="checkbox" data-permission="refunds.create" class="selectSale" data-id="${row.id}" ${row.can_bulk_refund === false ? 'disabled title="Use Partial Refund for remaining tickets"' : ''} />`,
         },
         {
             data: "id",
@@ -120,7 +121,9 @@ if (document.getElementById('salesTable')) {
                                 data-due-amount="${sale.due_amount || 0}"
                                 data-discount-amount="${sale.discount_amount || 0}"
                                 data-extra-remaining="${sale.extra_remaining_amount || 0}"
-                                data-categories="${encodeURIComponent(JSON.stringify(sale.categories || []))}"
+                                data-refund-discount-available="${sale.refund_discount_available}"
+                                data-refund-gross-remaining="${sale.refund_gross_remaining}"
+                                data-categories="${encodeURIComponent(JSON.stringify(sale.refundable_categories || sale.categories || []))}"
                                 data-status="shipped">
                                 Partial Refund
                             </button>
@@ -128,7 +131,7 @@ if (document.getElementById('salesTable')) {
     }
 
     function selectedSaleIds() {
-        return Array.from(document.querySelectorAll(".selectSale:checked"))
+        return Array.from(document.querySelectorAll(".selectSale:checked:not(:disabled)"))
             .map((checkbox) => checkbox.dataset.id);
     }
 
@@ -197,7 +200,7 @@ if (document.getElementById('salesTable')) {
             const selectAll = event.target.closest(".selectAllSales");
             if (!selectAll) return;
 
-            document.querySelectorAll(".selectSale").forEach((checkbox) => {
+            document.querySelectorAll(".selectSale:not(:disabled)").forEach((checkbox) => {
                 checkbox.checked = selectAll.checked;
             });
             document.querySelectorAll(".selectAllSales").forEach((checkbox) => {
@@ -226,6 +229,8 @@ let currentRefundTicketValue = 0;
 let currentRefundSaleDiscount = 0;
 let currentRefundSelectedGrossAmount = 0;
 let currentRefundExtraRemainingAmount = 0;
+let currentRefundDiscountAvailable = 0;
+let currentRefundGrossRemaining = 0;
 
 function roundRefundMoney(amount) {
     return Math.round((amount + Number.EPSILON) * 100) / 100;
@@ -235,9 +240,7 @@ function updateRefundPreview() {
     const grossAmount = currentRefundSelectedGrossAmount;
     const chargePercent = Number(document.getElementById('customerChargePercentInput')?.value || 0);
     const partnerPercent = Number(document.getElementById('partnerSharePercentInput')?.value || 0);
-    const refundDiscount = currentRefundTicketValue > 0
-        ? roundRefundMoney(Math.min(currentRefundSaleDiscount, currentRefundTicketValue) * grossAmount / currentRefundTicketValue)
-        : 0;
+    const refundDiscount = refundDiscountForSelection(grossAmount, currentRefundTicketValue, currentRefundSaleDiscount, currentRefundDiscountAvailable, currentRefundGrossRemaining);
     const amountAfterDiscount = Math.max(roundRefundMoney(grossAmount - refundDiscount), 0);
     const customerCharge = roundRefundMoney(grossAmount * chargePercent / 100);
     const partnerShare = roundRefundMoney(grossAmount * partnerPercent / 100);
@@ -313,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isConfirmed.isConfirmed) return;
 
         try {
-            const refundPage = document.getElementById('refundPage');
+            const refundPage = document.getElementById('refundPage') || document.getElementById('refundRequestPage');
             const endpoint = currentRefundEditing
                 ? refundPage.dataset.updateRefundUrl.replace('__ID__', currentRefundRequestId)
                 : refundPage.dataset.partialRefundUrl.replace('__ID__', currentRefundSaleId);
@@ -386,11 +389,13 @@ function openRefundModal(btn, editing = false) {
     document.getElementById('submitRefundBtn').textContent = editing
         ? 'Update Refund Request'
         : 'Submit Refund Request';
-    refreshRefundList = () => refreshDataTable('salesTable');
+    refreshRefundList = () => refreshDataTable(document.getElementById('salesTable') ? 'salesTable' : 'requestedRefundsTable');
     document.getElementById('receivedAmountInput').value = btn.dataset.received_total_amount;
     currentRefundDueAmount = Number(btn.dataset.dueAmount || 0);
     currentRefundTicketValue = Number(btn.dataset.received_total_amount);
     currentRefundSaleDiscount = Number(btn.dataset.discountAmount || 0);
+    currentRefundDiscountAvailable = Number(btn.dataset.refundDiscountAvailable ?? currentRefundSaleDiscount);
+    currentRefundGrossRemaining = Number(btn.dataset.refundGrossRemaining ?? currentRefundTicketValue);
     currentRefundExtraRemainingAmount = Number(btn.dataset.extraRemaining || 0);
     document.getElementById('customerChargePercentInput').value = editing ? (btn.dataset.customerCharge || 0) : 0;
     document.getElementById('partnerSharePercentInput').value = editing ? (btn.dataset.partnerShare || 0) : 0;
@@ -400,27 +405,12 @@ function openRefundModal(btn, editing = false) {
     currentRefundSelectedGrossAmount = 0;
     companyErrorRefund?.reset(editing ? JSON.parse(decodeURIComponent(btn.dataset.companyError || 'null')) : null);
     const categories = JSON.parse(decodeURIComponent(btn.dataset.categories || '[]'));
-    document.getElementById('refundCategoryRows').innerHTML = categories.map((category) => {
-        const unitPrice = Number(category.unit_price);
-        const purchasedQuantity = Number(category.quantity || category.purchased_quantity || 0);
-        const refundedQuantity = editing
-            ? Number(category.refunded_quantity ?? category.quantity_refunded ?? 0)
-            : 0;
-
-        return `<div class="grid grid-cols-5 items-center gap-2 rounded border p-2 text-sm">
-                <span class="col-span-2">${escapeHtml(category.package?.name || 'Ticket')}</span>
-                <span>${escapeHtml(category.type || '')}</span>
-                <span>Qty: ${purchasedQuantity}<br>৳${unitPrice.toFixed(2)}</span>
-                <input type="number" min="0" max="${purchasedQuantity}" value="${refundedQuantity}"
-                    data-category-id="${category.category_id ?? category.id}" data-price="${unitPrice}"
-                    class="refundCategoryQuantity w-full rounded border px-2 py-1" aria-label="Return quantity">
-            </div>`;
-    }).join('');
+    document.getElementById('refundCategoryRows').innerHTML = renderRefundCategoryRows(categories, editing);
     document.querySelectorAll('.refundCategoryQuantity').forEach((input) => input.addEventListener('input', () => {
         const quantity = Number(input.value || 0);
         const maximum = Number(input.max || 0);
         input.setCustomValidity(quantity > maximum
-            ? `Refund quantity cannot exceed the purchased quantity (${maximum}).`
+            ? `Refund quantity cannot exceed the remaining quantity (${maximum}).`
             : '');
         updateRefundAmount();
     }));

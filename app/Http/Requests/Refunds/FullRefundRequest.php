@@ -18,7 +18,7 @@ class FullRefundRequest extends FormRequest
     {
         return [
             'ids' => 'required|array',
-            'ids.*' => 'required|integer',
+            'ids.*' => 'required|integer|distinct|exists:ship_ticket_sales,id',
         ];
     }
 }

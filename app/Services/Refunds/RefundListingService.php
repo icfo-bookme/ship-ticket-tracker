@@ -17,14 +17,14 @@ class RefundListingService
     public function __construct(
         private readonly SaleFinancialService $saleFinancials,
         private readonly SalesReportService $salesReports,
+        private readonly RefundAvailabilityService $availability,
     ) {}
 
     /** @return array<string, mixed> */
     public function refundableSales(Request $request): array
     {
-        $query = ShipTicketSale::with(['ships', 'companies', 'payments', 'refunds.customerPayments', 'refunds.adjustments', 'refunds.companyErrorRefund', 'categories.package', 'verifyby.verifiedByUser:id,name'])
-            ->whereDoesntHave('refunds', fn (Builder $refunds) => $refunds->whereNotIn('status', [RefundStatus::Cancelled->value]))
-            ->whereNotIn('status', [SaleStatus::Pending->value, SaleStatus::Refunded->value, SaleStatus::PartialRefunded->value]);
+        $query = ShipTicketSale::with(['ships', 'companies', 'payments', 'refunds.tickets', 'refunds.customerPayments', 'refunds.adjustments', 'refunds.companyErrorRefund', 'categories.package', 'verifyby.verifiedByUser:id,name']);
+        $this->availability->applyToQuery($query);
 
         $this->applySaleFilters($query, $request);
         $query->when($request->filled('package_id'), fn (Builder $query) => $query
@@ -42,6 +42,11 @@ class RefundListingService
             $this->appendPaymentAndCategoryLabels($sale);
             $this->appendCurrentFinancials($sale);
             $sale->setAttribute('sale_details', $this->salesReports->saleDetails($sale));
+            $sale->setAttribute('refundable_categories', $this->availability->categories($sale));
+            $sale->setAttribute('can_bulk_refund', $this->availability->ticketRefunds($sale)->isEmpty());
+            foreach ($this->availability->balances($sale) as $key => $value) {
+                $sale->setAttribute($key, $value);
+            }
         });
 
         return [
@@ -135,7 +140,7 @@ class RefundListingService
         ], true), 404);
 
         $query = Refund::with([
-            'sale.ships', 'sale.companies', 'sale.categories.package', 'sale.payments', 'sale.refunds', 'tickets', 'adjustments', 'customerPayments', 'companyErrorRefund',
+            'sale.ships', 'sale.companies', 'sale.categories.package', 'sale.payments', 'sale.refunds.tickets', 'tickets', 'adjustments', 'customerPayments', 'companyErrorRefund',
         ])
             ->whereNotNull('requested_at')
             ->whereHas('sale', fn (Builder $sale) => $sale->whereNull('deleted_at'))
@@ -172,12 +177,18 @@ class RefundListingService
         if ($refund->sale) {
             $refund->sale->setAttribute('ticket_count', (int) $refund->sale->categories->sum('quantity'));
             $this->appendCurrentFinancials($refund->sale);
+            $refund->setAttribute('can_refund_remaining', $this->availability->canCreate($refund->sale));
+            $refund->setAttribute('refundable_categories', $this->availability->categories($refund->sale));
+            foreach ($this->availability->balances($refund->sale) as $key => $value) {
+                $refund->setAttribute($key, $value);
+            }
         }
 
         $requestedQuantities = $refund->tickets->keyBy('category_id');
         $categories = $refund->sale?->categories ?? collect();
         $customerRefundAmount = (float) $refund->customer_refund_amount;
-        $dueAdjustment = $refund->adjustment_started_at ? 0 : round(min(
+        $settled = $refund->status === RefundStatus::Completed->value || $refund->customer_refunded_at !== null || $refund->adjustment_started_at !== null;
+        $dueAdjustment = $settled ? (float) $refund->getRawOriginal('due_adjusted_amount') : round(min(
             max((float) ($refund->sale?->due_amount ?? 0), 0),
             max($customerRefundAmount, 0),
         ), 2);
@@ -186,7 +197,7 @@ class RefundListingService
         $refund->setAttribute('total_refund_tickets', (int) $refund->tickets->sum('refunded_quantity'));
         $refund->setAttribute('refund_calculation_valid', $customerRefundAmount >= 0);
         $refund->setAttribute('due_adjusted_amount', $dueAdjustment);
-        $refund->setAttribute('customer_refund_after_due_adjustment', round(max($customerRefundAmount - $dueAdjustment, 0), 2));
+        $refund->setAttribute('customer_refund_after_due_adjustment', round(max($customerRefundAmount - ($settled ? 0 : $dueAdjustment), 0), 2));
         if ($refund->adjustment_started_at) {
             $refund->setAttribute('due_adjusted_amount', (float) $refund->getRawOriginal('due_adjusted_amount'));
             $refund->setAttribute('refund_adjusted_amount', (float) $refund->adjustments->sum('received_amount'));
@@ -204,6 +215,16 @@ class RefundListingService
             'unit_price' => $category->unit_price,
             'package' => $category->package,
         ])->values());
+        if ($refund->sale) {
+            $remaining = $this->availability->categories($refund->sale, $refund->id)->keyBy('id');
+            $refund->setAttribute('edit_categories', $refund->edit_categories->map(fn (array $category): array => array_merge($category, [
+                'already_requested_quantity' => $remaining[$category['id']]['already_requested_quantity'],
+                'remaining_quantity' => $remaining[$category['id']]['remaining_quantity'],
+            ])));
+            foreach ($this->availability->balances($refund->sale, $refund->id) as $key => $value) {
+                $refund->setAttribute('edit_'.$key, $value);
+            }
+        }
     }
 
     /** @param Collection<int, ShipTicketSale> $sales

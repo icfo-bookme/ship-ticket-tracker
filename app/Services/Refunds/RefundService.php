@@ -16,6 +16,7 @@ class RefundService
     public function __construct(
         private readonly SaleFinancialService $saleFinancials,
         private readonly AuditLogService $auditLogs,
+        private readonly RefundAvailabilityService $availability,
     ) {}
 
     public function create(array $data): Refund
@@ -34,10 +35,15 @@ class RefundService
     public function fullRefund(array $saleIds): void
     {
         DB::transaction(function () use ($saleIds): void {
-            foreach ($saleIds as $id) {
+            foreach (array_unique($saleIds) as $id) {
                 $sale = ShipTicketSale::query()
                     ->with('categories.package')
+                    ->lockForUpdate()
                     ->find($id);
+
+                if ($sale && $this->availability->ticketRefunds($sale)->isNotEmpty()) {
+                    throw ValidationException::withMessages(['ids' => 'Sales with an existing ticket refund must use Partial Refund for remaining tickets.']);
+                }
 
                 if ($sale && ! in_array($sale->status, [SaleStatus::Pending->value, SaleStatus::Refunded->value], true)) {
                     $ticketSelections = $sale->categories->map(function ($category): array {
@@ -104,6 +110,10 @@ class RefundService
     public function partialRefund(ShipTicketSale $sale, array $data): void
     {
         DB::transaction(function () use ($sale, $data): void {
+            $sale = ShipTicketSale::query()->lockForUpdate()->findOrFail($sale->id);
+            if (! $this->availability->canCreate($sale)) {
+                throw ValidationException::withMessages(['ticket_selections' => 'No tickets are available for a new refund. Edit the open request, or check the previous refund breakdown.']);
+            }
             $categories = $sale->categories()->with('package')->get()->keyBy('id');
             $grossAmount = 0;
             $ticketCount = 0;
@@ -119,6 +129,9 @@ class RefundService
                 }
 
                 $quantity = (int) $selection['refunded_quantity'];
+                if ($quantity < 1 || collect($selectedTickets)->contains(fn (array $selected): bool => $selected['category']->id === $category->id)) {
+                    throw ValidationException::withMessages(['ticket_selections' => 'Select each category once with a positive quantity.']);
+                }
                 $unitAmount = (float) $category->unit_price;
                 $categoryAmount = round($unitAmount * $quantity, 2);
                 $grossAmount += $categoryAmount;
@@ -236,12 +249,16 @@ class RefundService
         });
     }
 
-    private function proportionalDiscount(ShipTicketSale $sale, float $grossAmount): float
+    private function proportionalDiscount(ShipTicketSale $sale, float $grossAmount, ?int $ignoredRefundId = null): float
     {
         $TicketValue = (float) $sale->ticket_value;
         $discount = min(max((float) $sale->discount_amount, 0), $TicketValue);
 
-        return $TicketValue > 0 ? round($discount * ($grossAmount / $TicketValue), 2) : 0;
+        $balances = $this->availability->balances($sale, $ignoredRefundId);
+        $proportional = $TicketValue > 0 ? round($discount * ($grossAmount / $TicketValue), 2) : 0;
+
+        return min($grossAmount, $balances['refund_discount_available'],
+            $grossAmount >= $balances['refund_gross_remaining'] ? $balances['refund_discount_available'] : $proportional);
     }
 
     private function customerRefundAmount(
@@ -321,6 +338,7 @@ class RefundService
         }
 
         DB::transaction(function () use ($refund, $sale, $data): void {
+            $sale = ShipTicketSale::query()->lockForUpdate()->findOrFail($sale->id);
             $categories = $sale->categories()->with('package')->get()->keyBy('id');
             $grossAmount = 0;
             $ticketCount = 0;
@@ -330,7 +348,8 @@ class RefundService
                 $category = $categories->get((int) $selection['category_id']);
                 $quantity = (int) $selection['refunded_quantity'];
 
-                if (! $category || $quantity > (int) $category->quantity) {
+                if (! $category || $quantity < 1 || $quantity > (int) $category->quantity
+                    || collect($selectedTickets)->contains(fn (array $selected): bool => $selected['category']->id === $category->id)) {
                     throw ValidationException::withMessages([
                         'ticket_selections' => 'Refund quantity cannot exceed the purchased quantity for that category.',
                     ]);
@@ -343,7 +362,7 @@ class RefundService
                 $selectedTickets[] = compact('category', 'quantity', 'unitAmount', 'categoryAmount');
             }
 
-            $refundDiscountAmount = $this->proportionalDiscount($sale, $grossAmount);
+            $refundDiscountAmount = $this->proportionalDiscount($sale, $grossAmount, $refund->id);
             $this->ensureRefundableCategories($sale, $selectedTickets, $grossAmount, $refund->id);
             $customerChargePercent = (float) $data['customer_charge_percent'];
             $partnerSharePercent = (float) $data['partner_share_percent'];
@@ -489,6 +508,9 @@ class RefundService
 
     private function ensureRefundableCategories(ShipTicketSale $sale, array $selectedTickets, float $amount, ?int $ignoredRefundId = null): void
     {
+        if (! $this->availability->hasReliableBreakdown($sale, $ignoredRefundId)) {
+            throw ValidationException::withMessages(['ticket_selections' => 'Previous ticket refund breakdown is incomplete. Correct it before requesting more tickets.']);
+        }
         $refunds = $sale->refunds()
             ->whereNotIn('status', [RefundStatus::Cancelled->value])
             ->where('refund_type', '!=', 'extra_payment')
@@ -496,6 +518,10 @@ class RefundService
             ->with('tickets')
             ->get();
         $refundedAmount = (float) $refunds->sum('gross_refund_amount');
+
+        if ((int) $refunds->sum('refunded_number_of_tickets') + array_sum(array_column($selectedTickets, 'quantity')) > (int) $sale->ticket_count) {
+            throw ValidationException::withMessages(['ticket_selections' => 'Refunded tickets cannot exceed the sale ticket count.']);
+        }
 
         foreach ($selectedTickets as $selected) {
             $alreadyRefunded = (int) $refunds

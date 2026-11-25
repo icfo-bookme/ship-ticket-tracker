@@ -2,6 +2,66 @@
 
 use Symfony\Component\Process\Process;
 
+it('renders remaining ticket quantities and opens new requests from completed refunds', function () {
+    $script = <<<'JS'
+        import assert from 'node:assert/strict';
+        import fs from 'node:fs';
+        import vm from 'node:vm';
+        import { renderRemainingRefundButton, renderRefundCategoryRows, refundDiscountForSelection } from './resources/js/components/refund-remaining.js';
+        const categories = [
+            { id: 1, package: { name: '<Deck>' }, type: 'departure', quantity: 2, already_requested_quantity: 2, remaining_quantity: 0, unit_price: 100 },
+            { id: 2, package: { name: 'Deck' }, type: 'return', quantity: 2, already_requested_quantity: 0, remaining_quantity: 2, unit_price: 100 },
+        ];
+        const html = renderRefundCategoryRows(categories, false);
+        assert.ok(html.includes('&lt;Deck&gt;'));
+        assert.ok(html.includes('>Departure</h4>'));
+        assert.ok(html.includes('>Return</h4>'));
+        assert.ok(html.includes('Purchased: 2'));
+        assert.ok(html.includes('Already Requested/Refunded: 2'));
+        assert.match(html, /max="0" value="0" disabled/);
+        assert.match(html, /max="2" value="0"/);
+        const editing = renderRefundCategoryRows([{ ...categories[1], refunded_quantity: 1 }], true);
+        assert.match(editing, /max="2" value="1"/);
+        assert.equal(refundDiscountForSelection(0.01, 0.03, 0.02, 0, 0.01), 0);
+        assert.equal(refundDiscountForSelection(0.01, 0.03, 0.01, 0.01, 0.01), 0.01);
+        assert.equal(refundDiscountForSelection(200, 400, 40, 20, 200), 20);
+        const events = {}, tableEvents = {};
+        const page = { dataset: { status: 'completed', canRefund: '1' } };
+        const table = { addEventListener: (name, handler) => { tableEvents[name] = handler; } };
+        let columns, opened;
+        const document = {
+            getElementById: id => id === 'refundRequestPage' ? page : id === 'requestedRefundsTable' ? table : null,
+            addEventListener: (name, handler) => { events[name] = handler; },
+            dispatchEvent: event => { opened = event; },
+        };
+        const source = fs.readFileSync('resources/js/pages/refund-requests.js', 'utf8').replace(/^import .*;\r?\n/gm, '');
+        vm.runInNewContext(source, {
+            document, window: { location: { search: '' } }, URLSearchParams,
+            initializeDataTable: options => { columns = options.columns; },
+            renderRemainingRefundButton, renderRefundCustomer() {},
+            refreshDataTable() {}, escapeHtml: value => String(value ?? ''),
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
+        });
+        const row = { can_refund_remaining: true, sale: { id: 7, ticket_value: 400 }, refundable_categories: categories, refund_discount_available: 20, refund_gross_remaining: 200 };
+        assert.ok(columns.at(-1).render(null, 'display', row).includes('Refund Remaining Tickets'));
+        row.can_refund_remaining = false;
+        assert.ok(!columns.at(-1).render(null, 'display', row).includes('remainingRefundBtn'));
+        row.can_refund_remaining = true;
+        page.dataset.canRefund = '0';
+        assert.ok(!columns.at(-1).render(null, 'display', row).includes('remainingRefundBtn'));
+        events.DOMContentLoaded();
+        const button = { dataset: { id: '7' } };
+        tableEvents.click({ target: { closest: selector => selector === '.remainingRefundBtn' ? button : null } });
+        assert.equal(opened.type, 'refund:open');
+        assert.equal(opened.detail.editing, false);
+        assert.equal(opened.detail.button, button);
+        JS;
+    $process = new Process(['node', '--input-type=module', '-e', $script], base_path());
+    $process->mustRun();
+
+    expect($process->isSuccessful())->toBeTrue();
+});
+
 it('keeps refund phone numbers under customer names without separate mobile columns', function () {
     foreach (['refunds.js', 'refund-requests.js'] as $page) {
         $source = file_get_contents(resource_path('js/pages/'.$page));

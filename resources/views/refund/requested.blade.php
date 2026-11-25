@@ -1,6 +1,10 @@
 <x-app-layout>
     @vite(['resources/js/pages/refunds.js', 'resources/js/pages/refund-requests.js'])
-    <div id="refundRequestPage" data-status="{{ $refundStatus }}" data-approve-url="{{ route('refunds.approve', ['id' => '__ID__']) }}" data-cancel-url="{{ route('refunds.cancel', ['id' => '__ID__']) }}" data-payment-details-url="{{ route('refunds.payment-details', ['id' => '__ID__']) }}" data-customer-payment-url="{{ route('refunds.customer-payment', ['id' => '__ID__']) }}" class="py-6">
+    <div id="refundRequestPage" data-status="{{ $refundStatus }}"
+        data-can-refund="{{ auth()->user()?->can('refunds.create') ? '1' : '0' }}"
+        data-partial-refund-url="{{ route('refunds.partial', ['id' => '__ID__']) }}"
+        data-update-refund-url="{{ route('refunds.update', ['refund' => '__ID__']) }}"
+        data-approve-url="{{ route('refunds.approve', ['id' => '__ID__']) }}" data-cancel-url="{{ route('refunds.cancel', ['id' => '__ID__']) }}" data-payment-details-url="{{ route('refunds.payment-details', ['id' => '__ID__']) }}" data-customer-payment-url="{{ route('refunds.customer-payment', ['id' => '__ID__']) }}" class="py-6">
         <div class=" mx-auto sm:px-6 lg:px-8">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $pageTitle }}</h2>
 
